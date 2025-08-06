@@ -1,24 +1,122 @@
+# --------------------------------------------------------
 # Logs
+# --------------------------------------------------------
 logs
 *.log
 npm-debug.log*
+pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# --------------------------------------------------------
+# Runtime Data & Process IDs
+# --------------------------------------------------------
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# --------------------------------------------------------
+# Diagnostic Reports
+# --------------------------------------------------------
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# --------------------------------------------------------
+# Build Output / Compiled Files
+# --------------------------------------------------------
 dist
 dist-ssr
-*.local
+.build
+/build
+/.next
+.out
+.nuxt
+.vuepress/dist
+.docusaurus
+.svelte-kit/
+/.temp
+.tmp
+.cache
+.parcel-cache
+.vitepress/dist
+.vitepress/cache
 
-# Editor directories and files
+# --------------------------------------------------------
+# Dependency Folders
+# --------------------------------------------------------
+node_modules/
+jspm_packages/
+bower_components/
+web_modules/
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# --------------------------------------------------------
+# TypeScript / JavaScript
+# --------------------------------------------------------
+*.tsbuildinfo
+*.tgz
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# --------------------------------------------------------
+# Test Output
+# --------------------------------------------------------
+coverage
+.nyc_output
+
+# --------------------------------------------------------
+# IDEs and Editor Config
+# --------------------------------------------------------
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
 .idea
-.DS_Store
+.project
+.classpath
+.settings/
+.c9/
+*.launch
+*.sublime-workspace
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# --------------------------------------------------------
+# OS and Local Files
+# --------------------------------------------------------
+.DS_Store
+*.local
+
+# --------------------------------------------------------
+# dotenv Environment Files
+# --------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --------------------------------------------------------
+# Other Tooling
+# --------------------------------------------------------
+.grunt
+.lock-wscript
+.build/Release
+.eslintcache
+.stylelintcache
+.node_repl_history
+.serverless/
+.fusebox/
+.dynamodb/
+.firebase/
+.tern-port
+.vscode-test
