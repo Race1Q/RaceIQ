@@ -5,6 +5,7 @@ import LogoutButton from './components/LogoutButton';
 import { f1ApiService } from './services/f1Api';
 import type { Race } from './services/f1Api';
 import './App.css';
+import DbTest from './components/DbTest';
 
 function App() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -16,7 +17,6 @@ function App() {
       const races = await f1ApiService.getRecentRaces(3);
       setRecentRaces(races);
     };
-    
     fetchRecentRaces();
   }, []);
 
@@ -72,6 +72,13 @@ function App() {
           ) : (
             <div className="public-data">
               <h2>Recent Races</h2>
+
+              {/* Supabase DB connectivity check */}
+              <div style={{ margin: '12px 0', padding: 12, border: '1px solid #333', borderRadius: 8 }}>
+                <strong>DB Test</strong>
+                <DbTest />
+              </div>
+
               <div className="races-grid">
                 {recentRaces.map((race: Race) => (
                   <div key={race.id} className="race-card">
