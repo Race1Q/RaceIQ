@@ -4,14 +4,16 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DriversModule } from './drivers/drivers.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env.back', // or '.env.backend' if that's what you use
+      envFilePath: '.env.back',
     }),
     ScheduleModule.forRoot(),
+    AuthModule,
     DriversModule,
   ],
   controllers: [AppController],

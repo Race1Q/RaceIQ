@@ -7,7 +7,9 @@ import { f1ApiService } from './services/f1Api';
 import type { Race } from './services/f1Api';
 import './App.css';
 import DbTest from './components/DbTest';
-import AboutUs from "./pages/AboutUs"; 
+import AboutUs from "./pages/AboutUs";
+import Drivers from "./pages/Drivers";
+import Admin from "./pages/Admin"; 
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -110,20 +112,24 @@ function App() {
             <div className="nav-logo">
               <h2>RaceIQ</h2>
             </div>
-            <div className="nav-links">
-              <Link to="/" className="nav-link">Home</Link>
-              <Link to="/about" className="nav-link">About</Link>
-              <Link to="#api" className="nav-link">API</Link>
-              {isAuthenticated ? <LogoutButton /> : <LoginButton />}
-            </div>
+                         <div className="nav-links">
+               <Link to="/" className="nav-link">Home</Link>
+               <Link to="/about" className="nav-link">About</Link>
+               <Link to="/drivers" className="nav-link">Drivers</Link>
+               <Link to="/admin" className="nav-link">Admin</Link>
+               <Link to="#api" className="nav-link">API</Link>
+               {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+             </div>
           </div>
         </nav>
 
-        {/* Routes */}
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutUs />} />
-        </Routes>
+                 {/* Routes */}
+         <Routes>
+           <Route path="/" element={<HomePage />} />
+           <Route path="/about" element={<AboutUs />} />
+           <Route path="/drivers" element={<Drivers />} />
+           <Route path="/admin" element={<Admin />} />
+         </Routes>
 
         {/* Footer */}
         <footer className="footer">

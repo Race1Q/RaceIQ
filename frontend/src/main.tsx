@@ -1,18 +1,20 @@
-
-import { createRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client';
 import { Auth0Provider } from '@auth0/auth0-react';
-import './index.css'
-import App from './App.tsx'
+import './index.css';
+import App from './App.tsx';
+
 const root = createRoot(document.getElementById('root')!);
 
 root.render(
-<Auth0Provider
-    domain="dev-6mvzvr3totwc6rkd.us.auth0.com"
-    clientId="nM3L0iuU12uOqSfucxxThUZFtt8xbfGP"
+  <Auth0Provider
+    domain={import.meta.env.VITE_AUTH0_DOMAIN}
+    clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
     authorizationParams={{
-      redirect_uri: window.location.origin
+      redirect_uri: window.location.origin,
+      audience: import.meta.env.VITE_AUTH0_AUDIENCE, // Needed for access token
+      scope: "openid profile email read:teams manage:teams" // Request needed scopes
     }}
   >
     <App />
-  </Auth0Provider>,
+  </Auth0Provider>
 );
