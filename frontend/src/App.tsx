@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { useAuth0 } from '@auth0/auth0-react';
 import LoginButton from './components/LoginButton';
 import LogoutButton from './components/LogoutButton';
@@ -6,12 +7,12 @@ import { f1ApiService } from './services/f1Api';
 import type { Race } from './services/f1Api';
 import './App.css';
 import DbTest from './components/DbTest';
+import AboutUs from "./pages/AboutUs"; 
 
-function App() {
+function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
   const [recentRaces, setRecentRaces] = useState<Race[]>([]);
 
-  // Fetch recent races from F1 API
   useEffect(() => {
     const fetchRecentRaces = async () => {
       const races = await f1ApiService.getRecentRaces(3);
@@ -30,22 +31,7 @@ function App() {
   }
 
   return (
-    <div className="app">
-      {/* Navigation */}
-      <nav className="navbar">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <h2>RaceIQ</h2>
-          </div>
-          <div className="nav-links">
-            <a href="#home" className="nav-link">Home</a>
-            <a href="#about" className="nav-link">About</a>
-            <a href="#api" className="nav-link">API</a>
-            {isAuthenticated ? <LogoutButton /> : <LoginButton />}
-          </div>
-        </div>
-      </nav>
-
+    <>
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-container">
@@ -67,7 +53,6 @@ function App() {
             <div className="personalized-feed">
               <h2>Welcome back, {user?.name}!</h2>
               <p>Your personalized F1 feed will appear here.</p>
-              {/* TODO: Add personalized content */}
             </div>
           ) : (
             <div className="public-data">
@@ -109,23 +94,54 @@ function App() {
           </div>
         </section>
       )}
+    </>
+  );
+}
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-links">
-              <a href="#api-docs" className="footer-link">API Docs</a>
-              <a href="#privacy" className="footer-link">Privacy Policy</a>
-              <a href="#contact" className="footer-link">Contact</a>
+function App() {
+  const { isAuthenticated } = useAuth0();
+
+  return (
+    <Router>
+      <div className="app">
+        {/* Navigation */}
+        <nav className="navbar">
+          <div className="nav-container">
+            <div className="nav-logo">
+              <h2>RaceIQ</h2>
             </div>
-            <p className="footer-copyright">
-              ©2025 RaceIQ. All rights reserved.
-            </p>
+            <div className="nav-links">
+              <Link to="/" className="nav-link">Home</Link>
+              <Link to="/about" className="nav-link">About</Link>
+              <Link to="#api" className="nav-link">API</Link>
+              {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+            </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </nav>
+
+        {/* Routes */}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutUs />} />
+        </Routes>
+
+        {/* Footer */}
+        <footer className="footer">
+          <div className="container">
+            <div className="footer-content">
+              <div className="footer-links">
+                <a href="#api-docs" className="footer-link">API Docs</a>
+                <a href="#privacy" className="footer-link">Privacy Policy</a>
+                <a href="#contact" className="footer-link">Contact</a>
+              </div>
+              <p className="footer-copyright">
+                ©2025 RaceIQ. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </Router>
   );
 }
 
