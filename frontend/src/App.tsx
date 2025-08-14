@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import LoginButton from './components/LoginButton';
 import LogoutButton from './components/LogoutButton';
@@ -7,9 +7,10 @@ import { f1ApiService } from './services/f1Api';
 import type { Race } from './services/f1Api';
 import './App.css';
 import DbTest from './components/DbTest';
-import AboutUs from "./pages/AboutUs";
-import Drivers from "./pages/Drivers";
-import Admin from "./pages/Admin"; 
+import AboutUs from './pages/AboutUs';
+import Drivers from './pages/Drivers';
+import Admin from './pages/Admin';
+import ProtectedRoute from './components/ProtectedRoute'; // <-- add this
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -104,50 +105,67 @@ function App() {
   const { isAuthenticated } = useAuth0();
 
   return (
-    <Router>
-      <div className="app">
-        {/* Navigation */}
-        <nav className="navbar">
-          <div className="nav-container">
-            <div className="nav-logo">
-              <h2>RaceIQ</h2>
-            </div>
-                         <div className="nav-links">
-               <Link to="/" className="nav-link">Home</Link>
-               <Link to="/about" className="nav-link">About</Link>
-               <Link to="/drivers" className="nav-link">Drivers</Link>
-               <Link to="/admin" className="nav-link">Admin</Link>
-               <Link to="#api" className="nav-link">API</Link>
-               {isAuthenticated ? <LogoutButton /> : <LoginButton />}
-             </div>
+    <div className="app">
+      {/* Navigation */}
+      <nav className="navbar">
+        <div className="nav-container">
+          <div className="nav-logo">
+            <h2>RaceIQ</h2>
           </div>
-        </nav>
-
-                 {/* Routes */}
-         <Routes>
-           <Route path="/" element={<HomePage />} />
-           <Route path="/about" element={<AboutUs />} />
-           <Route path="/drivers" element={<Drivers />} />
-           <Route path="/admin" element={<Admin />} />
-         </Routes>
-
-        {/* Footer */}
-        <footer className="footer">
-          <div className="container">
-            <div className="footer-content">
-              <div className="footer-links">
-                <a href="#api-docs" className="footer-link">API Docs</a>
-                <a href="#privacy" className="footer-link">Privacy Policy</a>
-                <a href="#contact" className="footer-link">Contact</a>
-              </div>
-              <p className="footer-copyright">
-                ©2025 RaceIQ. All rights reserved.
-              </p>
-            </div>
+          <div className="nav-links">
+            <Link to="/" className="nav-link">Home</Link>
+            <Link to="/about" className="nav-link">About</Link>
+            <Link to="/drivers" className="nav-link">Drivers</Link>
+            <Link to="/admin" className="nav-link">Admin</Link>
+            <Link to="#api" className="nav-link">API</Link>
+            {isAuthenticated ? <LogoutButton /> : <LoginButton />}
           </div>
-        </footer>
-      </div>
-    </Router>
+        </div>
+      </nav>
+
+      {/* Routes */}
+      <Routes>
+        {/* PUBLIC */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutUs />} />
+
+        {/* MEMBER or ADMIN */}
+        <Route
+          path="/drivers"
+          element={
+            <ProtectedRoute requirePermissions={['read:drivers']}>
+              <Drivers />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ADMIN only */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requirePermissions={['admin:all']}>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="container">
+          <div className="footer-content">
+            <div className="footer-links">
+              <a href="#api-docs" className="footer-link">API Docs</a>
+              <a href="#privacy" className="footer-link">Privacy Policy</a>
+              <a href="#contact" className="footer-link">Contact</a>
+            </div>
+            <p className="footer-copyright">
+              ©2025 RaceIQ. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
 

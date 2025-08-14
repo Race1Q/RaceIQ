@@ -5,16 +5,15 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DriversModule } from './drivers/drivers.module';
 import { AuthModule } from './auth/auth.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env.back',
-    }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
     ScheduleModule.forRoot(),
     AuthModule,
     DriversModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

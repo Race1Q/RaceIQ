@@ -11,17 +11,16 @@ export class ScopesGuard implements CanActivate {
       ctx.getHandler(),
       ctx.getClass(),
     ]);
-    if (!required || required.length === 0) return true;
+    if (!required?.length) return true;
 
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user as { permissions?: string[]; scope?: string };
+    const req = ctx.switchToHttp().getRequest();
+    const user = req.user as { permissions?: string[]; scope?: string };
 
-    // Auth0 may put permissions in `permissions[]` (RBAC) OR space-delimited `scope`
     const have = new Set([
       ...(user?.permissions ?? []),
       ...((user?.scope ?? '').split(' ').filter(Boolean)),
     ]);
 
-    return required.every((s) => have.has(s));
+    return required.every((p) => have.has(p));
   }
 }
