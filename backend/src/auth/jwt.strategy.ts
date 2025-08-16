@@ -7,23 +7,23 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(private readonly config: ConfigService) {
-    const domain = config.get<string>('AUTH0_DOMAIN');
+    const issuerUrl = config.get<string>('AUTH0_ISSUER_URL');
     const audience = config.get<string>('AUTH0_AUDIENCE');
 
-    if (!domain || !audience) {
-      throw new Error('AUTH0_DOMAIN or AUTH0_AUDIENCE is not set');
+    if (!issuerUrl || !audience) {
+      throw new Error('AUTH0_ISSUER_URL or AUTH0_AUDIENCE is not set');
     }
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      issuer: `https://${domain}/`,                       // NOTE: trailing slash
+      issuer: issuerUrl,
       audience,
       algorithms: ['RS256'],
       secretOrKeyProvider: jwksRsa.passportJwtSecret({
         cache: true,
         rateLimit: true,
         jwksRequestsPerMinute: 5,
-        jwksUri: `https://${domain}/.well-known/jwks.json`,
+        jwksUri: `${issuerUrl}.well-known/jwks.json`,
       }),
     });
   }

@@ -5,7 +5,6 @@ import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   providers: [JwtStrategy],

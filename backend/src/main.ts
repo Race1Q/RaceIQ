@@ -3,6 +3,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  // --- ADD THIS DEBUG LINE ---
+  console.log('>>> DATABASE_URL from env:', process.env.DATABASE_URL);
+
   const app = await NestFactory.create(AppModule);
 
   // Add this section for CORS
