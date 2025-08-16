@@ -24,11 +24,13 @@ export class DriversService {
 
   constructor(private cfg: ConfigService) {
     this.supabase = createClient(
+      // FIXED: Use the correct Supabase Project URL, not the database string.
       this.cfg.get<string>('SUPABASE_URL')!,
       this.cfg.get<string>('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { persistSession: false } }
     );
   }
+  
 
   async getAllForDiff(): Promise<DriverRow[]> {
     const { data, error } = await this.supabase

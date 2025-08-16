@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 config({ path: '.env.back' }); // change to '.env.backend' if that's your filename
 
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from '../src/app.module';
 import { IngestService } from '../src/drivers/ingest.service';
 
@@ -27,19 +28,22 @@ function getYearOrPositional(): string | undefined {
 async function main() {
   console.log('cwd =', process.cwd());
   console.log('env file present =', existsSync('.env.back')); // adjust if using .env.backend
-  console.log('SUPABASE_URL =', process.env.SUPABASE_URL);
-  console.log('SERVICE_ROLE present =', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-  console.log('argv =', process.argv); // <— debug what npm actually passes
-
+  
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ['log', 'error', 'warn'],
   });
 
+  const configService = app.get(ConfigService);
   const ingest = app.get(IngestService);
 
-  // Read from CLI or fallback to env vars
-  const year = getYearOrPositional() || process.env.SEASON_YEAR || undefined;
-  const meeting = getArg('meeting') || process.env.MEETING_KEY || undefined;
+  // Debug logging using ConfigService
+  console.log('SUPABASE_URL =', configService.get<string>('SUPABASE_URL'));
+  console.log('SERVICE_ROLE present =', !!configService.get<string>('SUPABASE_SERVICE_ROLE_KEY'));
+  console.log('argv =', process.argv); // <— debug what npm actually passes
+
+  // Read from CLI or fallback to env vars (note: SEASON_YEAR and MEETING_KEY not in .env.back)
+  const year = getYearOrPositional() || configService.get<string>('SEASON_YEAR') || undefined;
+  const meeting = getArg('meeting') || configService.get<string>('MEETING_KEY') || undefined;
 
   console.log('Args ->', { year, meeting });
   const res = await ingest.run({ year, meeting_key: meeting });

@@ -1,20 +1,22 @@
 // backend/src/main.ts
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  // --- ADD THIS DEBUG LINE ---
-  console.log('>>> DATABASE_URL from env:', process.env.DATABASE_URL);
-
   const app = await NestFactory.create(AppModule);
-
+  
+  // Get ConfigService instance
+  const configService = app.get(ConfigService);
+  
   // Add this section for CORS
-  const frontendURL = process.env.FRONTEND_URL;
+  const frontendURL = configService.get<string>('FRONTEND_URL');
   app.enableCors({
     origin: [frontendURL],
   });
 
   // Your port logic is correct
-  await app.listen(process.env.PORT ?? 3000);
+  const port = configService.get<number>('PORT') ?? 3000;
+  await app.listen(port);
 }
 bootstrap();

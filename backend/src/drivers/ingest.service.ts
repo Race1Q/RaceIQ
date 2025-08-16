@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { DriversService, DriverRow } from './drivers.service';
 
@@ -55,9 +56,14 @@ async function getWithRetry<T>(
 @Injectable()
 export class IngestService {
   private readonly logger = new Logger(IngestService.name);
-  private readonly base = process.env.OPENF1_BASE || 'https://api.openf1.org/v1';
+  private readonly base: string;
 
-  constructor(private readonly drivers: DriversService) {}
+  constructor(
+    private readonly drivers: DriversService,
+    private readonly configService: ConfigService
+  ) {
+    this.base = this.configService.get<string>('OPENF1_BASE') || 'https://api.openf1.org/v1';
+  }
 
   // ---------- Public entrypoint ----------
   async run(options?: IngestOptions): Promise<IngestResult> {
