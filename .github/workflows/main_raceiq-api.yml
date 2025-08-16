@@ -23,8 +23,8 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Build with npm
-        working-directory: ./backend
+      - name: npm install, build, and test
+        working-directory: ./backend 
         run: |
           npm ci
           npm run build --if-present
@@ -52,9 +52,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_90D2F9518F204A6BB40C486AD647A72C }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_004B82747CC4402BAAD9659371ADC4AA }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_65D0B91319054C94AA7FD4BD872E223B }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_7652B1BB52334C20AF15D5773A02EE46 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_ABD7E8D4BF9D4A76ACD5EFFEA7F746DB }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_321C4082F9884E919F4C7F00B89397D3 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -63,4 +63,5 @@ jobs:
           app-name: 'RaceIQ-api'
           slot-name: 'Production'
           package: .
+
           
