@@ -18,26 +18,38 @@ jobs:
        id-token: write
        contents: read
     steps:
-      - uses: actions/checkout@v4 # Updated for best practice
+      - uses: actions/checkout@v3
         with:
           submodules: true
-
+          lfs: false
+      - name: Install OIDC Client from Core Package
+        run: npm install @actions/core@1.6.0 @actions/http-client
+      - name: Get Id Token
+        uses: actions/github-script@v6
+        id: idtoken
+        with:
+           script: |
+               const coredemo = require('@actions/core')
+               return await coredemo.getIDToken()
+           result-encoding: string
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_AUTH0_DOMAIN: ${{ secrets.VITE_AUTH0_DOMAIN }}
+          VITE_AUTH0_CLIENT_ID: ${{ secrets.VITE_AUTH0_CLIENT_ID }}
+          VITE_AUTH0_AUDIENCE: ${{ secrets.VITE_AUTH0_AUDIENCE }}
         with:
-          # This action now uses the permissions block above to authenticate securely via OIDC.
-          # The API token and manual OIDC steps are no longer needed.
-
-          ###### Repository/Build Configurations ######
-          # By removing 'action: "upload"', this task will now automatically:
-          #  1. Navigate to your app_location ('./frontend')
-          #  2. Run 'npm install'
-          #  3. Run 'npm run build' (injecting the environment variables)
-          #  4. Deploy the result from the 'output_location' ('dist')
-          app_location: "./frontend"
-          api_location: ""
-          output_location: "dist"
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_SAND_0300D7203 }}
+          action: "upload"
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: "./frontend" # App source code path
+          api_location: "" # Api source code path - optional
+          output_location: "dist" # Built app content directory - optional
+          github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
