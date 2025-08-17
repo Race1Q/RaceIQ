@@ -139,6 +139,7 @@ export class IngestService {
         team_name: d.team_name ?? null,
         team_colour: this.normalizeHex(d.team_colour ?? null),
         season_year: season, // ← requires season_year column in DB + DriverRow
+        is_active: false,
       }))
       .filter(
         (r) => !!r.full_name && !!r.country_code && r.country_code!.length === 3
@@ -210,6 +211,7 @@ export class IngestService {
       'team_name',
       'team_colour',
       'season_year',
+      'is_active'
     ];
     return keys.some((k) => (a?.[k] ?? null) !== (b?.[k] ?? null));
   }

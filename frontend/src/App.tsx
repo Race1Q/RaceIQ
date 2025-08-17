@@ -11,6 +11,7 @@ import AboutUs from './pages/AboutUs';
 import Drivers from './pages/Drivers';
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute'; // <-- add this
+import bannerImage from './assets/2026-Concept.png';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -37,7 +38,7 @@ function HomePage() {
     <>
       {/* Hero Section */}
       <section className="hero">
-        <div className="hero-container">
+        <div className="hero-container" style={{ backgroundImage: `url(${bannerImage})` }}>
           <h1 className="hero-title">Track Every F1 Appearance</h1>
           <p className="hero-subtitle">
             View race results and appearances for your favourite drivers and teams — across sports.
@@ -116,6 +117,7 @@ function App() {
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/about" className="nav-link">About</Link>
             <Link to="/drivers" className="nav-link">Drivers</Link>
+            <Link to="/driversTest" className="nav-link">DriversTest</Link>
             <Link to="/admin" className="nav-link">Admin</Link>
             <Link to="#api" className="nav-link">API</Link>
             {isAuthenticated ? <LogoutButton /> : <LoginButton />}
@@ -128,6 +130,7 @@ function App() {
         {/* PUBLIC */}
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUs />} />
+        <Route path="/driversTest" element={<Drivers />} />
 
         {/* MEMBER or ADMIN */}
         <Route

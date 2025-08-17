@@ -15,6 +15,7 @@ export type DriverRow = {
   team_name: string | null;
   team_colour: string | null;
   season_year: number; // <-- NEW
+  is_active: boolean;
 };
 
 @Injectable()
@@ -54,12 +55,29 @@ export class DriversService {
     }
   }
 
-  async list(limit = 100, offset = 0): Promise<DriverRow[]> {
+  async list(limit = 100, offset = 0, activeOnly = true): Promise<DriverRow[]> {
+    
     const { data, error } = await this.supabase
       .from('drivers')
       .select('*')
       .order('full_name', { ascending: true })
       .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+    return data ?? [];
+  }
+
+  async listWithFilter(isActive?: string): Promise<DriverRow[]> {
+    let query = this.supabase
+      .from('drivers')
+      .select('*')
+      .order('full_name', { ascending: true });
+  
+    if (isActive !== undefined) {
+      query = query.eq('isActive', isActive === 'true');
+    }
+  
+    const { data, error } = await query;
     if (error) throw error;
     return data ?? [];
   }

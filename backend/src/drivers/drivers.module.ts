@@ -5,6 +5,7 @@ import { IngestService } from './ingest.service';     // <-- Import IngestServic
 
 @Module({
   controllers: [DriversController],
-  providers: [DriversService, IngestService], // <-- Add this providers array
+  providers: [DriversService, IngestService],
+  exports: [DriversService],
 })
 export class DriversModule {}
