@@ -74,6 +74,25 @@ const Drivers = () => {
 });
 
 
+function darkenColor(hex: string, percent: number): string {
+  // Remove # if present
+  hex = hex.replace('#', '');
+  
+  // Convert to RGB
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  // Darken each component
+  const darkenedR = Math.max(0, r * (100 - percent) / 100);
+  const darkenedG = Math.max(0, g * (100 - percent) / 100);
+  const darkenedB = Math.max(0, b * (100 - percent) / 100);
+
+  // Convert back to hex
+  return `#${Math.round(darkenedR).toString(16).padStart(2, '0')}${Math.round(darkenedG).toString(16).padStart(2, '0')}${Math.round(darkenedB).toString(16).padStart(2, '0')}`;
+}
+
+
   // Render individual driver card
   const renderDriverCard = (driver: Drivers) => {
     const cardStyle: CSSProperties = {
@@ -84,6 +103,9 @@ const Drivers = () => {
       };
 
       const teamColor = formatTeamColor(driver.team_colour);
+      const gradientStyle = {
+        background: `radial-gradient(circle at center, ${teamColor} 0%, ${darkenColor(teamColor, 40)} 100%)`
+      };
 
     return (
       <div key={driver.driver_id} className="driver-card" style={cardStyle}>
@@ -91,7 +113,7 @@ const Drivers = () => {
       {/* Image with team color background */}
       <div 
         className="driver-image-wrapper" 
-        style={{ backgroundColor: teamColor }}
+        style={gradientStyle} 
       >
         {driver.headshot_url ? (
           <img
@@ -110,15 +132,29 @@ const Drivers = () => {
             className="driver-image fallback-image"
           />
         )}
+
+          {driver.driver_number && (
+          <div className="driver-number">
+            {driver.driver_number}
+          </div>
+          )}
         </div>
 
-        <div className="driver-info">
-          <h2>{driver.full_name || 'Unknown Driver'}</h2>
-          <p><strong>Number:</strong> {driver.driver_number || '--'}</p>
+
+        <h2>{driver.full_name || 'Unknown Driver'}</h2>
+
+        <div className='driver-info'>
+        <div className="info-text">
           <p><strong>Team:</strong> {driver.team_name || 'Unknown Team'}</p>
           <p><strong>Country:</strong> {driver.country_code || '--'}</p>
+          </div>
+          <button
+            className="view-profile-button"
+          >
+            View Profile
+          </button>
+          </div>
         </div>
-      </div>
     );
   };
 
