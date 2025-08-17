@@ -1,6 +1,0 @@
-{
-    "navigationFallback": {
-      "rewrite": "/index.html",
-      "exclude": ["/vite.svg", "*.{css,js,png,gif,ico,jpg,svg}"]
-    }
-  }
