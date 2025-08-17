@@ -18,7 +18,7 @@ jobs:
        id-token: write
        contents: read
     steps:
-      - uses: actions/checkout@v4 # Updated for best practice
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -26,18 +26,13 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # This action now uses the permissions block above to authenticate securely via OIDC.
-          # The API token and manual OIDC steps are no longer needed.
-
           ###### Repository/Build Configurations ######
-          # By removing 'action: "upload"', this task will now automatically:
-          #  1. Navigate to your app_location ('./frontend')
-          #  2. Run 'npm install'
-          #  3. Run 'npm run build' (injecting the environment variables)
-          #  4. Deploy the result from the 'output_location' ('dist')
+          action: "upload"
           app_location: "./frontend"
           api_location: ""
           output_location: "dist"
+          # This forces the build command to run before uploading
+          app_build_command: "npm run build"
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
