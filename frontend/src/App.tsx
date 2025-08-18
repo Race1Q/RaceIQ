@@ -132,7 +132,7 @@ function App() {
 
         {/* MEMBER or ADMIN */}
         <Route
-          path="/drivers"
+          path="/driversTest"
           element={
             <ProtectedRoute requirePermissions={['read:drivers']}>
               <Drivers />
