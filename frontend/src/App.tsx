@@ -63,10 +63,7 @@ function HomePage() {
               <h2>Recent Races</h2>
 
               {/* Supabase DB connectivity check */}
-              <div style={{ margin: '12px 0', padding: 12, border: '1px solid #333', borderRadius: 8 }}>
-                <strong>DB Test</strong>
-                <DbTest />
-              </div>
+
 
               <div className="races-grid">
                 {recentRaces.map((race: Race) => (
@@ -115,11 +112,12 @@ function App() {
           </div>
           <div className="nav-links">
             <Link to="/" className="nav-link">Home</Link>
+
+            {/* <Link to="/drivers" className="nav-link">Drivers</Link> */}
+            <Link to="/driversTest" className="nav-link">Drivers</Link>
+            {/* <Link to="/admin" className="nav-link">Admin</Link> */}
             <Link to="/about" className="nav-link">About</Link>
-            <Link to="/drivers" className="nav-link">Drivers</Link>
-            <Link to="/driversTest" className="nav-link">DriversTest</Link>
-            <Link to="/admin" className="nav-link">Admin</Link>
-            <Link to="#api" className="nav-link">API</Link>
+            {/* <Link to="#api" className="nav-link">API</Link> */}
             {isAuthenticated ? <LogoutButton /> : <LoginButton />}
           </div>
         </div>

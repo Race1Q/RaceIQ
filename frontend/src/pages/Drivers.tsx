@@ -2,15 +2,9 @@ import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import { supabase } from "../lib/supabase";
 import "./Drivers.css";
-import  bannerImage  from "../assets/F1-2025-drivers-lineup.png";
+import  bannerImage  from "../assets/banner.jpg";
 import userIcon from "../assets/UserIcon.png";
-import { 
-    FaChevronDown,       // Simple arrow
-    FaCaretDown,         // Caret
-    FaAngleDown,         // Angle bracket
-    FaArrowDown,         // Straight arrow
-    FaSortDown           // Sort arrow
-  } from 'react-icons/fa';
+import { FaAngleDown } from 'react-icons/fa';
 
 interface Drivers {
     driver_id : number;
@@ -32,7 +26,7 @@ const Drivers = () => {
   const [drivers, setDrivers] = useState<Drivers[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(""); // NEW state for search
-  const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("all");
+  const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("active");
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
 
   // Fetch drivers data
