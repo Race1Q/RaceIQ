@@ -308,7 +308,7 @@ body {
 /* Footer */
 .footer {
   background-color: #1a1a1a;
-  border-top: 1px solid #333;
+  border-top: 2px solid #e10600;
   padding: 40px 0;
   margin-top: auto;
 }
