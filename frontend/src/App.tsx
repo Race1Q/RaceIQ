@@ -108,7 +108,9 @@ function App() {
       <nav className="navbar">
         <div className="nav-container">
           <div className="nav-logo">
-            <h2>RaceIQ</h2>
+            <Link to="/" style={{ textDecoration: 'none' }} aria-label="Go to home">
+              <h2>RaceIQ</h2>
+            </Link>
           </div>
           <div className="nav-links">
             <Link to="/" className="nav-link">Home</Link>
