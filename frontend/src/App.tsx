@@ -116,7 +116,7 @@ function App() {
             <Link to="/" className="nav-link">Home</Link>
 
             {/* <Link to="/drivers" className="nav-link">Drivers</Link> */}
-            <Link to="/driversTest" className="nav-link">Drivers</Link>
+            <Link to="/drivers" className="nav-link">Drivers</Link>
             {/* <Link to="/admin" className="nav-link">Admin</Link> */}
             <Link to="/about" className="nav-link">About</Link>
             {/* <Link to="#api" className="nav-link">API</Link> */}
@@ -130,17 +130,9 @@ function App() {
         {/* PUBLIC */}
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUs />} />
-        <Route path="/driversTest" element={<Drivers />} />
+        <Route path="/drivers" element={<Drivers />} />
 
         {/* MEMBER or ADMIN */}
-        <Route
-          path="/driversTest"
-          element={
-            <ProtectedRoute requirePermissions={['read:drivers']}>
-              <Drivers />
-            </ProtectedRoute>
-          }
-        />
 
         {/* ADMIN only */}
         <Route

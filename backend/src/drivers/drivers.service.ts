@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseService } from '../supabase/supabase.service';
 
 export type DriverRow = {
   driver_id?: number;
@@ -23,14 +24,7 @@ export class DriversService {
   private readonly logger = new Logger(DriversService.name);
   private supabase: SupabaseClient;
 
-  constructor(private cfg: ConfigService) {
-    this.supabase = createClient(
-      // FIXED: Use the correct Supabase Project URL, not the database string.
-      this.cfg.get<string>('SUPABASE_URL')!,
-      this.cfg.get<string>('SUPABASE_SERVICE_ROLE_KEY')!,
-      { auth: { persistSession: false } },
-    );
-  }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   async getAllForDiff(): Promise<DriverRow[]> {
     const { data, error } = await this.supabase.from('drivers').select('*');
@@ -62,7 +56,7 @@ export class DriversService {
   }
 
   async listWithFilter(isActive?: string): Promise<DriverRow[]> {
-    let query = this.supabase.from('drivers').select('*').order('full_name', { ascending: true });
+    let query = this.supabaseService.client.from('drivers').select('*').order('full_name', { ascending: true });
 
     if (isActive !== undefined) {
       query = query.eq('isActive', isActive === 'true');

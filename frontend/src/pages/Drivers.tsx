@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import { supabase } from "../lib/supabase";
+import axios from 'axios';
 import "./Drivers.css";
 import  bannerImage  from "../assets/banner.jpg";
 import userIcon from "../assets/UserIcon.png";
@@ -28,24 +29,39 @@ const Drivers = () => {
   const [searchQuery, setSearchQuery] = useState(""); // NEW state for search
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("active");
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
+  const [error, setError] = useState<string | null>(null);
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
   // Fetch drivers data
   useEffect(() => {
     const fetchDrivers = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const { data, error } = await supabase
-          .from("drivers")
-          .select("*")
-          .order("driver_number", { ascending: true });
+        console.log('Fetching drivers from:', `${backendUrl}/drivers`);
+        
+        const response = await axios.get(`${backendUrl}/drivers`);
+        console.log('API Response:', response);
+        console.log('Response data:', response.data);
 
-        if (error) throw error;
-        setDrivers(data || []);
-      } catch (error) {
-        console.error("Error fetching drivers:", error);
+        // SIMPLIFY THIS - response.data is already the array you need
+        setDrivers(response.data); // Directly use response.data
+
+      } catch (err) {
+        console.error('Full error details:', err);
+        const errorMessage = axios.isAxiosError(err)
+          ? err.response?.data?.message || err.message
+          : err instanceof Error
+          ? err.message
+          : 'Failed to load drivers';
+        setError(errorMessage);
+        setDrivers([]);
       } finally {
         setLoading(false);
       }
     };
+    
     fetchDrivers();
   }, []);
 
