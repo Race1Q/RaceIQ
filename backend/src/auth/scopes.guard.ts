@@ -18,7 +18,7 @@ export class ScopesGuard implements CanActivate {
 
     const have = new Set([
       ...(user?.permissions ?? []),
-      ...((user?.scope ?? '').split(' ').filter(Boolean)),
+      ...(user?.scope ?? '').split(' ').filter(Boolean),
     ]);
 
     return required.every((p) => have.has(p));

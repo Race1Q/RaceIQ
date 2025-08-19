@@ -28,27 +28,22 @@ export class DriversService {
       // FIXED: Use the correct Supabase Project URL, not the database string.
       this.cfg.get<string>('SUPABASE_URL')!,
       this.cfg.get<string>('SUPABASE_SERVICE_ROLE_KEY')!,
-      { auth: { persistSession: false } }
+      { auth: { persistSession: false } },
     );
   }
-  
 
   async getAllForDiff(): Promise<DriverRow[]> {
-    const { data, error } = await this.supabase
-      .from('drivers')
-      .select('*');
+    const { data, error } = await this.supabase.from('drivers').select('*');
     if (error) throw error;
     return data ?? [];
   }
 
   async upsertMany(rows: DriverRow[]): Promise<void> {
     if (!rows.length) return;
-    const { error } = await this.supabase
-      .from('drivers')
-      .upsert(rows, {
-        onConflict: 'full_name,country_code,season_year', // <-- Updated
-        ignoreDuplicates: false,
-      });
+    const { error } = await this.supabase.from('drivers').upsert(rows, {
+      onConflict: 'full_name,country_code,season_year', // <-- Updated
+      ignoreDuplicates: false,
+    });
     if (error) {
       this.logger.error(`Upsert failed: ${error.message}`, error);
       throw error;
@@ -56,7 +51,6 @@ export class DriversService {
   }
 
   async list(limit = 100, offset = 0, activeOnly = true): Promise<DriverRow[]> {
-    
     const { data, error } = await this.supabase
       .from('drivers')
       .select('*')
@@ -68,15 +62,12 @@ export class DriversService {
   }
 
   async listWithFilter(isActive?: string): Promise<DriverRow[]> {
-    let query = this.supabase
-      .from('drivers')
-      .select('*')
-      .order('full_name', { ascending: true });
-  
+    let query = this.supabase.from('drivers').select('*').order('full_name', { ascending: true });
+
     if (isActive !== undefined) {
       query = query.eq('isActive', isActive === 'true');
     }
-  
+
     const { data, error } = await query;
     if (error) throw error;
     return data ?? [];

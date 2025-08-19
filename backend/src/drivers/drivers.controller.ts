@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards,Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScopesGuard } from '../auth/scopes.guard';
 import { Scopes } from '../auth/scopes.decorator';
@@ -7,7 +7,6 @@ import { DriversService } from './drivers.service';
 @Controller('drivers')
 @UseGuards(JwtAuthGuard, ScopesGuard)
 export class DriversController {
-
   constructor(private readonly driversService: DriversService) {}
   // GET /drivers  -> requires read:drivers
   @Get()

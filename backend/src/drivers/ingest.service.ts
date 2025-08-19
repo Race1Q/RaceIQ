@@ -5,15 +5,15 @@ import { DriversService, DriverRow } from './drivers.service';
 
 // ---------- Types ----------
 export interface IngestOptions {
-  year?: string;         // e.g. "2025"
-  meeting_key?: string;  // e.g. "latest" or "1219"
+  year?: string; // e.g. "2025"
+  meeting_key?: string; // e.g. "latest" or "1219"
 }
 
 export interface IngestResult {
-  fetched: number;       // raw mapped rows (after validation)
-  unique: number;        // after de-dup
-  upserted: number;      // rows actually written
-  skipped: number;       // unique - upserted
+  fetched: number; // raw mapped rows (after validation)
+  unique: number; // after de-dup
+  upserted: number; // rows actually written
+  skipped: number; // unique - upserted
 }
 
 export type OpenF1Driver = {
@@ -38,7 +38,7 @@ async function getWithRetry<T>(
   url: string,
   params: Record<string, any>,
   tries = 3,
-  timeout = 20000
+  timeout = 20000,
 ): Promise<T> {
   let lastErr: any;
   for (let i = 0; i < tries; i++) {
@@ -60,7 +60,7 @@ export class IngestService {
 
   constructor(
     private readonly drivers: DriversService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     this.base = this.configService.get<string>('OPENF1_BASE') || 'https://api.openf1.org/v1';
   }
@@ -74,7 +74,7 @@ export class IngestService {
         `${this.base}/drivers`,
         { meeting_key: options.meeting_key },
         3,
-        20000
+        20000,
       );
       return this.processDrivers(data ?? [], { season });
     }
@@ -86,7 +86,7 @@ export class IngestService {
         `${this.base}/meetings`,
         { year: options.year },
         3,
-        20000
+        20000,
       );
       const meetingKeys = (meetings ?? []).map((m) => m.meeting_key);
       if (!meetingKeys.length) {
@@ -96,32 +96,24 @@ export class IngestService {
 
       const batches = await Promise.all(
         meetingKeys.map((mk) =>
-          getWithRetry<OpenF1Driver[]>(
-            `${this.base}/drivers`,
-            { meeting_key: mk },
-            3,
-            20000
-          ).catch(() => [])
-        )
+          getWithRetry<OpenF1Driver[]>(`${this.base}/drivers`, { meeting_key: mk }, 3, 20000).catch(
+            () => [],
+          ),
+        ),
       );
       const merged = ([] as OpenF1Driver[]).concat(...batches);
       return this.processDrivers(merged, { season });
     }
 
     // C) no filter (can be large; avoid if possible)
-    const data = await getWithRetry<OpenF1Driver[]>(
-      `${this.base}/drivers`,
-      {},
-      3,
-      40000
-    );
+    const data = await getWithRetry<OpenF1Driver[]>(`${this.base}/drivers`, {}, 3, 40000);
     return this.processDrivers(data ?? [], { season: new Date().getFullYear() });
   }
 
   // ---------- Mapping → De-dup → Diff → Upsert ----------
   private async processDrivers(
     data: OpenF1Driver[],
-    options?: { season?: number }
+    options?: { season?: number },
   ): Promise<IngestResult> {
     const season = options?.season ?? new Date().getFullYear();
 
@@ -141,9 +133,7 @@ export class IngestService {
         season_year: season, // ← requires season_year column in DB + DriverRow
         is_active: false,
       }))
-      .filter(
-        (r) => !!r.full_name && !!r.country_code && r.country_code!.length === 3
-      );
+      .filter((r) => !!r.full_name && !!r.country_code && r.country_code!.length === 3);
 
     const fetched = mapped.length;
     if (!fetched) {
@@ -165,13 +155,11 @@ export class IngestService {
     const existing = await this.drivers.getAllForDiff();
     const byKey = new Map(
       (existing || [])
-        .filter(
-          (e) => e.full_name && e.country_code && typeof e.season_year === 'number'
-        )
+        .filter((e) => e.full_name && e.country_code && typeof e.season_year === 'number')
         .map((e) => [
           `${(e.full_name as string).toLowerCase()}|${e.country_code}|${e.season_year}`,
           e,
-        ])
+        ]),
     );
 
     const toUpsert: IncomingDriver[] = [];
@@ -186,7 +174,7 @@ export class IngestService {
     if (toUpsert.length) await this.drivers.upsertMany(toUpsert);
 
     this.logger.log(
-      `Fetched: ${fetched}, Unique: ${unique}, Upserted: ${toUpsert.length}, Skipped: ${skipped}`
+      `Fetched: ${fetched}, Unique: ${unique}, Upserted: ${toUpsert.length}, Skipped: ${skipped}`,
     );
     return { fetched, unique, upserted: toUpsert.length, skipped };
   }
@@ -211,7 +199,7 @@ export class IngestService {
       'team_name',
       'team_colour',
       'season_year',
-      'is_active'
+      'is_active',
     ];
     return keys.some((k) => (a?.[k] ?? null) !== (b?.[k] ?? null));
   }
