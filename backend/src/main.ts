@@ -16,6 +16,7 @@ async function bootstrap() {
       'http://localhost:5173',
       'https://purple-sand-0300d7203.2.azurestaticapps.net' 
     ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
