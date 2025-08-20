@@ -106,6 +106,8 @@ coverage
 !.env.example
 .env.local
 !.env.back
+!.env.production
+!.env.development
 # --------------------------------------------------------
 # Other Tooling
 # --------------------------------------------------------
