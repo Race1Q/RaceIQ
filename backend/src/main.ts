@@ -12,7 +12,10 @@ async function bootstrap() {
   // Add this section for CORS
   const frontendURL = configService.get<string>('FRONTEND_URL');
   app.enableCors({
-    origin: [frontendURL],
+    origin: [
+      'http://localhost:5173',
+      'https://purple-sand-0300d7203.2.azurestaticapps.net' 
+    ],
     credentials: true,
   });
 
