@@ -13,6 +13,7 @@ async function bootstrap() {
   const frontendURL = configService.get<string>('FRONTEND_URL');
   app.enableCors({
     origin: [frontendURL],
+    credentials: true,
   });
 
   // Your port logic is correct

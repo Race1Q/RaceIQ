@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Drivers = () => {
+const Drivers2 = () => {
   return (
     <div className="container" style={{ paddingTop: '100px', minHeight: '60vh' }}>
       <h1 style={{ color: '#e10600', marginBottom: '30px' }}>F1 Drivers</h1>
@@ -85,4 +85,4 @@ const Drivers = () => {
   );
 };
 
-export default Drivers;
+export default Drivers2;
