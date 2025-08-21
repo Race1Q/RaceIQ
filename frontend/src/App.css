@@ -86,12 +86,22 @@ body {
   color: #ffffff;
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
   position: relative;
+  display: inline-block;
 }
 
 .nav-link:hover {
   color: #e10600;
+  transform: translateY(-2px);
+  text-shadow: 0 2px 4px rgba(225, 6, 0, 0.3);
+}
+
+.nav-link-active {
+  color: #e10600 !important;
+  transform: translateY(-2px);
+  text-shadow: 0 2px 4px rgba(225, 6, 0, 0.3);
+  box-shadow: 0 4px 8px rgba(225, 6, 0, 0.2);
 }
 
 .nav-link::after {
@@ -103,9 +113,14 @@ body {
   left: 0;
   background-color: #e10600;
   transition: width 0.3s ease;
+  box-shadow: 0 2px 4px rgba(225, 6, 0, 0.3);
 }
 
 .nav-link:hover::after {
+  width: 100%;
+}
+
+.nav-link-active::after {
   width: 100%;
 }
 

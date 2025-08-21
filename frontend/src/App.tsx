@@ -10,7 +10,8 @@ import DbTest from './components/DbTest';
 import AboutUs from './pages/AboutUs';
 import Drivers from './pages/Drivers';
 import Admin from './pages/Admin';
-import ProtectedRoute from './components/ProtectedRoute'; // <-- add this
+import ProtectedRoute from './components/ProtectedRoute';
+import { useActiveRoute } from './hooks/useActiveRoute';
 import bannerImage from './assets/2026-Concept.png';
 
 function HomePage() {
@@ -101,6 +102,10 @@ function HomePage() {
 
 function App() {
   const { isAuthenticated } = useAuth0();
+  const isHomeActive = useActiveRoute('/');
+  const isDriversActive = useActiveRoute('/drivers');
+  const isAboutActive = useActiveRoute('/about');
+  const isAdminActive = useActiveRoute('/admin');
 
   return (
     <div className="app">
@@ -113,13 +118,32 @@ function App() {
             </Link>
           </div>
           <div className="nav-links">
-            <Link to="/" className="nav-link">Home</Link>
-
-            {/* <Link to="/drivers" className="nav-link">Drivers</Link> */}
-            <Link to="/drivers" className="nav-link">Drivers</Link>
-            {/* <Link to="/admin" className="nav-link">Admin</Link> */}
-            <Link to="/about" className="nav-link">About</Link>
-            {/* <Link to="#api" className="nav-link">API</Link> */}
+            <Link 
+              to="/" 
+              className={`nav-link ${isHomeActive ? 'nav-link-active' : ''}`}
+            >
+              Home
+            </Link>
+            <Link 
+              to="/drivers" 
+              className={`nav-link ${isDriversActive ? 'nav-link-active' : ''}`}
+            >
+              Drivers
+            </Link>
+            <Link 
+              to="/about" 
+              className={`nav-link ${isAboutActive ? 'nav-link-active' : ''}`}
+            >
+              About
+            </Link>
+            {isAuthenticated && (
+              <Link 
+                to="/admin" 
+                className={`nav-link ${isAdminActive ? 'nav-link-active' : ''}`}
+              >
+                Admin
+              </Link>
+            )}
             {isAuthenticated ? <LogoutButton /> : <LoginButton />}
           </div>
         </div>
@@ -131,8 +155,6 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/drivers" element={<Drivers />} />
-
-        {/* MEMBER or ADMIN */}
 
         {/* ADMIN only */}
         <Route
