@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import F1LoadingSpinner from './F1LoadingSpinner';
 
 type Props = { children: React.ReactNode; requirePermissions?: string[] };
 
@@ -23,7 +24,9 @@ export default function ProtectedRoute({ children, requirePermissions }: Props) 
     if (!isLoading) run();
   }, [isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently, requirePermissions]);
 
-  if (isLoading || allowed === null) return <div>Loading…</div>;
+  if (isLoading || allowed === null) {
+    return <F1LoadingSpinner text="Authenticating" />;
+  }
   if (allowed === false) return <Navigate to="/" replace />;
   return <>{children}</>;
 }

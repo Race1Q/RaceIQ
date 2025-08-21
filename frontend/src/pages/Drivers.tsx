@@ -6,6 +6,7 @@ import "./Drivers.css";
 import  bannerImage  from "../assets/banner.jpg";
 import userIcon from "../assets/UserIcon.png";
 import { FaAngleDown } from 'react-icons/fa';
+import F1LoadingSpinner from '../components/F1LoadingSpinner';
 
 interface Drivers {
     driver_id : number;
@@ -169,12 +170,7 @@ function darkenColor(hex: string, percent: number): string {
   };
 
   if (loading) {
-    return (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
-        </div>
-      );
+    return <F1LoadingSpinner text="Loading Drivers" />;
   }
 
   return (

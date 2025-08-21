@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import LoginButton from './components/LoginButton';
 import LogoutButton from './components/LogoutButton';
+import F1LoadingSpinner from './components/F1LoadingSpinner';
 import { f1ApiService } from './services/f1Api';
 import type { Race } from './services/f1Api';
 import './App.css';
@@ -27,12 +28,7 @@ function HomePage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
+    return <F1LoadingSpinner text="Loading RaceIQ" />;
   }
 
   return (
