@@ -45,34 +45,10 @@ This is our **single source of truth** for all design-related values. No more ha
 
 **Example `variables.css`:**
 
-````css
-/* src/styles/base/variables.css */
-:root {
-  /* Colors */
-  --color-primary-red: #e10600;
-  --color-background-dark: #0a0a0a;
-  --color-surface-gray: #1a1a1a;
-  --color-text-light: #ffffff;
-  --color-text-muted: #888888;
-  --color-accent-green: #00ff00;
-
-  /* Font Families */
-  --font-primary: 'Exo 2', sans-serif;
-  --font-display: 'Orbitron', sans-serif;
-
-  /* Spacing (Base 8px scale) */
-  --space-1: 0.5rem; /* 8px */
-  --space-2: 1rem;   /* 16px */
-  --space-3: 1.5rem; /* 24px */
-  --space-4: 2rem;   /* 32px */
-
-  /* Border Radius */
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-}
+--
 
 **Team Directive:** Everyone on the team **must** use these variables for styling.
+
 - **Do:** `color: var(--color-primary-red);`
 - **Don't:** `color: #e10600;`
 
@@ -86,16 +62,19 @@ This is the key to preventing style collisions. By using the `.module.css` exten
 A class named `.title` in `Header.module.css` might become `Header_title__aB3x1`, which will never conflict with another `.title` class elsewhere.
 
 **Action:**
+
 1.  Rename all existing component and page-specific stylesheets from `.css` to `.module.css`.
-    -   Example: `Drivers.css` -> `Drivers.module.css`.
+    - Example: `Drivers.css` -> `Drivers.module.css`.
 2.  Update the import and usage in the corresponding `.tsx` file.
 
 **Example Transformation:**
+
 - **Before (in `Drivers.tsx`):**
   ```jsx
   import './Drivers.css';
   // ...
   return <div className="driver-card">...</div>;
+  ```
 
 After (in Drivers.tsx):
 
@@ -119,4 +98,7 @@ Global Styles are for Globals Only: Only truly global, application-wide styles (
 Favor Composition: Build complex components by combining smaller components, each with its own scoped styles.
 
 By implementing this architecture, we ensure that as RaceIQ grows, our CSS codebase remains clean, predictable, and easy for everyone to contribute to.
-````
+
+```
+
+```
