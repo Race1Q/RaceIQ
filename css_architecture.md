@@ -84,20 +84,21 @@ import styles from './Drivers.module.css';
 // ...
 return <div className={styles.driverCard}>...</div>;
 
-Step 4: Go-Forward Plan & Team Rules
-To maintain consistency, the entire team will adhere to the following rules for all new development:
+## Step 4: Go-Forward Plan & Team Rules
 
-New Components Get Their Own Module: Every new component must have its own ComponentName.module.css file.
+1. To maintain consistency, the entire team will adhere to the following rules for all new development:
 
-Use Design Tokens: Always use var(--variable-name) from variables.css for all colors, fonts, and spacing.
+2. New Components Get Their Own Module: Every new component must have its own ComponentName.module.css file.
 
-No More Inline Styles: The style={{...}} prop is forbidden, except for rare cases of dynamic values that CSS can't handle (e.g., calculated positions).
+3. Use Design Tokens: Always use var(--variable-name) from variables.css for all colors, fonts, and spacing.
 
-Global Styles are for Globals Only: Only truly global, application-wide styles (like body typography or CSS resets) belong in src/styles/base/global.css.
+4. No More Inline Styles: The style={{...}} prop is forbidden, except for rare cases of dynamic values that CSS can't handle (e.g., calculated positions).
 
-Favor Composition: Build complex components by combining smaller components, each with its own scoped styles.
+5. Global Styles are for Globals Only: Only truly global, application-wide styles (like body typography or CSS resets) belong in src/styles/base/global.css.
 
-By implementing this architecture, we ensure that as RaceIQ grows, our CSS codebase remains clean, predictable, and easy for everyone to contribute to.
+6. Favor Composition: Build complex components by combining smaller components, each with its own scoped styles.
+
+7. By implementing this architecture, we ensure that as RaceIQ grows, our CSS codebase remains clean, predictable, and easy for everyone to contribute to.
 
 ```
 
