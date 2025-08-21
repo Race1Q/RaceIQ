@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger,HttpService } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -24,14 +24,36 @@ export class DriversService {
   private readonly logger = new Logger(DriversService.name);
   private supabase: SupabaseClient;
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(private readonly supabaseService: SupabaseService, private readonly httpService: HttpService,) {}
 
   async getAllForDiff(): Promise<DriverRow[]> {
     const { data, error } = await this.supabase.from('drivers').select('*');
     if (error) throw error;
     return data ?? [];
   }
+  async syncDrivers(): Promise<any> {
+    const url = 'https://api.jolpi.ca/ergast/f1/2025/drivers/';
+    
+    const { data } = await this.httpService.axiosRef.get(url);
+    const drivers = data.MRData.DriverTable.Drivers;
 
+    // Map API fields to DB fields
+    const formattedDrivers = drivers.map((d) => ({
+      driver_number: d.permanentNumber ? parseInt(d.permanentNumber) : null,
+      first_name: d.givenName,
+      last_name: d.familyName,
+      name_acronym: d.code,
+      country_code: d.nationality, // you might want to map nationality -> ISO country codes
+    }));
+
+    // Insert into Supabase
+    const { data: inserted, error } = await this.supabase
+      .from('drivers_v2')
+      .upsert(formattedDrivers, { onConflict: 'driver_number' }); // prevents duplicates
+
+    if (error) throw new Error(error.message);
+    return inserted;
+  }
   async upsertMany(rows: DriverRow[]): Promise<void> {
     if (!rows.length) return;
     const { error } = await this.supabase.from('drivers').upsert(rows, {
