@@ -1,148 +1,74 @@
 import React from 'react';
+import './Admin.css';
 
 const Admin = () => {
   return (
-    <div className="container" style={{ paddingTop: '100px', minHeight: '60vh' }}>
-      <h1 style={{ color: '#e10600', marginBottom: '30px' }}>Admin Dashboard</h1>
+    <div className="admin-container">
+      <h1 className="admin-title">Admin Dashboard</h1>
       
-      <div style={{ 
-        background: '#1a1a1a', 
-        padding: '40px', 
-        borderRadius: '12px',
-        border: '1px solid #333'
-      }}>
-        <h2 style={{ color: '#ffffff', marginBottom: '20px' }}>System Overview</h2>
+      <div className="admin-overview">
+        <h2 className="admin-overview__title">System Overview</h2>
         
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-          gap: '20px',
-          marginBottom: '40px'
-        }}>
+        <div className="stat-grid">
           {/* Admin stats cards */}
-          <div style={{ 
-            background: '#0f0f0f', 
-            padding: '20px', 
-            borderRadius: '8px',
-            border: '1px solid #333',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ color: '#e10600', marginBottom: '10px' }}>Total Users</h3>
-            <p style={{ color: '#ffffff', fontSize: '2rem', fontWeight: 'bold' }}>1,247</p>
-            <p style={{ color: '#888', fontSize: '0.9rem' }}>+12% this week</p>
+          <div className="stat-card">
+            <h3 className="stat-card__title">Total Users</h3>
+            <p className="stat-card__value">1,247</p>
+            <p className="stat-card__subtitle">+12% this week</p>
           </div>
 
-          <div style={{ 
-            background: '#0f0f0f', 
-            padding: '20px', 
-            borderRadius: '8px',
-            border: '1px solid #333',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ color: '#e10600', marginBottom: '10px' }}>Active Sessions</h3>
-            <p style={{ color: '#ffffff', fontSize: '2rem', fontWeight: 'bold' }}>89</p>
-            <p style={{ color: '#888', fontSize: '0.9rem' }}>Currently online</p>
+          <div className="stat-card">
+            <h3 className="stat-card__title">Active Sessions</h3>
+            <p className="stat-card__value">89</p>
+            <p className="stat-card__subtitle">Currently online</p>
           </div>
 
-          <div style={{ 
-            background: '#0f0f0f', 
-            padding: '20px', 
-            borderRadius: '8px',
-            border: '1px solid #333',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ color: '#e10600', marginBottom: '10px' }}>API Calls</h3>
-            <p style={{ color: '#ffffff', fontSize: '2rem', fontWeight: 'bold' }}>45.2K</p>
-            <p style={{ color: '#888', fontSize: '0.9rem' }}>Today</p>
+          <div className="stat-card">
+            <h3 className="stat-card__title">API Calls</h3>
+            <p className="stat-card__value">45.2K</p>
+            <p className="stat-card__subtitle">Today</p>
           </div>
 
-          <div style={{ 
-            background: '#0f0f0f', 
-            padding: '20px', 
-            borderRadius: '8px',
-            border: '1px solid #333',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ color: '#e10600', marginBottom: '10px' }}>System Status</h3>
-            <p style={{ color: '#00ff00', fontSize: '1.2rem', fontWeight: 'bold' }}>Healthy</p>
-            <p style={{ color: '#888', fontSize: '0.9rem' }}>All systems operational</p>
+          <div className="stat-card">
+            <h3 className="stat-card__title">System Status</h3>
+            <p className="stat-card__value stat-card__value--success">Healthy</p>
+            <p className="stat-card__subtitle">All systems operational</p>
           </div>
         </div>
 
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
-          gap: '30px'
-        }}>
+        <div className="admin-tools-grid">
           {/* Admin tools */}
-          <div style={{ 
-            background: '#0f0f0f', 
-            padding: '25px', 
-            borderRadius: '8px',
-            border: '1px solid #333'
-          }}>
-            <h3 style={{ color: '#e10600', marginBottom: '20px' }}>Quick Actions</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button style={{ 
-                background: '#e10600', 
-                color: '#ffffff', 
-                border: 'none', 
-                padding: '10px 15px', 
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}>
+          <div className="admin-tool-card">
+            <h3 className="admin-tool-card__title">Quick Actions</h3>
+            <div className="action-buttons">
+              <button className="action-button action-button--primary">
                 Refresh Data Cache
               </button>
-              <button style={{ 
-                background: '#333', 
-                color: '#ffffff', 
-                border: 'none', 
-                padding: '10px 15px', 
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}>
+              <button className="action-button action-button--secondary">
                 View System Logs
               </button>
-              <button style={{ 
-                background: '#333', 
-                color: '#ffffff', 
-                border: 'none', 
-                padding: '10px 15px', 
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}>
+              <button className="action-button action-button--secondary">
                 Manage Users
               </button>
             </div>
           </div>
 
-          <div style={{ 
-            background: '#0f0f0f', 
-            padding: '25px', 
-            borderRadius: '8px',
-            border: '1px solid #333'
-          }}>
-            <h3 style={{ color: '#e10600', marginBottom: '20px' }}>Recent Activity</h3>
-            <div style={{ color: '#cccccc' }}>
-              <p style={{ marginBottom: '10px' }}>• New user registration: John Doe</p>
-              <p style={{ marginBottom: '10px' }}>• API rate limit exceeded for IP: 192.168.1.100</p>
-              <p style={{ marginBottom: '10px' }}>• Database backup completed successfully</p>
-              <p style={{ marginBottom: '10px' }}>• System maintenance scheduled for 2:00 AM</p>
-              <p>• Cache cleared for race data</p>
+          <div className="admin-tool-card">
+            <h3 className="admin-tool-card__title">Recent Activity</h3>
+            <div className="activity-list">
+              <p className="activity-item">• New user registration: John Doe</p>
+              <p className="activity-item">• API rate limit exceeded for IP: 192.168.1.100</p>
+              <p className="activity-item">• Database backup completed successfully</p>
+              <p className="activity-item">• System maintenance scheduled for 2:00 AM</p>
+              <p className="activity-item">• Cache cleared for race data</p>
             </div>
           </div>
         </div>
 
-        <div style={{ 
-          marginTop: '40px', 
-          padding: '20px', 
-          background: '#0f0f0f', 
-          borderRadius: '8px',
-          border: '1px solid #333'
-        }}>
-          <h3 style={{ color: '#e10600', marginBottom: '15px' }}>Admin Features</h3>
-          <p style={{ color: '#cccccc' }}>This admin dashboard provides system monitoring, user management, and configuration tools.</p>
-          <p style={{ color: '#cccccc', marginTop: '10px' }}>Coming soon: Advanced analytics, automated alerts, and performance optimization tools.</p>
+        <div className="admin-features">
+          <h3 className="admin-features__title">Admin Features</h3>
+          <p className="admin-features__description">This admin dashboard provides system monitoring, user management, and configuration tools.</p>
+          <p className="admin-features__description">Coming soon: Advanced analytics, automated alerts, and performance optimization tools.</p>
         </div>
       </div>
     </div>
