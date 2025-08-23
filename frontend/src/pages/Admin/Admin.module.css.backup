@@ -7,58 +7,58 @@
 }
 
 .admin-title {
-  color: #e10600;
-  margin-bottom: 30px;
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-lg);
 }
 
 /* Admin overview section */
 .admin-overview {
-  background: #1a1a1a;
-  padding: 40px;
-  border-radius: 12px;
-  border: 1px solid #333;
+  background: var(--color-surface-gray);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
 }
 
 .admin-overview__title {
-  color: #ffffff;
-  margin-bottom: 20px;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-md);
 }
 
 /* Statistics grid */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
 }
 
 /* Stat cards */
 .stat-card {
-  background: #0f0f0f;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #333;
+  background: var(--color-surface-dark);
+  padding: var(--space-md);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
   text-align: center;
 }
 
 .stat-card__title {
-  color: #e10600;
-  margin-bottom: 10px;
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-sm);
 }
 
 .stat-card__value {
-  color: #ffffff;
+  color: var(--color-text-light);
   font-size: 2rem;
   font-weight: bold;
 }
 
 .stat-card__value--success {
-  color: #00ff00;
+  color: var(--color-accent-green);
   font-size: 1.2rem;
 }
 
 .stat-card__subtitle {
-  color: #888;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }
 
@@ -66,66 +66,66 @@
 .admin-tools-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 30px;
+  gap: var(--space-lg);
 }
 
 /* Admin tool cards */
 .admin-tool-card {
-  background: #0f0f0f;
+  background: var(--color-surface-dark);
   padding: 25px;
-  border-radius: 8px;
-  border: 1px solid #333;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
 }
 
 .admin-tool-card__title {
-  color: #e10600;
-  margin-bottom: 20px;
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-md);
 }
 
 /* Action buttons */
 .action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 .action-button {
   border: none;
   padding: 10px 15px;
-  border-radius: 5px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  color: #ffffff;
+  color: var(--color-text-light);
   font-weight: 500;
   transition: all 0.3s ease;
 }
 
 .action-button--primary {
-  background: #e10600;
+  background: var(--color-primary-red);
 }
 
 .action-button--primary:hover {
-  background: #c10500;
+  background: var(--color-primary-red-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(225, 6, 0, 0.3);
 }
 
 .action-button--secondary {
-  background: #333;
+  background: var(--color-border-gray);
 }
 
 .action-button--secondary:hover {
-  background: #444;
+  background: var(--color-surface-gray-light);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Activity list */
 .activity-list {
-  color: #cccccc;
+  color: var(--color-text-medium);
 }
 
 .activity-item {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-sm);
 }
 
 .activity-item:last-child {
@@ -134,21 +134,21 @@
 
 /* Admin features section */
 .admin-features {
-  margin-top: 40px;
-  padding: 20px;
-  background: #0f0f0f;
-  border-radius: 8px;
-  border: 1px solid #333;
+  margin-top: var(--space-xl);
+  padding: var(--space-md);
+  background: var(--color-surface-dark);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
 }
 
 .admin-features__title {
-  color: #e10600;
+  color: var(--color-primary-red);
   margin-bottom: 15px;
 }
 
 .admin-features__description {
-  color: #cccccc;
-  margin-bottom: 10px;
+  color: var(--color-text-medium);
+  margin-bottom: var(--space-sm);
 }
 
 .admin-features__description:last-child {
@@ -158,7 +158,7 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .admin-overview {
-    padding: 20px;
+    padding: var(--space-md);
   }
   
   .stat-grid {
@@ -168,10 +168,10 @@
   
   .admin-tools-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: var(--space-md);
   }
   
   .admin-tool-card {
-    padding: 20px;
+    padding: var(--space-md);
   }
 } 

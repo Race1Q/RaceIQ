@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import axios from 'axios';
-import "./Drivers.css";
-import  bannerImage  from "../assets/banner.jpg";
-import userIcon from "../assets/UserIcon.png";
+import styles from './Drivers.module.css';
+import  bannerImage  from "../../assets/banner.jpg";
+import userIcon from "../../assets/UserIcon.png";
 import { FaAngleDown } from 'react-icons/fa';
-import F1LoadingSpinner from '../components/F1LoadingSpinner';
+import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 
 interface Drivers {
     driver_id : number;
@@ -119,33 +119,33 @@ function darkenColor(hex: string, percent: number): string {
       };
 
     return (
-      <div key={driver.driver_id} className="driver-card" style={cardStyle}>
+      <div key={driver.driver_id} className={styles.driverCard} style={cardStyle}>
       
       {/* Image with team color background */}
       <div 
-        className="driver-image-wrapper" 
+        className={styles.driverImageWrapper} 
         style={gradientStyle} 
       >
         {driver.headshot_url ? (
           <img
             src={driver.headshot_url}
             alt={driver.full_name}
-            className="driver-image"
+            className={styles.driverImage}
             onError={(e) => {
               e.currentTarget.src = userIcon;
-              e.currentTarget.className = 'driver-image fallback-image';
+              e.currentTarget.className = `${styles.driverImage} ${styles.fallbackImage}`;
             }}
           />
         ) : (
           <img
             src={userIcon}
             alt="Default driver"
-            className="driver-image fallback-image"
+            className={`${styles.driverImage} ${styles.fallbackImage}`}
           />
         )}
 
           {driver.driver_number && (
-          <div className="driver-number">
+          <div className={styles.driverNumber}>
             {driver.driver_number}
           </div>
           )}
@@ -154,13 +154,13 @@ function darkenColor(hex: string, percent: number): string {
 
         <h2>{driver.full_name || 'Unknown Driver'}</h2>
 
-        <div className='driver-info'>
-        <div className="info-text">
+        <div className={styles.driverInfo}>
+        <div className={styles.infoText}>
           <p><strong>Team:</strong> {driver.team_name || 'Unknown Team'}</p>
           <p><strong>Country:</strong> {driver.country_code || '--'}</p>
           </div>
           <button
-            className="view-profile-button"
+            className={styles.viewProfileButton}
           >
             View Profile
           </button>
@@ -174,13 +174,13 @@ function darkenColor(hex: string, percent: number): string {
   }
 
   return (
-    <div className="drivers-container">
+    <div className={styles.driversContainer}>
 
     {/* Banner Section */}
-    <div className="drivers-banner" style={{ backgroundImage: `url(${bannerImage})` }}>
-        <div className="banner-content">
-         <h1 className="banner-title">Formula 1 Drivers</h1>
-             <p className="banner-text">
+    <div className={styles.driversBanner} style={{ backgroundImage: `url(${bannerImage})` }}>
+        <div className={styles.bannerContent}>
+         <h1 className={styles.bannerTitle}>Formula 1 Drivers</h1>
+             <p className={styles.bannerText}>
                 Explore the complete lineup of F1 drivers over all seasons. 
                 Click on a driver to view their profile and stats.
              </p>
@@ -188,12 +188,12 @@ function darkenColor(hex: string, percent: number): string {
     </div>
 
     {/* Search and Filter Container */}
-<div className="search-filter-container">
+<div className={styles.searchFilterContainer}>
 
     {/* Team Filter Dropdown */}
-<div className="team-filter-container">
+<div className={styles.teamFilterContainer}>
     <select
-      className="team-filter"
+      className={styles.teamFilter}
       value={selectedTeam}
       onChange={(e) => setSelectedTeam(e.target.value)}
     >
@@ -204,16 +204,16 @@ function darkenColor(hex: string, percent: number): string {
           <option key={team} value={team}>{team}</option>
         ))}
     </select>
-    <span className="dropdown-icon"><FaAngleDown /></span>
+    <span className={styles.dropdownIcon}><FaAngleDown /></span>
   </div>
 
 
   {/* Search Bar (keep existing) */}
-  <div className="driver-search-container">
-    <span className="search-icon">🔍</span>
+  <div className={styles.driverSearchContainer}>
+    <span className={styles.searchIcon}>🔍</span>
     <input
       type="text"
-      className="driver-search"
+      className={styles.driverSearch}
       placeholder="Search by name or team..."
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
@@ -222,7 +222,7 @@ function darkenColor(hex: string, percent: number): string {
   </div>
 
   {/* New Scrollable Toggle */}
-  <div className="driver-toggle">
+  <div className={styles.driverToggle}>
     <input
       type="radio"
       id="filter-all"
@@ -256,11 +256,11 @@ function darkenColor(hex: string, percent: number): string {
 </div>
 
     {/* Driver Cards */}
-      <div className="driver-cards">
+      <div className={styles.driverCards}>
         {filteredDrivers.length > 0 ? (
           filteredDrivers.map(renderDriverCard)
         ) : (
-          <div className="no-drivers">No driver matches your search</div>
+          <div className={styles.noDrivers}>No driver matches your search</div>
         )}
       </div>
     </div>

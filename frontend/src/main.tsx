@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
 import './index.css';
-import App from './App.tsx';
+import App from './App/App.tsx';
 
 // Get Auth0 configuration from runtime environment variables
 const getAuth0Config = () => {

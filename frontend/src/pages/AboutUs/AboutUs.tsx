@@ -1,8 +1,8 @@
-import "./AboutUs.css"; // optional for styling
+import styles from './AboutUs.module.css';
 
 export default function AboutUs() {
   return (
-    <div className="about-container">
+    <div className={styles.aboutContainer}>
       <h1>About RaceIQ</h1>
       <p>
         RaceIQ is your go-to F1 stats tracker. Our mission is to provide fans 
