@@ -12,21 +12,21 @@ To keep our styles organized, we will adopt a dedicated `styles` directory withi
 ` ` `
 frontend/
 └── src/
-├── components/
-│ └── Button/
-│ ├── Button.tsx
-│ └── Button.module.css
-├── pages/
-│ └── Drivers/
-│ ├── Drivers.tsx
-│ └── Drivers.module.css
-└── styles/
-├── base/
-│ ├── \_reset.css
-│ ├── variables.css
-│ └── global.css
-└── utils/
-└── animations.css
+    ├── components/
+    │   └── Button/
+    │       ├── Button.tsx
+    │       └── Button.module.css
+    ├── pages/
+    │   └── Drivers/
+    │       ├── Drivers.tsx
+    │       └── Drivers.module.css
+    └── styles/
+        ├── base/
+        │   ├── _reset.css
+        │   ├── variables.css
+        │   └── global.css
+        └── utils/
+            └── animations.css
 
 ` ` `
 
