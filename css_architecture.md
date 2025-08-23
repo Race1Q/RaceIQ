@@ -9,25 +9,26 @@
 To keep our styles organized, we will adopt a dedicated `styles` directory within `frontend/src/`. This structure clearly separates styles based on their scope and purpose.
 
 **Proposed Directory Structure:**
+` ` `
 frontend/
 └── src/
 ├── components/
-│ ├── Button/
-│ │ ├── Button.tsx
-│ │ └── Button.module.css // Component-specific styles
-│ └── ...
+│ └── Button/
+│ ├── Button.tsx
+│ └── Button.module.css
 ├── pages/
-│ ├── Drivers/
-│ │ ├── Drivers.tsx
-│ │ └── Drivers.module.css // Page-specific styles
-│ └── ...
+│ └── Drivers/
+│ ├── Drivers.tsx
+│ └── Drivers.module.css
 └── styles/
 ├── base/
-│ ├── \_reset.css // Optional: A CSS reset
-│ ├── variables.css // CRITICAL: Design tokens
-│ └── global.css // Base styles for body, etc.
+│ ├── \_reset.css
+│ ├── variables.css
+│ └── global.css
 └── utils/
-└── animations.css // Reusable keyframe animations
+└── animations.css
+
+` ` `
 
 **Action:** Create the `src/styles` directory and the subdirectories (`base`, `utils`). Move and rename existing global styles into this structure.
 
