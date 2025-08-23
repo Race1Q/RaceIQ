@@ -1,24 +1,34 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ScopesGuard } from '../auth/scopes.guard';
-import { Scopes } from '../auth/scopes.decorator';
-import { DriversService } from './drivers.service';
+// src/drivers/drivers.controller.ts
+import { Controller, Get, Post, Query, Logger } from '@nestjs/common';
+import { DriversService, DriverRow } from './drivers.service';
+import { DriversIngestService } from './drivers-ingest.service';
 
 @Controller('drivers')
-//@UseGuards(JwtAuthGuard, ScopesGuard)
 export class DriversController {
-  constructor(private readonly driversService: DriversService) {}
-  // GET /drivers  -> requires read:drivers
-  @Get()
-  //@Scopes('read:drivers')
-  async findAll(@Query('isActive') isActive?: string) {
-    return this.driversService.listWithFilter(isActive);
+  private readonly logger = new Logger(DriversController.name);
+
+  constructor(
+    private readonly driversService: DriversService,
+    private readonly driversIngestService: DriversIngestService,
+  ) {}
+
+  @Post('ingest')
+  async ingestDrivers() {
+    this.logger.log('Starting drivers ingestion');
+    const result = await this.driversIngestService.ingestDrivers();
+    return {
+      message: 'Drivers ingestion completed',
+      result,
+    };
   }
 
-  // POST /drivers -> requires write:drivers (kept for future admin edits)
-  @Post()
-  @Scopes('write:drivers')
-  create(@Body() dto: any) {
-    return { created: true, dto };
+  @Get()
+  async getAllDrivers(): Promise<DriverRow[]> {
+    return this.driversService.getAllDrivers();
+  }
+
+  @Get('search')
+  async searchDrivers(@Query('q') query: string): Promise<DriverRow[]> {
+    return this.driversService.searchDrivers(query);
   }
 }

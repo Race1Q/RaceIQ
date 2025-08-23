@@ -1,69 +1,51 @@
+// src/drivers/drivers.service.ts
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../supabase/supabase.service';
 
-export type DriverRow = {
-  driver_id?: number;
-  full_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  country_code: string | null;
-  name_acronym: string | null;
-  driver_number: number | null;
-  broadcast_name: string | null;
-  headshot_url: string | null;
-  team_name: string | null;
-  team_colour: string | null;
-  season_year: number; // <-- NEW
+export interface DriverRow {
+  full_name: string;
+  first_name: string;
+  last_name: string;
+  country_code: string;
+  name_acronym: string;
+  driver_number: number;
+  broadcast_name: string;
+  headshot_url: string;
+  team_name: string;
+  team_colour: string;
+  season_year: number;
   is_active: boolean;
-};
+}
 
 @Injectable()
 export class DriversService {
   private readonly logger = new Logger(DriversService.name);
-  private supabase: SupabaseClient;
 
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async getAllForDiff(): Promise<DriverRow[]> {
-    const { data, error } = await this.supabase.from('drivers').select('*');
-    if (error) throw error;
-    return data ?? [];
-  }
+  async getAllDrivers(): Promise<DriverRow[]> {
+    const { data, error } = await this.supabaseService.client.from('drivers').select('*');
 
-  async upsertMany(rows: DriverRow[]): Promise<void> {
-    if (!rows.length) return;
-    const { error } = await this.supabase.from('drivers').upsert(rows, {
-      onConflict: 'full_name,country_code,season_year', // <-- Updated
-      ignoreDuplicates: false,
-    });
     if (error) {
-      this.logger.error(`Upsert failed: ${error.message}`, error);
-      throw error;
+      this.logger.error('Failed to fetch all drivers', error);
+      throw new Error('Failed to fetch all drivers');
     }
+
+    return data;
   }
 
-  async list(limit = 100, offset = 0, activeOnly = true): Promise<DriverRow[]> {
-    const { data, error } = await this.supabase
+  async searchDrivers(query: string): Promise<DriverRow[]> {
+    const { data, error } = await this.supabaseService.client
       .from('drivers')
       .select('*')
-      .order('full_name', { ascending: true })
-      .range(offset, offset + limit - 1);
+      .or(`full_name.ilike.%${query}%,country_code.ilike.%${query}%`)
+      .order('full_name', { ascending: true });
 
-    if (error) throw error;
-    return data ?? [];
-  }
-
-  async listWithFilter(isActive?: string): Promise<DriverRow[]> {
-    let query = this.supabaseService.client.from('drivers').select('*').order('full_name', { ascending: true });
-
-    if (isActive !== undefined) {
-      query = query.eq('isActive', isActive === 'true');
+    if (error) {
+      this.logger.error('Failed to search drivers', error);
+      throw new Error('Failed to search drivers');
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data ?? [];
+    return data;
   }
 }

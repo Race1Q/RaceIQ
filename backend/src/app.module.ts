@@ -9,7 +9,9 @@ import { AdminModule } from './admin/admin.module';
 import { ConstructorsModule } from './constructors/constructors.module';
 import { CircuitsModule } from './circuits/circuits.module';
 import { CountriesModule } from './countries/countries.module';
-
+import { RacesModule } from './races/races.module';
+import { SeasonsModule } from './seasons/seasons.module';
+import { ResultsModule } from './results/results.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
@@ -20,6 +22,12 @@ import { CountriesModule } from './countries/countries.module';
     ConstructorsModule,
     CircuitsModule,
     CountriesModule,
+    RacesModule,
+    SeasonsModule,
+    ResultsModule,
+  
+
+
   ],
   controllers: [AppController],
   providers: [AppService],
