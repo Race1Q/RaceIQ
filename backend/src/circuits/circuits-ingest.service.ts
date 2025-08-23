@@ -3,29 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { SupabaseService } from '../supabase/supabase.service';
-
-interface ApiCircuit {
-  circuitId: string;
-  circuitName: string;
-  Location: {
-    locality: string;
-    country: string;
-    lat: string;
-    long: string;
-  };
-  url: string;
-}
-
-interface ApiResponse {
-  MRData: {
-    CircuitTable: {
-      Circuits: ApiCircuit[];
-    };
-    total: string;
-    limit: string;
-    offset: string;
-  };
-}
+import { Circuit, ApiCircuit } from './circuits.entity';
 
 @Injectable()
 export class CircuitIngestService {
@@ -36,6 +14,11 @@ export class CircuitIngestService {
     private readonly supabaseService: SupabaseService,
   ) {}
 
+  /**
+   * Fetches all circuits from the Ergast API, handling pagination if necessary.
+   * The Ergast API returns a maximum of 30 circuits per page.
+   * @returns A promise of an array of ApiCircuit objects.
+   */
   async fetchAllCircuitsFromAPI(): Promise<ApiCircuit[]> {
     const allCircuits: ApiCircuit[] = [];
     let offset = 0;
@@ -44,188 +27,70 @@ export class CircuitIngestService {
 
     try {
       while (hasMore) {
-        const apiUrl = `https://api.jolpi.ca/ergast/f1/circuits/?format=json&offset=${offset}&limit=${limit}`;
-        this.logger.log(`Fetching circuits from offset: ${offset}`);
+        const apiUrl = `https://api.jolpi.ca/ergast/f1/circuits.json?limit=${limit}&offset=${offset}`;
+        this.logger.log(`Fetching circuits from API with offset: ${offset}`);
+        const response = await firstValueFrom(this.httpService.get(apiUrl));
         
-        const response = await firstValueFrom(this.httpService.get<ApiResponse>(apiUrl));
-        const circuits = response.data.MRData.CircuitTable.Circuits;
+        const apiResponse = response.data;
+        const circuits = apiResponse.MRData.CircuitTable.Circuits;
+        const total = parseInt(apiResponse.MRData.total, 10);
         
-        this.logger.log(`Received ${circuits.length} circuits from offset ${offset}`);
-        
-        if (circuits.length > 0) {
-          allCircuits.push(...circuits);
-          
-          // Check if we have more circuits to fetch
-          const total = parseInt(response.data.MRData.total);
-          const currentOffset = parseInt(response.data.MRData.offset);
-          const currentLimit = parseInt(response.data.MRData.limit);
-          
-          if (currentOffset + currentLimit >= total) {
-            hasMore = false;
-          } else {
-            offset += limit;
-          }
-        } else {
-          hasMore = false;
-        }
+        this.logger.log(`Received ${circuits.length} circuits (Total: ${total})`);
 
-        // Add a small delay to be respectful to the API
-        await new Promise(resolve => setTimeout(resolve, 100));
+        allCircuits.push(...circuits);
+        offset += limit;
+        hasMore = offset < total;
       }
-      
-      this.logger.log(`Total circuits fetched: ${allCircuits.length}`);
-      
-      if (allCircuits.length > 0) {
-        this.logger.log('First circuit:', allCircuits[0]);
-        this.logger.log('Last circuit:', allCircuits[allCircuits.length - 1]);
-      }
-      
+      this.logger.log(`Successfully fetched all ${allCircuits.length} circuits.`);
       return allCircuits;
     } catch (error) {
-      this.logger.error('Failed to fetch circuits from API', error);
-      throw new Error('Failed to fetch circuits data');
+      this.logger.error('Failed to fetch circuits', error.message);
+      throw new Error('Failed to fetch circuits data from Ergast API');
     }
   }
 
-  private getCountryCode(country: string): string {
-    // Map full country names to 3-letter country codes
-    const countryMap: { [key: string]: string } = {
-      'Australia': 'AUS',
-      'Austria': 'AUT',
-      'Azerbaijan': 'AZE',
-      'Bahrain': 'BHR',
-      'Belgium': 'BEL',
-      'Canada': 'CAN',
-      'China': 'CHN',
-      'France': 'FRA',
-      'Germany': 'DEU',
-      'Hungary': 'HUN',
-      'India': 'IND',
-      'Italy': 'ITA',
-      'Japan': 'JPN',
-      'Malaysia': 'MYS',
-      'Mexico': 'MEX',
-      'Monaco': 'MCO',
-      'Netherlands': 'NLD',
-      'Portugal': 'PRT',
-      'Russia': 'RUS',
-      'Saudi Arabia': 'SAU',
-      'Singapore': 'SGP',
-      'Spain': 'ESP',
-      'Turkey': 'TUR',
-      'UAE': 'ARE',
-      'UK': 'GBR',
-      'USA': 'USA',
-      'United States': 'USA',
-      'United Kingdom': 'GBR',
-      'United Arab Emirates': 'ARE',
-      'South Africa': 'ZAF',
-      'Argentina': 'ARG',
-      'Morocco': 'MAR',
-      'Sweden': 'SWE',
-      'Korea': 'KOR',  // South Korea
-      'San Marino': 'SMR',
-      'Vietnam': 'VNM',
-  
-      // ✅ From your full circuits list (extra additions for uniqueness)
-      'Brazil': 'BRA',
-      'Qatar': 'QAT',
-      'Europe': 'EUR', // Generic code for European circuits
-    };
-  
-    return countryMap[country] || country.substring(0, 3).toUpperCase();
-  }
-  
-
-  private async ensureCountryExists(countryCode: string, countryName: string): Promise<void> {
-    try {
-      // Check if country already exists
-      const { data: existingCountry, error: selectError } = await this.supabaseService.client
-        .from('countries')
-        .select('iso3')
-        .eq('iso3', countryCode)
-        .single();
-
-      if (selectError && selectError.code !== 'PGRST116') {
-        // If country doesn't exist, create it
-        this.logger.log(`Creating new country: ${countryCode} - ${countryName}`);
-        
-        const { error: insertError } = await this.supabaseService.client
-          .from('countries')
-          .insert({
-            iso3: countryCode,
-            country_name: countryName
-          });
-
-        if (insertError) {
-          this.logger.error(`Failed to create country ${countryCode}:`, insertError);
-          throw new Error(`Country creation failed: ${insertError.message}`);
-        }
-
-        this.logger.log(`Successfully created country: ${countryCode}`);
-      } else if (!selectError) {
-        this.logger.debug(`Country already exists: ${countryCode}`);
-      }
-    } catch (error) {
-      this.logger.error(`Error ensuring country exists ${countryCode}:`, error);
-      throw error;
-    }
-  }
-
+  /**
+   * Main method to ingest all circuits.
+   * This is an idempotent function, meaning it will create new circuits or update existing ones.
+   * @returns A promise of an object with the count of created and updated circuits.
+   */
   async ingestCircuits(): Promise<{ created: number; updated: number }> {
     const apiCircuits = await this.fetchAllCircuitsFromAPI();
     let created = 0;
     let updated = 0;
 
     this.logger.log(`Processing ${apiCircuits.length} circuits`);
-
-    // First, ensure all required countries exist
-    const uniqueCountries = new Map<string, string>();
-    for (const apiCircuit of apiCircuits) {
-      const countryCode = this.getCountryCode(apiCircuit.Location.country);
-      uniqueCountries.set(countryCode, apiCircuit.Location.country);
-    }
-
-    this.logger.log(`Ensuring ${uniqueCountries.size} countries exist`);
-    for (const [countryCode, countryName] of uniqueCountries) {
-      try {
-        await this.ensureCountryExists(countryCode, countryName);
-      } catch (error) {
-        this.logger.error(`Failed to ensure country ${countryCode} exists:`, error);
-      }
-    }
-
-    // Then process circuits
+    
     for (const apiCircuit of apiCircuits) {
       try {
         const result = await this.processCircuit(apiCircuit);
         if (result === 'created') created++;
         if (result === 'updated') updated++;
       } catch (error) {
-        this.logger.error(`Failed to process circuit ${apiCircuit.circuitName}:`, error);
-        // Continue with next circuit even if one fails
+        this.logger.error(`Failed to process circuit ${apiCircuit.circuitName}`, error.message);
+        // Continue with the next circuit even if one fails
       }
     }
 
-    this.logger.log(`Ingested circuits: ${created} created, ${updated} updated`);
+    this.logger.log(`Ingestion complete: ${created} created, ${updated} updated.`);
     return { created, updated };
   }
 
+  /**
+   * Processes a single circuit from the API, either creating or updating it in Supabase.
+   * @param apiCircuit The circuit object from the API.
+   * @returns A promise of either 'created' or 'updated'.
+   */
   private async processCircuit(apiCircuit: ApiCircuit): Promise<'created' | 'updated'> {
     this.logger.log(`Processing circuit: ${apiCircuit.circuitName}`);
 
-    // Convert full country name to 3-letter code
-    const countryCode = this.getCountryCode(apiCircuit.Location.country);
-
-    // Prepare circuit data for database with proper field lengths
-    const circuitData = {
-      name: apiCircuit.circuitName.substring(0, 100),
-      location: apiCircuit.Location.locality.substring(0, 100),
-      country_code: countryCode,
-      map_url: apiCircuit.url.substring(0, 200)
+    // Map the API data to your Supabase schema
+    const circuitData: Partial<Circuit> = {
+      name: apiCircuit.circuitName,
+      location: apiCircuit.Location.locality,
+      country_code: apiCircuit.Location.country,
+      map_url: apiCircuit.url.substring(0, 200) // Ensure URL fits within the column limit
     };
-
-    this.logger.debug('Creating circuit with data:', circuitData);
 
     // Check if circuit exists by name
     const { data: existingCircuit, error: selectError } = await this.supabaseService.client
@@ -235,32 +100,30 @@ export class CircuitIngestService {
       .single();
 
     if (selectError && selectError.code !== 'PGRST116') {
-      this.logger.error(`Select error for ${circuitData.name}:`, selectError);
+      this.logger.error(`Select error for ${circuitData.name}:`, selectError.message);
       throw new Error(`Select error: ${selectError.message}`);
     }
 
     if (existingCircuit) {
       this.logger.log(`Updating existing circuit: ${circuitData.name}`);
-      // Update existing circuit
       const { error } = await this.supabaseService.client
         .from('circuits')
         .update(circuitData)
-        .eq('name', circuitData.name);
+        .eq('id', existingCircuit.id);
 
       if (error) {
-        this.logger.error(`Failed to update circuit ${circuitData.name}`, error);
+        this.logger.error(`Failed to update circuit ${circuitData.name}`, error.message);
         throw new Error(`Update failed: ${error.message}`);
       }
       return 'updated';
     } else {
       this.logger.log(`Creating new circuit: ${circuitData.name}`);
-      // Create new circuit
       const { error } = await this.supabaseService.client
         .from('circuits')
         .insert(circuitData);
 
       if (error) {
-        this.logger.error(`Failed to create circuit ${circuitData.name}`, error);
+        this.logger.error(`Failed to create circuit ${circuitData.name}`, error.message);
         throw new Error(`Creation failed: ${error.message}`);
       }
       return 'created';
