@@ -11,6 +11,7 @@ import DbTest from '../components/DbTest/DbTest';
 import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriversDashboardPage from '../pages/DriversDashboardPage';
+import RacesPage from '../pages/RacesPage';
 import Admin from '../pages/Admin/Admin';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
@@ -101,6 +102,7 @@ function App() {
   const { isAuthenticated } = useAuth0();
   const isHomeActive = useActiveRoute('/');
   const isDriversActive = useActiveRoute('/drivers');
+  const isRacesActive = useActiveRoute('/races');
   const isAboutActive = useActiveRoute('/about');
   const isAdminActive = useActiveRoute('/admin');
 
@@ -134,6 +136,12 @@ function App() {
               Dashboard
             </Link>
             <Link 
+              to="/races" 
+              className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
+            >
+              Races
+            </Link>
+            <Link 
               to="/about" 
               className={`${styles.navLink} ${isAboutActive ? styles.navLinkActive : ''}`}
             >
@@ -159,6 +167,7 @@ function App() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers-dashboard" element={<DriversDashboardPage />} />
+        <Route path="/races" element={<RacesPage />} />
 
         {/* ADMIN only */}
         <Route

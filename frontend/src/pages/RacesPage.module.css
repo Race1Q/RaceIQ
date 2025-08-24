@@ -1,0 +1,99 @@
+.container {
+  min-height: 100vh;
+  background-color: var(--color-background-dark);
+  padding: var(--space-lg);
+}
+
+.layout {
+  height: 100%;
+  gap: var(--space-lg);
+  display: flex;
+  flex-direction: row;
+}
+
+.sidebar {
+  display: none; /* Hide the old sidebar since we now have a flex-based sidebar */
+}
+
+.mainContent {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.topRow {
+  margin-bottom: var(--space-lg);
+  align-items: stretch; /* Make all items same height */
+  min-height: 300px; /* Set minimum height for consistency */
+}
+
+.trackStatsSection {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.trackMapSection {
+  /* No background - stays as is */
+  display: flex;
+  flex-direction: column;
+}
+
+.weatherSection {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.analyticsGrid {
+  margin-top: var(--space-lg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    display: block; /* Show sidebar on mobile */
+    width: 100%;
+    max-width: none;
+  }
+
+  .topRow {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .trackStatsSection,
+  .trackMapSection,
+  .weatherSection {
+    flex: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-md);
+  }
+  
+  .layout {
+    gap: var(--space-md);
+  }
+  
+  .topRow {
+    gap: var(--space-md);
+  }
+  
+  .analyticsGrid {
+    gap: var(--space-md);
+  }
+}
