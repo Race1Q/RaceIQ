@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "ingest:drivers": "node -r ts-node/register scripts/ingest-drivers.ts"
+    "ingest:drivers": "node -r ts-node/register scripts/ingest-drivers.ts",
+    "migrate:auth0-users": "node -r ts-node/register scripts/migrate-auth0-users.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -27,8 +28,10 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^6.0.0",
-    "@supabase/supabase-js": "^2.55.0",
+    "@supabase/supabase-js": "^2.56.0",
+    "auth0": "^4.2.0",
     "axios": "^1.11.0",
+    "dotenv": "^16.6.1",
     "jwks-rsa": "^3.2.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
