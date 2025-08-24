@@ -10,6 +10,7 @@ import styles from './App.module.css';
 import DbTest from '../components/DbTest/DbTest';
 import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
+import DriversDashboardPage from '../pages/DriversDashboardPage';
 import Admin from '../pages/Admin/Admin';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
@@ -127,6 +128,12 @@ function App() {
               Drivers
             </Link>
             <Link 
+              to="/drivers-dashboard" 
+              className={`${styles.navLink} ${useActiveRoute('/drivers-dashboard') ? styles.navLinkActive : ''}`}
+            >
+              Dashboard
+            </Link>
+            <Link 
               to="/about" 
               className={`${styles.navLink} ${isAboutActive ? styles.navLinkActive : ''}`}
             >
@@ -151,6 +158,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/drivers" element={<Drivers />} />
+        <Route path="/drivers-dashboard" element={<DriversDashboardPage />} />
 
         {/* ADMIN only */}
         <Route

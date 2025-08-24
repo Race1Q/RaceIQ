@@ -1,0 +1,97 @@
+.container {
+  background-color: var(--color-surface-dark);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-md);
+  height: fit-content;
+  border: 1px solid var(--color-border-gray);
+}
+
+.searchContainer {
+  margin-bottom: var(--space-md);
+}
+
+.searchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  color: var(--color-text-muted);
+  position: absolute;
+  left: var(--space-sm);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.searchInput {
+  background-color: var(--color-surface-gray);
+  border: 1px solid var(--color-border-gray);
+  color: var(--color-text-light);
+  font-family: var(--font-primary);
+  padding-left: calc(var(--space-sm) + 20px + var(--space-sm));
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary-red);
+  box-shadow: 0 0 0 1px var(--color-primary-red);
+}
+
+.driverList {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.driverItem {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  background-color: var(--color-surface-gray);
+  width: 100%;
+}
+
+.driverItem:hover {
+  background-color: var(--color-surface-gray-light);
+  transform: translateX(2px);
+}
+
+.driverItem.active {
+  background-color: var(--color-surface-gray-light);
+  border-left-color: var(--color-primary-red);
+  transform: translateX(4px);
+}
+
+.driverNumber {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--color-primary-red);
+  margin-right: var(--space-sm);
+  min-width: 30px;
+}
+
+.driverInfo {
+  flex: 1;
+}
+
+.driverName {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  margin-bottom: 2px;
+}
+
+.driverTeam {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}

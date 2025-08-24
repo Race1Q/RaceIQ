@@ -1,8 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
+import { ChakraProvider } from '@chakra-ui/react';
 import './index.css';
 import App from './App/App.tsx';
+import theme from './theme';
 
 // Get Auth0 configuration from runtime environment variables
 const getAuth0Config = () => {
@@ -41,8 +43,10 @@ root.render(
       scope: 'openid profile email'
     }}
   >
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <ChakraProvider theme={theme}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ChakraProvider>
   </Auth0Provider>
 );
