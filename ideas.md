@@ -4,7 +4,7 @@
 
 RaceIQ is a full-stack web application designed for Formula 1 fans, data analysts, and fantasy players. It provides deep, post-race analytics, driver-team performance comparisons, and a lightweight fantasy sports experience. The platform ingests and processes data from the OpenF1 API to deliver rich, interactive visualizations and metrics that go beyond standard broadcast information.
 
-Access is governed by a simple Role-Based Access Control (RBAC) system. The public can view static pages, while authenticated **members** can access detailed dashboards, compare drivers, and participate in the fantasy league. **Admins** have access to a system management dashboard for data ingestion monitoring and user management.
+Access is governed by a simple Role-Based Access Control (RBAC) system. The public can view static pages, while authenticated **members** can access detailed dashboards, compare drivers, and participate in the fantasy league. **Admins** have access to a system management dashboard for data ingestion monitoring and user management. Indeed.
 
 ---
 
