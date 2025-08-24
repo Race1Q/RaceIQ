@@ -12,6 +12,7 @@ import { CountriesModule } from './countries/countries.module';
 import { RacesModule } from './races/races.module';
 import { SeasonsModule } from './seasons/seasons.module';
 import { ResultsModule } from './results/results.module';
+import { DriverStandingsModule } from './driverStandings/driverStandings.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
@@ -25,9 +26,7 @@ import { ResultsModule } from './results/results.module';
     RacesModule,
     SeasonsModule,
     ResultsModule,
-  
-
-
+    DriverStandingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
