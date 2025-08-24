@@ -1,0 +1,67 @@
+.card {
+  background-color: var(--color-surface-dark);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+  height: fit-content;
+}
+
+.cardHeader {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border-gray);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.cardBody {
+  padding: var(--space-md);
+}
+
+.chart {
+  background-color: transparent;
+}
+
+.xAxis line,
+.yAxis line {
+  stroke: var(--color-border-gray);
+}
+
+.xAxis path,
+.yAxis path {
+  stroke: var(--color-border-gray);
+}
+
+.tooltip {
+  background-color: var(--color-surface-dark);
+  border: 1px solid var(--color-border-gray);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltipLabel {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0 0 4px 0;
+}
+
+.tooltipValue {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  font-weight: bold;
+  margin: 0;
+}
+
+.bar {
+  transition: opacity 0.2s ease;
+}
+
+.bar:hover {
+  opacity: 0.8;
+}
