@@ -1,0 +1,147 @@
+.container {
+  background-color: rgba(42, 42, 42, 0.6); /* Semi-transparent dark surface */
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Track Stats Section - Now First */
+.trackStatsSection {
+  flex: 1;
+  margin-bottom: var(--space-md);
+}
+
+.trackStatsTitle {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-md);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.trackStatsContainer {
+  align-items: flex-start;
+}
+
+.trackStatItem {
+  gap: var(--space-sm);
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: var(--space-sm);
+}
+
+.trackStatIcon {
+  color: var(--color-text-light);
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary-red);
+  border-radius: var(--border-radius-md);
+}
+
+.trackStatContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.trackStatLabel {
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  color: var(--color-text-medium);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trackStatBarContainer {
+  background-color: var(--color-surface-dark);
+  border-radius: var(--border-radius-sm);
+  height: 6px;
+  margin-bottom: var(--space-xs);
+  overflow: hidden;
+}
+
+.trackStatBar {
+  height: 100%;
+  background-color: var(--color-primary-red);
+  border-radius: var(--border-radius-sm);
+  transition: width 0.3s ease;
+}
+
+.trackStatValue {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+}
+
+/* Weather Conditions Section - Now Second */
+.weatherSection {
+  border-top: 1px solid var(--color-border-gray);
+  padding-top: var(--space-md);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-md);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.weatherContainer {
+  align-items: flex-start;
+}
+
+.weatherItem {
+  gap: var(--space-sm);
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: var(--space-sm);
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  background-color: var(--color-primary-red);
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-light);
+  flex-shrink: 0;
+}
+
+.weatherContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.weatherLabel {
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  color: var(--color-text-medium);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.weatherValue {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+}

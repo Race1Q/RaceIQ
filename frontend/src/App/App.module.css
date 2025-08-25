@@ -204,6 +204,21 @@
   letter-spacing: 1px;
 }
 
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.logoText {
+  color: var(--color-primary-red);
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
 .navLinks {
   display: flex;
   align-items: center;

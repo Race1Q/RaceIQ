@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Gauge } from 'lucide-react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import F1LoadingSpinner from '../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -11,6 +12,7 @@ import DbTest from '../components/DbTest/DbTest';
 import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriversDashboardPage from '../pages/DriversDashboardPage';
+import RacesPage from '../pages/RacesPage';
 import Admin from '../pages/Admin/Admin';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
@@ -101,6 +103,7 @@ function App() {
   const { isAuthenticated } = useAuth0();
   const isHomeActive = useActiveRoute('/');
   const isDriversActive = useActiveRoute('/drivers');
+  const isRacesActive = useActiveRoute('/races');
   const isAboutActive = useActiveRoute('/about');
   const isAdminActive = useActiveRoute('/admin');
 
@@ -111,7 +114,10 @@ function App() {
         <div className={styles.navContainer}>
           <div className={styles.navLogo}>
             <Link to="/" style={{ textDecoration: 'none' }} aria-label="Go to home">
-              <h2>RaceIQ</h2>
+              <div className={styles.logoContainer}>
+                <Gauge size={24} color="var(--color-primary-red)" />
+                <h2 className={styles.logoText}>RaceIQ</h2>
+              </div>
             </Link>
           </div>
           <div className={styles.navLinks}>
@@ -132,6 +138,12 @@ function App() {
               className={`${styles.navLink} ${useActiveRoute('/drivers-dashboard') ? styles.navLinkActive : ''}`}
             >
               Dashboard
+            </Link>
+            <Link 
+              to="/races" 
+              className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
+            >
+              Races
             </Link>
             <Link 
               to="/about" 
@@ -159,6 +171,7 @@ function App() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers-dashboard" element={<DriversDashboardPage />} />
+        <Route path="/races" element={<RacesPage />} />
 
         {/* ADMIN only */}
         <Route

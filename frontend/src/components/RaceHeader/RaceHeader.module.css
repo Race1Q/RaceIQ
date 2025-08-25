@@ -1,0 +1,142 @@
+.container {
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin: 0 0 var(--space-xl) 0; /* Increased margin-bottom to var(--space-xl) */
+  position: relative;
+  padding: var(--space-lg) 0 var(--space-lg) 0; /* Increased top/bottom padding to var(--space-lg) */
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.trackName {
+  color: var(--color-text-light);
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.metaInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-text-medium);
+  font-size: 1.5rem;
+}
+
+.countryFlag {
+  width: 32px;
+  height: 24px;
+  border-radius: var(--border-radius-sm);
+}
+
+/* Horizontal line beneath header */
+.container::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-border-light);
+}
+
+.headerContent {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-xl);
+  width: 100%;
+}
+
+.metaItem {
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.icon {
+  color: var(--color-text-medium);
+  width: 32px;
+  height: 32px;
+}
+
+.metaText {
+  font-family: var(--font-primary);
+  font-size: 1.5rem;
+  color: var(--color-text-medium);
+  font-weight: 500;
+}
+
+.statsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: flex-end;
+  min-width: 200px;
+}
+
+.statItem {
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.trophyIcon {
+  color: var(--color-primary-red);
+}
+
+.statLabel {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+}
+
+.driverOfTheDay {
+  background-color: var(--color-primary-red);
+  color: var(--color-text-light);
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-md);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-md) 0 var(--space-md) 0; /* Increased mobile top/bottom padding to var(--space-md) */
+    margin: 0 0 var(--space-lg) 0; /* Increased mobile margin-bottom to var(--space-lg) */
+  }
+
+  .trackName {
+    font-size: 2.5rem;
+  }
+
+  .metaInfo {
+    font-size: 1.25rem;
+  }
+
+  .countryFlag {
+    width: 24px;
+    height: 18px;
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+  }
+}
