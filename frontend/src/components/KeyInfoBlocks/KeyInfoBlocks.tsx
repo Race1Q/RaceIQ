@@ -7,9 +7,10 @@ import styles from './KeyInfoBlocks.module.css';
 
 interface KeyInfoBlocksProps {
   keyInfo: KeyInfo;
+  teamColor?: string;
 }
 
-const KeyInfoBlocks: React.FC<KeyInfoBlocksProps> = ({ keyInfo }) => {
+const KeyInfoBlocks: React.FC<KeyInfoBlocksProps> = ({ keyInfo, teamColor }) => {
   const getWeatherIcon = (weather: string) => {
     switch (weather.toLowerCase()) {
       case 'rain':
@@ -31,6 +32,7 @@ const KeyInfoBlocks: React.FC<KeyInfoBlocksProps> = ({ keyInfo }) => {
           label="Weather"
           value={keyInfo.weather}
           description="Race conditions"
+          teamColor={teamColor}
         />
         
         <StatCard
@@ -38,6 +40,7 @@ const KeyInfoBlocks: React.FC<KeyInfoBlocksProps> = ({ keyInfo }) => {
           label="Fastest Lap"
           value={keyInfo.fastestLap.time}
           description={`by ${keyInfo.fastestLap.driver}`}
+          teamColor={teamColor}
         />
         
         <StatCard
@@ -45,6 +48,7 @@ const KeyInfoBlocks: React.FC<KeyInfoBlocksProps> = ({ keyInfo }) => {
           label="Overtakes"
           value={keyInfo.totalOvertakes.toString()}
           description="Total overtakes"
+          teamColor={teamColor}
         />
       </HStack>
     </Box>

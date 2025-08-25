@@ -33,7 +33,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             className={styles.driverImage}
           />
           
-          <Box className={styles.driverNumber}>{driver.number}</Box>
+          <Box className={styles.driverNumber} style={{ color: teamColor }}>{driver.number}</Box>
           
           <Heading className={styles.driverName}>
             {driver.name}
@@ -49,7 +49,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           
           <Box className={styles.statsContainer}>
             <Box className={styles.statItem}>
-              <Text className={styles.statValue}>{driver.points}</Text>
+              <Text className={styles.statValue} style={{ color: teamColor }}>{driver.points}</Text>
               <Text className={styles.statLabel}>Points</Text>
             </Box>
           </Box>

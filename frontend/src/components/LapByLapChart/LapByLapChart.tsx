@@ -10,6 +10,7 @@ interface LapByLapData {
 
 interface LapByLapChartProps {
   data: LapByLapData[];
+  teamColor?: string;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -24,7 +25,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const LapByLapChart: React.FC<LapByLapChartProps> = ({ data }) => {
+const LapByLapChart: React.FC<LapByLapChartProps> = ({ data, teamColor }) => {
   return (
     <Card className={styles.card}>
       <CardHeader className={styles.cardHeader}>
@@ -47,10 +48,10 @@ const LapByLapChart: React.FC<LapByLapChartProps> = ({ data }) => {
             <Line
               type="monotone"
               dataKey="position"
-              stroke="var(--color-primary-red)"
+              stroke={teamColor || 'var(--color-primary-red)'}
               strokeWidth={3}
-              dot={{ fill: 'var(--color-primary-red)', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: 'var(--color-primary-red)', strokeWidth: 2 }}
+              dot={{ fill: teamColor || 'var(--color-primary-red)', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: teamColor || 'var(--color-primary-red)', strokeWidth: 2 }}
               className={styles.line}
             />
           </LineChart>

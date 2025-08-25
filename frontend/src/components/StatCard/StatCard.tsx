@@ -7,14 +7,18 @@ interface StatCardProps {
   label: string;
   value: string;
   description: string;
+  teamColor?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value, description }) => {
+const StatCard: React.FC<StatCardProps> = ({ icon, label, value, description, teamColor }) => {
   return (
     <Box className={styles.card}>
       <Box className={styles.cardBody}>
         <Flex align="center" justify="space-between">
-          <Box className={styles.iconContainer}>
+          <Box 
+            className={styles.iconContainer}
+            style={{ backgroundColor: teamColor || 'var(--color-primary-red)' }}
+          >
             {icon}
           </Box>
           <Box className={styles.stat}>

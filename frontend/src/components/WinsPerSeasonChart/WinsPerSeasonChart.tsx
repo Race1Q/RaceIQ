@@ -10,6 +10,7 @@ interface WinsPerSeasonData {
 
 interface WinsPerSeasonChartProps {
   data: WinsPerSeasonData[];
+  teamColor?: string;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -24,7 +25,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const WinsPerSeasonChart: React.FC<WinsPerSeasonChartProps> = ({ data }) => {
+const WinsPerSeasonChart: React.FC<WinsPerSeasonChartProps> = ({ data, teamColor }) => {
   return (
     <Card className={styles.card}>
       <CardHeader className={styles.cardHeader}>
@@ -45,7 +46,7 @@ const WinsPerSeasonChart: React.FC<WinsPerSeasonChartProps> = ({ data }) => {
             <Tooltip content={<CustomTooltip />} />
             <Bar
               dataKey="wins"
-              fill="var(--color-primary-red)"
+              fill={teamColor || 'var(--color-primary-red)'}
               radius={[4, 4, 0, 0]}
               className={styles.bar}
             />

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Flex, Box } from '@chakra-ui/react';
 import DriverList from '../components/DriverList/DriverList';
 import DashboardGrid from '../components/DashboardGrid/DashboardGrid';
 import HeroSection from '../components/HeroSection/HeroSection';
+import { useTheme } from '../context/ThemeContext';
+import { teamColors } from '../lib/teamColors';
 
 // Mock data for drivers
 const mockDrivers = [
@@ -16,7 +18,7 @@ const mockDrivers = [
     podiums: 98,
     fastestLaps: 30,
     points: 2586.5,
-    image: 'https://via.placeholder.com/150x200/DC0000/FFFFFF?text=MV',
+    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/1col/image.png',
     winsPerSeason: [
       { season: '2021', wins: 10 },
       { season: '2022', wins: 15 },
@@ -43,7 +45,7 @@ const mockDrivers = [
     podiums: 197,
     fastestLaps: 64,
     points: 4639.5,
-    image: 'https://via.placeholder.com/150x200/00D2BE/FFFFFF?text=LH',
+    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/1col/image.png',
     winsPerSeason: [
       { season: '2021', wins: 8 },
       { season: '2022', wins: 0 },
@@ -70,7 +72,7 @@ const mockDrivers = [
     podiums: 30,
     fastestLaps: 7,
     points: 1074,
-    image: 'https://via.placeholder.com/150x200/DC0000/FFFFFF?text=CL',
+    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/1col/image.png',
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 3 },
@@ -97,7 +99,7 @@ const mockDrivers = [
     podiums: 15,
     fastestLaps: 5,
     points: 633,
-    image: 'https://via.placeholder.com/150x200/FF8700/FFFFFF?text=LN',
+    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png',
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 0 },
@@ -124,7 +126,7 @@ const mockDrivers = [
     podiums: 18,
     fastestLaps: 3,
     points: 982.5,
-    image: 'https://via.placeholder.com/150x200/DC0000/FFFFFF?text=CS',
+    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/1col/image.png',
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 1 },
@@ -145,8 +147,22 @@ const mockDrivers = [
 
 const DriversDashboardPage: React.FC = () => {
   const [selectedDriverId, setSelectedDriverId] = useState('max_verstappen');
+  const { setThemeColor } = useTheme();
 
   const selectedDriver = mockDrivers.find(driver => driver.id === selectedDriverId) || mockDrivers[0];
+
+  useEffect(() => {
+    // Set the theme color when the selected driver changes
+    if (selectedDriver) {
+      const newColor = teamColors[selectedDriver.team] || '#FF1801';
+      setThemeColor(newColor);
+    }
+
+    // This cleanup function runs when the component unmounts
+    return () => {
+      setThemeColor('#FF1801'); // Reset to default red
+    };
+  }, [selectedDriver, setThemeColor]);
 
   return (
     <>

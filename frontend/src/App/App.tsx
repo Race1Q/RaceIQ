@@ -17,6 +17,7 @@ import Admin from '../pages/Admin/Admin';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -41,12 +42,13 @@ function HomePage() {
         title="Track Every F1 Appearance"
         subtitle="View race results and appearances for your favourite drivers and teams — across sports."
         backgroundImageUrl="https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg"
-      >
-        <div className={styles.heroButtons}>
-          <button className={`${styles.btn} ${styles.btnPrimary}`}>View Public Data</button>
-          {!isAuthenticated && <LoginButton />}
-        </div>
-      </HeroSection>
+      />
+      
+      {/* Hero Buttons */}
+      <div className={styles.heroButtons}>
+        <button className={`${styles.btn} ${styles.btnPrimary}`}>View Public Data</button>
+        {!isAuthenticated && <LoginButton />}
+      </div>
 
       {/* Public Data Preview / Personalized Feed */}
       <section className={styles.dataSection}>
@@ -97,71 +99,85 @@ function HomePage() {
   );
 }
 
-function App() {
+function Navbar() {
   const { isAuthenticated } = useAuth0();
   const isHomeActive = useActiveRoute('/');
   const isDriversActive = useActiveRoute('/drivers');
   const isRacesActive = useActiveRoute('/races');
   const isAboutActive = useActiveRoute('/about');
   const isAdminActive = useActiveRoute('/admin');
+  const isDashboardActive = useActiveRoute('/drivers-dashboard');
 
   return (
-    <div className={styles.app}>
-      {/* Navigation */}
-      <nav className={styles.navbar}>
-        <div className={styles.navContainer}>
-          <div className={styles.navLogo}>
-            <Link to="/" style={{ textDecoration: 'none' }} aria-label="Go to home">
-              <div className={styles.logoContainer}>
-                <Gauge size={24} color="var(--color-primary-red)" />
-                <h2 className={styles.logoText}>RaceIQ</h2>
-              </div>
-            </Link>
-          </div>
-          <div className={styles.navLinks}>
-            <Link 
-              to="/" 
-              className={`${styles.navLink} ${isHomeActive ? styles.navLinkActive : ''}`}
-            >
-              Home
-            </Link>
-            <Link 
-              to="/drivers" 
-              className={`${styles.navLink} ${isDriversActive ? styles.navLinkActive : ''}`}
-            >
-              Drivers
-            </Link>
-            <Link 
-              to="/drivers-dashboard" 
-              className={`${styles.navLink} ${useActiveRoute('/drivers-dashboard') ? styles.navLinkActive : ''}`}
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/races" 
-              className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
-            >
-              Races
-            </Link>
-            <Link 
-              to="/about" 
-              className={`${styles.navLink} ${isAboutActive ? styles.navLinkActive : ''}`}
-            >
-              About
-            </Link>
-            {isAuthenticated && (
-              <Link 
-                to="/admin" 
-                className={`${styles.navLink} ${isAdminActive ? styles.navLinkActive : ''}`}
-              >
-                Admin
-              </Link>
-            )}
-            {isAuthenticated ? <LogoutButton /> : <LoginButton />}
-          </div>
+    <nav className={styles.navbar}>
+      <div className={styles.navContainer}>
+        <div className={styles.navLogo}>
+          <Link to="/" style={{ textDecoration: 'none' }} aria-label="Go to home">
+            <div className={styles.logoContainer}>
+              <Gauge size={24} />
+              <h2 className={styles.logoText}>RaceIQ</h2>
+            </div>
+          </Link>
         </div>
-      </nav>
+        <div className={styles.navLinks}>
+          <Link 
+            to="/" 
+            className={`${styles.navLink} ${isHomeActive ? styles.navLinkActive : ''}`}
+          >
+            Home
+          </Link>
+          <Link 
+            to="/drivers" 
+            className={`${styles.navLink} ${isDriversActive ? styles.navLinkActive : ''}`}
+          >
+            Drivers
+          </Link>
+          <Link 
+            to="/drivers-dashboard" 
+            className={`${styles.navLink} ${isDashboardActive ? styles.navLinkActive : ''}`}
+          >
+            Dashboard
+          </Link>
+          <Link 
+            to="/races" 
+            className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
+          >
+            Races
+          </Link>
+          <Link 
+            to="/about" 
+            className={`${styles.navLink} ${isAboutActive ? styles.navLinkActive : ''}`}
+          >
+            About
+          </Link>
+          {isAuthenticated && (
+            <Link 
+              to="/admin" 
+              className={`${styles.navLink} ${isAdminActive ? styles.navLinkActive : ''}`}
+            >
+              Admin
+            </Link>
+          )}
+          {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+        </div>
+      </div>
+    </nav>
+  );
+}
 
+function AppContent() {
+  const { themeColor, themeRgbColor } = useTheme();
+
+  return (
+    <div 
+      className={styles.app}
+      style={{
+        '--dynamic-accent-color': themeColor,
+        '--dynamic-accent-rgb': themeRgbColor,
+      } as React.CSSProperties}
+    >
+      <Navbar />
+      
       {/* Routes */}
       <Routes>
         {/* PUBLIC */}
@@ -198,6 +214,14 @@ function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

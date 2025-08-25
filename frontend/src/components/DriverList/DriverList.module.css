@@ -65,7 +65,6 @@
 
 .driverItem.active {
   background-color: var(--color-surface-gray-light);
-  border-left-color: var(--color-primary-red);
   transform: translateX(4px);
 }
 

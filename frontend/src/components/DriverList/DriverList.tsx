@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { VStack, Input, Box, Text } from '@chakra-ui/react';
 import { Search } from 'lucide-react';
+import { teamColors } from '../../lib/assets';
 import styles from './DriverList.module.css';
 
 interface Driver {
@@ -40,19 +41,32 @@ const DriverList: React.FC<DriverListProps> = ({ drivers, selectedDriverId, setS
       </Box>
       
       <VStack spacing={2} className={styles.driverList}>
-        {filteredDrivers.map((driver) => (
-          <Box
-            key={driver.id}
-            className={`${styles.driverItem} ${driver.id === selectedDriverId ? styles.active : ''}`}
-            onClick={() => setSelectedDriverId(driver.id)}
-          >
-            <Text className={styles.driverNumber}>{driver.number}</Text>
-            <Box className={styles.driverInfo}>
-              <Text className={styles.driverName}>{driver.name}</Text>
-              <Text className={styles.driverTeam}>{driver.team}</Text>
+        {filteredDrivers.map((driver) => {
+          const isActive = driver.id === selectedDriverId;
+          const teamColor = teamColors[driver.team] || '#FF1801'; // Default to F1 red if team not found
+          
+          return (
+            <Box
+              key={driver.id}
+              className={`${styles.driverItem} ${isActive ? styles.active : ''}`}
+              onClick={() => setSelectedDriverId(driver.id)}
+              style={{
+                borderLeftColor: isActive ? teamColor : 'transparent'
+              }}
+            >
+              <Text 
+                className={styles.driverNumber}
+                style={{ color: teamColor }}
+              >
+                {driver.number}
+              </Text>
+              <Box className={styles.driverInfo}>
+                <Text className={styles.driverName}>{driver.name}</Text>
+                <Text className={styles.driverTeam}>{driver.team}</Text>
+              </Box>
             </Box>
-          </Box>
-        ))}
+          );
+        })}
       </VStack>
     </Box>
   );
