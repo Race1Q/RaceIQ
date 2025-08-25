@@ -16,7 +16,7 @@ import RacesPage from '../pages/RacesPage';
 import Admin from '../pages/Admin/Admin';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
-import bannerImage from '../assets/2026-Concept.png';
+import HeroSection from '../components/HeroSection/HeroSection';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -37,18 +37,16 @@ function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className={styles.hero}>
-        <div className={styles.heroContainer} style={{ backgroundImage: `url(${bannerImage})` }}>
-          <h1 className={styles.heroTitle}>Track Every F1 Appearance</h1>
-          <p className={styles.heroSubtitle}>
-            View race results and appearances for your favourite drivers and teams — across sports.
-          </p>
-          <div className={styles.heroButtons}>
-            <button className={`${styles.btn} ${styles.btnPrimary}`}>View Public Data</button>
-            {!isAuthenticated && <LoginButton />}
-          </div>
+      <HeroSection
+        title="Track Every F1 Appearance"
+        subtitle="View race results and appearances for your favourite drivers and teams — across sports."
+        backgroundImageUrl="https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg"
+      >
+        <div className={styles.heroButtons}>
+          <button className={`${styles.btn} ${styles.btnPrimary}`}>View Public Data</button>
+          {!isAuthenticated && <LoginButton />}
         </div>
-      </section>
+      </HeroSection>
 
       {/* Public Data Preview / Personalized Feed */}
       <section className={styles.dataSection}>

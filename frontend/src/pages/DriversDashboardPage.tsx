@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Flex, Box } from '@chakra-ui/react';
 import DriverList from '../components/DriverList/DriverList';
 import DashboardGrid from '../components/DashboardGrid/DashboardGrid';
+import HeroSection from '../components/HeroSection/HeroSection';
 
 // Mock data for drivers
 const mockDrivers = [
@@ -148,20 +149,30 @@ const DriversDashboardPage: React.FC = () => {
   const selectedDriver = mockDrivers.find(driver => driver.id === selectedDriverId) || mockDrivers[0];
 
   return (
-    <Container maxWidth="1400px" paddingX={['1rem', '2rem', '3rem']} paddingY="2rem">
-      <Flex direction={['column', 'column', 'row']} gap={6}>
-        <Box width={['100%', '100%', '300px']} flexShrink={0}>
-          <DriverList
-            drivers={mockDrivers}
-            selectedDriverId={selectedDriverId}
-            setSelectedDriverId={setSelectedDriverId}
-          />
-        </Box>
-        <Box flex={1}>
-          <DashboardGrid driver={selectedDriver} />
-        </Box>
-      </Flex>
-    </Container>
+    <>
+      {/* Hero Section */}
+      <HeroSection
+        title="Drivers Dashboard"
+        subtitle="Your personalized hub for in-depth driver statistics and performance analytics."
+        backgroundImageUrl="https://images.pexels.com/photos/29252132/pexels-photo-29252132.jpeg"
+      />
+      
+      {/* Main Content */}
+      <Container maxWidth="1400px" paddingX={['1rem', '2rem', '3rem']} paddingY="2rem">
+        <Flex direction={['column', 'column', 'row']} gap={6}>
+          <Box width={['100%', '100%', '300px']} flexShrink={0}>
+            <DriverList
+              drivers={mockDrivers}
+              selectedDriverId={selectedDriverId}
+              setSelectedDriverId={setSelectedDriverId}
+            />
+          </Box>
+          <Box flex={1}>
+            <DashboardGrid driver={selectedDriver} />
+          </Box>
+        </Flex>
+      </Container>
+    </>
   );
 };
 

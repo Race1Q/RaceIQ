@@ -14,6 +14,7 @@ import PaceDistributionChart from '../components/PaceDistributionChart/PaceDistr
 import TireStrategyChart from '../components/TireStrategyChart/TireStrategyChart';
 import RaceThemedDivider from '../components/RaceThemedDivider/RaceThemedDivider';
 import RaceStandingsTable from '../components/RaceStandingsTable/RaceStandingsTable';
+import HeroSection from '../components/HeroSection/HeroSection';
 import { mockRaces } from '../data/mockRaces';
 import { teamColors } from '../lib/assets';
 import type { Race } from '../data/types';
@@ -30,8 +31,18 @@ const RacesPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="1400px" px={8}>
-      <Flex className={styles.layout}>
+    <>
+      {/* Hero Section */}
+      <HeroSection
+        title="Race Analytics"
+        subtitle="A deep dive into the strategy, performance, and key moments from every Grand Prix."
+        backgroundColor="var(--color-primary-red)"
+        disableOverlay
+      />
+      
+      {/* Main Content */}
+      <Container maxWidth="1400px" px={8}>
+        <Flex className={styles.layout}>
         {/* Desktop Sidebar - Part of flex layout */}
         {isDesktop && (
           <RaceList
@@ -158,7 +169,8 @@ const RacesPage: React.FC = () => {
           </Grid>
         </Box>
       </Flex>
-    </Container>
+      </Container>
+    </>
   );
 };
 

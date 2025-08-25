@@ -228,6 +228,7 @@
 .navLink {
   color: var(--color-text-light);
   text-decoration: none;
+  font-family: var(--font-display);
   font-weight: 500;
   transition: all 0.3s ease;
   position: relative;
@@ -240,7 +241,7 @@
   text-shadow: 0 2px 4px rgba(225, 6, 0, 0.3);
 }
 
-.navLink-active {
+.navLinkActive {
   color: var(--color-primary-red) !important;
   transform: translateY(-2px);
   text-shadow: 0 2px 4px rgba(225, 6, 0, 0.3);
@@ -263,7 +264,7 @@
   width: 100%;
 }
 
-.navLink-active::after {
+.navLinkActive::after {
   width: 100%;
 }
 
@@ -356,6 +357,11 @@
   gap: var(--space-md);
   justify-content: center;
   flex-wrap: wrap;
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
 /* Data Section */

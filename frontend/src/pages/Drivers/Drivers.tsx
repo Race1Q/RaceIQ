@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from "../../lib/supabase";
 import axios from 'axios';
 import styles from './Drivers.module.css';
-import  bannerImage  from "../../assets/banner.jpg";
 import userIcon from "../../assets/UserIcon.png";
 import { FaAngleDown } from 'react-icons/fa';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import HeroSection from '../../components/HeroSection/HeroSection';
 
 interface Drivers {
     driver_id : number;
@@ -174,21 +174,18 @@ function darkenColor(hex: string, percent: number): string {
   }
 
   return (
-    <div className={styles.driversContainer}>
+    <>
+      {/* Hero Section */}
+      <HeroSection
+        title="Driver Profiles"
+        subtitle="Explore the stats, history, and performance of every driver on the 2025 grid."
+        backgroundImageUrl="https://images.pexels.com/photos/15155732/pexels-photo-15155732.jpeg"
+      />
 
-    {/* Banner Section */}
-    <div className={styles.driversBanner} style={{ backgroundImage: `url(${bannerImage})` }}>
-        <div className={styles.bannerContent}>
-         <h1 className={styles.bannerTitle}>Formula 1 Drivers</h1>
-             <p className={styles.bannerText}>
-                Explore the complete lineup of F1 drivers over all seasons. 
-                Click on a driver to view their profile and stats.
-             </p>
-        </div>
-    </div>
-
-    {/* Search and Filter Container */}
-<div className={styles.searchFilterContainer}>
+      {/* Main Content */}
+      <div className={styles.driversContainer}>
+        {/* Search and Filter Container */}
+        <div className={styles.searchFilterContainer}>
 
     {/* Team Filter Dropdown */}
 <div className={styles.teamFilterContainer}>
@@ -263,7 +260,8 @@ function darkenColor(hex: string, percent: number): string {
           <div className={styles.noDrivers}>No driver matches your search</div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
