@@ -12,6 +12,8 @@ import RaceControlLog from '../components/RaceControlLog/RaceControlLog';
 import FlagsTimeline from '../components/FlagsTimeline/FlagsTimeline';
 import PaceDistributionChart from '../components/PaceDistributionChart/PaceDistributionChart';
 import TireStrategyChart from '../components/TireStrategyChart/TireStrategyChart';
+import RaceThemedDivider from '../components/RaceThemedDivider/RaceThemedDivider';
+import RaceStandingsTable from '../components/RaceStandingsTable/RaceStandingsTable';
 import { mockRaces } from '../data/mockRaces';
 import { teamColors } from '../lib/assets';
 import type { Race } from '../data/types';
@@ -52,72 +54,75 @@ const RacesPage: React.FC = () => {
 
         {/* Main Content */}
         <Box className={styles.mainContent}>
-          {/* Race Header */}
-          <RaceHeader race={selectedRace} />
-
-          {/* Top Row: Two-column layout */}
-          <Flex className={styles.topRow} gap={6}>
-            {/* Left Column: Track Layout and Standings */}
-            <Box className={styles.leftColumn} flex="8">
-              <VStack className={styles.leftContent} spacing={6}>
-                {/* Track Layout */}
-                <Box className={styles.trackMapSection}>
-                  <TrackMap
-                    coords={selectedRace.trackMapCoords}
-                    trackName={selectedRace.trackName}
-                    race={selectedRace}
-                  />
-                </Box>
-
-                {/* Standings */}
-                <Box className={styles.standingsSection}>
-                  <HStack spacing={4} className={styles.podiumContainer}>
-                    <PodiumCard
-                      position={1}
-                      driverName={selectedRace.standings[0].driver}
-                      teamName={selectedRace.standings[0].team}
-                      points={selectedRace.standings[0].points}
-                      driverImageUrl={selectedRace.standings[0].driverImageUrl}
-                      accentColor={teamColors[selectedRace.standings[0].team] || '#00D2BE'}
+          {/* === SECTION 1: OVERVIEW === */}
+          <VStack as="section" spacing={6} alignItems="stretch">
+            <RaceHeader race={selectedRace} />
+            {/* Track Layout full width and Podium display */}
+            <Flex className={styles.topRow} gap={6}>
+              {/* Left Column: Track Layout and Podium */}
+              <Box className={styles.leftColumn} flex="8">
+                <VStack className={styles.leftContent} spacing={6}>
+                  <Box className={styles.trackMapSection}>
+                    <TrackMap
+                      coords={selectedRace.trackMapCoords}
+                      trackName={selectedRace.trackName}
+                      race={selectedRace}
                     />
-                    <Box className={styles.podiumCard2nd}>
+                  </Box>
+                  <Box className={styles.standingsSection}>
+                    <HStack spacing={4} className={styles.podiumContainer}>
                       <PodiumCard
-                        position={2}
-                        driverName={selectedRace.standings[1].driver}
-                        teamName={selectedRace.standings[1].team}
-                        points={selectedRace.standings[1].points}
-                        driverImageUrl={selectedRace.standings[1].driverImageUrl}
-                        accentColor={teamColors[selectedRace.standings[1].team] || '#00D2BE'}
+                        position={1}
+                        driverName={selectedRace.standings[0].driver}
+                        teamName={selectedRace.standings[0].team}
+                        points={selectedRace.standings[0].points}
+                        driverImageUrl={selectedRace.standings[0].driverImageUrl}
+                        accentColor={teamColors[selectedRace.standings[0].team] || '#00D2BE'}
                       />
-                    </Box>
-                    <Box className={styles.podiumCard3rd}>
-                      <PodiumCard
-                        position={3}
-                        driverName={selectedRace.standings[2].driver}
-                        teamName={selectedRace.standings[2].team}
-                        points={selectedRace.standings[2].points}
-                        driverImageUrl={selectedRace.standings[2].driverImageUrl}
-                        accentColor={teamColors[selectedRace.standings[2].team] || '#00D2BE'}
-                      />
-                    </Box>
-                  </HStack>
-                </Box>
-              </VStack>
-            </Box>
+                      <Box className={styles.podiumCard2nd}>
+                        <PodiumCard
+                          position={2}
+                          driverName={selectedRace.standings[1].driver}
+                          teamName={selectedRace.standings[1].team}
+                          points={selectedRace.standings[1].points}
+                          driverImageUrl={selectedRace.standings[1].driverImageUrl}
+                          accentColor={teamColors[selectedRace.standings[1].team] || '#00D2BE'}
+                        />
+                      </Box>
+                      <Box className={styles.podiumCard3rd}>
+                        <PodiumCard
+                          position={3}
+                          driverName={selectedRace.standings[2].driver}
+                          teamName={selectedRace.standings[2].team}
+                          points={selectedRace.standings[2].points}
+                          driverImageUrl={selectedRace.standings[2].driverImageUrl}
+                          accentColor={teamColors[selectedRace.standings[2].team] || '#00D2BE'}
+                        />
+                      </Box>
+                    </HStack>
+                  </Box>
+                </VStack>
+              </Box>
 
-            {/* Right Column: Track Info & Weather (spans both rows) */}
-            <Box className={styles.rightColumn} flex="2">
-              <WeatherCard weather={selectedRace.weather} race={selectedRace} />
-            </Box>
-          </Flex>
+              {/* Right Column: Track Info & Weather (spans both rows) */}
+              <Box className={styles.rightColumn} flex="2">
+                <WeatherCard weather={selectedRace.weather} race={selectedRace} />
+              </Box>
+            </Flex>
+          </VStack>
 
-          {/* Analytics Grid */}
-          <Grid className={styles.analyticsGrid} templateColumns="repeat(12, 1fr)" gap={6}>
-            {/* Lap Position Chart */}
-            <GridItem colSpan={{ base: 12, lg: 8 }}>
-              <LapPositionChart race={selectedRace} />
-            </GridItem>
+          <RaceThemedDivider />
 
+          {/* === SECTION 2: RACE STANDINGS & LAP CHART === */}
+          <VStack as="section" spacing={6} alignItems="stretch">
+            <RaceStandingsTable race={selectedRace} allRaces={mockRaces} onSelectRace={handleRaceSelect} />
+            <LapPositionChart race={selectedRace} />
+          </VStack>
+
+          <RaceThemedDivider />
+
+          {/* === SECTION 3: DETAILED ANALYTICS === */}
+          <Grid as="section" className={styles.analyticsGrid} templateColumns="repeat(12, 1fr)" gap={6}>
             {/* Historical Stats */}
             <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
               <HistoricalStatsTable stats={selectedRace.historicalStats} />
