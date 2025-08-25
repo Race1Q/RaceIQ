@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { Container, Flex, Grid, GridItem, Box, useBreakpointValue } from '@chakra-ui/react';
+import { Container, Flex, Grid, GridItem, Box, useBreakpointValue, VStack, HStack } from '@chakra-ui/react';
 import RaceList from '../components/RaceList/RaceList';
 import RaceHeader from '../components/RaceHeader/RaceHeader';
 import TrackMap from '../components/TrackMap/TrackMap';
-import RaceStandings from '../components/RaceStandings/RaceStandings';
-import KeyInfoBlocks from '../components/KeyInfoBlocks/KeyInfoBlocks';
+import WeatherCard from '../components/WeatherCard/WeatherCard';
+import PodiumCard from '../components/PodiumCard/PodiumCard';
+import LapPositionChart from '../components/LapPositionChart/LapPositionChart';
+import HistoricalStatsTable from '../components/HistoricalStatsTable/HistoricalStatsTable';
+import FastestLapCard from '../components/FastestLapCard/FastestLapCard';
+import RaceControlLog from '../components/RaceControlLog/RaceControlLog';
 import FlagsTimeline from '../components/FlagsTimeline/FlagsTimeline';
 import PaceDistributionChart from '../components/PaceDistributionChart/PaceDistributionChart';
 import TireStrategyChart from '../components/TireStrategyChart/TireStrategyChart';
-import HistoricalStatsTable from '../components/HistoricalStatsTable/HistoricalStatsTable';
-import LapPositionChart from '../components/LapPositionChart/LapPositionChart';
-import WeatherCard from '../components/WeatherCard/WeatherCard';
-import RaceControlLog from '../components/RaceControlLog/RaceControlLog';
-import FastestLapCard from '../components/FastestLapCard/FastestLapCard';
-import TrackStatsBars from '../components/TrackStatsBars/TrackStatsBars';
 import { mockRaces } from '../data/mockRaces';
+import { teamColors } from '../lib/assets';
+import type { Race } from '../data/types';
 import styles from './RacesPage.module.css';
 
 const RacesPage: React.FC = () => {
@@ -28,7 +28,7 @@ const RacesPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="1400px" className={styles.container}>
+    <Container maxWidth="1400px" px={8}>
       <Flex className={styles.layout}>
         {/* Desktop Sidebar - Part of flex layout */}
         {isDesktop && (
@@ -55,25 +55,59 @@ const RacesPage: React.FC = () => {
           {/* Race Header */}
           <RaceHeader race={selectedRace} />
 
-          {/* Top Row: TrackStatsBars, TrackMap, WeatherCard (1:2:1 ratio) */}
+          {/* Top Row: Two-column layout */}
           <Flex className={styles.topRow} gap={6}>
-            {/* TrackStatsBars - 1 part */}
-            <Box className={styles.trackStatsSection} flex="1">
-              <TrackStatsBars race={selectedRace} />
+            {/* Left Column: Track Layout and Standings */}
+            <Box className={styles.leftColumn} flex="8">
+              <VStack className={styles.leftContent} spacing={6}>
+                {/* Track Layout */}
+                <Box className={styles.trackMapSection}>
+                  <TrackMap
+                    coords={selectedRace.trackMapCoords}
+                    trackName={selectedRace.trackName}
+                    race={selectedRace}
+                  />
+                </Box>
+
+                {/* Standings */}
+                <Box className={styles.standingsSection}>
+                  <HStack spacing={4} className={styles.podiumContainer}>
+                    <PodiumCard
+                      position={1}
+                      driverName={selectedRace.standings[0].driver}
+                      teamName={selectedRace.standings[0].team}
+                      points={selectedRace.standings[0].points}
+                      driverImageUrl={selectedRace.standings[0].driverImageUrl}
+                      accentColor={teamColors[selectedRace.standings[0].team] || '#00D2BE'}
+                    />
+                    <Box className={styles.podiumCard2nd}>
+                      <PodiumCard
+                        position={2}
+                        driverName={selectedRace.standings[1].driver}
+                        teamName={selectedRace.standings[1].team}
+                        points={selectedRace.standings[1].points}
+                        driverImageUrl={selectedRace.standings[1].driverImageUrl}
+                        accentColor={teamColors[selectedRace.standings[1].team] || '#00D2BE'}
+                      />
+                    </Box>
+                    <Box className={styles.podiumCard3rd}>
+                      <PodiumCard
+                        position={3}
+                        driverName={selectedRace.standings[2].driver}
+                        teamName={selectedRace.standings[2].team}
+                        points={selectedRace.standings[2].points}
+                        driverImageUrl={selectedRace.standings[2].driverImageUrl}
+                        accentColor={teamColors[selectedRace.standings[2].team] || '#00D2BE'}
+                      />
+                    </Box>
+                  </HStack>
+                </Box>
+              </VStack>
             </Box>
 
-            {/* TrackMap - 2 parts */}
-            <Box className={styles.trackMapSection} flex="2">
-              <TrackMap
-                coords={selectedRace.trackMapCoords}
-                trackName={selectedRace.trackName}
-                race={selectedRace}
-              />
-            </Box>
-
-            {/* WeatherCard - 1 part */}
-            <Box className={styles.weatherSection} flex="1">
-              <WeatherCard weather={selectedRace.weather} />
+            {/* Right Column: Track Info & Weather (spans both rows) */}
+            <Box className={styles.rightColumn} flex="2">
+              <WeatherCard weather={selectedRace.weather} race={selectedRace} />
             </Box>
           </Flex>
 
@@ -82,11 +116,6 @@ const RacesPage: React.FC = () => {
             {/* Lap Position Chart */}
             <GridItem colSpan={{ base: 12, lg: 8 }}>
               <LapPositionChart race={selectedRace} />
-            </GridItem>
-
-            {/* Race Standings */}
-            <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-              <RaceStandings standings={selectedRace.standings} />
             </GridItem>
 
             {/* Historical Stats */}

@@ -1,0 +1,119 @@
+.card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.textContent {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.title {
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.driverName {
+  color: var(--color-text-light);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  line-height: 1.1;
+}
+
+.teamName {
+  color: var(--color-text-light);
+  font-size: 1rem;
+  font-weight: 400;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.points {
+  color: var(--color-text-light);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.points::before {
+  content: attr(data-points);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.driverImage {
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  height: 120%;
+  width: auto;
+  object-fit: contain;
+  z-index: 1;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.iconButton {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.iconButton:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card {
+    height: 180px;
+    padding: var(--space-md);
+  }
+
+  .driverName {
+    font-size: 1.5rem;
+  }
+
+  .teamName {
+    font-size: 0.875rem;
+  }
+
+  .points {
+    font-size: 1rem;
+  }
+
+  .driverImage {
+    height: 110%;
+    right: -10px;
+    bottom: -10px;
+  }
+
+  .iconButton {
+    width: 28px;
+    height: 28px;
+    top: var(--space-sm);
+    right: var(--space-sm);
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Gauge } from 'lucide-react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import F1LoadingSpinner from '../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -113,7 +114,10 @@ function App() {
         <div className={styles.navContainer}>
           <div className={styles.navLogo}>
             <Link to="/" style={{ textDecoration: 'none' }} aria-label="Go to home">
-              <h2>RaceIQ</h2>
+              <div className={styles.logoContainer}>
+                <Gauge size={24} color="var(--color-primary-red)" />
+                <h2 className={styles.logoText}>RaceIQ</h2>
+              </div>
             </Link>
           </div>
           <div className={styles.navLinks}>

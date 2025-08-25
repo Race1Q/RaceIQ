@@ -4,6 +4,7 @@ export interface RaceStanding {
   points: number;
   team: string;
   driverAbbreviation: string;
+  driverImageUrl: string;
   interval?: string;
   status?: string;
 }

@@ -1,7 +1,7 @@
 .container {
   min-height: 100vh;
   background-color: var(--color-background-dark);
-  padding: var(--space-lg);
+  padding: 0 var(--space-lg) var(--space-lg) var(--space-lg);
 }
 
 .layout {
@@ -24,10 +24,57 @@
 .topRow {
   margin-bottom: var(--space-lg);
   align-items: stretch; /* Make all items same height */
-  min-height: 300px; /* Set minimum height for consistency */
+  min-height: 600px; /* Increased height to accommodate both track layout and standings */
 }
 
-.trackStatsSection {
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.leftContent {
+  height: 100%;
+  align-items: stretch;
+}
+
+.trackMapSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.standingsSection {
+  background-color: transparent;
+  border-radius: var(--border-radius-lg);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.podiumContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.podiumCard2nd {
+  transform: scale(0.9);
+  height: 180px !important;
+}
+
+.podiumCard3rd {
+  transform: scale(0.9);
+  height: 180px !important;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.weatherSection {
   background-color: var(--color-surface-gray);
   border-radius: var(--border-radius-lg);
   border: 1px solid var(--color-border-gray);
@@ -36,13 +83,22 @@
   flex-direction: column;
 }
 
-.trackMapSection {
-  /* No background - stays as is */
+.secondRow {
+  margin-bottom: var(--space-lg);
+  align-items: stretch;
+  min-height: 400px; /* Set minimum height for the charts */
+}
+
+.raceResultsSection {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+  padding: var(--space-lg);
   display: flex;
   flex-direction: column;
 }
 
-.weatherSection {
+.lapChartSection {
   background-color: var(--color-surface-gray);
   border-radius: var(--border-radius-lg);
   border: 1px solid var(--color-border-gray);
@@ -72,9 +128,13 @@
     min-height: auto;
   }
 
-  .trackStatsSection,
+  .leftContent {
+    height: auto;
+  }
+
   .trackMapSection,
-  .weatherSection {
+  .standingsSection,
+  .rightColumn {
     flex: none;
     width: 100%;
   }
@@ -82,7 +142,7 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: var(--space-md);
+    padding: 0 var(--space-md) var(--space-md) var(--space-md);
   }
   
   .layout {
@@ -90,6 +150,10 @@
   }
   
   .topRow {
+    gap: var(--space-md);
+  }
+
+  .secondRow {
     gap: var(--space-md);
   }
   

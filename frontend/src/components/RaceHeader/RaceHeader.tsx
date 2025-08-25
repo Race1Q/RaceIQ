@@ -15,8 +15,8 @@ const RaceHeader: React.FC<RaceHeaderProps> = ({ race }) => {
       <Box className={styles.headerContent}>
         <Box className={styles.titleSection}>
           <Heading className={styles.trackName}>{race.trackName}</Heading>
-          <HStack className={styles.metaInfo}>
-            <HStack className={styles.metaItem}>
+          <HStack className={styles.metaInfo} spacing={4}>
+            <HStack className={styles.metaItem} spacing={2}>
               <img 
                 src={getCountryFlagUrl(race.countryCode)} 
                 alt={`${race.country} flag`}
@@ -24,7 +24,7 @@ const RaceHeader: React.FC<RaceHeaderProps> = ({ race }) => {
               />
               <Text className={styles.metaText}>{race.country}</Text>
             </HStack>
-            <HStack className={styles.metaItem}>
+            <HStack className={styles.metaItem} spacing={2}>
               <Calendar size={16} className={styles.icon} />
               <Text className={styles.metaText}>
                 {new Date(race.date).toLocaleDateString('en-US', {

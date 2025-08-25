@@ -7,6 +7,7 @@
   height: calc(100vh - 80px); /* Subtract navbar height */
   overflow: hidden;
   flex-shrink: 0; /* Prevent shrinking */
+  position: relative; /* Add relative positioning for absolute child */
 }
 
 .container.expanded {
@@ -16,7 +17,8 @@
 .arrowTrigger {
   position: absolute;
   top: var(--space-md);
-  left: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
   width: 40px;
   height: 40px;
   background-color: var(--color-primary-red);
