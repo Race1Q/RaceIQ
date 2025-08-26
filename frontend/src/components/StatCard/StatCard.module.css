@@ -3,6 +3,13 @@
   border-radius: var(--border-radius-lg);
   border: 1px solid var(--color-border-gray);
   height: fit-content;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode enhancements */
+[data-theme='light'] .card {
+  border-color: var(--color-border-light);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .cardBody {
@@ -19,6 +26,15 @@
   border-radius: var(--border-radius-md);
   color: var(--color-text-light);
   flex-shrink: 0;
+}
+
+/* Light mode icon enhancements */
+[data-theme='light'] .iconContainer {
+  background-color: var(--color-background-dark);
+}
+
+[data-theme='light'] .iconContainer svg {
+  color: var(--driver-team-color);
 }
 
 .iconContainer svg {

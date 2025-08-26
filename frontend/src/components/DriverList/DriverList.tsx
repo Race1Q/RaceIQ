@@ -36,6 +36,7 @@ const DriverList: React.FC<DriverListProps> = ({ drivers, selectedDriverId, setS
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={styles.searchInput}
+            pl="2.5rem"
           />
         </Box>
       </Box>

@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
-import { ChakraProvider } from '@chakra-ui/react';
+import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
 import './index.css';
 import App from './App/App.tsx';
 import theme from './theme';
@@ -34,19 +34,22 @@ const auth0Config = getAuth0Config();
 const root = createRoot(document.getElementById('root')!);
 
 root.render(
-  <Auth0Provider
-    domain={auth0Config.domain}
-    clientId={auth0Config.clientId}
-    authorizationParams={{
-      redirect_uri: window.location.origin,
-      audience: auth0Config.audience,
-      scope: 'openid profile email'
-    }}
-  >
-    <ChakraProvider theme={theme}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ChakraProvider>
-  </Auth0Provider>
+  <>
+    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+    <Auth0Provider
+      domain={auth0Config.domain}
+      clientId={auth0Config.clientId}
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+        audience: auth0Config.audience,
+        scope: 'openid profile email'
+      }}
+    >
+      <ChakraProvider theme={theme}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ChakraProvider>
+    </Auth0Provider>
+  </>
 );

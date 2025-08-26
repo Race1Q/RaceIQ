@@ -222,7 +222,23 @@
 .navLinks {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
   gap: var(--space-lg);
+}
+
+.navCenter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  justify-content: center;
+  flex: 1;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 .navLink {
@@ -515,8 +531,17 @@
   }
 
   .navLinks {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .navCenter {
     flex-wrap: wrap;
     justify-content: center;
+    gap: var(--space-md);
+  }
+
+  .navRight {
     gap: var(--space-md);
   }
 
