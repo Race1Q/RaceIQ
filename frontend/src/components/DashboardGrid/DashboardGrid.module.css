@@ -1,4 +1,11 @@
 .grid {
   width: 100%;
   min-height: 100vh;
+  padding: var(--space-lg);
+  gap: var(--space-lg);
+}
+
+/* Light mode grid enhancements */
+[data-theme='light'] .grid {
+  background-color: var(--color-background-dark);
 }

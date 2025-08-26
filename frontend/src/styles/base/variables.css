@@ -17,6 +17,7 @@
   --color-surface-white: #ffffff;
   --color-border-light: #cccccc;
   --color-surface-gray-light: #444444;
+  --color-static-white: #F5F5F5;
   
   /* Font Families */
   --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -33,4 +34,20 @@
   --border-radius-sm: 5px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
+}
+
+/* Light theme color overrides */
+[data-theme='light'] {
+  --color-background-dark: #F0F2F5;   /* Light gray background */
+  --color-surface-dark: #FDFDFD;      /* Very light gray */
+  --color-surface-gray: #FFFFFF;      /* White cards */
+  --color-surface-gray-light: #E2E8F0; /* Light gray for secondary surfaces */
+  --color-text-light: #1A202C;        /* Dark text */
+  --color-text-medium: #718096;       /* Medium gray text */
+  --color-text-muted: #A0AEC0;        /* Muted text */
+  --color-border-gray: #E2E8F0;       /* Light gray border */
+  --color-border-light: #E2E8F0;      /* Light gray border */
+  --color-icon-muted: #A0AEC0;        /* Muted icons */
+  --color-text-light-gray: #2D3748;   /* Dark text for light mode */
+  --color-surface-white: #FFFFFF;     /* White surface */
 }

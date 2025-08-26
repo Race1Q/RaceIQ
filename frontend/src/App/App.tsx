@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Gauge } from 'lucide-react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import F1LoadingSpinner from '../components/F1LoadingSpinner/F1LoadingSpinner';
+import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
 import { f1ApiService } from '../services/f1Api';
 import type { Race } from '../services/f1Api';
 import styles from './App.module.css';
@@ -14,6 +15,7 @@ import Drivers from '../pages/Drivers/Drivers';
 import DriversDashboardPage from '../pages/DriversDashboardPage';
 import RacesPage from '../pages/RacesPage';
 import Admin from '../pages/Admin/Admin';
+import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
@@ -101,12 +103,14 @@ function HomePage() {
 
 function Navbar() {
   const { isAuthenticated } = useAuth0();
+  const navigate = useNavigate();
   const isHomeActive = useActiveRoute('/');
   const isDriversActive = useActiveRoute('/drivers');
   const isRacesActive = useActiveRoute('/races');
   const isAboutActive = useActiveRoute('/about');
   const isAdminActive = useActiveRoute('/admin');
   const isDashboardActive = useActiveRoute('/drivers-dashboard');
+  const isProfileActive = useActiveRoute('/profile');
 
   return (
     <nav className={styles.navbar}>
@@ -120,45 +124,58 @@ function Navbar() {
           </Link>
         </div>
         <div className={styles.navLinks}>
-          <Link 
-            to="/" 
-            className={`${styles.navLink} ${isHomeActive ? styles.navLinkActive : ''}`}
-          >
-            Home
-          </Link>
-          <Link 
-            to="/drivers" 
-            className={`${styles.navLink} ${isDriversActive ? styles.navLinkActive : ''}`}
-          >
-            Drivers
-          </Link>
-          <Link 
-            to="/drivers-dashboard" 
-            className={`${styles.navLink} ${isDashboardActive ? styles.navLinkActive : ''}`}
-          >
-            Dashboard
-          </Link>
-          <Link 
-            to="/races" 
-            className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
-          >
-            Races
-          </Link>
-          <Link 
-            to="/about" 
-            className={`${styles.navLink} ${isAboutActive ? styles.navLinkActive : ''}`}
-          >
-            About
-          </Link>
-          {isAuthenticated && (
+          <div className={styles.navCenter}>
             <Link 
-              to="/admin" 
-              className={`${styles.navLink} ${isAdminActive ? styles.navLinkActive : ''}`}
+              to="/" 
+              className={`${styles.navLink} ${isHomeActive ? styles.navLinkActive : ''}`}
             >
-              Admin
+              Home
             </Link>
-          )}
-          {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+            <Link 
+              to="/drivers" 
+              className={`${styles.navLink} ${isDriversActive ? styles.navLinkActive : ''}`}
+            >
+              Drivers
+            </Link>
+            <Link 
+              to="/drivers-dashboard" 
+              className={`${styles.navLink} ${isDashboardActive ? styles.navLinkActive : ''}`}
+            >
+              Dashboard
+            </Link>
+            <Link 
+              to="/races" 
+              className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
+            >
+              Races
+            </Link>
+            <Link 
+              to="/about" 
+              className={`${styles.navLink} ${isAboutActive ? styles.navLinkActive : ''}`}
+            >
+              About
+            </Link>
+            {isAuthenticated && (
+              <Link 
+                to="/admin" 
+                className={`${styles.navLink} ${isAdminActive ? styles.navLinkActive : ''}`}
+              >
+                Admin
+              </Link>
+            )}
+          </div>
+          <div className={styles.navRight}>
+            <ThemeToggleButton />
+            {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+            {isAuthenticated && (
+              <button 
+                onClick={() => navigate('/profile')}
+                className={isProfileActive ? styles.navLinkActive : ''}
+              >
+                My Profile
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </nav>
@@ -187,6 +204,16 @@ function AppContent() {
         <Route path="/drivers-dashboard" element={<DriversDashboardPage />} />
         <Route path="/races" element={<RacesPage />} />
 
+        {/* PROTECTED ROUTES */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        
         {/* ADMIN only */}
         <Route
           path="/admin"

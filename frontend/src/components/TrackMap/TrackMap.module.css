@@ -36,23 +36,31 @@
   stroke: #ff0000;
   stroke-linecap: round;
   stroke-linejoin: round;
+  stroke-width: 4;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
 .sector2 {
   stroke: #0066ff;
   stroke-linecap: round;
   stroke-linejoin: round;
+  stroke-width: 4;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
 .sector3 {
   stroke: #ffff00;
   stroke-linecap: round;
   stroke-linejoin: round;
+  stroke-width: 4;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
 .startFinish {
   stroke: var(--color-text-light);
   stroke-linecap: round;
+  stroke-width: 4;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
 .trackLabel {

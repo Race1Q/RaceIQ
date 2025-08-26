@@ -1,0 +1,41 @@
+/* ProfilePage Component Styles */
+
+.profilePage {
+  min-height: 100vh;
+  background-color: var(--color-background-dark);
+}
+
+.settingsCard {
+  background-color: var(--color-surface-gray);
+  border: 1px solid var(--color-border-gray);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-xl);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.settingsCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--dynamic-accent-color, var(--color-primary-red)), var(--color-primary-red-light));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .settingsCard {
+    padding: var(--space-lg);
+    margin: 0 var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .settingsCard {
+    padding: var(--space-md);
+    margin: 0 var(--space-sm);
+  }
+}

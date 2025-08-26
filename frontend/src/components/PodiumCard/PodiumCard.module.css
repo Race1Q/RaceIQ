@@ -18,6 +18,15 @@
     z-index: 3;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); /* CHANGED: Added text shadow */
   }
+
+  /* Light mode text enhancements */
+  [data-theme='light'] .driverName,
+  [data-theme='light'] .teamName,
+  [data-theme='light'] .points,
+  [data-theme='light'] .positionIndicator {
+    color: var(--color-static-white);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  }
   
   .textContent {
     position: relative;
