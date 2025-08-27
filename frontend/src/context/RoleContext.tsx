@@ -33,27 +33,16 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       // Ensure we have a valid session/token in case RLS is enabled in the future
       try { await getAccessTokenSilently(); } catch {}
 
-      // Requirement: user.sub maps to public.users.id (PK). Fallback to auth0_sub if needed.
+      // Mapping: public.users primary key is auth0_sub and matches Auth0 user.sub
       const userSub = user.sub;
 
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('role')
-        .eq('id', userSub)
+        .eq('auth0_sub', userSub)
         .maybeSingle();
 
       if (error) throw error;
-
-      if (!data) {
-        // Fallback for environments where auth0_sub is used instead of id
-        const fallback = await supabase
-          .from('users')
-          .select('role')
-          .eq('auth0_sub', userSub)
-          .maybeSingle();
-        if (fallback.error) throw fallback.error;
-        data = fallback.data;
-      }
 
       setRole((data?.role as Role) ?? null);
       setLoading(false);
