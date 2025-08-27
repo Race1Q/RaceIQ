@@ -20,6 +20,7 @@ import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { RoleProvider, useRole } from '../context/RoleContext';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -47,10 +48,7 @@ function HomePage() {
       />
       
       {/* Hero Buttons */}
-      <div className={styles.heroButtons}>
-        <button className={`${styles.btn} ${styles.btnPrimary}`}>View Public Data</button>
-        {!isAuthenticated && <LoginButton />}
-      </div>
+     
 
       {/* Public Data Preview / Personalized Feed */}
       <section className={styles.dataSection}>
@@ -103,6 +101,7 @@ function HomePage() {
 
 function Navbar() {
   const { isAuthenticated } = useAuth0();
+  const { role } = useRole();
   const navigate = useNavigate();
   const isHomeActive = useActiveRoute('/');
   const isDriversActive = useActiveRoute('/drivers');
@@ -155,7 +154,7 @@ function Navbar() {
             >
               About
             </Link>
-            {isAuthenticated && (
+            {role === 'admin' && (
               <Link 
                 to="/admin" 
                 className={`${styles.navLink} ${isAdminActive ? styles.navLinkActive : ''}`}
@@ -218,7 +217,7 @@ function AppContent() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute requirePermissions={['admin:all']}>
+            <ProtectedRoute requireAdmin>
               <Admin />
             </ProtectedRoute>
           }
@@ -247,7 +246,9 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <RoleProvider>
+        <AppContent />
+      </RoleProvider>
     </ThemeProvider>
   );
 }
