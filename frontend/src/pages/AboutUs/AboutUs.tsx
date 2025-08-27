@@ -20,15 +20,15 @@ const AboutUs: React.FC = () => {
     { name: 'Shives', role: 'Backend Developer' },
     { name: 'Jay', role: 'Full Stack Developer' },
     { name: 'Kovis', role: 'UI/UX Designer' },
-    { name: 'Umayr', role: 'Data Engineer' },
+    { name: 'Umayr', role: 'Tester' },
     { name: 'MA', role: 'Project Lead' },
   ];
 
   const techStack = [
     { name: 'React', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg' },
     { name: 'NestJS', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a8/NestJS.svg' },
-    { name: 'Supabase', logo: 'https://raw.githubusercontent.com/supabase/supabase/master/web/static/supabase-logo-wordmark--dark.svg' },
-    { name: 'Auth0', logo: 'https://raw.githubusercontent.com/auth0/auth0-styleguide/master/lib/assets/img/logo-grey-horizontal.svg' },
+    { name: 'Supabase', logo: 'https://pipedream.com/s.v0/app_1dBhP3/logo/96' },
+    { name: 'Auth0', logo: 'https://www.svgrepo.com/show/448296/auth0.svg' },
     { name: 'OpenF1 API', logo: null, icon: DatabaseZap },
   ];
 
