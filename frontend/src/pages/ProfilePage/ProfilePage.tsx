@@ -17,13 +17,11 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import HeroSection from '../../components/HeroSection/HeroSection';
-// import { teamColors } from '../../lib/teamColors';
-import { supabase } from '../../lib/supabase';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
 
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth0();
+  const { user, getAccessTokenSilently } = useAuth0();
   const toast = useToast();
   
   // Form state
@@ -34,77 +32,64 @@ const ProfilePage: React.FC = () => {
     emailNotifications: false,
   });
 
-  // Live driver options (IDs 2..22)
+  // Options for dropdowns
   const [driverOptions, setDriverOptions] = useState<{ id: number; name: string }[]>([]);
-  const [driversLoading, setDriversLoading] = useState<boolean>(false);
   const [constructorOptions, setConstructorOptions] = useState<{ id: number; name: string }[]>([]);
-  const [constructorsLoading, setConstructorsLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
+  // Fetch all initial data from backend
   useEffect(() => {
-    const loadDrivers = async () => {
+    const fetchInitialData = async () => {
       try {
-        setDriversLoading(true);
-        const { data, error } = await supabase
-          .from('drivers')
-          .select('id, first_name, last_name')
-          .gte('id', 2)
-          .lte('id', 22)
-          .order('id', { ascending: true });
+        setLoading(true);
+        const token = await getAccessTokenSilently();
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
 
-        if (error) throw error;
+        // Fetch user profile
+        const profileResponse = await fetch('/api/users/me', { headers });
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          setFormData(prev => ({
+            ...prev,
+            username: profileData.databaseUser?.username || user?.name || '',
+            favoriteTeam: profileData.databaseUser?.favorite_constructor_id || '',
+            favoriteDriver: profileData.databaseUser?.favorite_driver_id || '',
+          }));
+        }
 
-        const options = (data || []).map(d => ({
-          id: d.id as number,
-          name: [d.first_name, d.last_name].filter(Boolean).join(' ') || String(d.id),
-        }));
-        setDriverOptions(options);
-      } catch (e: any) {
+        // Fetch constructors
+        const constructorsResponse = await fetch('/api/constructors', { headers });
+        if (constructorsResponse.ok) {
+          const constructorsData = await constructorsResponse.json();
+          setConstructorOptions(constructorsData);
+        }
+
+        // Fetch drivers
+        const driversResponse = await fetch('/api/drivers', { headers });
+        if (driversResponse.ok) {
+          const driversData = await driversResponse.json();
+          setDriverOptions(driversData);
+        }
+      } catch (error: any) {
         toast({
-          title: 'Failed to load drivers',
-          description: e?.message || 'Unexpected error fetching drivers from database.',
+          title: 'Failed to load profile data',
+          description: error?.message || 'Unexpected error fetching data from server.',
           status: 'error',
           duration: 4000,
           isClosable: true,
         });
       } finally {
-        setDriversLoading(false);
+        setLoading(false);
       }
     };
-    loadDrivers();
-  }, [toast]);
 
-  useEffect(() => {
-    const loadConstructors = async () => {
-      try {
-        setConstructorsLoading(true);
-        const { data, error } = await supabase
-          .from('constructors')
-          .select('id, name')
-          .gte('id', 1)
-          .lte('id', 10)
-          .order('id', { ascending: true });
-
-        if (error) throw error;
-
-        const options = (data || []).map(c => ({
-          id: c.id as number,
-          name: (c.name as string) || String(c.id),
-        }));
-        setConstructorOptions(options);
-      } catch (e: any) {
-        toast({
-          title: 'Failed to load teams',
-          description: e?.message || 'Unexpected error fetching teams from database.',
-          status: 'error',
-          duration: 4000,
-          isClosable: true,
-        });
-      } finally {
-        setConstructorsLoading(false);
-      }
-    };
-    loadConstructors();
-  }, [toast]);
+    if (user) {
+      fetchInitialData();
+    }
+  }, [user, getAccessTokenSilently, toast]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -121,33 +106,42 @@ const ProfilePage: React.FC = () => {
         throw new Error('No authenticated user');
       }
 
-      // Persist favorites to public.users
-      const favoriteDriverId = formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver);
-      const favoriteConstructorId = formData.favoriteTeam === '' ? null : Number(formData.favoriteTeam);
+      // Get JWT token
+      const token = await getAccessTokenSilently();
+      
+      // Create payload with only updatable fields
+      const payload = {
+        username: formData.username || undefined,
+        favorite_constructor_id: formData.favoriteTeam === '' ? null : Number(formData.favoriteTeam),
+        favorite_driver_id: formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver),
+      };
 
-      // Mapping update: public.users primary key is auth0_sub
-      const { data: updated, error: updateError } = await supabase
-        .from('users')
-        .update({ favorite_driver_id: favoriteDriverId, favorite_constructor_id: favoriteConstructorId })
-        .eq('auth0_sub', user.sub)
-        .select('auth0_sub')
-        .maybeSingle();
-      if (updateError) throw updateError;
-      if (!updated) {
-        throw new Error('No user row found for this account (auth0_sub mismatch).');
+      // Make PATCH request to backend
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
       }
 
       toast({
         title: 'Changes saved',
-        description: 'Favorites updated successfully.',
+        description: 'Your profile has been updated successfully.',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-    } catch (e: any) {
+    } catch (error: any) {
       toast({
         title: 'Failed to save changes',
-        description: e?.message || 'Could not update your favorite driver.',
+        description: error?.message || 'Could not update your profile.',
         status: 'error',
         duration: 4000,
         isClosable: true,
@@ -229,12 +223,12 @@ const ProfilePage: React.FC = () => {
                 color="var(--color-text-light)"
                 _hover={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))' }}
                 _focus={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))', boxShadow: '0 0 0 1px var(--dynamic-accent-color, var(--color-primary-red))' }}
-                isDisabled={constructorsLoading}
+                isDisabled={loading}
               >
-                {constructorsLoading && (
+                {loading && (
                   <option value="" disabled>Loading teams...</option>
                 )}
-                {!constructorsLoading && constructorOptions.map(team => (
+                {!loading && constructorOptions.map(team => (
                   <option key={team.id} value={team.id} style={{ backgroundColor: 'var(--color-surface-gray)', color: 'var(--color-text-light)' }}>
                     {team.name}
                   </option>
@@ -254,12 +248,12 @@ const ProfilePage: React.FC = () => {
                 color="var(--color-text-light)"
                 _hover={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))' }}
                 _focus={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))', boxShadow: '0 0 0 1px var(--dynamic-accent-color, var(--color-primary-red))' }}
-                isDisabled={driversLoading}
+                isDisabled={loading}
               >
-                {driversLoading && (
+                {loading && (
                   <option value="" disabled>Loading drivers...</option>
                 )}
-                {!driversLoading && driverOptions.map(d => (
+                {!loading && driverOptions.map(d => (
                   <option key={d.id} value={d.id} style={{ backgroundColor: 'var(--color-surface-gray)', color: 'var(--color-text-light)' }}>
                     {d.name}
                   </option>

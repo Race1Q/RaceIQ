@@ -7,6 +7,7 @@ import { DriversModule } from './drivers/drivers.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { UsersModule } from './users/users.module';
+import { ConstructorsModule } from './constructors/constructors.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module';
     DriversModule,
     AdminModule,
     UsersModule,
+    ConstructorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
