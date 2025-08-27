@@ -8,162 +8,120 @@ import { ApiDriverStanding, ApiResponse } from './driverStandings.entity';
 @Injectable()
 export class DriverStandingIngestService {
   private readonly logger = new Logger(DriverStandingIngestService.name);
+  private readonly apiBaseUrl = 'https://api.jolpi.ca/ergast/f1';
 
   constructor(
     private readonly httpService: HttpService,
     private readonly supabaseService: SupabaseService,
   ) {}
 
-  async fetchDriverStandingsFromAPI(): Promise<{
-    season: number;
-    round: number;
-    standings: ApiDriverStanding[];
-  }> {
+  private async fetchSeasonStandings(season: number, offset = 0, limit = 30) {
+    const apiUrl = `${this.apiBaseUrl}/${season}/driverstandings/?limit=${limit}&offset=${offset}&format=json`;
     try {
-      const apiUrl = 'https://api.jolpi.ca/ergast/f1/2025/driverstandings/?format=json';
       const response = await firstValueFrom(this.httpService.get<ApiResponse>(apiUrl));
-      
-      this.logger.log('API Response received');
-      
-      const standingsList = response.data.MRData.StandingsTable.StandingsLists[0];
-      const season = parseInt(standingsList.season);
-      const round = parseInt(standingsList.round);
-      const standings = standingsList.DriverStandings;
-      
-      this.logger.log(`Season: ${season}, Round: ${round}, Standings count: ${standings.length}`);
-      
-      if (standings.length > 0) {
-        this.logger.log('First driver standing:', standings[0]);
-      }
-      
-      return { season, round, standings };
+      const standingsLists = response.data.MRData.StandingsTable.StandingsLists || [];
+      if (standingsLists.length === 0) return { standings: [], round: 1 };
+
+      const round = parseInt(standingsLists[0].round);
+      const standings = standingsLists[0].DriverStandings || [];
+      return { standings, round };
     } catch (error) {
-      this.logger.error('Failed to fetch driver standings from API', error);
-      throw new Error('Failed to fetch driver standings data');
+      this.logger.error(`Failed to fetch standings for season ${season}, offset ${offset}`, error);
+      return { standings: [], round: 1 };
     }
   }
 
-  private async getSeasonId(apiSeason: number): Promise<number | null> {
-    try {
-      this.logger.log(`Looking for season ID for API season: ${apiSeason}`);
-      
-      // Look up the internal season_id for the API season year
-      const { data, error } = await this.supabaseService.client
-        .from('seasons')
-        .select('id')
-        .eq('year', apiSeason)
-        .single();
+  private async getSeasonId(season: number): Promise<number | null> {
+    const { data, error } = await this.supabaseService.client
+      .from('seasons')
+      .select('id')
+      .eq('year', season)
+      .single();
 
-      if (error) {
-        this.logger.error(`Failed to find season ID for year ${apiSeason}:`, error);
-        return null;
-      }
-
-      this.logger.log(`Found season ID: ${data.id} for API season: ${apiSeason}`);
-      return data.id;
-    } catch (error) {
-      this.logger.error(`Error finding season ID:`, error);
+    if (error) {
+      this.logger.error(`Failed to get season ID for ${season}`, error);
       return null;
     }
+    return data.id;
   }
 
-  private async getRaceId(internalSeasonId: number, round: number): Promise<number | null> {
-    try {
-      this.logger.log(`Looking for race: season_id=${internalSeasonId}, round=${round}`);
-      
-      // Try to find the specific race using the internal season_id
-      const { data, error } = await this.supabaseService.client
-        .from('races')
-        .select('id')
-        .eq('season_id', internalSeasonId)
-        .eq('round', round)
-        .single();
+  private async getRaceId(seasonId: number, round: number): Promise<number | null> {
+    const { data, error } = await this.supabaseService.client
+      .from('races')
+      .select('id')
+      .eq('season_id', seasonId)
+      .eq('round', round)
+      .single();
 
-      if (error) {
-        this.logger.error(`Failed to find race for season_id ${internalSeasonId}, round ${round}:`, error);
-        return null;
-      }
-
-      this.logger.log(`Found race ID: ${data.id} for season_id ${internalSeasonId}, round ${round}`);
-      return data.id;
-    } catch (error) {
-      this.logger.error(`Error finding race ID:`, error);
+    if (error) {
+      this.logger.error(`Failed to get race ID for season ${seasonId}, round ${round}`, error);
       return null;
     }
+    return data.id;
   }
 
-  private async getDriverId(driverNumber: string): Promise<number | null> {
-    try {
-      this.logger.log(`Looking for driver with number: ${driverNumber}`);
-      
-      const { data, error } = await this.supabaseService.client
-        .from('drivers')
-        .select('id')
-        .eq('driver_number', driverNumber)
-        .single();
+  private normalizeDriverName(name: string): string {
+    const variations: Record<string, string> = {
+      'Nino Farina': 'Giuseppe Farina',
+      // Add other known variations here if needed
+    };
+    return variations[name] || name;
+  }
 
-      if (error) {
-        this.logger.error(`Failed to find driver with number ${driverNumber}:`, error);
-        return null;
-      }
+  private async getOrCreateDriver(driver: {
+    givenName: string;
+    familyName: string;
+    permanentNumber?: string;
+    code: string;
+    nationality?: string;
+    dateOfBirth: string;
+  }): Promise<number | null> {
+    const firstName = this.normalizeDriverName(driver.givenName);
+    const lastName = this.normalizeDriverName(driver.familyName);
 
-      this.logger.log(`Found driver ID: ${data.id} for driver number ${driverNumber}`);
-      return data.id;
-    } catch (error) {
-      this.logger.error(`Error finding driver ID:`, error);
+    // Try exact match first
+    const { data: existingDriver } = await this.supabaseService.client
+      .from('drivers')
+      .select('*')
+      .eq('first_name', firstName)
+      .eq('last_name', lastName)
+      .single();
+
+    if (existingDriver) return existingDriver.id;
+
+    // Insert new driver
+    const countryCode = driver.nationality ? driver.nationality.substring(0, 3).toUpperCase() : null;
+    const driverData = {
+      driver_number: driver.permanentNumber ? parseInt(driver.permanentNumber) : null,
+      first_name: firstName,
+      last_name: lastName,
+      name_acronym: driver.code,
+      country_code: countryCode,
+      date_of_birth: driver.dateOfBirth,
+    };
+
+    const { data: newDriver, error } = await this.supabaseService.client
+      .from('drivers')
+      .insert(driverData)
+      .select('*')
+      .single();
+
+    if (error) {
+      this.logger.error(`Failed to create driver ${firstName} ${lastName}`, error);
       return null;
     }
-  }
 
-  async ingestDriverStandings(): Promise<{ created: number; updated: number }> {
-    const apiData = await this.fetchDriverStandingsFromAPI();
-    let created = 0;
-    let updated = 0;
-
-    this.logger.log(`Processing ${apiData.standings.length} driver standings`);
-
-    // First, get the internal season_id for API season 2025
-    const internalSeasonId = await this.getSeasonId(apiData.season);
-    if (!internalSeasonId) {
-      this.logger.error(`No internal season ID found for API season ${apiData.season}`);
-      return { created, updated };
-    }
-
-    // Then get race_id from races table using internal season_id
-    const raceId = await this.getRaceId(internalSeasonId, apiData.round);
-    if (!raceId) {
-      this.logger.error(`No race found for internal season_id ${internalSeasonId}, round ${apiData.round}`);
-      this.logger.error('Please ensure the races table is populated first');
-      return { created, updated };
-    }
-
-    for (const apiStanding of apiData.standings) {
-      try {
-        const result = await this.processDriverStanding(apiStanding, raceId, apiData.season);
-        if (result === 'created') created++;
-        if (result === 'updated') updated++;
-      } catch (error) {
-        this.logger.error(`Failed to process driver standing for ${apiStanding.Driver.givenName} ${apiStanding.Driver.familyName}:`, error);
-      }
-    }
-
-    this.logger.log(`Ingested driver standings: ${created} created, ${updated} updated`);
-    return { created, updated };
+    this.logger.log(`Created new driver: ${firstName} ${lastName}`);
+    return newDriver.id;
   }
 
   private async processDriverStanding(
     apiStanding: ApiDriverStanding,
     raceId: number,
-    season: number
+    season: number,
   ): Promise<'created' | 'updated'> {
-    const driverName = `${apiStanding.Driver.givenName} ${apiStanding.Driver.familyName}`;
-    this.logger.log(`Processing driver standing: ${driverName}`);
-
-    // Get driver_id from drivers table using driver number
-    const driverId = await this.getDriverId(apiStanding.Driver.permanentNumber);
-    if (!driverId) {
-      throw new Error(`Driver not found with number ${apiStanding.Driver.permanentNumber}`);
-    }
+    const driverId = await this.getOrCreateDriver(apiStanding.Driver);
+    if (!driverId) throw new Error(`Unable to resolve driver: ${apiStanding.Driver.givenName} ${apiStanding.Driver.familyName}`);
 
     const standingData = {
       race_id: raceId,
@@ -171,50 +129,90 @@ export class DriverStandingIngestService {
       points: parseFloat(apiStanding.points),
       position: parseInt(apiStanding.position),
       season: season,
-      wins: parseInt(apiStanding.wins)
+      wins: parseInt(apiStanding.wins),
     };
 
-    this.logger.debug('Creating driver standing with data:', standingData);
-
-    // Check if standing already exists - using the correct table name 'driver_standings'
     const { data: existingStanding, error: selectError } = await this.supabaseService.client
-      .from('driver_standings') // CORRECTED TABLE NAME
+      .from('driver_standings')
       .select('*')
       .eq('race_id', raceId)
       .eq('driver_id', driverId)
       .single();
 
     if (selectError && selectError.code !== 'PGRST116') {
-      this.logger.error(`Select error for race ${raceId}, driver ${driverId}:`, selectError);
       throw new Error(`Select error: ${selectError.message}`);
     }
 
     if (existingStanding) {
-      this.logger.log(`Updating existing driver standing: ${driverName}`);
-      // Update existing standing
       const { error } = await this.supabaseService.client
-        .from('driver_standings') // CORRECTED TABLE NAME
+        .from('driver_standings')
         .update(standingData)
         .eq('race_id', raceId)
         .eq('driver_id', driverId);
 
-      if (error) {
-        this.logger.error(`Failed to update driver standing ${driverName}`, error);
-        throw new Error(`Update failed: ${error.message}`);
-      }
+      if (error) throw new Error(`Update failed: ${error.message}`);
       return 'updated';
     } else {
-      this.logger.log(`Creating new driver standing: ${driverName}`);
-      // Create new standing
       const { error } = await this.supabaseService.client
-        .from('driver_standings') // CORRECTED TABLE NAME
+        .from('driver_standings')
         .insert(standingData);
 
-      if (error) {
-        this.logger.error(`Failed to create driver standing ${driverName}`, error);
-        throw new Error(`Creation failed: ${error.message}`);
-      }
+      if (error) throw new Error(`Insert failed: ${error.message}`);
       return 'created';
     }
   }
+
+  public async ingestAllDriverStandings(): Promise<{ created: number; updated: number }> {
+    let created = 0;
+    let updated = 0;
+
+    for (let season = 1950; season <= 2024; season++) {
+      this.logger.log(`Fetching driver standings for season ${season}`);
+
+      const seasonId = await this.getSeasonId(season);
+      if (!seasonId) {
+        this.logger.warn(`Skipping season ${season} - no season ID found`);
+        continue;
+      }
+
+      let offset = 0;
+      const limit = 30;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { standings, round } = await this.fetchSeasonStandings(season, offset, limit);
+        if (standings.length === 0) break;
+
+        const raceId = await this.getRaceId(seasonId, round);
+        if (!raceId) {
+          this.logger.warn(`Skipping standings for season ${season}, round ${round} - no race ID found`);
+          break;
+        }
+
+        for (const standing of standings) {
+          try {
+            const result = await this.processDriverStanding(standing, raceId, season);
+            if (result === 'created') created++;
+            if (result === 'updated') updated++;
+          } catch (error) {
+            this.logger.error(`Error processing standing: ${standing.Driver.givenName} ${standing.Driver.familyName}`, error);
+          }
+        }
+
+        offset += limit;
+        hasMore = standings.length === limit;
+
+        // Avoid hitting rate limit
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
+    }
+
+    this.logger.log(`Finished ingestion: ${created} created, ${updated} updated`);
+    return { created, updated };
+  }
 }
+
+
+
+
+

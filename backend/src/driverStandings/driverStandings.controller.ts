@@ -13,7 +13,7 @@ export class DriverStandingsController {
 
   @Post('ingest')
   async ingestDriverStandings() {
-    return this.driverStandingIngestService.ingestDriverStandings();
+    return this.driverStandingIngestService.ingestAllDriverStandings();
   }
 
   @Get()
