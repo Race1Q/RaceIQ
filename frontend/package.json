@@ -16,6 +16,7 @@
     "@emotion/styled": "^11.14.1",
     "@supabase/supabase-js": "^2.55.0",
     "axios": "^1.11.0",
+    "chakra-react-select": "^4.10.1",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.541.0",
     "next-themes": "^0.4.6",

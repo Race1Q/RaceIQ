@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import {
   Container,
@@ -7,7 +7,7 @@ import {
   HStack,
   Text,
   Input,
-  Select,
+  // The original Select is no longer needed from Chakra UI for these forms
   Switch,
   Button,
   Avatar,
@@ -16,6 +16,8 @@ import {
   Divider,
   useToast,
 } from '@chakra-ui/react';
+// 1. Import the new Select component
+import { Select } from 'chakra-react-select';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
@@ -24,7 +26,6 @@ const ProfilePage: React.FC = () => {
   const { user, getAccessTokenSilently } = useAuth0();
   const toast = useToast();
   
-  // Form state
   const [formData, setFormData] = useState({
     username: user?.name || '',
     favoriteTeam: '' as number | '',
@@ -32,12 +33,10 @@ const ProfilePage: React.FC = () => {
     emailNotifications: false,
   });
 
-  // Options for dropdowns
   const [driverOptions, setDriverOptions] = useState<{ id: number; name: string }[]>([]);
   const [constructorOptions, setConstructorOptions] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Fetch all initial data from backend
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -48,7 +47,6 @@ const ProfilePage: React.FC = () => {
           'Content-Type': 'application/json',
         };
 
-        // Fetch user profile
         const profileResponse = await fetch('/api/users/me', { headers });
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
@@ -60,14 +58,12 @@ const ProfilePage: React.FC = () => {
           }));
         }
 
-        // Fetch constructors
         const constructorsResponse = await fetch('/api/constructors', { headers });
         if (constructorsResponse.ok) {
           const constructorsData = await constructorsResponse.json();
           setConstructorOptions(constructorsData);
         }
 
-        // Fetch drivers
         const driversResponse = await fetch('/api/drivers', { headers });
         if (driversResponse.ok) {
           const driversData = await driversResponse.json();
@@ -90,33 +86,40 @@ const ProfilePage: React.FC = () => {
       fetchInitialData();
     }
   }, [user, getAccessTokenSilently, toast]);
+  
+  // 2. Prepare options for react-select, memoizing for performance
+  const transformedConstructorOptions = useMemo(() =>
+    constructorOptions.map(team => ({ value: team.id, label: team.name })),
+    [constructorOptions]
+  );
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const transformedDriverOptions = useMemo(() =>
+    driverOptions.map(driver => ({ value: driver.id, label: driver.name })),
+    [driverOptions]
+  );
+
+  const handleSelectChange = (field: 'favoriteDriver' | 'favoriteTeam', selectedOption: { value: number; label: string } | null) => {
     setFormData(prev => ({
       ...prev,
-      [field]: (field === 'favoriteDriver' || field === 'favoriteTeam')
-        ? (value === '' ? '' : Number(value))
-        : value
+      [field]: selectedOption ? selectedOption.value : '',
     }));
   };
 
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+  
   const handleSaveChanges = async () => {
     try {
       if (!user?.sub) {
         throw new Error('No authenticated user');
       }
-
-      // Get JWT token
       const token = await getAccessTokenSilently();
-      
-      // Create payload with only updatable fields
       const payload = {
         username: formData.username || undefined,
         favorite_constructor_id: formData.favoriteTeam === '' ? null : Number(formData.favoriteTeam),
         favorite_driver_id: formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver),
       };
-
-      // Make PATCH request to backend
       const response = await fetch('/api/users/profile', {
         method: 'PATCH',
         headers: {
@@ -125,12 +128,10 @@ const ProfilePage: React.FC = () => {
         },
         body: JSON.stringify(payload),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to update profile');
       }
-
       toast({
         title: 'Changes saved',
         description: 'Your profile has been updated successfully.',
@@ -150,14 +151,44 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleDeleteAccount = () => {
-    // TODO: Implement delete account functionality
-    toast({
-      title: 'Account deletion',
-      description: 'This feature will be implemented in a future update.',
-      status: 'warning',
-      duration: 5000,
-      isClosable: true,
-    });
+  };
+
+  const customSelectStyles = {
+    control: (provided: any) => ({
+      ...provided,
+      backgroundColor: 'var(--color-surface-gray)',
+      borderColor: 'var(--color-border-gray)',
+      color: 'var(--color-text-light)',
+      '&:hover': {
+        borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))',
+      },
+      boxShadow: 'none',
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      backgroundColor: 'var(--color-surface-gray)',
+      border: '1px solid var(--color-border-gray)',
+    }),
+    option: (provided: any, state: { isSelected: boolean, isFocused: boolean }) => ({
+      ...provided,
+      backgroundColor: state.isFocused ? 'var(--color-surface-gray-light)' : 'var(--color-surface-gray)',
+      color: 'var(--color-text-light)',
+      '&:active': {
+        backgroundColor: 'var(--color-border-gray)',
+      },
+    }),
+    singleValue: (provided: any) => ({
+      ...provided,
+      color: 'var(--color-text-light)',
+    }),
+    input: (provided: any) => ({
+      ...provided,
+      color: 'var(--color-text-light)',
+    }),
+    placeholder: (provided: any) => ({
+      ...provided,
+      color: 'var(--color-text-muted)',
+    }),
   };
 
   return (
@@ -171,7 +202,7 @@ const ProfilePage: React.FC = () => {
       <Container maxW="container.md" py={8}>
         <Box className={styles.settingsCard}>
           <VStack spacing={6} align="stretch">
-            {/* Profile Information */}
+            {/* Profile Info, Username, etc... */}
             <Box>
               <Text fontSize="xl" fontWeight="bold" mb={4} color="var(--color-text-light)">
                 Profile Information
@@ -193,10 +224,7 @@ const ProfilePage: React.FC = () => {
                 </VStack>
               </HStack>
             </Box>
-
             <Divider borderColor="var(--color-border-gray)" />
-
-            {/* Username */}
             <FormControl>
               <FormLabel color="var(--color-text-light)">Username</FormLabel>
               <Input
@@ -215,53 +243,35 @@ const ProfilePage: React.FC = () => {
             <FormControl>
               <FormLabel color="var(--color-text-light)">Favorite Team</FormLabel>
               <Select
-                value={formData.favoriteTeam}
-                onChange={(e) => handleInputChange('favoriteTeam', e.target.value)}
-                placeholder="Select your favorite team"
-                bg="var(--color-surface-gray)"
-                borderColor="var(--color-border-gray)"
-                color="var(--color-text-light)"
-                _hover={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))' }}
-                _focus={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))', boxShadow: '0 0 0 1px var(--dynamic-accent-color, var(--color-primary-red))' }}
+                options={transformedConstructorOptions}
+                value={transformedConstructorOptions.find(o => o.value === formData.favoriteTeam) || null}
+                onChange={(option) => handleSelectChange('favoriteTeam', option)}
+                placeholder="Search and select your favorite team"
+                isClearable
+                isLoading={loading}
                 isDisabled={loading}
-              >
-                {loading && (
-                  <option value="" disabled>Loading teams...</option>
-                )}
-                {!loading && constructorOptions.map(team => (
-                  <option key={team.id} value={team.id} style={{ backgroundColor: 'var(--color-surface-gray)', color: 'var(--color-text-light)' }}>
-                    {team.name}
-                  </option>
-                ))}
-              </Select>
+                chakraStyles={customSelectStyles}
+                focusBorderColor="var(--dynamic-accent-color, var(--color-primary-red))"
+              />
             </FormControl>
 
             {/* Favorite Driver */}
             <FormControl>
               <FormLabel color="var(--color-text-light)">Favorite Driver</FormLabel>
               <Select
-                value={formData.favoriteDriver}
-                onChange={(e) => handleInputChange('favoriteDriver', e.target.value)}
-                placeholder="Select your favorite driver"
-                bg="var(--color-surface-gray)"
-                borderColor="var(--color-border-gray)"
-                color="var(--color-text-light)"
-                _hover={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))' }}
-                _focus={{ borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))', boxShadow: '0 0 0 1px var(--dynamic-accent-color, var(--color-primary-red))' }}
+                options={transformedDriverOptions}
+                value={transformedDriverOptions.find(o => o.value === formData.favoriteDriver) || null}
+                onChange={(option) => handleSelectChange('favoriteDriver', option)}
+                placeholder="Search and select your favorite driver"
+                isClearable
+                isLoading={loading}
                 isDisabled={loading}
-              >
-                {loading && (
-                  <option value="" disabled>Loading drivers...</option>
-                )}
-                {!loading && driverOptions.map(d => (
-                  <option key={d.id} value={d.id} style={{ backgroundColor: 'var(--color-surface-gray)', color: 'var(--color-text-light)' }}>
-                    {d.name}
-                  </option>
-                ))}
-              </Select>
+                chakraStyles={customSelectStyles}
+                focusBorderColor="var(--dynamic-accent-color, var(--color-primary-red))"
+              />
             </FormControl>
-
-            {/* Email Notifications */}
+            
+            {/* Other sections */}
             <FormControl display="flex" alignItems="center">
               <FormLabel htmlFor="email-notifications" mb="0" color="var(--color-text-light)">
                 Receive occasional email updates and newsletters
@@ -273,10 +283,7 @@ const ProfilePage: React.FC = () => {
                 colorScheme="red"
               />
             </FormControl>
-
             <Divider borderColor="var(--color-border-gray)" />
-
-            {/* Appearance Section */}
             <Box>
               <Text fontSize="xl" fontWeight="bold" mb={4} color="var(--color-text-light)">
                 Appearance
@@ -288,10 +295,7 @@ const ProfilePage: React.FC = () => {
                 <ThemeToggleButton />
               </HStack>
             </Box>
-
             <Divider borderColor="var(--color-border-gray)" />
-
-            {/* Action Buttons */}
             <HStack spacing={4} justify="flex-end">
               <Button
                 onClick={handleDeleteAccount}
