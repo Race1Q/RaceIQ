@@ -15,6 +15,8 @@ import { ResultsModule } from './results/results.module';
 import { DriverStandingsModule } from './driverStandings/driverStandings.module';
 import { RaceResultsModule } from './raceResults/raceResults.module';
 import { ConstructorStandingsModule } from './constructorStandings/constructorStandings.module';
+import { QualifyingResultsModule } from './qualifyingResults/qualifyingResults.module';
+import { PitStopsModule } from './pitStops/pitStops.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
@@ -31,6 +33,8 @@ import { ConstructorStandingsModule } from './constructorStandings/constructorSt
     RaceResultsModule,
     DriverStandingsModule,
     ConstructorStandingsModule,
+    QualifyingResultsModule,
+    PitStopsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
