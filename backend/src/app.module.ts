@@ -13,6 +13,7 @@ import { RacesModule } from './races/races.module';
 import { SeasonsModule } from './seasons/seasons.module';
 import { ResultsModule } from './results/results.module';
 import { DriverStandingsModule } from './driverStandings/driverStandings.module';
+import { RaceResultsModule } from './raceResults/raceResults.module';
 import { ConstructorStandingsModule } from './constructorStandings/constructorStandings.module';
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ConstructorStandingsModule } from './constructorStandings/constructorSt
     RacesModule,
     SeasonsModule,
     ResultsModule,
+    RaceResultsModule,
     DriverStandingsModule,
     ConstructorStandingsModule,
   ],
