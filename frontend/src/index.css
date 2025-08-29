@@ -1,11 +1,20 @@
+@import './styles/base/variables.css';
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 :root {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-primary);
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #0a0a0a;
+  background-color: var(--color-background-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,6 +23,10 @@
 }
 
 body {
+  font-family: var(--font-primary);
+  background-color: var(--color-background-dark);
+  color: var(--color-text-light);
+  line-height: 1.6;
   margin: 0;
   min-width: 320px;
   min-height: 100vh;

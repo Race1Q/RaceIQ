@@ -9,25 +9,26 @@
 To keep our styles organized, we will adopt a dedicated `styles` directory within `frontend/src/`. This structure clearly separates styles based on their scope and purpose.
 
 **Proposed Directory Structure:**
+` ` `
 frontend/
 └── src/
-├── components/
-│ ├── Button/
-│ │ ├── Button.tsx
-│ │ └── Button.module.css // Component-specific styles
-│ └── ...
-├── pages/
-│ ├── Drivers/
-│ │ ├── Drivers.tsx
-│ │ └── Drivers.module.css // Page-specific styles
-│ └── ...
-└── styles/
-├── base/
-│ ├── \_reset.css // Optional: A CSS reset for browser consistency
-│ ├── variables.css // CRITICAL: Our design tokens (colors, fonts, etc.)
-│ └── global.css // Base styles for body, typography, etc.
-└── utils/
-└── animations.css // Reusable keyframe animations
+    ├── components/
+    │   └── Button/
+    │       ├── Button.tsx
+    │       └── Button.module.css
+    ├── pages/
+    │   └── Drivers/
+    │       ├── Drivers.tsx
+    │       └── Drivers.module.css
+    └── styles/
+        ├── base/
+        │   ├── _reset.css
+        │   ├── variables.css
+        │   └── global.css
+        └── utils/
+            └── animations.css
+
+` ` `
 
 **Action:** Create the `src/styles` directory and the subdirectories (`base`, `utils`). Move and rename existing global styles into this structure.
 
@@ -44,8 +45,31 @@ This is our **single source of truth** for all design-related values. No more ha
 3.  Import it at the very top of `src/styles/base/global.css` (or your main entry CSS file like `index.css`).
 
 **Example `variables.css`:**
+/_ src/styles/base/variables.css _/
+:root {
+/_ Colors _/
+--color-primary-red: #e10600;
+--color-background-dark: #0a0a0a;
+--color-surface-gray: #1a1a1a;
+--color-text-light: #ffffff;
+--color-text-muted: #888888;
+--color-accent-green: #00ff00;
 
---
+/_ Font Families _/
+--font-primary: 'Exo 2', sans-serif;
+--font-display: 'Orbitron', sans-serif;
+
+/_ Spacing (Base 8px scale) _/
+--space-1: 0.5rem; /_ 8px _/
+--space-2: 1rem; /_ 16px _/
+--space-3: 1.5rem; /_ 24px _/
+--space-4: 2rem; /_ 32px _/
+
+/_ Border Radius _/
+--border-radius-sm: 4px;
+--border-radius-md: 8px;
+--border-radius-lg: 12px;
+}
 
 **Team Directive:** Everyone on the team **must** use these variables for styling.
 
@@ -69,37 +93,26 @@ A class named `.title` in `Header.module.css` might become `Header_title__aB3x1`
 
 **Example Transformation:**
 
-- **Before (in `Drivers.tsx`):**
-  ```jsx
-  import './Drivers.css';
-  // ...
-  return <div className="driver-card">...</div>;
-  ```
+**Before (in `Drivers.tsx`):**
+import './Drivers.css';
+// ...
+return <div className="driver-card">...</div>;
 
-After (in Drivers.tsx):
-
-JavaScript
-
+**After (in `Drivers.tsx`):**
 import styles from './Drivers.module.css';
 // ...
 return <div className={styles.driverCard}>...</div>;
 
+---
+
 ## Step 4: Go-Forward Plan & Team Rules
 
-1. To maintain consistency, the entire team will adhere to the following rules for all new development:
+To maintain consistency, the entire team will adhere to the following rules for all new development:
 
-2. New Components Get Their Own Module: Every new component must have its own ComponentName.module.css file.
+1.  **New Components Get Their Own Module**: Every new component must have its own `ComponentName.module.css` file.
+2.  **Use Design Tokens**: Always use `var(--variable-name)` from `variables.css` for all colors, fonts, and spacing.
+3.  **No More Inline Styles**: The `style={{...}}` prop is forbidden, except for rare cases of dynamic values that CSS can't handle (e.g., calculated positions).
+4.  **Global Styles are for Globals Only**: Only truly global, application-wide styles (like `body` typography or CSS resets) belong in `src/styles/base/global.css`.
+5.  **Favor Composition**: Build complex components by combining smaller components, each with its own scoped styles.
 
-3. Use Design Tokens: Always use var(--variable-name) from variables.css for all colors, fonts, and spacing.
-
-4. No More Inline Styles: The style={{...}} prop is forbidden, except for rare cases of dynamic values that CSS can't handle (e.g., calculated positions).
-
-5. Global Styles are for Globals Only: Only truly global, application-wide styles (like body typography or CSS resets) belong in src/styles/base/global.css.
-
-6. Favor Composition: Build complex components by combining smaller components, each with its own scoped styles.
-
-7. By implementing this architecture, we ensure that as RaceIQ grows, our CSS codebase remains clean, predictable, and easy for everyone to contribute to.
-
-```
-
-```
+By implementing this architecture, we ensure that as RaceIQ grows, our CSS codebase remains clean, predictable, and easy for everyone to contribute to.

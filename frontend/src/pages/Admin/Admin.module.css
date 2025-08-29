@@ -1,0 +1,177 @@
+/* Admin Dashboard Styles */
+
+/* Main container */
+.adminContainer {
+  padding-top: 100px;
+  min-height: 60vh;
+}
+
+.adminTitle {
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-lg);
+}
+
+/* Admin overview section */
+.adminOverview {
+  background: var(--color-surface-gray);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+}
+
+.adminOverviewTitle {
+  color: var(--color-text-light);
+  margin-bottom: var(--space-md);
+}
+
+/* Statistics grid */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+/* Stat cards */
+.statCard {
+  background: var(--color-surface-dark);
+  padding: var(--space-md);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
+  text-align: center;
+}
+
+.statCardTitle {
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-sm);
+}
+
+.statCardValue {
+  color: var(--color-text-light);
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.statCardValueSuccess {
+  color: var(--color-accent-green);
+  font-size: 1.2rem;
+}
+
+.statCardSubtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Admin tools grid */
+.adminToolsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-lg);
+}
+
+/* Admin tool cards */
+.adminToolCard {
+  background: var(--color-surface-dark);
+  padding: 25px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
+}
+
+.adminToolCardTitle {
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-md);
+}
+
+/* Action buttons */
+.actionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.actionButton {
+  border: none;
+  padding: 10px 15px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  color: var(--color-text-light);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.actionButtonPrimary {
+  background: var(--color-primary-red);
+}
+
+.actionButtonPrimary:hover {
+  background: var(--color-primary-red-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(225, 6, 0, 0.3);
+}
+
+.actionButtonSecondary {
+  background: var(--color-border-gray);
+}
+
+.actionButtonSecondary:hover {
+  background: var(--color-surface-gray-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Activity list */
+.activityList {
+  color: var(--color-text-medium);
+}
+
+.activityItem {
+  margin-bottom: var(--space-sm);
+}
+
+.activityItem:last-child {
+  margin-bottom: 0;
+}
+
+/* Admin features section */
+.adminFeatures {
+  margin-top: var(--space-xl);
+  padding: var(--space-md);
+  background: var(--color-surface-dark);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
+}
+
+.adminFeaturesTitle {
+  color: var(--color-primary-red);
+  margin-bottom: 15px;
+}
+
+.adminFeaturesDescription {
+  color: var(--color-text-medium);
+  margin-bottom: var(--space-sm);
+}
+
+.adminFeaturesDescription:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .adminOverview {
+    padding: var(--space-md);
+  }
+  
+  .statGrid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .adminToolsGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  
+  .adminToolCard {
+    padding: var(--space-md);
+  }
+} 

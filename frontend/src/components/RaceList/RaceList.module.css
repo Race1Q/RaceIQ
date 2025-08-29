@@ -1,0 +1,164 @@
+.container {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+  transition: all 0.3s ease;
+  width: 60px;
+  height: calc(100vh - 80px); /* Subtract navbar height */
+  overflow: hidden;
+  flex-shrink: 0; /* Prevent shrinking */
+  position: relative; /* Add relative positioning for absolute child */
+}
+
+.container.expanded {
+  width: 280px;
+}
+
+.arrowTrigger {
+  position: absolute;
+  top: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-primary-red);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.arrowIcon {
+  color: var(--color-text-light);
+}
+
+.sidebarContent {
+  padding: var(--space-lg);
+  padding-top: 80px;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.container.expanded .sidebarContent {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-lg);
+  text-align: center;
+}
+
+.searchContainer {
+  margin-bottom: var(--space-lg);
+}
+
+.searchIcon {
+  color: var(--color-text-muted);
+}
+
+.searchInput {
+  background-color: var(--color-surface-dark);
+  border: 1px solid var(--color-border-gray);
+  color: var(--color-text-light);
+  font-family: var(--font-primary);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary-red);
+  box-shadow: 0 0 0 1px var(--color-primary-red);
+}
+
+.raceList {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+.raceItem {
+  background-color: var(--color-surface-dark);
+  border: 1px solid var(--color-border-gray);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  overflow: hidden;
+}
+
+.raceItem:hover {
+  background-color: var(--color-surface-gray-light);
+  border-color: var(--color-primary-red);
+}
+
+.raceItem.selected {
+  background-color: var(--color-primary-red);
+  border-color: var(--color-primary-red);
+}
+
+.raceItem.selected .trackName,
+.raceItem.selected .country,
+.raceItem.selected .date {
+  color: var(--color-text-light);
+}
+
+.teamColorBar {
+  width: 6px;
+  flex-shrink: 0;
+}
+
+.raceContent {
+  padding: var(--space-md);
+  flex: 1;
+}
+
+.trackName {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-sm);
+}
+
+.country {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-text-medium);
+  margin-bottom: var(--space-sm);
+}
+
+.date {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* Scrollbar styling */
+.raceList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.raceList::-webkit-scrollbar-track {
+  background: var(--color-surface-dark);
+}
+
+.raceList::-webkit-scrollbar-thumb {
+  background: var(--color-border-gray);
+  border-radius: 3px;
+}
+
+.raceList::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-red);
+}

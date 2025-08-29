@@ -1,0 +1,63 @@
+.container {
+  background: linear-gradient(135deg, var(--color-primary-red) 0%, #c00500 100%);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode enhancements */
+[data-theme='light'] .container {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  gap: var(--space-sm);
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.icon {
+  color: var(--color-text-light);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.content {
+  align-items: center;
+  text-align: center;
+}
+
+.time {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  line-height: 1;
+}
+
+.driverInfo {
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.driverIcon {
+  color: var(--color-text-light);
+}
+
+.driverName {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  color: var(--color-text-light);
+  font-weight: 500;
+}

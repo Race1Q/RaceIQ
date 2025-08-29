@@ -1,0 +1,177 @@
+/* Admin Dashboard Styles */
+
+/* Main container */
+.admin-container {
+  padding-top: 100px;
+  min-height: 60vh;
+}
+
+.admin-title {
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-lg);
+}
+
+/* Admin overview section */
+.admin-overview {
+  background: var(--color-surface-gray);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+}
+
+.admin-overview__title {
+  color: var(--color-text-light);
+  margin-bottom: var(--space-md);
+}
+
+/* Statistics grid */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+/* Stat cards */
+.stat-card {
+  background: var(--color-surface-dark);
+  padding: var(--space-md);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
+  text-align: center;
+}
+
+.stat-card__title {
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-sm);
+}
+
+.stat-card__value {
+  color: var(--color-text-light);
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.stat-card__value--success {
+  color: var(--color-accent-green);
+  font-size: 1.2rem;
+}
+
+.stat-card__subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Admin tools grid */
+.admin-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-lg);
+}
+
+/* Admin tool cards */
+.admin-tool-card {
+  background: var(--color-surface-dark);
+  padding: 25px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
+}
+
+.admin-tool-card__title {
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-md);
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.action-button {
+  border: none;
+  padding: 10px 15px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  color: var(--color-text-light);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.action-button--primary {
+  background: var(--color-primary-red);
+}
+
+.action-button--primary:hover {
+  background: var(--color-primary-red-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(225, 6, 0, 0.3);
+}
+
+.action-button--secondary {
+  background: var(--color-border-gray);
+}
+
+.action-button--secondary:hover {
+  background: var(--color-surface-gray-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Activity list */
+.activity-list {
+  color: var(--color-text-medium);
+}
+
+.activity-item {
+  margin-bottom: var(--space-sm);
+}
+
+.activity-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Admin features section */
+.admin-features {
+  margin-top: var(--space-xl);
+  padding: var(--space-md);
+  background: var(--color-surface-dark);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
+}
+
+.admin-features__title {
+  color: var(--color-primary-red);
+  margin-bottom: 15px;
+}
+
+.admin-features__description {
+  color: var(--color-text-medium);
+  margin-bottom: var(--space-sm);
+}
+
+.admin-features__description:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-overview {
+    padding: var(--space-md);
+  }
+  
+  .stat-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .admin-tools-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  
+  .admin-tool-card {
+    padding: var(--space-md);
+  }
+} 

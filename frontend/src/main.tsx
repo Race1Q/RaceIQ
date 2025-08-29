@@ -1,8 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
+import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
 import './index.css';
-import App from './App.tsx';
+import App from './App/App.tsx';
+import theme from './theme';
 
 // Get Auth0 configuration from runtime environment variables
 const getAuth0Config = () => {
@@ -31,18 +33,31 @@ const auth0Config = getAuth0Config();
 
 const root = createRoot(document.getElementById('root')!);
 
+// frontend/src/main.tsx
+
+// ... other code ...
+
 root.render(
-  <Auth0Provider
-    domain={auth0Config.domain}
-    clientId={auth0Config.clientId}
-    authorizationParams={{
-      redirect_uri: window.location.origin,
-      audience: auth0Config.audience,
-      scope: 'openid profile email'
-    }}
-  >
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </Auth0Provider>
+  <>
+    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+    <Auth0Provider
+      domain={auth0Config.domain}
+      clientId={auth0Config.clientId}
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+        audience: auth0Config.audience,
+        // 👇 Update this line to include all required scopes
+        scope: 'openid profile email read:drivers'
+      }}
+
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
+    >
+      <ChakraProvider theme={theme}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ChakraProvider>
+    </Auth0Provider>
+  </>
 );

@@ -1,0 +1,53 @@
+:root {
+  /* Colors */
+  --color-primary-red: #e10600;
+  --color-primary-red-dark: #c00500;
+  --color-background-dark: #0a0a0a;
+  --color-surface-dark: #0f0f0f;
+  --color-surface-gray: #1a1a1a;
+  --color-surface-light: #f5f5f5;
+  --color-text-light: #ffffff;
+  --color-text-medium: #cccccc;
+  --color-text-muted: #888888;
+  --color-border-gray: #333333;
+  --color-icon-muted: #666666;
+  --color-accent-green: #00ff00;
+  --color-primary-red-light: #ff4444;
+  --color-text-light-gray: #f0f0f0;
+  --color-surface-white: #ffffff;
+  --color-border-light: #cccccc;
+  --color-surface-gray-light: #444444;
+  --color-static-white: #F5F5F5;
+  
+  /* Font Families */
+  --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-display: 'Orbitron', sans-serif;
+  --font-secondary: 'Exo 2', sans-serif;
+  
+  /* Spacing */
+  --space-sm: 10px;
+  --space-md: 20px;
+  --space-lg: 30px;
+  --space-xl: 40px;
+  
+  /* Border Radius */
+  --border-radius-sm: 5px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+/* Light theme color overrides */
+[data-theme='light'] {
+  --color-background-dark: #F0F2F5;   /* Light gray background */
+  --color-surface-dark: #FDFDFD;      /* Very light gray */
+  --color-surface-gray: #FFFFFF;      /* White cards */
+  --color-surface-gray-light: #E2E8F0; /* Light gray for secondary surfaces */
+  --color-text-light: #1A202C;        /* Dark text */
+  --color-text-medium: #718096;       /* Medium gray text */
+  --color-text-muted: #A0AEC0;        /* Muted text */
+  --color-border-gray: #E2E8F0;       /* Light gray border */
+  --color-border-light: #E2E8F0;      /* Light gray border */
+  --color-icon-muted: #A0AEC0;        /* Muted icons */
+  --color-text-light-gray: #2D3748;   /* Dark text for light mode */
+  --color-surface-white: #FFFFFF;     /* White surface */
+}
