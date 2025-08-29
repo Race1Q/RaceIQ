@@ -1,35 +1,34 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ScopesGuard } from '../auth/scopes.guard';
-import { Scopes } from '../auth/scopes.decorator';
-import { DriversService } from './drivers.service';
-import { Driver } from './entities/driver.entity';
+// src/drivers/drivers.controller.ts
+import { Controller, Get, Post, Query, Logger } from '@nestjs/common';
+import { DriversService, DriverRow } from './drivers.service';
+import { DriversIngestService } from './drivers-ingest.service';
 
 @Controller('drivers')
-@UseGuards(JwtAuthGuard, ScopesGuard) // Secure all routes by default
 export class DriversController {
-  constructor(private readonly driversService: DriversService) {}
+  private readonly logger = new Logger(DriversController.name);
 
-  @Get()
-  @Scopes('read:drivers')
-  async findAll(
-    @Query('isActive') isActive?: string,
-    @Query('limit') limit = '100',
-    @Query('offset') offset = '0',
-  ): Promise<Driver[]> {
-    const isActiveBoolean = isActive !== undefined ? isActive === 'true' : undefined;
-    
-    return this.driversService.findAll({
-      isActive: isActiveBoolean,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10),
-    });
+  constructor(
+    private readonly driversService: DriversService,
+    private readonly driversIngestService: DriversIngestService,
+  ) {}
+
+  @Post('ingest')
+  async ingestDrivers() {
+    this.logger.log('Starting drivers ingestion');
+    const result = await this.driversIngestService.ingestDrivers();
+    return {
+      message: 'Drivers ingestion completed',
+      result,
+    };
   }
 
-  @Post()
-  @Scopes('write:drivers')
-  create(@Body() dto: any) {
-    // This remains a placeholder for future admin functionality
-    return { created: true, dto };
+  @Get()
+  async getAllDrivers(): Promise<DriverRow[]> {
+    return this.driversService.getAllDrivers();
+  }
+
+  @Get('search')
+  async searchDrivers(@Query('q') query: string): Promise<DriverRow[]> {
+    return this.driversService.searchDrivers(query);
   }
 }
