@@ -18,7 +18,6 @@ import { ConstructorStandingsModule } from './constructorStandings/constructorSt
 import { QualifyingResultsModule } from './qualifyingResults/qualifyingResults.module';
 import { PitStopsModule } from './pitStops/pitStops.module';
 import { LapsModule } from './laps/laps.module';import { UsersModule } from './users/users.module';
-import { ConstructorsModule } from './constructors/constructors.module';
 
 @Module({
   imports: [
