@@ -11,8 +11,8 @@ export class PitStopsController {
   ) {}
 
   @Get('race/:raceId')
-  async getByRace(@Param('raceId') raceId: string) {
-    return this.service.getByRaceId(parseInt(raceId));
+  async byRace(@Param('raceId') raceId: string) {
+    return this.service.getByRace(parseInt(raceId));
   }
 
   @Post('ingest')
