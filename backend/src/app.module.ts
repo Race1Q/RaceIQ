@@ -17,6 +17,7 @@ import { RaceResultsModule } from './raceResults/raceResults.module';
 import { ConstructorStandingsModule } from './constructorStandings/constructorStandings.module';
 import { QualifyingResultsModule } from './qualifyingResults/qualifyingResults.module';
 import { PitStopsModule } from './pitStops/pitStops.module';
+import { LapsModule } from './laps/laps.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
@@ -35,6 +36,7 @@ import { PitStopsModule } from './pitStops/pitStops.module';
     ConstructorStandingsModule,
     QualifyingResultsModule,
     PitStopsModule,
+    LapsModule,
   
   ],
   controllers: [AppController],
