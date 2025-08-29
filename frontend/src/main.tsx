@@ -33,6 +33,10 @@ const auth0Config = getAuth0Config();
 
 const root = createRoot(document.getElementById('root')!);
 
+// frontend/src/main.tsx
+
+// ... other code ...
+
 root.render(
   <>
     <ColorModeScript initialColorMode={theme.config.initialColorMode} />
@@ -42,8 +46,12 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
-        scope: 'openid profile email'
+        // 👇 Update this line to include all required scopes
+        scope: 'openid profile email read:drivers'
       }}
+
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
     >
       <ChakraProvider theme={theme}>
         <BrowserRouter>

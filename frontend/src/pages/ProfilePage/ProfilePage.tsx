@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import {
   Container,
@@ -7,7 +7,6 @@ import {
   HStack,
   Text,
   Input,
-  // The original Select is no longer needed from Chakra UI for these forms
   Switch,
   Button,
   Avatar,
@@ -16,14 +15,17 @@ import {
   Divider,
   useToast,
 } from '@chakra-ui/react';
-// 1. Import the new Select component
 import { Select } from 'chakra-react-select';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
 
+// Define the shape for our select options
+type SelectOption = { value: number; label: string };
+
 const ProfilePage: React.FC = () => {
-  const { user, getAccessTokenSilently } = useAuth0();
+  // 1. Get the isLoading flag from the hook
+  const { user, getAccessTokenSilently, isLoading } = useAuth0();
   const toast = useToast();
   
   const [formData, setFormData] = useState({
@@ -37,42 +39,60 @@ const ProfilePage: React.FC = () => {
   const [constructorOptions, setConstructorOptions] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const authedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    const token = await getAccessTokenSilently({
+      authorizationParams: {
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        scope: "read:drivers", // Request necessary permissions
+      },
+    });
+
+    const headers = new Headers(options.headers || {});
+    headers.set('Authorization', `Bearer ${token}`);
+    if (options.body) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (!response.ok) {
+      let errorMsg = `Request failed with status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.message || JSON.stringify(errorData);
+      } catch (e) { /* The response body was not JSON */ }
+      throw new Error(errorMsg);
+    }
+    
+    return response.json();
+  }, [getAccessTokenSilently]);
+
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
-        const token = await getAccessTokenSilently();
-        const headers = {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        };
 
-        const profileResponse = await fetch('/api/users/me', { headers });
-        if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          setFormData(prev => ({
-            ...prev,
-            username: profileData.databaseUser?.username || user?.name || '',
-            favoriteTeam: profileData.databaseUser?.favorite_constructor_id || '',
-            favoriteDriver: profileData.databaseUser?.favorite_driver_id || '',
-          }));
-        }
+        const [profileData, constructorsData, driversData] = await Promise.all([
+          authedFetch('/api/users/me'),
+          authedFetch('/api/constructors'),
+          authedFetch('/api/drivers')
+        ]);
 
-        const constructorsResponse = await fetch('/api/constructors', { headers });
-        if (constructorsResponse.ok) {
-          const constructorsData = await constructorsResponse.json();
-          setConstructorOptions(constructorsData);
-        }
+        setFormData(prev => ({
+          ...prev,
+          username: profileData.databaseUser?.username || user?.name || '',
+          favoriteTeam: profileData.databaseUser?.favorite_constructor_id || '',
+          favoriteDriver: profileData.databaseUser?.favorite_driver_id || '',
+        }));
+        setConstructorOptions(constructorsData);
+        setDriverOptions(driversData);
 
-        const driversResponse = await fetch('/api/drivers', { headers });
-        if (driversResponse.ok) {
-          const driversData = await driversResponse.json();
-          setDriverOptions(driversData);
-        }
       } catch (error: any) {
+        console.error("CAUGHT ERROR:", error); 
         toast({
           title: 'Failed to load profile data',
-          description: error?.message || 'Unexpected error fetching data from server.',
+          description: error.message,
           status: 'error',
           duration: 4000,
           isClosable: true,
@@ -82,12 +102,13 @@ const ProfilePage: React.FC = () => {
       }
     };
 
-    if (user) {
+    // 2. Wait until the user exists AND the loading is complete
+    if (user && !isLoading) {
       fetchInitialData();
     }
-  }, [user, getAccessTokenSilently, toast]);
+  // 3. Add isLoading to the dependency array
+  }, [user, isLoading, authedFetch, toast]);
   
-  // 2. Prepare options for react-select, memoizing for performance
   const transformedConstructorOptions = useMemo(() =>
     constructorOptions.map(team => ({ value: team.id, label: team.name })),
     [constructorOptions]
@@ -98,7 +119,7 @@ const ProfilePage: React.FC = () => {
     [driverOptions]
   );
 
-  const handleSelectChange = (field: 'favoriteDriver' | 'favoriteTeam', selectedOption: { value: number; label: string } | null) => {
+  const handleSelectChange = (field: 'favoriteDriver' | 'favoriteTeam', selectedOption: SelectOption | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: selectedOption ? selectedOption.value : '',
@@ -111,27 +132,19 @@ const ProfilePage: React.FC = () => {
   
   const handleSaveChanges = async () => {
     try {
-      if (!user?.sub) {
-        throw new Error('No authenticated user');
-      }
-      const token = await getAccessTokenSilently();
+      if (!user?.sub) throw new Error('No authenticated user');
+
       const payload = {
         username: formData.username || undefined,
         favorite_constructor_id: formData.favoriteTeam === '' ? null : Number(formData.favoriteTeam),
         favorite_driver_id: formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver),
       };
-      const response = await fetch('/api/users/profile', {
+
+      await authedFetch('/api/users/profile', {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
-      }
+
       toast({
         title: 'Changes saved',
         description: 'Your profile has been updated successfully.',
@@ -142,7 +155,7 @@ const ProfilePage: React.FC = () => {
     } catch (error: any) {
       toast({
         title: 'Failed to save changes',
-        description: error?.message || 'Could not update your profile.',
+        description: error.message,
         status: 'error',
         duration: 4000,
         isClosable: true,
@@ -151,6 +164,13 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleDeleteAccount = () => {
+    toast({
+       title: 'Account deletion',
+       description: 'This feature will be implemented in a future update.',
+       status: 'warning',
+       duration: 5000,
+       isClosable: true,
+     });
   };
 
   const customSelectStyles = {
@@ -239,13 +259,12 @@ const ProfilePage: React.FC = () => {
               />
             </FormControl>
 
-            {/* Favorite Team */}
             <FormControl>
               <FormLabel color="var(--color-text-light)">Favorite Team</FormLabel>
               <Select
                 options={transformedConstructorOptions}
                 value={transformedConstructorOptions.find(o => o.value === formData.favoriteTeam) || null}
-                onChange={(option) => handleSelectChange('favoriteTeam', option)}
+                onChange={(option) => handleSelectChange('favoriteTeam', option as SelectOption | null)}
                 placeholder="Search and select your favorite team"
                 isClearable
                 isLoading={loading}
@@ -255,13 +274,12 @@ const ProfilePage: React.FC = () => {
               />
             </FormControl>
 
-            {/* Favorite Driver */}
             <FormControl>
               <FormLabel color="var(--color-text-light)">Favorite Driver</FormLabel>
               <Select
                 options={transformedDriverOptions}
                 value={transformedDriverOptions.find(o => o.value === formData.favoriteDriver) || null}
-                onChange={(option) => handleSelectChange('favoriteDriver', option)}
+                onChange={(option) => handleSelectChange('favoriteDriver', option as SelectOption | null)}
                 placeholder="Search and select your favorite driver"
                 isClearable
                 isLoading={loading}
@@ -271,7 +289,6 @@ const ProfilePage: React.FC = () => {
               />
             </FormControl>
             
-            {/* Other sections */}
             <FormControl display="flex" alignItems="center">
               <FormLabel htmlFor="email-notifications" mb="0" color="var(--color-text-light)">
                 Receive occasional email updates and newsletters
@@ -330,6 +347,7 @@ const ProfilePage: React.FC = () => {
       </Container>
     </div>
   );
+  
 };
 
 export default ProfilePage;
