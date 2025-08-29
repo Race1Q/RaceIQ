@@ -29,12 +29,22 @@ export class DriverStandingsService {
     }
   }
 
-  async getAllDriverStandings(): Promise<DriverStanding[]> {
-    const { data, error } = await this.supabaseService.client
+  async getAllDriverStandings(limit?: number, offset?: number): Promise<DriverStanding[]> {
+    let query = this.supabaseService.client
       .from('drivers_standings')
       .select('*')
       .order('race_id', { ascending: true })
       .order('position', { ascending: true });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+    
+    if (offset) {
+      query = query.range(offset, offset + (limit || 100) - 1);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       this.logger.error('Failed to fetch driver standings', error);
@@ -90,14 +100,20 @@ export class DriverStandingsService {
     return data;
   }
 
-  async searchDriverStandings(query: string): Promise<DriverStanding[]> {
+  async searchDriverStandings(query: string, limit?: number): Promise<DriverStanding[]> {
     // This would need to join with drivers table for meaningful search
-    const { data, error } = await this.supabaseService.client
+    let supabaseQuery = this.supabaseService.client
       .from('drivers_standings')
       .select('*')
       .or(`season::text.ilike.%${query}%`)
       .order('season', { ascending: false })
       .order('position', { ascending: true });
+
+    if (limit) {
+      supabaseQuery = supabaseQuery.limit(limit);
+    }
+
+    const { data, error } = await supabaseQuery;
 
     if (error) {
       this.logger.error('Failed to search driver standings', error);
