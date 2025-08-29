@@ -19,6 +19,9 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "ingest:drivers": "node -r ts-node/register scripts/ingest-drivers.ts",
+    "ingest:constructors": "node -r ts-node/register scripts/ingest-constructors.ts",
+    "ingest:circuits": "node -r ts-node/register scripts/ingest-circuits.ts",
+    "ingest:countries": "node -r ts-node/register scripts/ingest-countries.ts",
     "migrate:auth0-users": "node -r ts-node/register scripts/migrate-auth0-users.ts"
   },
   "dependencies": {

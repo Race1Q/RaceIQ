@@ -1,21 +1,7 @@
 // src/drivers/drivers.service.ts
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-
-export interface DriverRow {
-  full_name: string;
-  first_name: string;
-  last_name: string;
-  country_code: string;
-  name_acronym: string;
-  driver_number: number;
-  broadcast_name: string;
-  headshot_url: string;
-  team_name: string;
-  team_colour: string;
-  season_year: number;
-  is_active: boolean;
-}
+import { Driver } from './entities/driver.entity';
 
 @Injectable()
 export class DriversService {
@@ -23,29 +9,34 @@ export class DriversService {
 
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async getAllDrivers(): Promise<DriverRow[]> {
-    const { data, error } = await this.supabaseService.client.from('drivers').select('*');
+  // The fields to select, including a computed full_name
+  private get selectFields() {
+    return 'id, driver_number, first_name, last_name, name_acronym, country_code, date_of_birth';
+  }
+
+  async getAllDrivers(): Promise<Driver[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('drivers')
+      .select(this.selectFields);
 
     if (error) {
       this.logger.error('Failed to fetch all drivers', error);
-      throw new Error('Failed to fetch all drivers');
+      throw new InternalServerErrorException('Failed to fetch all drivers');
     }
-
-    return data;
+    return (data as unknown as Driver[]) || [];
   }
 
-  async searchDrivers(query: string): Promise<DriverRow[]> {
+  async searchDrivers(query: string): Promise<Driver[]> {
     const { data, error } = await this.supabaseService.client
       .from('drivers')
-      .select('*')
-      .or(`full_name.ilike.%${query}%,country_code.ilike.%${query}%`)
-      .order('full_name', { ascending: true });
+      .select(this.selectFields)
+      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,name_acronym.ilike.%${query}%`)
+      .order('last_name', { ascending: true });
 
     if (error) {
       this.logger.error('Failed to search drivers', error);
-      throw new Error('Failed to search drivers');
+      throw new InternalServerErrorException('Failed to search drivers');
     }
-
-    return data;
+    return (data as unknown as Driver[]) || [];
   }
 }
