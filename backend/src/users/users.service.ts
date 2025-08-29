@@ -1,13 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-
-export type UserRow = {
-  id?: string;
-  auth0_sub: string;
-  username?: string | null;
-  full_name?: string | null;
-  favorite_constructor_id?: number | null;
-};
+import { User } from './entities/user.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +9,7 @@ export class UsersService {
 
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async findByAuth0Sub(auth0Sub: string): Promise<UserRow | null> {
+  async findByAuth0Sub(auth0Sub: string): Promise<User | null> {
     const { data, error } = await this.supabaseService.client
       .from('users')
       .select('*')
@@ -34,12 +28,15 @@ export class UsersService {
     return data;
   }
 
-  async createUser(auth0Sub: string): Promise<UserRow> {
-    const newUser: Omit<UserRow, 'id'> = {
+  async createUser(auth0Sub: string): Promise<User> {
+    const newUser: Omit<User, 'id'> = {
       auth0_sub: auth0Sub,
       username: null,
-      full_name: null,
+      email: null,
       favorite_constructor_id: null,
+      favorite_driver_id: null,
+      role: 'user',
+      created_at: new Date(),
     };
 
     const { data, error } = await this.supabaseService.client
@@ -57,7 +54,7 @@ export class UsersService {
     return data;
   }
 
-  async findOrCreateUser(auth0Sub: string): Promise<UserRow> {
+  async findOrCreateUser(auth0Sub: string): Promise<User> {
     // First try to find existing user
     const existingUser = await this.findByAuth0Sub(auth0Sub);
     
@@ -68,4 +65,24 @@ export class UsersService {
     // If user doesn't exist, create them
     return this.createUser(auth0Sub);
   }
+
+  async updateUserProfile(auth0Sub: string, updateData: UpdateProfileDto): Promise<User> {
+    const { data, error } = await this.supabaseService.client
+      .from('users')
+      .update({
+        username: updateData.username,
+        favorite_constructor_id: updateData.favorite_constructor_id,
+        favorite_driver_id: updateData.favorite_driver_id,
+      })
+      .eq('auth0_sub', auth0Sub)
+      .select()
+      .single();
+
+    if (error) {
+      this.logger.error(`Error updating profile for ${auth0Sub}: ${error.message}`, error);
+      throw error;
+    }
+
+    return data;
+ }
 }

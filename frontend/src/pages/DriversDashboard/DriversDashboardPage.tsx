@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Flex, Box } from '@chakra-ui/react';
-import DriverList from '../components/DriverList/DriverList';
-import DashboardGrid from '../components/DashboardGrid/DashboardGrid';
-import HeroSection from '../components/HeroSection/HeroSection';
-import { useTheme } from '../context/ThemeContext';
-import { teamColors } from '../lib/teamColors';
+import DriverList from '../../components/DriverList/DriverList';
+import DashboardGrid from '../../components/DashboardGrid/DashboardGrid';
+import HeroSection from '../../components/HeroSection/HeroSection';
+import { useTheme } from '../../context/ThemeContext';
+import { teamColors } from '../../lib/teamColors';
 
 // Mock data for drivers
 const mockDrivers = [

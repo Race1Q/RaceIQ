@@ -1,12 +1,14 @@
+// backend/src/drivers/drivers.module.ts
+
 import { Module } from '@nestjs/common';
 import { DriversController } from './drivers.controller';
-import { DriversService } from './drivers.service'; // <-- Import DriversService
-import { IngestService } from './ingest.service'; // <-- Import IngestService
-import { SupabaseModule } from '../supabase/supabase.module'; // <-- Import SupabaseModule
+import { DriversService } from './drivers.service';
+import { IngestService } from './ingest.service';
+import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
   imports: [SupabaseModule], 
-  controllers: [DriversController],
+  controllers: [DriversController], // Only one controller is needed
   providers: [DriversService, IngestService],
   exports: [DriversService],
 })

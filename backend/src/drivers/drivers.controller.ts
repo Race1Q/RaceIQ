@@ -3,22 +3,33 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScopesGuard } from '../auth/scopes.guard';
 import { Scopes } from '../auth/scopes.decorator';
 import { DriversService } from './drivers.service';
+import { Driver } from './entities/driver.entity';
 
 @Controller('drivers')
-//@UseGuards(JwtAuthGuard, ScopesGuard)
+@UseGuards(JwtAuthGuard, ScopesGuard) // Secure all routes by default
 export class DriversController {
   constructor(private readonly driversService: DriversService) {}
-  // GET /drivers  -> requires read:drivers
+
   @Get()
-  //@Scopes('read:drivers')
-  async findAll(@Query('isActive') isActive?: string) {
-    return this.driversService.listWithFilter(isActive);
+  @Scopes('read:drivers')
+  async findAll(
+    @Query('isActive') isActive?: string,
+    @Query('limit') limit = '100',
+    @Query('offset') offset = '0',
+  ): Promise<Driver[]> {
+    const isActiveBoolean = isActive !== undefined ? isActive === 'true' : undefined;
+    
+    return this.driversService.findAll({
+      isActive: isActiveBoolean,
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+    });
   }
 
-  // POST /drivers -> requires write:drivers (kept for future admin edits)
   @Post()
   @Scopes('write:drivers')
   create(@Body() dto: any) {
+    // This remains a placeholder for future admin functionality
     return { created: true, dto };
   }
 }
