@@ -35,6 +35,7 @@ import { PitStopsModule } from './pitStops/pitStops.module';
     ConstructorStandingsModule,
     QualifyingResultsModule,
     PitStopsModule,
+  
   ],
   controllers: [AppController],
   providers: [AppService],

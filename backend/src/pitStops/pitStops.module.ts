@@ -2,8 +2,8 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { PitStopsService } from './pitStops.service';
-import { PitStopsIngestionService } from './pitStops-ingestion.service';
 import { PitStopsController } from './pitStops.controller';
+import { PitStopsIngestionService } from './pitStops-ingestion.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { RacesModule } from '../races/races.module';
 import { DriversModule } from '../drivers/drivers.module';

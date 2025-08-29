@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RacesService } from '../races/races.service';
 import { DriversService } from '../drivers/drivers.service';
-import { ApiResponse, PitStopRow } from './pitStops.entity';
+import { ApiPitStopsResponse, PitStopRow, durationToMillis } from './pitStops.entity';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -30,34 +30,55 @@ export class PitStopsIngestionService {
     ];
     const drivers = await this.driversService.getAllDrivers();
 
+    // Build robust driverId mapping to match Ergast pit stop driverId field
+    // Ergast uses forms like "max_verstappen", "norris", "albon", etc.
+    const normalize = (s: string) =>
+      (s || '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}+/gu, '')
+        .replace(/[^a-zA-Z0-9_]/g, '')
+        .toLowerCase();
+
+    const driverKeyToDriver = new Map<string, any>();
+    for (const d of drivers as any[]) {
+      const first = normalize(d.first_name);
+      const last = normalize(d.last_name);
+      const variants = new Set<string>([
+        `${first}_${last}`,
+        `${first}${last}`,
+        `${last}`,
+        `${first}`,
+      ]);
+      for (const v of variants) {
+        if (!driverKeyToDriver.has(v)) driverKeyToDriver.set(v, d);
+      }
+    }
+
     for (const { year, races } of seasons) {
       for (const race of races) {
         try {
           const apiUrl = `https://api.jolpi.ca/ergast/f1/${year}/${race.round}/pitstops/`;
-          const { data } = await firstValueFrom(this.http.get<ApiResponse>(apiUrl));
+          const { data } = await firstValueFrom(this.http.get<ApiPitStopsResponse>(apiUrl));
           const payload = data.MRData.RaceTable.Races;
           if (!payload.length) continue;
-          const items = payload[0].PitStops;
+          const stops = payload[0].PitStops || [];
 
-          for (const item of items) {
-            const driver = drivers.find(d =>
-              (d as any).full_name?.toLowerCase().includes(item.driverId.replace('_', ' ')) ||
-              (d as any).name_acronym?.toUpperCase() === (item as any).code?.toUpperCase() ||
-              (d as any).driver_number?.toString() === (item as any).permanentNumber
-            );
-            if (!driver) {
-              this.logger.warn(`Missing driver mapping for pit stop: session ${race.id} → driver ${item.driverId}`);
+          for (const item of stops) {
+            const key = normalize(item.driverId || '');
+            const mappedDriver = driverKeyToDriver.get(key)
+              || driverKeyToDriver.get(key.replace(/_/g, ''))
+              || driverKeyToDriver.get(key.split('_').pop() || '');
+            if (!mappedDriver) {
+              this.logger.warn(`Missing driver mapping for race ${race.id} → driverId ${item.driverId}`);
               continue;
             }
 
-            const durationMs = Math.round(parseFloat(item.duration) * 1000);
-
             const row: PitStopRow = {
               race_id: race.id!,
-              driver_id: (driver as any).id,
+              driver_id: (mappedDriver as any).id,
               lap_number: parseInt(item.lap),
               stop_number: parseInt(item.stop),
-              duration_ms: durationMs,
+              duration_ms: durationToMillis(item.duration),
             };
 
             const { data: existing, error: selErr } = await this.supabase.client
@@ -90,7 +111,7 @@ export class PitStopsIngestionService {
           }
         } catch (e: any) {
           if (e?.response?.status === 404) {
-            this.logger.warn(`No pit stop data yet for season ${year}, round ${race.round}. Skipping.`);
+            this.logger.warn(`No pit stops yet for season ${year}, round ${race.round}. Skipping.`);
           } else if (e?.response?.status === 429) {
             this.logger.warn(`Rate limited by Ergast. Backing off for 2s...`);
             await delay(2000);
@@ -99,7 +120,7 @@ export class PitStopsIngestionService {
           }
         }
 
-        await delay(600);
+        await delay(700);
       }
     }
 
