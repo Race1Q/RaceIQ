@@ -33,6 +33,10 @@ const auth0Config = getAuth0Config();
 
 const root = createRoot(document.getElementById('root')!);
 
+// frontend/src/main.tsx
+
+// ... other code ...
+
 root.render(
   <>
     <ColorModeScript initialColorMode={theme.config.initialColorMode} />
