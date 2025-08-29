@@ -30,7 +30,7 @@ const mockDrivers = [
       'https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/team%20logos/red%20bull.png',
     teamLogoWhiteUrl:
       'https://www.redbullracing.com/assets/images/red-bull-racing-logo-white.svg',
-    firstRace: '2015 Australian GP',
+    firstRace: { year: '2015', event: 'Australian GP' },
     winsPerSeason: [
       { season: '2021', wins: 10 },
       { season: '2022', wins: 15 },
@@ -80,7 +80,7 @@ const mockDrivers = [
       'https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/team%20logos/mercedes.png',
     teamLogoWhiteUrl:
       'https://www.mercedes-amg-f1.com/wp-content/themes/mercedes-amg-f1/img/logo-mercedes-amg-f1.svg',
-    firstRace: '2007 Australian GP',
+    firstRace: { year: '2007', event: 'Australian GP' },
     winsPerSeason: [
       { season: '2021', wins: 8 },
       { season: '2022', wins: 0 },
@@ -130,7 +130,7 @@ const mockDrivers = [
       'https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/team%20logos/ferrari.png',
     teamLogoWhiteUrl:
       'https://www.ferrari.com/etc.clientlibs/ferrari/clientlibs/clientlib-common/resources/img/ferrari_logo.svg',
-    firstRace: '2018 Australian GP',
+    firstRace: { year: '2018', event: 'Australian GP' },
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 3 },
@@ -180,7 +180,7 @@ const mockDrivers = [
       'https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/team%20logos/mclaren.png',
     teamLogoWhiteUrl:
       'https://www.mclaren.com/themes/custom/mclarentheme/images/logo.svg',
-    firstRace: '2019 Australian GP',
+    firstRace: { year: '2019', event: 'Australian GP' },
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 0 },
@@ -230,7 +230,7 @@ const mockDrivers = [
       'https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/team%20logos/ferrari.png',
     teamLogoWhiteUrl:
       'https://www.ferrari.com/etc.clientlibs/ferrari/clientlibs/clientlib-common/resources/img/ferrari_logo.svg',
-    firstRace: '2015 Australian GP',
+    firstRace: { year: '2015', event: 'Australian GP' },
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 1 },

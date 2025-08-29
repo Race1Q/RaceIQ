@@ -1,6 +1,6 @@
 .keyInfoBar {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   background-color: var(--color-surface-dark);
   border: 1px solid var(--color-border-gray);
   border-radius: var(--border-radius-lg);
@@ -11,17 +11,17 @@
   width: 90%;
   max-width: 1100px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .backButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-lg);
+  padding: 0 var(--space-lg);
   color: var(--color-text-muted);
   border-right: 1px solid var(--color-border-gray);
   transition: all 0.2s ease;
-  align-self: stretch;
 }
 
 .backButton:hover {
@@ -30,10 +30,10 @@
 }
 
 .teamLogoWrapper {
-  padding: var(--space-lg);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--space-lg);
   border-right: 1px solid var(--color-border-gray);
   min-width: 220px;
 }
@@ -42,18 +42,19 @@
   height: 60px;
   max-width: 150px;
   object-fit: contain;
+  transition: filter 0.3s ease;
 }
 
 .logoColor { display: block; }
 .logoWhite { display: none; }
 
 [data-theme='dark'] .logoColor { display: none; }
-[data-theme='dark'] .logoWhite { display: block; }
+[data-theme='dark'] .logoWhite { display: block; filter: brightness(1.1); }
 
 .statsContainer {
   display: flex;
   flex-direction: column;
-  padding: var(--space-sm) var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
   flex-grow: 1;
 }
 
@@ -65,12 +66,31 @@
   letter-spacing: 1px;
   margin-bottom: var(--space-sm);
   padding-left: var(--space-md);
+  text-align: left;
 }
 
 .statsGrid {
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr;
+  align-items: center;
   flex-grow: 1;
+  gap: var(--space-sm);
+}
+
+.statsGrid > * { border-right: 1px solid var(--color-border-gray); }
+.statsGrid > *:last-child { border-right: none; }
+
+@media (max-width: 1024px) {
+  .statsGrid { grid-template-columns: 1fr 1fr 1.2fr; }
+}
+
+@media (max-width: 768px) {
+  .keyInfoBar { flex-direction: column; width: 95%; margin-top: var(--space-md); }
+  .backButton { position: absolute; top: 0; left: 0; border: none; background-color: rgba(0, 0, 0, 0.3); border-radius: 0 var(--border-radius-lg) 0 var(--border-radius-lg); z-index: 2; }
+  .teamLogoWrapper { border-right: none; padding: var(--space-md); }
+  .statsGrid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
+  .infoBlock { border-bottom: 1px solid var(--color-border-gray); }
+  .statsGrid > *:nth-last-child(1), .statsGrid > *:nth-last-child(2) { border-bottom: none; }
 }
 
 
