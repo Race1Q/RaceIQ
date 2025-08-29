@@ -17,7 +17,8 @@ import { RaceResultsModule } from './raceResults/raceResults.module';
 import { ConstructorStandingsModule } from './constructorStandings/constructorStandings.module';
 import { QualifyingResultsModule } from './qualifyingResults/qualifyingResults.module';
 import { PitStopsModule } from './pitStops/pitStops.module';
-import { LapsModule } from './laps/laps.module';import { UsersModule } from './users/users.module';
+import { LapsModule } from './laps/laps.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -38,9 +39,7 @@ import { LapsModule } from './laps/laps.module';import { UsersModule } from './u
     QualifyingResultsModule,
     PitStopsModule,
     LapsModule,
-  
     UsersModule,
-    ConstructorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

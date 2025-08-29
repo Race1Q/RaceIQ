@@ -1,7 +1,11 @@
 // src/drivers/drivers.controller.ts
-import { Controller, Get, Post, Query, Logger } from '@nestjs/common';
-import { DriversService, DriverRow } from './drivers.service';
-import { DriversIngestService } from './drivers-ingest.service';
+import { Controller, Get, Post, Query, Logger, UseGuards } from '@nestjs/common';
+import { DriversService } from './drivers.service';
+import { IngestService } from './ingest.service';
+import { Driver } from './entities/driver.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ScopesGuard } from '../auth/scopes.guard';
+import { Scopes } from '../auth/scopes.decorator';
 
 @Controller('drivers')
 export class DriversController {
@@ -9,26 +13,33 @@ export class DriversController {
 
   constructor(
     private readonly driversService: DriversService,
-    private readonly driversIngestService: DriversIngestService,
+    private readonly ingestService: IngestService,
   ) {}
 
   @Post('ingest')
+  @UseGuards(JwtAuthGuard, ScopesGuard)
+  @Scopes('write:drivers') // Secure this admin-level action
   async ingestDrivers() {
-    this.logger.log('Starting drivers ingestion');
-    const result = await this.driversIngestService.ingestDrivers();
+    this.logger.log('Starting drivers ingestion via API endpoint');
+    // We don't await this so the request can return immediately
+    this.ingestService.ingestDrivers();
     return {
-      message: 'Drivers ingestion completed',
-      result,
+      message: 'Drivers ingestion process started in the background.',
     };
   }
 
   @Get()
-  async getAllDrivers(): Promise<DriverRow[]> {
+  @UseGuards(JwtAuthGuard, ScopesGuard)
+  @Scopes('read:drivers')
+  async getAllDrivers(): Promise<Driver[]> {
     return this.driversService.getAllDrivers();
   }
 
   @Get('search')
-  async searchDrivers(@Query('q') query: string): Promise<DriverRow[]> {
+  @UseGuards(JwtAuthGuard, ScopesGuard)
+  @Scopes('read:drivers')
+  async searchDrivers(@Query('q') query: string): Promise<Driver[]> {
+    if (!query) return [];
     return this.driversService.searchDrivers(query);
   }
 }

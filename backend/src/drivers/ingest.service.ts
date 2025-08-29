@@ -1,177 +1,220 @@
-// backend/src/drivers/ingest.service.ts
-
+// src/drivers/drivers-ingest.service.ts
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { DriversService } from './drivers.service';
-import { Driver } from './entities/driver.entity'; // <-- FIX 1: Import the correct Driver entity
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+import { SupabaseService } from '../supabase/supabase.service';
 
-// ---------- Types ----------
-// ... (IngestOptions, IngestResult, OpenF1Driver types remain the same) ...
-export interface IngestOptions { // Kept for clarity
-    year?: string; 
-    meeting_key?: string; 
-}
-export interface IngestResult { // Kept for clarity
-    fetched: number; 
-    unique: number; 
-    upserted: number; 
-    skipped: number; 
-}
-export type OpenF1Driver = { // Kept for clarity
-    broadcast_name?: string | null;
-    country_code?: string | null;
-    driver_number?: number | null;
-    first_name?: string | null;
-    full_name?: string | null;
-    headshot_url?: string | null;
-    last_name?: string | null;
-    name_acronym?: string | null;
-    team_colour?: string | null; 
-    team_name?: string | null;
-};
-
-
-type IncomingDriver = Omit<Driver, 'driver_id'>; // <-- FIX 2: Base the type on the new Driver entity
-
-// ... (Small helpers and getWithRetry functions remain the same) ...
-const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-async function getWithRetry<T>( url: string, params: Record<string, any>, tries = 3, timeout = 20000): Promise<T> {
-    let lastErr: any;
-    for (let i = 0; i < tries; i++) {
-        try {
-            const { data } = await axios.get<T>(url, { params, timeout });
-            return data;
-        } catch (e) {
-            lastErr = e;
-            if (i < tries - 1) await sleep(500 * Math.pow(2, i));
-        }
-    }
-    throw lastErr;
+interface ApiDriver {
+  driverId: string;
+  url: string;
+  givenName: string;
+  familyName: string;
+  permanentNumber?: string;
+  code: string;
+  nationality?: string;
+  dateOfBirth: string;
 }
 
+interface ApiResponse {
+  MRData: {
+    DriverTable: {
+      Drivers: ApiDriver[];
+    };
+    total: string;
+    limit: string;
+    offset: string;
+  };
+}
 
 @Injectable()
 export class IngestService {
   private readonly logger = new Logger(IngestService.name);
-  private readonly base: string;
+  private readonly pageLimit = 30; // API default page size
+
+  private readonly countryCodeMap: Record<string, string> = {
+    Australia: 'AUS',
+    Austria: 'AUT',
+    Azerbaijan: 'AZE',
+    Bahrain: 'BHR',
+    Belgium: 'BEL',
+    Brazil: 'BRA',
+    Canada: 'CAN',
+    China: 'CHN',
+    France: 'FRA',
+    Germany: 'DEU',
+    Hungary: 'HUN',
+    India: 'IND',
+    Italy: 'ITA',
+    Japan: 'JPN',
+    Malaysia: 'MYS',
+    Mexico: 'MEX',
+    Monaco: 'MCO',
+    Netherlands: 'NLD',
+    Portugal: 'PRT',
+    Russia: 'RUS',
+    'Saudi Arabia': 'SAU',
+    Singapore: 'SGP',
+    Spain: 'ESP',
+    Turkey: 'TUR',
+    UAE: 'ARE',
+    UK: 'GBR',
+    USA: 'USA',
+    'United States': 'USA',
+    'United Kingdom': 'GBR',
+    'United Arab Emirates': 'ARE',
+    'South Africa': 'ZAF',
+    Argentina: 'ARG',
+    Morocco: 'MAR',
+    Sweden: 'SWE',
+    Korea: 'KOR',
+    'San Marino': 'SMR',
+    Vietnam: 'VNM',
+    Europe: 'EUR',
+    Qatar: 'QAT',
+  };
 
   constructor(
-    private readonly drivers: DriversService,
-    private readonly configService: ConfigService,
-  ) {
-    this.base = this.configService.get<string>('OPENF1_BASE') || 'https://api.openf1.org/v1';
+    private readonly httpService: HttpService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
+
+  private getCountryCode(nationality?: string): string | null {
+    if (!nationality) return null;
+    return this.countryCodeMap[nationality] ?? nationality.substring(0, 3).toUpperCase();
   }
 
-  // ... (run method remains the same) ...
-  async run(options?: IngestOptions): Promise<IngestResult> {
-    if (options?.meeting_key) {
-        const season = options?.year ? Number(options.year) : new Date().getFullYear();
-        const data = await getWithRetry<OpenF1Driver[]>(`${this.base}/drivers`, { meeting_key: options.meeting_key }, 3, 20000);
-        return this.processDrivers(data ?? [], { season });
+  private async fetchDriversPage(season: number, offset: number, attempt = 0): Promise<ApiDriver[]> {
+    const apiUrl = `https://api.jolpi.ca/ergast/f1/${season}/drivers/?format=json&limit=${this.pageLimit}&offset=${offset}`;
+    try {
+      const response = await firstValueFrom(this.httpService.get<ApiResponse>(apiUrl));
+      return response.data.MRData.DriverTable.Drivers;
+    } catch (err: any) {
+      if (err.response?.status === 429) {
+        // exponential backoff on rate limit
+        const waitTime = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+        this.logger.warn(`Rate limited. Waiting ${waitTime.toFixed(0)}ms before retrying season ${season} page ${offset / this.pageLimit + 1}`);
+        await new Promise((r) => setTimeout(r, waitTime));
+        return this.fetchDriversPage(season, offset, attempt + 1);
+      }
+      this.logger.error(`Failed to fetch drivers for season ${season} page ${offset / this.pageLimit + 1}`, err.message);
+      return [];
     }
-    if (options?.year) {
-        const season = Number(options.year);
-        const meetings = await getWithRetry<{ meeting_key: number }[]>(`${this.base}/meetings`, { year: options.year }, 3, 20000);
-        const meetingKeys = (meetings ?? []).map((m) => m.meeting_key);
-        if (!meetingKeys.length) {
-            this.logger.warn(`No meetings found for year ${options.year}`);
-            return { fetched: 0, unique: 0, upserted: 0, skipped: 0 };
+  }
+
+  private async fetchAllDriversForSeason(season: number): Promise<ApiDriver[]> {
+    const allDrivers: ApiDriver[] = [];
+    let offset = 0;
+    while (true) {
+      const pageDrivers = await this.fetchDriversPage(season, offset);
+      if (!pageDrivers.length) break;
+      allDrivers.push(...pageDrivers);
+      if (pageDrivers.length < this.pageLimit) break; // last page
+      offset += this.pageLimit;
+      // small delay to respect burst limit
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return allDrivers;
+  }
+
+  async ingestDrivers(): Promise<{ created: number; updated: number }> {
+    const startYear = 1950;
+    const endYear = 2025;
+
+    this.logger.log('Starting drivers ingestion');
+    const uniqueDrivers = new Map<string, ApiDriver>();
+
+    for (let season = startYear; season <= endYear; season++) {
+      const seasonDrivers = await this.fetchAllDriversForSeason(season);
+      for (const driver of seasonDrivers) {
+        if (!uniqueDrivers.has(driver.driverId)) {
+          uniqueDrivers.set(driver.driverId, driver);
         }
-        const batches = await Promise.all(meetingKeys.map((mk) => getWithRetry<OpenF1Driver[]>(`${this.base}/drivers`, { meeting_key: mk }, 3, 20000).catch(() => [])));
-        const merged = ([] as OpenF1Driver[]).concat(...batches);
-        return this.processDrivers(merged, { season });
-    }
-    const data = await getWithRetry<OpenF1Driver[]>(`${this.base}/drivers`, {}, 3, 40000);
-    return this.processDrivers(data ?? [], { season: new Date().getFullYear() });
-  }
-
-  private async processDrivers(
-    data: OpenF1Driver[],
-    options?: { season?: number },
-  ): Promise<IngestResult> {
-    const season = options?.season ?? new Date().getFullYear();
-
-    const mapped: Driver[] = (data || [])
-      .map<Driver>((d) => ({
-        full_name: d.full_name ?? [d.first_name, d.last_name].filter(Boolean).join(' ') ?? 'Unknown',
-        first_name: d.first_name ?? '',
-        last_name: d.last_name ?? '',
-        country_code: (d.country_code || '').toUpperCase() || null,
-        name_acronym: d.name_acronym ?? null,
-        driver_number: d.driver_number ?? null,
-        broadcast_name: d.broadcast_name ?? null,
-        headshot_url: d.headshot_url ?? null,
-        team_name: d.team_name ?? null,
-        team_colour: this.normalizeHex(d.team_colour ?? null),
-        season_year: season,
-        is_active: false, // Default value, can be updated later
-      }))
-      .filter((r) => !!r.full_name && !!r.country_code && r.country_code!.length === 3);
-
-    const fetched = mapped.length;
-    if (!fetched) {
-      this.logger.warn('No drivers found after mapping/validation.');
-      return { fetched: 0, unique: 0, upserted: 0, skipped: 0 };
+      }
     }
 
-    const dedup = new Map<string, Driver>(); // Use Driver type
-    for (const r of mapped) {
-      const key = `${r.full_name!.toLowerCase()}|${r.country_code}|${r.season_year}`;
-      const prev = dedup.get(key);
-      dedup.set(key, prev ? this.pickBetter(prev, r) : r);
+    let created = 0;
+    let updated = 0;
+
+    for (const driver of uniqueDrivers.values()) {
+      const countryCode = this.getCountryCode(driver.nationality);
+
+      // Ensure country exists
+      if (countryCode) {
+        const { data: existingCountry, error: countrySelectError } =
+          await this.supabaseService.client
+            .from('countries')
+            .select('country_code')
+            .eq('country_code', countryCode)
+            .single();
+
+        if (countrySelectError && countrySelectError.code !== 'PGRST116') {
+          this.logger.error(`Country select error for ${countryCode}`, countrySelectError.message);
+          throw new Error(`Country select failed: ${countrySelectError.message}`);
+        }
+
+        if (!existingCountry) {
+          const { error: countryInsertError } = await this.supabaseService.client
+            .from('countries')
+            .insert({ country_code: countryCode, country_name: driver.nationality });
+          if (countryInsertError) {
+            this.logger.error(`Country insert error for ${driver.nationality}`, countryInsertError.message);
+            throw new Error(`Country insert failed: ${countryInsertError.message}`);
+          }
+          this.logger.log(`Created new country: ${driver.nationality} (${countryCode})`);
+        }
+      }
+
+      const driverData = {
+        driver_number: driver.permanentNumber ? parseInt(driver.permanentNumber) : null,
+        first_name: driver.givenName,
+        last_name: driver.familyName,
+        name_acronym: driver.code,
+        country_code: countryCode,
+        date_of_birth: driver.dateOfBirth,
+      };
+
+      const { data: existingDriver, error: selectError } =
+        await this.supabaseService.client
+          .from('drivers')
+          .select('*')
+          .eq('first_name', driverData.first_name)
+          .eq('last_name', driverData.last_name)
+          .single();
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        this.logger.error(`Driver select error for ${driverData.first_name} ${driverData.last_name}`, selectError.message);
+        throw new Error(`Driver select failed: ${selectError.message}`);
+      }
+
+      if (existingDriver) {
+        const { error: updateError } = await this.supabaseService.client
+          .from('drivers')
+          .update(driverData)
+          .eq('id', existingDriver.id);
+        if (updateError) {
+          this.logger.error(`Failed to update driver ${driverData.first_name} ${driverData.last_name}`, updateError.message);
+          throw new Error(`Driver update failed: ${updateError.message}`);
+        }
+        updated++;
+      } else {
+        const { error: insertError } = await this.supabaseService.client
+          .from('drivers')
+          .insert(driverData);
+        if (insertError) {
+          this.logger.error(`Failed to create driver ${driverData.first_name} ${driverData.last_name}`, insertError.message);
+          throw new Error(`Driver creation failed: ${insertError.message}`);
+        }
+        created++;
+      }
     }
-    const incoming = Array.from(dedup.values());
-    const unique = incoming.length;
 
-    const existing = await this.drivers.getAllForDiff();
-    const byKey = new Map(
-      (existing || [])
-        .filter((e) => e.full_name && e.country_code && typeof e.season_year === 'number')
-        .map((e) => [`${(e.full_name as string).toLowerCase()}|${e.country_code}|${e.season_year}`, e]),
-    );
-
-    const toUpsert: Driver[] = []; // Use Driver type
-    let skipped = 0;
-    for (const row of incoming) {
-      const key = `${row.full_name!.toLowerCase()}|${row.country_code}|${row.season_year}`;
-      const ex = byKey.get(key);
-      if (!ex || this.rowDiffers(ex, row)) toUpsert.push(row);
-      else skipped++;
-    }
-
-    if (toUpsert.length) await this.drivers.upsertMany(toUpsert);
-
-    this.logger.log(`Fetched: ${fetched}, Unique: ${unique}, Upserted: ${toUpsert.length}, Skipped: ${skipped}`);
-    return { fetched, unique, upserted: toUpsert.length, skipped };
-  }
-  
-  // ... (pickBetter and normalizeHex methods remain the same) ...
-  private pickBetter(a: Driver, b: Driver): Driver {
-    const score = (r: Driver) => (r.team_name ? 1 : 0) + (r.headshot_url ? 1 : 0) + (r.driver_number ? 1 : 0);
-    return score(b) > score(a) ? b : a;
-  }
-  private normalizeHex(hex?: string | null): string | null {
-    if (!hex) return null;
-    return hex.replace(/^#/, '').toLowerCase();
-  }
-
-
-  private rowDiffers(a: Driver, b: Driver): boolean { // Use Driver type
-    const keys: (keyof Omit<Driver, 'driver_id'>)[] = [
-      'full_name',
-      'first_name',
-      'last_name',
-      'country_code',
-      'name_acronym',
-      'driver_number',
-      'broadcast_name',
-      'headshot_url',
-      'team_name',
-      'team_colour',
-      'season_year',
-      'is_active',
-    ];
-    return keys.some((k) => (a?.[k] ?? null) !== (b?.[k] ?? null));
+    this.logger.log(`Ingestion completed: ${created} created, ${updated} updated`);
+    return { created, updated };
   }
 }
+
+
+
+
+
+
