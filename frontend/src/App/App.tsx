@@ -9,10 +9,9 @@ import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton
 import { f1ApiService } from '../services/f1Api';
 import type { Race } from '../services/f1Api';
 import styles from './App.module.css';
-import DbTest from '../components/DbTest/DbTest';
 import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
-import DriversDashboardPage from '../pages/DriversDashboard/DriversDashboardPage';
+import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
 import RacesPage from '../pages/RacesPage/RacesPage';
 import Admin from '../pages/Admin/Admin';
 import ProfilePage from '../pages/ProfilePage/ProfilePage';
@@ -21,6 +20,8 @@ import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { RoleProvider, useRole } from '../context/RoleContext';
+import useScrollToTop from '../hooks/useScrollToTop';
+import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -108,7 +109,6 @@ function Navbar() {
   const isRacesActive = useActiveRoute('/races');
   const isAboutActive = useActiveRoute('/about');
   const isAdminActive = useActiveRoute('/admin');
-  const isDashboardActive = useActiveRoute('/drivers-dashboard');
   const isProfileActive = useActiveRoute('/profile');
 
   return (
@@ -135,12 +135,6 @@ function Navbar() {
               className={`${styles.navLink} ${isDriversActive ? styles.navLinkActive : ''}`}
             >
               Drivers
-            </Link>
-            <Link 
-              to="/drivers-dashboard" 
-              className={`${styles.navLink} ${isDashboardActive ? styles.navLinkActive : ''}`}
-            >
-              Dashboard
             </Link>
             <Link 
               to="/races" 
@@ -183,6 +177,7 @@ function Navbar() {
 
 function AppContent() {
   const { themeColor, themeRgbColor } = useTheme();
+  useScrollToTop();
 
   return (
     <div 
@@ -200,7 +195,7 @@ function AppContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/drivers" element={<Drivers />} />
-        <Route path="/drivers-dashboard" element={<DriversDashboardPage />} />
+        <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
 
         {/* PROTECTED ROUTES */}
@@ -223,6 +218,8 @@ function AppContent() {
           }
         />
       </Routes>
+
+      <BackToTopButton />
 
       {/* Footer */}
       <footer className={styles.footer}>

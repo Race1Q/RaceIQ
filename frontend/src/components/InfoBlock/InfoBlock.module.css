@@ -1,0 +1,31 @@
+.infoBlock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background-color: transparent;
+  padding: var(--space-sm) var(--space-md);
+  border-right: 1px solid var(--color-border-gray);
+}
+
+.infoBlock:last-child { border-right: none; }
+
+.iconWrapper { color: var(--dynamic-accent-color, var(--color-primary-red)); }
+
+.textWrapper { display: flex; flex-direction: column; align-items: flex-start; }
+
+.value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  line-height: 1.1;
+}
+
+.label {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+
