@@ -31,6 +31,7 @@ const mockDrivers = [
     teamLogoWhiteUrl:
       'https://www.redbullracing.com/assets/images/red-bull-racing-logo-white.svg',
     firstRace: { year: '2015', event: 'Australian GP' },
+    funFact: "Max is the youngest-ever race winner in Formula 1 history, winning the 2016 Spanish Grand Prix at just 18 years old.",
     winsPerSeason: [
       { season: '2021', wins: 10 },
       { season: '2022', wins: 15 },
@@ -81,6 +82,7 @@ const mockDrivers = [
     teamLogoWhiteUrl:
       'https://www.mercedes-amg-f1.com/wp-content/themes/mercedes-amg-f1/img/logo-mercedes-amg-f1.svg',
     firstRace: { year: '2007', event: 'Australian GP' },
+    funFact: "Lewis Hamilton holds the record for most pole positions in Formula 1 history, with over 100 pole positions to his name.",
     winsPerSeason: [
       { season: '2021', wins: 8 },
       { season: '2022', wins: 0 },
@@ -131,6 +133,7 @@ const mockDrivers = [
     teamLogoWhiteUrl:
       'https://www.ferrari.com/etc.clientlibs/ferrari/clientlibs/clientlib-common/resources/img/ferrari_logo.svg',
     firstRace: { year: '2018', event: 'Australian GP' },
+    funFact: "Charles Leclerc became the first Monegasque driver to win a Formula 1 race when he won the 2019 Belgian Grand Prix.",
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 3 },
@@ -181,6 +184,7 @@ const mockDrivers = [
     teamLogoWhiteUrl:
       'https://www.mclaren.com/themes/custom/mclarentheme/images/logo.svg',
     firstRace: { year: '2019', event: 'Australian GP' },
+    funFact: "Lando Norris is known for his gaming skills and often streams on Twitch, making him one of the most relatable drivers to younger fans.",
     winsPerSeason: [
       { season: '2021', wins: 0 },
       { season: '2022', wins: 0 },

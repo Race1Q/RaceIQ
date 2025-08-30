@@ -46,10 +46,10 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
-        // 👇 Update this line to include all required scopes
-        scope: 'openid profile email read:drivers'
+        // 1. Added 'read:drivers' back to the scope
+        scope: 'openid profile email read:drivers' 
       }}
-
+      // 2. Added the two props for Refresh Token Rotation
       useRefreshTokens={true}
       cacheLocation="localstorage"
     >

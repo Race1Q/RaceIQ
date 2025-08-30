@@ -1,0 +1,61 @@
+/* frontend/src/components/LegacyDriverCard/LegacyDriverCard.module.css */
+.cardLink { 
+  text-decoration: none; 
+  color: inherit; 
+}
+
+.card {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border-gray);
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.card:hover { 
+  transform: translateY(-5px); 
+}
+
+.cardHeader { 
+  background-color: var(--color-surface-dark); 
+  padding: var(--space-md); 
+}
+
+.driverImage {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--color-primary-red);
+  margin: 0 auto;
+}
+
+.cardBody { 
+  padding: var(--space-md); 
+}
+
+.driverName { 
+  font-family: var(--font-display); 
+  font-size: 1.2rem; 
+  color: var(--color-text-light); 
+  margin-bottom: var(--space-sm); 
+}
+
+.driverDetail { 
+  font-size: 0.9rem; 
+  color: var(--color-text-medium); 
+  margin: 4px 0; 
+}
+
+.viewProfileButton {
+  background-color: var(--color-primary-red);
+  color: var(--color-text-light);
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: 10px 16px;
+  margin-top: var(--space-md);
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+}

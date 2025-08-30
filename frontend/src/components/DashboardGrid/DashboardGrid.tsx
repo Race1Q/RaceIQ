@@ -1,6 +1,6 @@
 import React from 'react';
 import { Grid } from '@chakra-ui/react';
-import DriverProfileCard from '../DriverProfileCard/DriverProfileCard';
+import DriverDetailProfile from '../DriverDetailProfile/DriverDetailProfile';
 import StatCard from '../StatCard/StatCard';
 import WinsPerSeasonChart from '../WinsPerSeasonChart/WinsPerSeasonChart';
 import LapByLapChart from '../LapByLapChart/LapByLapChart';
@@ -19,6 +19,7 @@ interface Driver {
   fastestLaps: number;
   points: number;
   image: string;
+  funFact: string;
   winsPerSeason: Array<{ season: string; wins: number }>;
   lapByLapData: Array<{ lap: number; position: number }>;
 }
@@ -32,7 +33,7 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({ driver }) => {
 
   return (
     <Grid templateColumns="repeat(auto-fit, minmax(350px, 1fr))" gap={6} className={styles.grid}>
-      <DriverProfileCard driver={driver} />
+      <DriverDetailProfile driver={driver} />
       
       <StatCard
         icon={<Trophy />}

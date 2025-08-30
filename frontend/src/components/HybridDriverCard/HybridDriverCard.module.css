@@ -1,0 +1,106 @@
+/* frontend/src/components/HybridDriverCard/HybridDriverCard.module.css */
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  height: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border-gray);
+  background-color: var(--color-surface-gray);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.cardTop {
+  flex-basis: 60%; /* Top section takes 60% of the height */
+  position: relative;
+  background: linear-gradient(135deg, var(--team-color-start) 0%, var(--team-color-end) 100%);
+  padding: var(--space-md);
+  overflow: hidden;
+}
+
+.driverImage {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+.driverNumber {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  font-family: var(--font-display);
+  font-size: 3rem;
+  color: var(--color-text-light);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  z-index: 1;
+}
+
+.driverName {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  line-height: 1;
+  text-align: right;
+  text-transform: uppercase;
+  color: var(--color-text-light);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  z-index: 1;
+}
+
+.driverName span { 
+  display: block; 
+}
+
+.cardBottom {
+  flex-basis: 40%; /* Bottom section takes 40% */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  border-top: 1px solid var(--color-border-gray);
+}
+
+.infoBlock { 
+  text-align: left; 
+}
+
+.driverDetail {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-text-medium);
+  margin: 4px 0;
+}
+
+.driverDetail strong { 
+  color: var(--color-text-muted); 
+}
+
+.viewProfileButton {
+  background-color: var(--color-primary-red);
+  color: var(--color-text-light);
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: 10px 16px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  white-space: nowrap;
+}
