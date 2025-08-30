@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RacesService } from '../races/races.service';
 import { DriversService } from '../drivers/drivers.service';
-import { ConstructorService } from '../constructors/constructors.service';
+import { ConstructorsService } from '../constructors/constructors.service';
 import { RaceResult, ApiRace, ApiResponse } from './results.entity';
 
 // Utility function to add a delay
@@ -20,7 +20,7 @@ export class ResultsIngestService {
     private readonly supabaseService: SupabaseService,
     private readonly racesService: RacesService,
     private readonly driversService: DriversService,
-    private readonly constructorsService: ConstructorService,
+    private readonly constructorsService: ConstructorsService,
   ) {}
 
   async fetchResultsFromAPI(season: string, round: string): Promise<ApiRace[]> {

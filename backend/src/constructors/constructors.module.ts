@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ConstructorController } from './constructors.controller';
-import { ConstructorService } from './constructors.service';
+import { ConstructorsController } from './constructors.controller';
+import { ConstructorsService } from './constructors.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [SupabaseModule, HttpModule],
-  controllers: [ConstructorController],
-  providers: [ConstructorService],
-  exports: [ConstructorService],
+  controllers: [ConstructorsController],
+  providers: [ConstructorsService],
+  exports: [ConstructorsService],
 })
 export class ConstructorsModule {}
