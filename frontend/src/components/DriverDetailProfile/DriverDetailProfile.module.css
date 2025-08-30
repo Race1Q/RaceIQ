@@ -1,0 +1,72 @@
+/* src/components/DriverDetailProfile/DriverDetailProfile.module.css */
+
+.profileCard {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border-gray);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: 100%; /* Ensure it fills the grid area */
+}
+
+.imageContainer {
+  width: 100%;
+  margin-bottom: var(--space-md);
+}
+
+.driverImage {
+  width: 200px; /* Larger image */
+  height: 200px;
+  object-fit: cover;
+  border-radius: 50%; /* Keep it circular */
+  border: 4px solid var(--dynamic-accent-color, var(--color-primary-red));
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  margin: 0 auto;
+}
+
+.infoContainer {
+  margin-bottom: var(--space-lg);
+}
+
+.driverName {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--color-text-light);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.teamName {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  color: var(--color-text-medium);
+}
+
+.funFactContainer {
+  margin-top: auto; /* Push to the bottom */
+  padding: var(--space-md);
+  border-top: 1px solid var(--color-border-gray);
+  width: 100%;
+  position: relative;
+}
+
+.quoteIcon {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--color-icon-muted);
+  background-color: var(--color-surface-gray);
+  padding: 0 8px;
+}
+
+.funFactText {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  line-height: 1.5;
+}

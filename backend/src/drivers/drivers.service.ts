@@ -10,55 +10,48 @@ export class DriversService {
 
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async findAll(options: { isActive?: boolean; limit?: number; offset?: number } = {}): Promise<any[]> { // Return type is now more generic
-    const { isActive, limit = 100, offset = 0 } = options;
+  async getAllDrivers(options: { limit?: number; offset?: number } = {}): Promise<Driver[]> {
+    const { limit = 100, offset = 0 } = options;
 
-    let query = this.supabaseService.client
+    const { data, error } = await this.supabaseService.client
+      .from('drivers')
+      .select<string, Driver>('*')
+      .range(offset, offset + limit - 1)
+      .order('last_name', { ascending: true });
+
+    if (error) {
+      this.logger.error('Failed to fetch all drivers', error);
+      throw new InternalServerErrorException('Failed to fetch all drivers');
+    }
+    return data ?? [];
+  }
+
+  async findActiveDrivers(): Promise<Driver[]> {
+    const { data, error } = await this.supabaseService.client
       .from('drivers_with_full_name')
-      .select('id, full_name') 
-      .order('full_name', { ascending: true });
-
-    if (isActive !== undefined) {
-      query = query.eq('is_active', isActive);
-    }
-
-    query = query.range(offset, offset + limit - 1);
-
-    const { data, error } = await query;
+      // Corrected to select only the columns that exist in your view
+      .select<string, Driver>('id, full_name, driver_number, country_code, date_of_birth, name_acronym')
+      .gte('id', 2)
+      .lte('id', 22)
+      .order('last_name', { ascending: true });
 
     if (error) {
-      this.logger.error(`Failed to fetch drivers. Error: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Could not fetch drivers.');
+      this.logger.error('Failed to fetch active drivers', error);
+      throw new InternalServerErrorException('Failed to fetch active drivers');
     }
-
-    // Transform the data to the shape the frontend expects ({ id, name })
-    const formattedData = (data || []).map(driver => ({
-      id: driver.id,
-      name: driver.full_name,
-    }));
-
-    return formattedData;
+    return data ?? [];
   }
-  
-  async upsertMany(rows: Driver[]): Promise<void> {
-    if (!rows || rows.length === 0) {
-      return;
-    }
-    const { error } = await this.supabaseService.client.from('drivers').upsert(rows, {
-      onConflict: 'full_name,country_code,season_year',
-      ignoreDuplicates: false,
-    });
+
+  async searchDrivers(query: string): Promise<Driver[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('drivers')
+      .select<string, Driver>('*')
+      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,name_acronym.ilike.%${query}%`)
+      .order('last_name', { ascending: true });
+
     if (error) {
-      this.logger.error(`Upsert failed: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Could not upsert drivers.');
-    }
-  }
-  
-  async getAllForDiff(): Promise<Driver[]> {
-    const { data, error } = await this.supabaseService.client.from('drivers').select('*');
-    if (error) {
-      this.logger.error(`Failed to fetch drivers for diff. Error: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Could not fetch drivers for diff.');
+      this.logger.error('Failed to search drivers', error);
+      throw new InternalServerErrorException('Failed to search drivers');
     }
     return data ?? [];
   }

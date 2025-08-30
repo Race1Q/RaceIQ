@@ -42,8 +42,12 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
-        scope: 'openid profile email'
+        // 1. Added 'read:drivers' back to the scope
+        scope: 'openid profile email read:drivers' 
       }}
+      // 2. Added the two props for Refresh Token Rotation
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
     >
       <ChakraProvider theme={theme}>
         <BrowserRouter>
