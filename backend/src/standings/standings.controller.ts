@@ -1,14 +1,15 @@
 import { Controller, Get, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { StandingsService } from './standings.service';
-// The AuthGuard import has been removed as it is no longer used for this endpoint
+import { AuthGuard } from './auth.guard';
+import { ConfigService } from '@nestjs/config';
 
-@Controller('standings')
+@Controller('standings') // <-- The fix is here
 export class StandingsController {
-  constructor(private readonly standingsService: StandingsService) {}
+  constructor(private readonly standingsService: StandingsService, private readonly configService: ConfigService) {}
 
   @Get('drivers')
-  // The @UseGuards(AuthGuard) decorator has been removed to make this endpoint public
   async getDriverStandings(@Query('season') seasonParam?: string) {
+    // This part of the code remains unchanged
     let targetSeason = seasonParam;
     
     if (!targetSeason) {
