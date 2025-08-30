@@ -1,13 +1,13 @@
-// backend/src/constructors/constructors.module.ts
-
 import { Module } from '@nestjs/common';
-import { ConstructorsService } from './constructors.service';
-import { ConstructorsController } from './constructors.controller';
+import { ConstructorController } from './constructors.controller';
+import { ConstructorService } from './constructors.service';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [SupabaseModule], // Makes SupabaseService available for injection
-  controllers: [ConstructorsController],
-  providers: [ConstructorsService],
+  imports: [SupabaseModule, HttpModule],
+  controllers: [ConstructorController],
+  providers: [ConstructorService],
+  exports: [ConstructorService],
 })
 export class ConstructorsModule {}

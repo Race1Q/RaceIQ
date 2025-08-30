@@ -1,16 +1,39 @@
-// backend/src/constructors/constructors.controller.ts
-
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ConstructorsService } from './constructors.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Controller, Get, Post, Query, Logger } from '@nestjs/common';
+import { ConstructorService } from './constructors.service';
+import { Constructor } from './constructors.entity';
 
 @Controller('constructors')
-@UseGuards(JwtAuthGuard) // This protects the endpoint, requiring a valid token
-export class ConstructorsController {
-  constructor(private readonly constructorsService: ConstructorsService) {}
+export class ConstructorController {
+  private readonly logger = new Logger(ConstructorController.name);
+
+  constructor(private readonly constructorService: ConstructorService) {}
+
+  @Post('ingest')
+  async ingestConstructors() {
+    this.logger.log('Starting constructors ingestion');
+    const result = await this.constructorService.ingestConstructors();
+    return {
+      message: 'Constructors ingestion completed',
+      result,
+    };
+  }
 
   @Get()
-  findAll() {
-    return this.constructorsService.findAll();
+  async getAllConstructors(): Promise<Constructor[]> {
+    return this.constructorService.getAllConstructors();
+  }
+
+  @Get('search')
+  async searchConstructors(@Query('q') query: string): Promise<Constructor[]> {
+    if (!query) {
+      return this.constructorService.getAllConstructors();
+    }
+    return this.constructorService.searchConstructors(query);
+  }
+
+  @Get(':id')
+  async getConstructorById(@Query('id') constructorId: string): Promise<Constructor | null> {
+    return this.constructorService.getConstructorById(constructorId);
   }
 }
+

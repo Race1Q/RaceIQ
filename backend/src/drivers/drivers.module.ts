@@ -3,11 +3,12 @@ import { Module } from '@nestjs/common';
 import { DriversController } from './drivers.controller';
 import { DriversService } from './drivers.service';
 import { IngestService } from './ingest.service';
+import { HttpModule } from '@nestjs/axios';
 import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-  imports: [SupabaseModule], 
-  controllers: [DriversController], // Only one controller is needed
+  imports: [HttpModule, SupabaseModule],
+  controllers: [DriversController],
   providers: [DriversService, IngestService],
   exports: [DriversService],
 })

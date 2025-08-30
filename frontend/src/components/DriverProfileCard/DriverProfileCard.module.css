@@ -44,17 +44,15 @@
 }
 
 .driverName {
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  font-family: var(--font-display); /* This will be the fallback */
   font-weight: 700;
-  color: var(--color-text-light); /* Default to light text */
+  color: var(--color-text-light);
   line-height: 1;
   text-transform: uppercase;
-  /* 1. Remove the old border-bottom */
   padding-bottom: 8px;
   margin-bottom: 8px;
-  position: relative; /* Needed for the pseudo-element */
-  width: 65%; /* Constrain the width so the line doesn't extend too far */
+  position: relative;
+  width: 65%;
 }
 
 /* 2. Create the fading line using a pseudo-element */
@@ -68,8 +66,20 @@
   background: linear-gradient(to right, rgba(255, 255, 255, 0.7) 50%, transparent 100%);
 }
 
-.driverName span { 
-  display: block; 
+/* New typography styles for the name */
+.firstName {
+  font-family: var(--font-signature);
+  font-size: clamp(2.2rem, 6vw, 3rem);
+  font-weight: 400;
+  text-transform: none; /* Signature font shouldn't be uppercase */
+  display: block;
+  margin-bottom: -0.5rem; /* Adjust for font overlap */
+}
+
+.lastName {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  display: block;
 }
 
 .teamName {
@@ -90,7 +100,9 @@
 /* 3. Add styles for when the card has a light background */
 .useDarkText .driverName,
 .useDarkText .driverNumber,
-.useDarkText .teamName {
+.useDarkText .teamName,
+.useDarkText .firstName,
+.useDarkText .lastName {
   color: #1a1a1a; /* Use a dark color */
   text-shadow: none; /* Remove shadows that are for dark backgrounds */
 }
@@ -125,13 +137,10 @@
 }
 
 .flagImage {
-  width: 40px;
+  font-size: 36px; /* Control SVG flag size with font-size */
   border-radius: var(--border-radius-sm);
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.flagImage:error { 
-  display: none; 
+  line-height: 1; /* Helps with alignment */
 }
 
 .cardBottom {
