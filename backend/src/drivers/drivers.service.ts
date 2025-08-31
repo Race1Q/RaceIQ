@@ -51,4 +51,26 @@ export class DriversService {
 
     return data ?? [];
   }
+
+  async findOneDetails(driverId: number): Promise<any> {
+    const { data, error } = await this.supabaseService.client
+      .rpc('get_driver_details', { p_driver_id: driverId });
+
+    if (error) {
+      this.logger.error(`Failed to fetch details for driver ${driverId}`, error);
+      throw new InternalServerErrorException('Failed to fetch driver details');
+    }
+    return data;
+  }
+
+  async findOnePerformance(driverId: number, season: number): Promise<any> {
+    const { data, error } = await this.supabaseService.client
+      .rpc('get_driver_performance', { p_driver_id: driverId, p_season: season });
+
+    if (error) {
+      this.logger.error(`Failed to fetch performance for driver ${driverId} in season ${season}`, error);
+      throw new InternalServerErrorException('Failed to fetch driver performance');
+    }
+    return data;
+  }
 }

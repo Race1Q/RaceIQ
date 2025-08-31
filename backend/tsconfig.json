@@ -25,7 +25,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.spec.ts", // <-- ADD THIS LINE
-    "**/*.e2e-spec.ts" // <-- AND THIS LINE
+    "**/*.spec.ts", 
+    "**/*.e2e-spec.ts" 
   ]
 }

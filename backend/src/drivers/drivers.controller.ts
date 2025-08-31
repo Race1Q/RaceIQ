@@ -37,4 +37,20 @@ export class DriversController {
   async findDriversByStandings(@Param('season', ParseIntPipe) season: number) {
     return this.driversService.findDriversByStandings(season);
   }
+  @Get(':id/details')
+  @UseGuards(JwtAuthGuard, ScopesGuard)
+  @Scopes('read:drivers')
+  async findOneDetails(@Param('id', ParseIntPipe) id: number) {
+    return this.driversService.findOneDetails(id);
+  }
+
+  @Get(':id/performance/:season')
+  @UseGuards(JwtAuthGuard, ScopesGuard)
+  @Scopes('read:drivers')
+  async findOnePerformance(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('season', ParseIntPipe) season: number,
+  ) {
+    return this.driversService.findOnePerformance(id, season);
+  }
 }
