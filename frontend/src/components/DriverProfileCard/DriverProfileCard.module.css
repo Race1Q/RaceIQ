@@ -95,6 +95,8 @@
   font-weight: 700;
   color: var(--color-text-light); /* Default to light text */
   line-height: 1;
+  /* Ensure number doesn't overlap with flag */
+  margin-right: 60px; /* Give space for the flag */
 }
 
 /* 3. Add styles for when the card has a light background */
@@ -143,6 +145,8 @@
   line-height: 1; /* Helps with alignment */
 }
 
+
+
 .cardBottom {
   background-color: var(--color-surface-dark);
   text-align: center;
@@ -155,6 +159,7 @@
 }
 
 .card:hover .cardBottom {
-  background-color: var(--color-primary-red);
+  /* Change from the static red to the dynamic team color variable */
+  background-color: var(--team-color-start);
   color: var(--color-text-light);
 }
