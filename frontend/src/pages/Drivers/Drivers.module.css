@@ -1,100 +1,65 @@
+/* frontend/src/pages/Drivers/Drivers.module.css */
 
-.driversContainer {
-  padding: var(--space-lg); /* Use larger padding for consistency */
-}
-
-/* --- Filter Styles --- */
-.searchFilterContainer {
+/* --- ADD THESE NEW STYLES FOR THE TABS --- */
+.tabsContainer {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: var(--space-lg);
+  border-bottom: 1px solid var(--color-border-gray);
   margin-bottom: var(--space-xl);
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.tabsContainer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, etc. */
 }
 
-.teamFilterContainer {
-  position: relative;
-  min-width: 250px;
-  height: 45px;
-}
-
-.teamFilter {
-  width: 100%;
-  height: 100%;
-  padding: 10px 35px 10px 15px;
-  font-family: var(--font-primary);
-  font-size: 1rem;
-  border-radius: var(--border-radius-md);
-  border: 1px solid var(--color-border-gray);
-  background-color: var(--color-surface-gray);
-  color: var(--color-text-light);
-  appearance: none;
+.tab {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background-color: transparent;
+  border: none;
+  padding: var(--space-sm) 0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  white-space: nowrap;
+  position: relative;
+  border-bottom: 3px solid transparent;
+  transition: color 0.2s ease-in-out;
 }
 
-.teamFilter:focus {
-  border-color: var(--color-primary-red);
-  box-shadow: 0 0 0 2px rgba(225, 6, 0, 0.2);
-  outline: none;
+.tab:hover {
+  color: var(--color-text-light);
 }
 
-.dropdownIcon {
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: var(--color-icon-muted);
+.activeTab {
+  color: var(--color-text-light);
+  border-bottom-color: var(--color-primary-red);
 }
-/* --- End Filter Styles --- */
+/* --- END OF NEW STYLES --- */
 
-/* New container for all the team rows */
 .teamsContainer {
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
 }
-
-.teamRow { 
-  width: 100%; 
+.teamSection {
+  width: 100%;
 }
-
-.teamNameHeader {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  color: var(--color-text-light);
-  margin-bottom: var(--space-md);
-  padding-bottom: var(--space-sm);
-  border-bottom: 2px solid var(--color-border-gray);
-  text-align: left;
-}
-
-/* This is the row for a single team's drivers */
 .driverRow {
   display: grid;
-  /* Creates the two-wide layout */
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--space-lg);
 }
-
-/* Keep error state styles */
-.errorState, .noDrivers {
+.errorState {
   color: var(--color-primary-red-light);
   text-align: center;
   font-size: 1.2rem;
   padding: var(--space-xl);
 }
-
-/* Responsive adjustments for the grid */
-@media (max-width: 900px) {
+@media (min-width: 800px) {
   .driverRow {
-    /* Stack to a single column on smaller screens */
-    grid-template-columns: 1fr;
-  }
-  .teamNameHeader {
-    font-size: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
-
-/* NOTE: All old styles like .driverCards, .searchFilterContainer, etc.,
-   that are not used by the new TSX structure have been removed for clarity.
-   The styles for your individual cards themselves are untouched. */

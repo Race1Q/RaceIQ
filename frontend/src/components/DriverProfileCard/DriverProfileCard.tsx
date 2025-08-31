@@ -41,22 +41,23 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
     '--team-color-end': darkenColor(teamColor, 20),
   } as React.CSSProperties;
 
-  const textColorMode = getTextColorForBackground(driver.team_color);
-  const cardClasses = `${styles.card} ${textColorMode === 'dark' ? styles.useDarkText : ''}`;
+  // The cardClasses logic is no longer needed
 
   const [firstName, ...lastNameParts] = driver.name.split(' ');
   const lastName = lastNameParts.join(' ');
 
+  // Map 3-letter country codes to 2-letter codes for react-country-flag
+  const countryCode = countryCodeMap[driver.nationality] || driver.nationality;
+
   return (
     <Link to={`/drivers/${driver.id}`} className={styles.cardLink}>
-      <div className={cardClasses} style={cardStyle}>
+      <div className={styles.card} style={cardStyle}>
         <div className={styles.cardTop}>
           <div className={styles.driverInfo}>
             <h2 className={styles.driverName}>
               <span className={styles.firstName}>{firstName}</span>
               <span className={styles.lastName}>{lastName}</span>
             </h2>
-            <p className={styles.teamName}>{driver.team}</p>
             <p className={styles.driverNumber}>{driver.number}</p>
           </div>
 
@@ -69,7 +70,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           
           <div className={styles.flagWrapper}>
             <ReactCountryFlag
-              countryCode={countryCodeMap[driver.nationality] || ''}
+              countryCode={countryCode}
               svg
               className={styles.flagImage}
               title={driver.nationality}

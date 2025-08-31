@@ -4,21 +4,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useToast } from '@chakra-ui/react';
 import styles from './Drivers.module.css';
-import { FaAngleDown } from 'react-icons/fa'; // Import the icon
-import HeroSection from '../../components/HeroSection/HeroSection';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
+import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
 import { driverHeadshots } from '../../lib/driverHeadshots';
+import { teamLogoMap } from '../../lib/teamAssets';
 
 // Interfaces
-interface ApiDriver {
-    id: number; full_name: string; driver_number: number | null;
-    country_code: string | null; team_name: string;
-}
-interface Driver extends ApiDriver {
-    headshot_url: string; team_color: string;
-}
+interface ApiDriver { id: number; full_name: string; driver_number: number | null; country_code: string | null; team_name: string; }
+interface Driver extends ApiDriver { headshot_url: string; team_color: string; }
 type GroupedDrivers = { [teamName: string]: Driver[] };
 
 const Drivers = () => {
@@ -28,8 +23,8 @@ const Drivers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1. RE-INTRODUCE state for the team filter
-  const [selectedTeam, setSelectedTeam] = useState<string>("all");
+  // 1. RE-INTRODUCE state for the selected team filter
+  const [selectedTeam, setSelectedTeam] = useState<string>("All");
 
   const authedFetch = useCallback(async (url: string) => {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
@@ -58,10 +53,11 @@ const Drivers = () => {
           team_color: teamColors[driver.team_name] || teamColors["Default"],
         }));
         setDrivers(hydratedDrivers);
-      } catch (err: any) {
-        setError(err.message || 'An unexpected error occurred.');
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
+        setError(errorMessage);
         toast({
-          title: 'Error fetching drivers', description: err.message,
+          title: 'Error fetching drivers', description: errorMessage,
           status: 'error', duration: 5000, isClosable: true,
         });
       } finally {
@@ -71,87 +67,80 @@ const Drivers = () => {
     fetchAndProcessDrivers();
   }, [authedFetch, toast]);
 
-  // 2. UPDATE useMemo to include the team filter logic
   const { orderedTeamNames, groupedDrivers } = useMemo(() => {
-    const filteredByTeam = drivers.filter((driver) => {
-        return selectedTeam === "all" || driver.team_name === selectedTeam;
-    });
-
-    const groups = filteredByTeam.reduce<GroupedDrivers>((acc, driver) => {
+    const groups = drivers.reduce<GroupedDrivers>((acc, driver) => {
       const team = driver.team_name;
       if (!acc[team]) acc[team] = [];
       acc[team].push(driver);
       return acc;
     }, {});
-    
-    const orderedTeams = [...new Set(filteredByTeam.map(d => d.team_name))];
-
+    const orderedTeams = [...new Set(drivers.map(d => d.team_name))];
     return { orderedTeamNames: orderedTeams, groupedDrivers: groups };
-  }, [drivers, selectedTeam]);
+  }, [drivers]);
 
-  // Create a unique list of all teams for the dropdown menu
-  const uniqueTeams = useMemo(() => [...new Set(drivers.map(d => d.team_name))].sort(), [drivers]);
+  // Create the list of teams to display based on the filter
+  const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
+  // Create the list of tabs for the UI
+  const filterTabs = ["All", ...orderedTeamNames];
 
   return (
-    <>
-      <HeroSection
-        title="Driver Profiles"
-        subtitle="Explore the stats, history, and performance of every driver on the grid."
-        backgroundImageUrl="https://images.pexels.com/photos/15155732/pexels-photo-15155732.jpeg"
-      />
-      <div className={styles.driversContainer}>
-        
-        {/* 3. ADD the filter UI back to the page */}
-        <div className={styles.searchFilterContainer}>
-          <div className={styles.teamFilterContainer}>
-            <select
-              className={styles.teamFilter}
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              disabled={loading}
-            >
-              <option value="all">All Teams</option>
-              {uniqueTeams.map(team => (
-                <option key={team} value={team}>{team}</option>
-              ))}
-            </select>
-            <span className={styles.dropdownIcon}><FaAngleDown /></span>
+    <div className="pageContainer">
+      {loading && <F1LoadingSpinner text="Loading Drivers..." />}
+      {error && <div className={styles.errorState}>{error}</div>}
+      
+      {!loading && !error && (
+        <>
+          {/* 2. ADD the filter tabs UI at the top of the page content */}
+          <div className={styles.tabsContainer}>
+            {filterTabs.map(team => (
+              <button
+                key={team}
+                className={`${styles.tab} ${selectedTeam === team ? styles.activeTab : ''}`}
+                onClick={() => setSelectedTeam(team)}
+              >
+                {team}
+              </button>
+            ))}
           </div>
-        </div>
 
-        {loading && <F1LoadingSpinner text="Loading Drivers..." />}
-        {error && <div className={styles.errorState}>{error}</div>}
-        
-        {!loading && !error && (
           <div className={styles.teamsContainer}>
-            {orderedTeamNames.map(teamName => {
-              const driversInTeam = groupedDrivers[teamName];
-              if (!driversInTeam || driversInTeam.length === 0) return null;
+            {/* 3. MAP over the filtered list of teams */}
+            {teamsToRender.length > 0 ? (
+                teamsToRender.map(teamName => {
+                const driversInTeam = groupedDrivers[teamName];
+                if (!driversInTeam || driversInTeam.length === 0) return null;
 
-              return (
-                <div key={teamName} className={styles.teamRow}>
-                  <h2 className={styles.teamNameHeader}>{teamName}</h2>
-                  <div className={styles.driverRow}>
-                    {driversInTeam.map(driver => {
-                      const driverCardData = {
-                        id: driver.full_name.toLowerCase().replace(/ /g, '_'),
-                        name: driver.full_name,
-                        number: driver.driver_number ? String(driver.driver_number) : 'N/A',
-                        team: driver.team_name,
-                        nationality: driver.country_code || 'N/A',
-                        image: driver.headshot_url,
-                        team_color: driver.team_color,
-                      };
-                      return <DriverProfileCard key={driver.id} driver={driverCardData} />;
-                    })}
+                return (
+                  <div key={teamName} className={styles.teamSection}>
+                    <TeamBanner 
+                      teamName={teamName}
+                      logoUrl={teamLogoMap[teamName] || ''}
+                      teamColor={teamColors[teamName] || teamColors['Default']}
+                    />
+                    <div className={styles.driverRow}>
+                      {driversInTeam.map(driver => {
+                        const driverCardData = {
+                          id: driver.full_name.toLowerCase().replace(/ /g, '_'),
+                          name: driver.full_name,
+                          number: driver.driver_number ? String(driver.driver_number) : 'N/A',
+                          team: driver.team_name,
+                          nationality: driver.country_code || 'N/A',
+                          image: driver.headshot_url,
+                          team_color: driver.team_color,
+                        };
+                        return <DriverProfileCard key={driver.id} driver={driverCardData} />;
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+                <div className={styles.noDrivers}>No drivers found.</div>
+            )}
           </div>
-        )}
-      </div>
-    </>
+        </>
+      )}
+    </div>
   );
 };
 
