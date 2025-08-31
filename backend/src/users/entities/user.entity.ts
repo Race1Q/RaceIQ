@@ -1,8 +1,7 @@
 // src/users/entities/user.entity.ts
 
 export class User {
-    id: string; // The user's unique ID from the database (usually a UUID)
-    auth0_sub: string;
+    auth0_sub: string; // Primary key
     username: string | null;
     email: string | null;
     favorite_constructor_id: number | null;
