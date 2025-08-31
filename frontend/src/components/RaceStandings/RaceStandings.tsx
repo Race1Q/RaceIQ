@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Text, VStack, HStack, Image } from '@chakra-ui/react';
 import { Trophy, Medal, Award } from 'lucide-react';
 import type { RaceStanding } from '../../data/types';
-import { teamLogos } from '../../lib/assets';
+import { teamLogoMap } from '../../lib/teamAssets';
 import styles from './RaceStandings.module.css';
 
 interface RaceStandingsProps {
@@ -54,10 +54,10 @@ const RaceStandings: React.FC<RaceStandingsProps> = ({ standings }) => {
                 </Box>
                 
                 <Image 
-                  src={teamLogos[standing.team]} 
+                  src={teamLogoMap[standing.team] || teamLogoMap["Default"]} 
                   alt={`${standing.team} logo`}
                   className={styles.teamLogo}
-                  fallbackSrc="https://via.placeholder.com/24x24/666666/ffffff?text=?"
+                  fallbackSrc={teamLogoMap["Default"]}
                 />
                 
                 <Box className={styles.driverInfo}>

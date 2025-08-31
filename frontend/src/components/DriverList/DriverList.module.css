@@ -1,103 +1,74 @@
-.container {
+.driverListContainer {
   background-color: var(--color-surface-dark);
+  border: 1px solid var(--color-border-gray);
   border-radius: var(--border-radius-lg);
   padding: var(--space-md);
-  height: fit-content;
-  border: 1px solid var(--color-border-gray);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
-}
-
-/* Light mode enhancements */
-[data-theme='light'] .container {
-  border-color: var(--color-border-light);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.searchContainer {
-  margin-bottom: var(--space-md);
-}
-
-.searchWrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.searchIcon {
-  color: var(--color-text-muted);
-  position: absolute;
-  left: var(--space-sm);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.searchInput {
-  background-color: var(--color-surface-gray);
-  border: 1px solid var(--color-border-gray);
-  color: var(--color-text-light);
-  font-family: var(--font-primary);
-  padding-right: var(--space-sm);
-}
-
-.searchInput::placeholder {
-  color: var(--color-text-muted);
-}
-
-.searchInput:focus {
-  border-color: var(--color-primary-red);
-  box-shadow: 0 0 0 1px var(--color-primary-red);
-}
-
-.driverList {
-  max-height: 500px;
+  height: 100%;
   overflow-y: auto;
+}
+
+.listTitle {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border-gray);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .driverItem {
   display: flex;
   align-items: center;
+  gap: var(--space-md);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--border-radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-left: 3px solid transparent;
-  background-color: var(--color-surface-gray);
-  width: 100%;
+  transition: background-color 0.2s ease-in-out;
+  border-left: 4px solid transparent;
 }
 
 .driverItem:hover {
-  background-color: var(--color-surface-gray-light);
-  transform: translateX(2px);
+  background-color: var(--color-surface-gray);
 }
 
-.driverItem.active {
-  background-color: var(--color-surface-gray-light);
-  transform: translateX(4px);
+.driverItem.selected {
+  background-color: var(--color-surface-gray);
+  border-left-color: var(--team-color-border);
 }
 
 .driverNumber {
   font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: var(--color-primary-red);
-  margin-right: var(--space-sm);
-  min-width: 30px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 50px;
+  text-align: center;
 }
 
 .driverInfo {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .driverName {
   font-family: var(--font-primary);
-  font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-text-light);
-  margin-bottom: 2px;
+  font-size: 1rem;
 }
 
-.driverTeam {
+.teamName {
   font-family: var(--font-primary);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--color-text-muted);
 }

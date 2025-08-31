@@ -2,38 +2,39 @@
 
 import React from 'react';
 import styles from './DriverDetailProfile.module.css';
-import userIcon from '../../assets/UserIcon.png';
-import { Quote } from 'lucide-react';
+import userIcon from '../../assets/UserIcon.png'; // Fallback icon
 
-interface Driver {
+interface DriverDetailProfileProps {
   name: string;
   team: string;
-  image: string;
+  imageUrl: string | null;
   funFact: string;
 }
 
-interface DriverDetailProfileProps {
-  driver: Driver;
-}
+const DriverDetailProfile: React.FC<DriverDetailProfileProps> = ({ name, team, imageUrl, funFact }) => {
+  // CRITICAL FIX: Add a defensive check.
+  // If 'name' is undefined or not a string, default to an empty string to prevent the .split() crash.
+  const nameToSplit = typeof name === 'string' ? name : '';
+  const [firstName, ...lastNameParts] = nameToSplit.split(' ');
+  const lastName = lastNameParts.join(' ');
 
-const DriverDetailProfile: React.FC<DriverDetailProfileProps> = ({ driver }) => {
   return (
     <div className={styles.profileCard}>
       <div className={styles.imageContainer}>
-        <img
-          src={driver.image || userIcon}
-          alt={driver.name}
+        <img 
+          src={imageUrl || userIcon} 
+          alt={nameToSplit} 
           className={styles.driverImage}
           onError={(e) => { e.currentTarget.src = userIcon; }}
         />
       </div>
       <div className={styles.infoContainer}>
-        <h2 className={styles.driverName}>{driver.name}</h2>
-        <p className={styles.teamName}>{driver.team}</p>
-      </div>
-      <div className={styles.funFactContainer}>
-        <Quote className={styles.quoteIcon} size={20} />
-        <p className={styles.funFactText}>{driver.funFact}</p>
+        <h3 className={styles.driverName}>
+          <span className={styles.firstName}>{firstName || 'Driver'}</span>
+          <span className={styles.lastName}>{lastName || 'Name'}</span>
+        </h3>
+        <p className={styles.teamName}>{team || 'Unknown Team'}</p>
+        <p className={styles.funFact}>{funFact || "Driver information is being loaded..."}</p>
       </div>
     </div>
   );

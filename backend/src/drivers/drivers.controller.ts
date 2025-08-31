@@ -14,8 +14,6 @@ export class DriversController {
     private readonly driversService: DriversService,
   ) {}
 
-
-
   @Get()
   @UseGuards(JwtAuthGuard, ScopesGuard)
   @Scopes('read:drivers')
@@ -49,7 +47,7 @@ export class DriversController {
   @Scopes('read:drivers')
   async findOnePerformance(
     @Param('id', ParseIntPipe) id: number,
-    @Param('season', ParseIntPipe) season: number,
+    @Param('season') season: string, // <-- Changed to string, removed ParseIntPipe
   ) {
     return this.driversService.findOnePerformance(id, season);
   }

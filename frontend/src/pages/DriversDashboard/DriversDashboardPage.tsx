@@ -1,190 +1,138 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Flex, Box } from '@chakra-ui/react';
+import { useAuth0 } from '@auth0/auth0-react';
+
+// Import Components and Contexts
 import DriverList from '../../components/DriverList/DriverList';
 import DashboardGrid from '../../components/DashboardGrid/DashboardGrid';
 import HeroSection from '../../components/HeroSection/HeroSection';
+import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { useTheme } from '../../context/ThemeContext';
 import { teamColors } from '../../lib/teamColors';
 
-// Mock data for drivers
-const mockDrivers = [
-  {
-    id: 'max_verstappen',
-    name: 'Max Verstappen',
-    number: '1',
-    team: 'Red Bull Racing',
-    nationality: 'Dutch',
-    wins: 54,
-    podiums: 98,
-    fastestLaps: 30,
-    points: 2586.5,
-    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/1col/image.png',
-    winsPerSeason: [
-      { season: '2021', wins: 10 },
-      { season: '2022', wins: 15 },
-      { season: '2023', wins: 19 },
-      { season: '2024', wins: 10 }
-    ],
-    lapByLapData: [
-      { lap: 1, position: 1 }, { lap: 2, position: 1 }, { lap: 3, position: 1 },
-      { lap: 4, position: 1 }, { lap: 5, position: 1 }, { lap: 6, position: 1 },
-      { lap: 7, position: 1 }, { lap: 8, position: 1 }, { lap: 9, position: 1 },
-      { lap: 10, position: 1 }, { lap: 11, position: 1 }, { lap: 12, position: 1 },
-      { lap: 13, position: 1 }, { lap: 14, position: 1 }, { lap: 15, position: 1 },
-      { lap: 16, position: 1 }, { lap: 17, position: 1 }, { lap: 18, position: 1 },
-      { lap: 19, position: 1 }, { lap: 20, position: 1 }
-    ]
-  },
-  {
-    id: 'lewis_hamilton',
-    name: 'Lewis Hamilton',
-    number: '44',
-    team: 'Mercedes',
-    nationality: 'British',
-    wins: 103,
-    podiums: 197,
-    fastestLaps: 64,
-    points: 4639.5,
-    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/1col/image.png',
-    winsPerSeason: [
-      { season: '2021', wins: 8 },
-      { season: '2022', wins: 0 },
-      { season: '2023', wins: 0 },
-      { season: '2024', wins: 0 }
-    ],
-    lapByLapData: [
-      { lap: 1, position: 3 }, { lap: 2, position: 3 }, { lap: 3, position: 2 },
-      { lap: 4, position: 2 }, { lap: 5, position: 2 }, { lap: 6, position: 2 },
-      { lap: 7, position: 2 }, { lap: 8, position: 2 }, { lap: 9, position: 2 },
-      { lap: 10, position: 2 }, { lap: 11, position: 2 }, { lap: 12, position: 2 },
-      { lap: 13, position: 2 }, { lap: 14, position: 2 }, { lap: 15, position: 2 },
-      { lap: 16, position: 2 }, { lap: 17, position: 2 }, { lap: 18, position: 2 },
-      { lap: 19, position: 2 }, { lap: 20, position: 2 }
-    ]
-  },
-  {
-    id: 'charles_leclerc',
-    name: 'Charles Leclerc',
-    number: '16',
-    team: 'Ferrari',
-    nationality: 'Monegasque',
-    wins: 5,
-    podiums: 30,
-    fastestLaps: 7,
-    points: 1074,
-    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/1col/image.png',
-    winsPerSeason: [
-      { season: '2021', wins: 0 },
-      { season: '2022', wins: 3 },
-      { season: '2023', wins: 0 },
-      { season: '2024', wins: 2 }
-    ],
-    lapByLapData: [
-      { lap: 1, position: 2 }, { lap: 2, position: 2 }, { lap: 3, position: 3 },
-      { lap: 4, position: 3 }, { lap: 5, position: 3 }, { lap: 6, position: 3 },
-      { lap: 7, position: 3 }, { lap: 8, position: 3 }, { lap: 9, position: 3 },
-      { lap: 10, position: 3 }, { lap: 11, position: 3 }, { lap: 12, position: 3 },
-      { lap: 13, position: 3 }, { lap: 14, position: 3 }, { lap: 15, position: 3 },
-      { lap: 16, position: 3 }, { lap: 17, position: 3 }, { lap: 18, position: 3 },
-      { lap: 19, position: 3 }, { lap: 20, position: 3 }
-    ]
-  },
-  {
-    id: 'lando_norris',
-    name: 'Lando Norris',
-    number: '4',
-    team: 'McLaren',
-    nationality: 'British',
-    wins: 1,
-    podiums: 15,
-    fastestLaps: 5,
-    points: 633,
-    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png',
-    winsPerSeason: [
-      { season: '2021', wins: 0 },
-      { season: '2022', wins: 0 },
-      { season: '2023', wins: 0 },
-      { season: '2024', wins: 1 }
-    ],
-    lapByLapData: [
-      { lap: 1, position: 4 }, { lap: 2, position: 4 }, { lap: 3, position: 4 },
-      { lap: 4, position: 4 }, { lap: 5, position: 4 }, { lap: 6, position: 4 },
-      { lap: 7, position: 4 }, { lap: 8, position: 4 }, { lap: 9, position: 4 },
-      { lap: 10, position: 4 }, { lap: 11, position: 4 }, { lap: 12, position: 4 },
-      { lap: 13, position: 4 }, { lap: 14, position: 4 }, { lap: 15, position: 4 },
-      { lap: 16, position: 4 }, { lap: 17, position: 4 }, { lap: 18, position: 4 },
-      { lap: 19, position: 4 }, { lap: 20, position: 4 }
-    ]
-  },
-  {
-    id: 'carlos_sainz',
-    name: 'Carlos Sainz',
-    number: '55',
-    team: 'Ferrari',
-    nationality: 'Spanish',
-    wins: 2,
-    podiums: 18,
-    fastestLaps: 3,
-    points: 982.5,
-    image: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/1col/image.png',
-    winsPerSeason: [
-      { season: '2021', wins: 0 },
-      { season: '2022', wins: 1 },
-      { season: '2023', wins: 0 },
-      { season: '2024', wins: 1 }
-    ],
-    lapByLapData: [
-      { lap: 1, position: 5 }, { lap: 2, position: 5 }, { lap: 3, position: 5 },
-      { lap: 4, position: 5 }, { lap: 5, position: 5 }, { lap: 6, position: 5 },
-      { lap: 7, position: 5 }, { lap: 8, position: 5 }, { lap: 9, position: 5 },
-      { lap: 10, position: 5 }, { lap: 11, position: 5 }, { lap: 12, position: 5 },
-      { lap: 13, position: 5 }, { lap: 14, position: 5 }, { lap: 15, position: 5 },
-      { lap: 16, position: 5 }, { lap: 17, position: 5 }, { lap: 18, position: 5 },
-      { lap: 19, position: 5 }, { lap: 20, position: 5 }
-    ]
-  }
-];
-
 const DriversDashboardPage: React.FC = () => {
-  const [selectedDriverId, setSelectedDriverId] = useState('max_verstappen');
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
+  const [selectedDriverData, setSelectedDriverData] = useState<any | null>(null);
+  const [loading, setLoading] = useState({ list: true, details: true });
+  const [error, setError] = useState<string | null>(null);
+
   const { setThemeColor } = useTheme();
+  const { getAccessTokenSilently } = useAuth0();
 
-  const selectedDriver = mockDrivers.find(driver => driver.id === selectedDriverId) || mockDrivers[0];
-
-  useEffect(() => {
-    // Set the theme color when the selected driver changes
-    if (selectedDriver) {
-      const newColor = teamColors[selectedDriver.team] || '#FF1801';
-      setThemeColor(newColor);
+  const authedFetch = useCallback(async (url: string) => {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const token = await getAccessTokenSilently({
+      authorizationParams: { 
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE, 
+        scope: "read:drivers" 
+      },
+    });
+    const headers = new Headers();
+    headers.set('Authorization', `Bearer ${token}`);
+    const response = await fetch(`${apiBaseUrl}${url}`, { headers });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
+    return response.json();
+  }, [getAccessTokenSilently]);
 
-    // This cleanup function runs when the component unmounts
-    return () => {
-      setThemeColor('#FF1801'); // Reset to default red
+  // Effect 1: Fetch the list of all drivers ONCE on mount.
+  useEffect(() => {
+    const fetchDriverList = async () => {
+      try {
+        setError(null);
+        setLoading({ list: true, details: true });
+        const driverListData = await authedFetch('/api/drivers/by-standings/2025');
+        setDrivers(driverListData);
+        // Automatically select the first driver by their NUMERIC ID.
+        if (driverListData && driverListData.length > 0) {
+          setSelectedDriverId(driverListData[0].id); // Use the numeric ID
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load driver list.');
+      } finally {
+        setLoading(prev => ({ ...prev, list: false }));
+      }
     };
-  }, [selectedDriver, setThemeColor]);
+    fetchDriverList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // <-- Empty array ensures this runs only ONCE on mount.
+
+  // Effect 2: Fetch details for the selected driver whenever the ID changes.
+  useEffect(() => {
+    if (!selectedDriverId) return;
+
+    const fetchDriverDetails = async () => {
+      setLoading(prev => ({ ...prev, details: true }));
+      setError(null);
+
+      try {
+        const [details, performance] = await Promise.all([
+          authedFetch(`/api/drivers/${selectedDriverId}/details`),
+          authedFetch(`/api/drivers/${selectedDriverId}/performance/2025`)
+        ]);
+
+        const flattenedData = {
+          id: details.driverId,
+          fullName: details.fullName,
+          teamName: details.team.name,
+          funFact: details.profile.funFact,
+          imageUrl: details.profile.imageUrl,
+          wins: details.careerStats.wins,
+          podiums: details.careerStats.podiums,
+          fastestLaps: details.careerStats.fastestLaps,
+          points: details.careerStats.totalPoints,
+          championshipStanding: performance.championshipStanding,
+          winsPerSeason: performance.winsPerSeason,
+        };
+        setSelectedDriverData(flattenedData);
+
+        const newColor = teamColors[details.team.name] || '#FF1801';
+        setThemeColor(newColor);
+        
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load driver details.');
+      } finally {
+        setLoading(prev => ({ ...prev, details: false }));
+      }
+    };
+
+    fetchDriverDetails();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDriverId]); // <-- Now only depends on the ID, which is correct.
+
+  if (loading.list) {
+    return <F1LoadingSpinner text="Loading drivers..." />;
+  }
+
+  if (error) {
+    return <Container centerContent padding="4rem">Error: {error}</Container>;
+  }
 
   return (
     <>
-      {/* Hero Section */}
       <HeroSection
         title="Drivers Dashboard"
         subtitle="Your personalized hub for in-depth driver statistics and performance analytics."
         backgroundImageUrl="https://images.pexels.com/photos/29252132/pexels-photo-29252132.jpeg"
       />
       
-      {/* Main Content */}
       <Container maxWidth="1400px" paddingX={['1rem', '2rem', '3rem']} paddingY="2rem">
         <Flex direction={['column', 'column', 'row']} gap={6}>
           <Box width={['100%', '100%', '300px']} flexShrink={0}>
             <DriverList
-              drivers={mockDrivers}
+              drivers={drivers}
               selectedDriverId={selectedDriverId}
               setSelectedDriverId={setSelectedDriverId}
             />
           </Box>
           <Box flex={1}>
-            <DashboardGrid driver={selectedDriver} />
+            {loading.details && <F1LoadingSpinner text="Loading dashboard..." />}
+            {!loading.details && selectedDriverData && (
+              <DashboardGrid driver={selectedDriverData} />
+            )}
           </Box>
         </Flex>
       </Container>

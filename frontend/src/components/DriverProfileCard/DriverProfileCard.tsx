@@ -1,7 +1,7 @@
 // frontend/src/components/DriverProfileCard/DriverProfileCard.tsx
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+// REMOVED: import { Link } from 'react-router-dom';
 import ReactCountryFlag from 'react-country-flag';
 import styles from './DriverProfileCard.module.css';
 import userIcon from '../../assets/UserIcon.png';
@@ -41,17 +41,19 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
     '--team-color-end': darkenColor(teamColor, 20),
   } as React.CSSProperties;
 
-  // The cardClasses logic is no longer needed
+  const textColorMode = getTextColorForBackground(driver.team_color);
+  const cardClasses = `${styles.card} ${textColorMode === 'dark' ? styles.useDarkText : ''}`;
 
   const [firstName, ...lastNameParts] = driver.name.split(' ');
   const lastName = lastNameParts.join(' ');
 
-  // Map 3-letter country codes to 2-letter codes for react-country-flag
   const countryCode = countryCodeMap[driver.nationality] || driver.nationality;
 
+  // CRITICAL FIX: The root element is now a <div>, not a <Link>.
+  // The className that used to be on the Link is now on this div.
   return (
-    <Link to={`/drivers/${driver.id}`} className={styles.cardLink}>
-      <div className={styles.card} style={cardStyle}>
+    <div className={styles.cardLink}>
+      <div className={cardClasses} style={cardStyle}>
         <div className={styles.cardTop}>
           <div className={styles.driverInfo}>
             <h2 className={styles.driverName}>
@@ -82,7 +84,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           <span>View Profile</span>
         </div>
       </div>
-    </Link>
+    </div>
   );
 };
 

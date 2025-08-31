@@ -63,7 +63,7 @@ export class DriversService {
     return data;
   }
 
-  async findOnePerformance(driverId: number, season: number): Promise<any> {
+  async findOnePerformance(driverId: number, season: string): Promise<any> { // <-- Changed to string
     const { data, error } = await this.supabaseService.client
       .rpc('get_driver_performance', { p_driver_id: driverId, p_season: season });
 
