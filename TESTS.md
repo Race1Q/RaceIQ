@@ -103,4 +103,23 @@ The Admin page is mostly static UI, so automated tests focus on structure and CS
 - [x] Renders 7 speedometer markings and 7 numbers.  
 - [x] Spot-check: number “300” is visible.  
 
+### FastestLapCard.test.tsx
+- [x] Renders the title "Fastest Lap".  
+- [x] Displays the provided lap time.  
+- [x] Displays the driver name with Zap icon.  
+- [x] Applies dynamic gradient background using `teamColor` (fallback to red).  
+
+### FeaturedDriverCard.test.tsx
+- [x] Renders title, driver name, team, and points.  
+- [x] Displays driver image with correct `alt` and `src`.  
+- [x] Renders ArrowUpRight icon button.  
+- [x] Applies background with provided `accentColor`.  
+
+### FlagsTimeline.test.tsx
+- [x] Renders the title "Race Timeline".  
+- [x] Displays lap labels (Lap 1 … Lap N).  
+- [x] Segments are rendered with correct width, class, and title tooltip.  
+- [x] Legend includes: Green Flag, Yellow Flag, Safety Car, Virtual Safety Car.  
+- [x] Defaults unknown flag type to Green Flag (color + label).  
+
 ---
