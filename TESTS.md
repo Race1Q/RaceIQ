@@ -122,4 +122,9 @@ The Admin page is mostly static UI, so automated tests focus on structure and CS
 - [x] Legend includes: Green Flag, Yellow Flag, Safety Car, Virtual Safety Car.  
 - [x] Defaults unknown flag type to Green Flag (color + label).  
 
+### ProfilePage.test.tsx
+- [x] Shows warning toast when clicking **Delete Account**.  
+- [x] Toggles email notifications switch on/off.  
+- [x] Lets user change username, team, and driver fields, then saves via PATCH with correct headers, payload, and success toast.  
+
 ---
