@@ -28,13 +28,12 @@ const Drivers = () => {
   const [selectedTeam, setSelectedTeam] = useState<string>("All");
 
   const authedFetch = useCallback(async (url: string) => {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
       const token = await getAccessTokenSilently({
           authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE, scope: "read:drivers" },
       });
       const headers = new Headers();
       headers.set('Authorization', `Bearer ${token}`);
-      const response = await fetch(`${apiBaseUrl}${url}`, { headers });
+      const response = await fetch(url, { headers });
       if (!response.ok) {
           const errorBody = await response.text();
           throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`);
