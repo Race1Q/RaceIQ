@@ -6,10 +6,7 @@ import ProfilePage from './ProfilePage';
 
 // ---- Mock CSS module ----
 vi.mock('./ProfilePage.module.css', () => ({
-  default: {
-    profilePage: 'profilePage',
-    settingsCard: 'settingsCard',
-  },
+  default: { profilePage: 'profilePage', settingsCard: 'settingsCard' },
 }), { virtual: true });
 
 // ---- Mock child components ----
@@ -21,7 +18,6 @@ vi.mock('../../components/HeroSection/HeroSection', () => ({
     </header>
   ),
 }));
-
 vi.mock('../../components/ThemeToggleButton/ThemeToggleButton', () => ({
   default: () => <button data-testid="theme-toggle">toggle theme</button>,
 }));
@@ -45,13 +41,10 @@ vi.mock('@auth0/auth0-react', () => ({
 const toastMock = vi.fn();
 vi.mock('@chakra-ui/react', async (importOriginal) => {
   const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useToast: () => toastMock,
-  };
+  return { ...actual, useToast: () => toastMock };
 });
 
-// ---- Mock chakra-react-select -> native <select> ----
+// ---- Mock chakra-react-select to a native select ----
 vi.mock('chakra-react-select', () => {
   function TestSelect({
     options = [],
@@ -100,9 +93,7 @@ function renderWithProviders(ui: React.ReactElement) {
 const fetchMock = vi.fn();
 
 beforeEach(() => {
-  vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com');
   vi.stubEnv('VITE_AUTH0_AUDIENCE', 'https://auth0.example.com/api');
-
   // @ts-ignore
   global.fetch = fetchMock;
   fetchMock.mockReset();
@@ -122,69 +113,41 @@ const profileResponse = {
     favorite_driver_id: 33,
   },
 };
-
 const constructorsResponse = [
   { id: 1, name: 'Ferrari' },
   { id: 2, name: 'Red Bull Racing' },
 ];
-
 const driversResponse = [
   { id: 33, name: 'Max Verstappen' },
   { id: 16, name: 'Charles Leclerc' },
 ];
 
-// Utility to set up the three initial GET requests
+// Utility to set up the three initial GET requests (order: /me, /constructors, /drivers)
 function setupInitialFetches() {
   fetchMock
-    // GET /api/users/me
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => profileResponse,
-    } as any)
-    // GET /api/constructors
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => constructorsResponse,
-    } as any)
-    // GET /api/drivers
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => driversResponse,
-    } as any);
+    .mockResolvedValueOnce({ ok: true, json: async () => profileResponse } as any)
+    .mockResolvedValueOnce({ ok: true, json: async () => constructorsResponse } as any)
+    .mockResolvedValueOnce({ ok: true, json: async () => driversResponse } as any);
 }
 
 describe('ProfilePage', () => {
-  it('loads profile, pre-fills fields, and composes full API URLs', async () => {
+  it('loads profile, pre-fills fields, and hits API endpoints (relative URLs)', async () => {
     setupInitialFetches();
-
     renderWithProviders(<ProfilePage />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'https://api.example.com/api/users/me',
-      expect.any(Object)
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'https://api.example.com/api/constructors',
-      expect.any(Object)
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      'https://api.example.com/api/drivers',
-      expect.any(Object)
-    );
+    const [c1, c2, c3] = fetchMock.mock.calls;
+    expect(String(c1[0]).endsWith('/api/users/me')).toBe(true);
+    expect(String(c2[0]).endsWith('/api/constructors')).toBe(true);
+    expect(String(c3[0]).endsWith('/api/drivers')).toBe(true);
 
     const usernameInput = screen.getByPlaceholderText('Enter your username') as HTMLInputElement;
     expect(usernameInput.value).toBe('K-Money');
-
     expect(screen.getByTestId('Search and select your favorite team-selected').textContent)
       .toBe('Red Bull Racing');
     expect(screen.getByTestId('Search and select your favorite driver-selected').textContent)
       .toBe('Max Verstappen');
-
     expect(screen.getByText('Alice Tester')).toBeInTheDocument();
     expect(screen.getByText('alice@example.com')).toBeInTheDocument();
   });
@@ -192,25 +155,17 @@ describe('ProfilePage', () => {
   it('shows a warning toast when clicking "Delete Account"', async () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
-
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
 
     fireEvent.click(screen.getByRole('button', { name: /delete account/i }));
-
-    await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: 'warning',
-          title: expect.stringMatching(/account deletion/i),
-        })
-      )
-    );
+    expect(toastMock).toHaveBeenCalled();
+    const warnArgs = toastMock.mock.calls.find(([arg]) => arg.status === 'warning')?.[0];
+    expect(warnArgs?.title).toMatch(/account deletion/i);
   });
 
   it('toggles email notifications switch', async () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
-
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
 
     const switchEl = screen.getByRole('checkbox', {
