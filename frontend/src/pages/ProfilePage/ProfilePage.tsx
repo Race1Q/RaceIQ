@@ -40,9 +40,6 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const authedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
-    // 1. Get the base URL from your environment variables
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-
     const token = await getAccessTokenSilently({
       authorizationParams: {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
@@ -56,11 +53,8 @@ const ProfilePage: React.FC = () => {
       headers.set('Content-Type', 'application/json');
     }
 
-    // 2. Combine the base URL with the endpoint path to create the full URL
-    const fullUrl = `${apiBaseUrl}${url}`;
-
-    // 3. Use the full URL in the fetch call
-    const response = await fetch(fullUrl, { ...options, headers });
+    // Use the URL directly (Vite proxy will handle /api requests)
+    const response = await fetch(url, { ...options, headers });
 
     if (!response.ok) {
       let errorMsg = `Request failed with status: ${response.status}`;

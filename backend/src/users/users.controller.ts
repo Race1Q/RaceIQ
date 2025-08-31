@@ -36,6 +36,27 @@ export class UsersController {
     }
   }
 
+  // Endpoint to ensure user exists in database (called after Auth0 signup)
+  @Post('ensure-exists')
+  @UseGuards(JwtAuthGuard)
+  async ensureUserExists(@Req() req: any) {
+    try {
+      const auth0Sub = req.user.sub;
+      const email = req.user.email; // Get email from JWT payload
+      const user = await this.usersService.findOrCreateUser(auth0Sub, email);
+      return {
+        message: 'User ensured successfully',
+        user,
+        wasCreated: !req.user.user, // If req.user.user doesn't exist, it was just created
+      };
+    } catch (error) {
+      return {
+        message: 'Error ensuring user exists',
+        error: error.message,
+      };
+    }
+  }
+
 @Patch('profile') // Handles PATCH /api/users/profile
 @UseGuards(JwtAuthGuard)
 async updateProfile(@Req() req: any, @Body() updateProfileDto: UpdateProfileDto) {

@@ -22,6 +22,7 @@ import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { RoleProvider, useRole } from '../context/RoleContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
+import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -244,7 +245,9 @@ function App() {
   return (
     <ThemeProvider>
       <RoleProvider>
-        <AppContent />
+        <UserRegistrationHandler>
+          <AppContent />
+        </UserRegistrationHandler>
       </RoleProvider>
     </ThemeProvider>
   );
