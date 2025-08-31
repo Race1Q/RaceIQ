@@ -7,5 +7,8 @@ export class Driver {
   name_acronym: string | null;
   country_code: string | null;
   date_of_birth: string;
-  full_name?: string; // This will be a computed property from the service
+  full_name: string; // This is always computed by the service
+  team_name?: string | null; // Current team name
+  nationality?: string | null; // Driver nationality
+  car_number?: number | null; // Current car number
 }
