@@ -39,4 +39,16 @@ export class DriversService {
     }
     return (data as unknown as Driver[]) || [];
   }
+
+  async findDriversByStandings(season: number): Promise<any[]> {
+    const { data, error } = await this.supabaseService.client
+      .rpc('get_drivers_sorted_by_standings', { p_season: season });
+
+    if (error) {
+      this.logger.error('Failed to fetch drivers by standings', error);
+      throw new InternalServerErrorException('Failed to fetch drivers by standings');
+    }
+
+    return data ?? [];
+  }
 }

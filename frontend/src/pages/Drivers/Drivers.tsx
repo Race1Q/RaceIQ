@@ -1,173 +1,146 @@
 // frontend/src/pages/Drivers/Drivers.tsx
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useToast } from '@chakra-ui/react';
 import styles from './Drivers.module.css';
-import { FaAngleDown } from 'react-icons/fa';
-import HeroSection from '../../components/HeroSection/HeroSection';
-import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
-import LegacyDriverCard from '../../components/LegacyDriverCard/LegacyDriverCard';
-import HybridDriverCard from '../../components/HybridDriverCard/HybridDriverCard';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
-import { teamColors } from '../../lib/teamColors'; // Import the new team colors
-import { driverHeadshots } from '../../lib/driverHeadshots'; // Import the driver headshots
+import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
+import TeamBanner from '../../components/TeamBanner/TeamBanner';
+import { teamColors } from '../../lib/teamColors';
+import { driverHeadshots } from '../../lib/driverHeadshots';
+import { teamLogoMap } from '../../lib/teamAssets';
 
-interface Driver {
-    id: number;
-    full_name: string;
-    driver_number: number | null;
-    country_code: string | null;
-    team_name: string; 
-    headshot_url: string;
-    team_color: string;
-}
-
-interface ApiDriver {
-    id: number;
-    full_name: string;
-    driver_number: number | null;
-    country_code: string | null;
-}
+// Interfaces
+interface ApiDriver { id: number; full_name: string; driver_number: number | null; country_code: string | null; team_name: string; }
+interface Driver extends ApiDriver { headshot_url: string; team_color: string; }
+type GroupedDrivers = { [teamName: string]: Driver[] };
 
 const Drivers = () => {
   const { getAccessTokenSilently } = useAuth0();
   const toast = useToast();
-
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTeam, setSelectedTeam] = useState<string>("all");
+  // 1. RE-INTRODUCE state for the selected team filter
+  const [selectedTeam, setSelectedTeam] = useState<string>("All");
 
-  const authedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    const token = await getAccessTokenSilently({
-      authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE, scope: "read:drivers" },
-    });
-    const headers = new Headers(options.headers || {});
-    headers.set('Authorization', `Bearer ${token}`);
-    const response = await fetch(`${apiBaseUrl}${url}`, { ...options, headers });
-    if (!response.ok) throw new Error('Failed to fetch data');
-    return response.json();
+  const authedFetch = useCallback(async (url: string) => {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const token = await getAccessTokenSilently({
+          authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE, scope: "read:drivers" },
+      });
+      const headers = new Headers();
+      headers.set('Authorization', `Bearer ${token}`);
+      const response = await fetch(`${apiBaseUrl}${url}`, { headers });
+      if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`);
+      }
+      return response.json();
   }, [getAccessTokenSilently]);
 
   useEffect(() => {
-    const fetchDrivers = async () => {
+    const fetchAndProcessDrivers = async () => {
       try {
         setLoading(true);
         setError(null);
-        const activeDrivers: ApiDriver[] = await authedFetch('/api/drivers/active');
-
-        // Map the API data and inject the static data
-        const hydratedDrivers = activeDrivers.map(driver => {
-          const teamName = "TBA"; // This remains a placeholder for now
-          return {
-            ...driver,
-            team_name: teamName,
-            headshot_url: driverHeadshots[driver.full_name] || "", // Get headshot from our static object
-            team_color: teamColors[teamName] || teamColors["Default"], // Get team color from our static object
-          };
-        });
-        
+        const apiDrivers: ApiDriver[] = await authedFetch('/api/drivers/by-standings/2025');
+        const hydratedDrivers = apiDrivers.map(driver => ({
+          ...driver,
+          headshot_url: driverHeadshots[driver.full_name] || "",
+          team_color: teamColors[driver.team_name] || teamColors["Default"],
+        }));
         setDrivers(hydratedDrivers);
-      } catch (err: any) {
-        setError(err.message || 'An unexpected error occurred.');
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
+        setError(errorMessage);
         toast({
-          title: 'Error fetching drivers',
-          description: err.message,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
+          title: 'Error fetching drivers', description: errorMessage,
+          status: 'error', duration: 5000, isClosable: true,
         });
       } finally {
         setLoading(false);
       }
     };
-    fetchDrivers();
+    fetchAndProcessDrivers();
   }, [authedFetch, toast]);
 
-  const filteredDrivers = drivers.filter((driver) => {
-    const matchesSearch =
-      driver.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (driver.team_name && driver.team_name.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesTeam = selectedTeam === "all" || driver.team_name === selectedTeam;
-    return matchesSearch && matchesTeam;
-  });
+  const { orderedTeamNames, groupedDrivers } = useMemo(() => {
+    const groups = drivers.reduce<GroupedDrivers>((acc, driver) => {
+      const team = driver.team_name;
+      if (!acc[team]) acc[team] = [];
+      acc[team].push(driver);
+      return acc;
+    }, {});
+    const orderedTeams = [...new Set(drivers.map(d => d.team_name))];
+    return { orderedTeamNames: orderedTeams, groupedDrivers: groups };
+  }, [drivers]);
 
-  const uniqueTeams = Array.from(new Set(drivers.map(driver => driver.team_name).filter(Boolean)))
-    .sort();
+  // Create the list of teams to display based on the filter
+  const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
+  // Create the list of tabs for the UI
+  const filterTabs = ["All", ...orderedTeamNames];
 
   return (
-    <>
-      <HeroSection
-        title="Driver Profiles"
-        subtitle="Explore the stats, history, and performance of every driver on the grid."
-        backgroundImageUrl="https://images.pexels.com/photos/15155732/pexels-photo-15155732.jpeg"
-      />
-      <div className={styles.driversContainer}>
-        <div className={styles.searchFilterContainer}>
-          <div className={styles.teamFilterContainer}>
-            <select
-              className={styles.teamFilter}
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              disabled={loading}
-            >
-              <option value="all">All Teams</option>
-              {uniqueTeams.map(team => (
-                <option key={team} value={team!}>{team}</option>
-              ))}
-            </select>
-            <span className={styles.dropdownIcon}><FaAngleDown /></span>
+    <div className="pageContainer">
+      {loading && <F1LoadingSpinner text="Loading Drivers..." />}
+      {error && <div className={styles.errorState}>{error}</div>}
+      
+      {!loading && !error && (
+        <>
+          {/* 2. ADD the filter tabs UI at the top of the page content */}
+          <div className={styles.tabsContainer}>
+            {filterTabs.map(team => (
+              <button
+                key={team}
+                className={`${styles.tab} ${selectedTeam === team ? styles.activeTab : ''}`}
+                onClick={() => setSelectedTeam(team)}
+              >
+                {team}
+              </button>
+            ))}
           </div>
-          <div className={styles.driverSearchContainer}>
-            <span className={styles.searchIcon}>🔍</span>
-            <input
-              type="text"
-              className={styles.driverSearch}
-              placeholder="Search by name or team..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ color: '#000000' }}
-            />
-          </div>
-        </div>
-        
-        {loading && <F1LoadingSpinner text="Loading Drivers..." />}
-        {error && <div className={styles.noDrivers}>{error}</div>}
-        
-        {!loading && !error && (
-          <div className={styles.driverCards}>
-            {filteredDrivers.length > 0 ? (
-              filteredDrivers.map((driver) => {
-                const driverCardData = {
-                  id: driver.full_name.toLowerCase().replace(/ /g, '_'),
-                  name: driver.full_name,
-                  number: driver.driver_number ? String(driver.driver_number) : 'N/A',
-                  team: driver.team_name,
-                  nationality: driver.country_code || 'N/A',
-                  image: driver.headshot_url,
-                  team_color: driver.team_color,
-                };
 
-                // Conditionally render one of the THREE card styles
-                if (driver.full_name === "Alexander Albon") {
-                  return <LegacyDriverCard key={driver.id} driver={driverCardData} />;
-                } else if (driver.full_name === "Fernando Alonso") {
-                  return <HybridDriverCard key={driver.id} driver={driverCardData} />;
-                } else {
-                  return <DriverProfileCard key={driver.id} driver={driverCardData} />;
-                }
+          <div className={styles.teamsContainer}>
+            {/* 3. MAP over the filtered list of teams */}
+            {teamsToRender.length > 0 ? (
+                teamsToRender.map(teamName => {
+                const driversInTeam = groupedDrivers[teamName];
+                if (!driversInTeam || driversInTeam.length === 0) return null;
+
+                return (
+                  <div key={teamName} className={styles.teamSection}>
+                    <TeamBanner 
+                      teamName={teamName}
+                      logoUrl={teamLogoMap[teamName] || ''}
+                      teamColor={teamColors[teamName] || teamColors['Default']}
+                    />
+                    <div className={styles.driverRow}>
+                      {driversInTeam.map(driver => {
+                        const driverCardData = {
+                          id: driver.full_name.toLowerCase().replace(/ /g, '_'),
+                          name: driver.full_name,
+                          number: driver.driver_number ? String(driver.driver_number) : 'N/A',
+                          team: driver.team_name,
+                          nationality: driver.country_code || 'N/A',
+                          image: driver.headshot_url,
+                          team_color: driver.team_color,
+                        };
+                        return <DriverProfileCard key={driver.id} driver={driverCardData} />;
+                      })}
+                    </div>
+                  </div>
+                );
               })
             ) : (
-              <div className={styles.noDrivers}>No driver matches your search</div>
+                <div className={styles.noDrivers}>No drivers found.</div>
             )}
           </div>
-        )}
-      </div>
-    </>
+        </>
+      )}
+    </div>
   );
 };
 

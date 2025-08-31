@@ -1,39 +1,27 @@
-import { Controller, Get, Post, Query, Logger } from '@nestjs/common';
-import { ConstructorService } from './constructors.service';
-import { Constructor } from './constructors.entity';
+// backend/src/constructors/constructors.controller.ts
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { ConstructorsService } from './constructors.service';
+import { Constructor } from './entities/constructors.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ScopesGuard } from '../auth/scopes.guard';
+import { Scopes } from '../auth/scopes.decorator';
 
 @Controller('constructors')
-export class ConstructorController {
-  private readonly logger = new Logger(ConstructorController.name);
-
-  constructor(private readonly constructorService: ConstructorService) {}
+@UseGuards(JwtAuthGuard, ScopesGuard)
+export class ConstructorsController {
+  constructor(private readonly constructorsService: ConstructorsService) {}
 
   @Post('ingest')
+  @Scopes('write:constructors') // Assumes this scope exists
   async ingestConstructors() {
-    this.logger.log('Starting constructors ingestion');
-    const result = await this.constructorService.ingestConstructors();
-    return {
-      message: 'Constructors ingestion completed',
-      result,
-    };
+    this.constructorsService.ingestConstructors();
+    return { message: 'Constructor ingestion started in the background.' };
   }
 
   @Get()
+  @Scopes('read:constructors') // Assumes this scope exists
   async getAllConstructors(): Promise<Constructor[]> {
-    return this.constructorService.getAllConstructors();
-  }
-
-  @Get('search')
-  async searchConstructors(@Query('q') query: string): Promise<Constructor[]> {
-    if (!query) {
-      return this.constructorService.getAllConstructors();
-    }
-    return this.constructorService.searchConstructors(query);
-  }
-
-  @Get(':id')
-  async getConstructorById(@Query('id') constructorId: string): Promise<Constructor | null> {
-    return this.constructorService.getConstructorById(constructorId);
+    return this.constructorsService.getAllConstructors();
   }
 }
 

@@ -19,6 +19,9 @@
   --color-surface-gray-light: #444444;
   --color-static-white: #F5F5F5;
   
+  /* New Token for SVG Logo Colors */
+  --color-logo-primary: #FFFFFF; /* White for dark mode */
+  
   /* Font Families */
   --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   --font-display: 'Orbitron', sans-serif;
@@ -51,4 +54,7 @@
   --color-icon-muted: #A0AEC0;        /* Muted icons */
   --color-text-light-gray: #2D3748;   /* Dark text for light mode */
   --color-surface-white: #FFFFFF;     /* White surface */
+  
+  /* New Token for SVG Logo Colors */
+  --color-logo-primary: #1a202c; /* Black for light mode */
 }

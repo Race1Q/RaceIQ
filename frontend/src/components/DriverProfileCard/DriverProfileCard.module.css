@@ -28,29 +28,31 @@
   position: relative;
   display: flex;
   flex-grow: 1;
-  padding: var(--space-lg);
+  padding: var(--space-xl);
   background: linear-gradient(135deg, var(--team-color-start) 0%, var(--team-color-end) 100%);
-  min-height: 280px;
+  min-height: 300px;
   overflow: hidden;
 }
 
 .driverInfo {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   z-index: 2;
   text-align: left;
   width: 100%;
+  gap: var(--space-md);
 }
 
 .driverName {
   font-family: var(--font-display); /* This will be the fallback */
   font-weight: 700;
-  color: var(--color-text-light);
+  color: #FFFFFF; /* Explicitly white */
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); /* Add shadow for legibility */
   line-height: 1;
   text-transform: uppercase;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-md);
   position: relative;
   width: 65%;
 }
@@ -82,35 +84,23 @@
   display: block;
 }
 
-.teamName {
-  font-family: var(--font-primary);
-  font-size: clamp(1rem, 3vw, 1.2rem);
-  color: rgba(255, 255, 255, 0.9); /* Default to light text */
-  font-weight: 500;
-}
+
 
 .driverNumber {
   font-family: var(--font-display);
-  font-size: clamp(3rem, 8vw, 4rem);
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
   font-weight: 700;
-  color: var(--color-text-light); /* Default to light text */
+  color: #FFFFFF; /* Explicitly white */
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); /* Add shadow for legibility */
   line-height: 1;
+  text-align: left;
+  position: absolute;
+  left: var(--space-xl);
+  top: calc(var(--space-xl) + 80px); /* Position below the name with proper spacing */
+  z-index: 2;
 }
 
-/* 3. Add styles for when the card has a light background */
-.useDarkText .driverName,
-.useDarkText .driverNumber,
-.useDarkText .teamName,
-.useDarkText .firstName,
-.useDarkText .lastName {
-  color: #1a1a1a; /* Use a dark color */
-  text-shadow: none; /* Remove shadows that are for dark backgrounds */
-}
-
-/* Make the fading line dark as well */
-.useDarkText .driverName::after {
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.7) 50%, transparent 100%);
-}
+/* The .useDarkText styles are no longer needed and have been REMOVED. */
 
 .driverImage {
   position: absolute;
@@ -131,22 +121,35 @@
 
 .flagWrapper {
   position: absolute;
-  bottom: var(--space-md);
-  left: var(--space-md);
+  left: var(--space-lg);
+  top: calc(var(--space-lg) + 60px); /* Position below the name, aligned with driver number */
   z-index: 2;
+  display: flex;
+  align-items: center;
 }
 
 .flagImage {
-  font-size: 36px; /* Control SVG flag size with font-size */
-  border-radius: var(--border-radius-sm);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  line-height: 1; /* Helps with alignment */
+  width: 52px;
+  height: 39px;
+  border-radius: 0; /* Remove circle - make it rectangular like a real flag */
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  object-fit: cover;
+  filter: none; /* Remove any accent color filters */
+  border: 1px solid rgba(255, 255, 255, 0.15); /* Subtle border for definition */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.flagImage:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+
 
 .cardBottom {
   background-color: var(--color-surface-dark);
   text-align: center;
-  padding: 10px;
+  padding: var(--space-md);
   font-family: var(--font-display);
   color: var(--color-text-muted);
   font-size: 0.9rem;
@@ -155,6 +158,7 @@
 }
 
 .card:hover .cardBottom {
-  background-color: var(--color-primary-red);
+  /* Change from the static red to the dynamic team color variable */
+  background-color: var(--team-color-start);
   color: var(--color-text-light);
 }

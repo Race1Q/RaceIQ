@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RacesService } from '../races/races.service';
 import { DriversService } from '../drivers/drivers.service';
-import { ConstructorService } from '../constructors/constructors.service';
+import { ConstructorsService } from '../constructors/constructors.service';
 import { ApiResponse, ApiRace, RaceResultRow } from './raceResults.entity';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -19,7 +19,7 @@ export class RaceResultsIngestionService {
     private readonly supabase: SupabaseService,
     private readonly racesService: RacesService,
     private readonly driversService: DriversService,
-    private readonly constructorsService: ConstructorService,
+    private readonly constructorsService: ConstructorsService,
   ) {}
 
   async fetchAllResultsForSeason(season: string): Promise<ApiRace[]> {

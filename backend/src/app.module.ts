@@ -17,7 +17,7 @@ import { SeasonsModule } from './seasons/seasons.module';
 import { ResultsModule } from './results/results.module';
 import { DriverStandingsModule } from './driverStandings/driverStandings.module';
 import { RaceResultsModule } from './raceResults/raceResults.module';
-import { ConstructorStandingsModule } from './constructorStandings/constructorStandings.module';
+import { ConstructorStandingsModule } from './constructor-standings/constructor-standings.module';
 import { QualifyingResultsModule } from './qualifyingResults/qualifyingResults.module';
 import { PitStopsModule } from './pitStops/pitStops.module';
 import { LapsModule } from './laps/laps.module';
