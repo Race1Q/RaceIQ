@@ -15,7 +15,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/setupTests.ts'],
+    globals: true,                 // lets you use describe/it/expect without imports
+    setupFiles: ['./src/setupTests.ts'], // your existing setup (cleanup + matchMedia polyfill)
     css: true,
   },
 })
