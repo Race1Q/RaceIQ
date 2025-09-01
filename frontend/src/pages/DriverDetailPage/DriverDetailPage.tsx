@@ -12,6 +12,7 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 import { useTheme } from '../../context/ThemeContext';
 import { teamColors } from '../../lib/teamColors';
 import { getCountryFlagUrl } from '../../lib/assets';
+import { driverHeadshots } from '../../lib/driverHeadshots';
 import styles from './DriverDetailPage.module.css';
 
 const DriverDetailPage: React.FC = () => {
@@ -72,7 +73,8 @@ const DriverDetailPage: React.FC = () => {
           dateOfBirth: details.dateOfBirth,
           teamName: details.team.name,
           funFact: details.profile.funFact,
-          imageUrl: details.profile.imageUrl,
+          // Use driverHeadshots as primary source, fallback to API imageUrl
+          imageUrl: driverHeadshots[details.fullName] || details.profile.imageUrl,
           wins: details.careerStats.wins,
           podiums: details.careerStats.podiums,
           fastestLaps: details.careerStats.fastestLaps,
@@ -121,7 +123,7 @@ const DriverDetailPage: React.FC = () => {
   // 5. RENDER THE PAGE WITH LIVE DATA
   return (
     <>
-      <HeroSection backgroundImageUrl={driverData.imageUrl || "https://default-hero-image.url/bg.jpeg"}>
+      <HeroSection backgroundImageUrl={driverData.imageUrl || "https://images.pexels.com/photos/29252132/pexels-photo-29252132.jpeg"}>
         <div className={styles.heroContentLayout}>
           <div className={styles.heroTitleBlock}>
             <h1 className={styles.heroTitle}>
@@ -144,7 +146,11 @@ const DriverDetailPage: React.FC = () => {
       </HeroSection>
 
       <Container maxWidth="1400px">
-        <KeyInfoBar driver={driverData} />
+        <KeyInfoBar driver={{
+          ...driverData,
+          fullName: driverData.fullName,
+          imageUrl: driverData.imageUrl
+        }} />
       </Container>
 
       <Container maxWidth="1400px" paddingX={['1rem', '2rem', '3rem']} paddingY="2rem">
