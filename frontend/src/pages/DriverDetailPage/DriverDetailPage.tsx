@@ -31,7 +31,6 @@ const DriverDetailPage: React.FC = () => {
 
   // 2. AUTHENTICATED FETCH HELPER
   const authedFetch = useCallback(async (url: string) => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
     const token = await getAccessTokenSilently({
       authorizationParams: { 
         audience: import.meta.env.VITE_AUTH0_AUDIENCE, 
@@ -41,19 +40,9 @@ const DriverDetailPage: React.FC = () => {
     const headers = new Headers();
     headers.set('Authorization', `Bearer ${token}`);
     
-    // Fix URL construction to avoid double slashes
-    let fullUrl;
-    if (import.meta.env.DEV) {
-      // In development, use relative URL (Vite proxy will handle it)
-      fullUrl = url;
-    } else {
-      // In production, construct full URL
-      fullUrl = `${apiBaseUrl}${url}`;
-    }
+    console.log('Making request to:', url); // Debug log
     
-    console.log('Making request to:', fullUrl); // Debug log
-    
-    const response = await fetch(fullUrl, { headers });
+    const response = await fetch(url, { headers });
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
@@ -75,8 +64,8 @@ const DriverDetailPage: React.FC = () => {
         setError(null);
 
         const [driverDetails, driverPerformance] = await Promise.all([
-          authedFetch(`/api/drivers/${numericDriverId}/details`),
-          authedFetch(`/api/drivers/${numericDriverId}/performance/2025`)
+          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/details`)),
+          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/performance/2025`))
         ]);
 
         const flattenedData = {

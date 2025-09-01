@@ -6,7 +6,7 @@ export function getApiBaseUrl(): string {
   }
   
   // In production, use the environment variable
-  return import.meta.env.VITE_API_BASE_URL || '';
+  return import.meta.env.VITE_BACKEND_URL || '';
 }
 
 // Helper function to build full API URLs
