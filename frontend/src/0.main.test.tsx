@@ -20,7 +20,6 @@ function cleanupDomRoot() {
 
 // ——— Polyfills/stubs helpful during bootstrap ———
 function installGlobals() {
-  // Responsive queries → desktop
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string) => ({
@@ -35,7 +34,6 @@ function installGlobals() {
     }),
   });
 
-  // Chakra/layout libs sometimes use ResizeObserver
   // @ts-expect-error
   global.ResizeObserver = class {
     observe() {}
@@ -43,7 +41,6 @@ function installGlobals() {
     disconnect() {}
   };
 
-  // Prevent accidental network during bootstrap
   if (!(global as any).fetch || (global as any).fetch === undefined) {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));
   }
@@ -73,7 +70,7 @@ vi.mock('@auth0/auth0-react', () => ({
   Auth0Provider: 'auth0-provider',
 }));
 
-// ✅ Use vi.importActual (Vitest-safe) to keep ColorModeScript while noop-ing ChakraProvider
+// Keep ColorModeScript real; no-op ChakraProvider
 vi.mock('@chakra-ui/react', async () => {
   const actual = await vi.importActual<any>('@chakra-ui/react');
   return {
@@ -101,7 +98,8 @@ beforeEach(() => {
   delete (window as any).VITE_AUTH0_CLIENT_ID;
   delete (window as any).VITE_AUTH0_AUDIENCE;
 
-  // Note: import.meta.env is provided by Vite. We won't mutate it here; tests adapt to presence/absence.
+  // Remove any previous env stubs
+  vi.unstubAllEnvs?.();
 });
 
 afterEach(() => {
@@ -109,6 +107,7 @@ afterEach(() => {
   vi.unstubAllEnvs?.();
 });
 
+// ——— Utilities ———
 function findAuth0Provider(el: any): any | null {
   if (!el) return null;
   const children = Array.isArray(el?.props?.children)
@@ -125,121 +124,77 @@ function findAuth0Provider(el: any): any | null {
   return null;
 }
 
-function getEnvAuth0() {
-  // eslint-disable-next-line no-undef
-  const env = (import.meta as any).env ?? {};
-  const domain = env.VITE_AUTH0_DOMAIN;
-  const clientId = env.VITE_AUTH0_CLIENT_ID;
-  const audience = env.VITE_AUTH0_AUDIENCE;
-  return { domain, clientId, audience };
-}
-
 describe('main.tsx bootstrap', () => {
-  it(
-    'uses import.meta.env when available and sets expected Auth0 props',
-    async () => {
-      // Import AFTER mocks are in place
-      await import('./main');
+  it('Branch A: uses import.meta.env when available and sets expected Auth0 props', async () => {
+    // Force ENV branch
+    vi.stubEnv('VITE_AUTH0_DOMAIN', 'env-domain');
+    vi.stubEnv('VITE_AUTH0_CLIENT_ID', 'env-client-id');
+    vi.stubEnv('VITE_AUTH0_AUDIENCE', 'env-audience');
 
-      expect(renderedTree).toBeTruthy();
-      const auth0El = findAuth0Provider(renderedTree);
-      expect(auth0El).toBeTruthy();
+    await import('./main');
 
-      const { domain, clientId, authorizationParams, useRefreshTokens, cacheLocation } = auth0El!.props;
+    expect(renderedTree).toBeTruthy();
+    const auth0El = findAuth0Provider(renderedTree);
+    expect(auth0El).toBeTruthy();
 
-      const env = getEnvAuth0();
-      if (env.domain && env.clientId) {
-        expect(domain).toBe(env.domain);
-        expect(clientId).toBe(env.clientId);
-        if (env.audience) {
-          expect(authorizationParams).toMatchObject({
-            redirect_uri: window.location.origin,
-            audience: env.audience,
-            scope: expect.stringContaining('read:drivers'),
-          });
-        } else {
-          expect(authorizationParams).toMatchObject({
-            redirect_uri: window.location.origin,
-            scope: expect.stringContaining('read:drivers'),
-          });
-        }
-      } else {
-        // If env is absent, app might fall back to window.* (not set here).
-        // At minimum, domain/clientId should exist from some config.
-        expect(domain).toBeTruthy();
-        expect(clientId).toBeTruthy();
-      }
-      expect(useRefreshTokens).toBe(true);
-      expect(cacheLocation).toBe('localstorage');
-    },
-    15000
-  );
+    const { domain, clientId, authorizationParams, useRefreshTokens, cacheLocation } = auth0El!.props;
 
-  it(
-    'falls back to window.VITE_* when env is not present (or else uses env if present)',
-    async () => {
-      const env = getEnvAuth0();
+    expect(domain).toBe('env-domain');
+    expect(clientId).toBe('env-client-id');
+    expect(authorizationParams).toMatchObject({
+      redirect_uri: window.location.origin,
+      audience: 'env-audience',
+      scope: expect.stringContaining('read:drivers'),
+    });
+    expect(useRefreshTokens).toBe(true);
+    expect(cacheLocation).toBe('localstorage');
+  } ,20000);
 
-      if (!env.domain || !env.clientId) {
-        // Simulate window fallback only when env is absent
-        (window as any).VITE_AUTH0_DOMAIN = 'win-domain';
-        (window as any).VITE_AUTH0_CLIENT_ID = 'win-client-id';
-        (window as any).VITE_AUTH0_AUDIENCE = 'win-audience';
-      }
-
-      await import('./main');
-
-      expect(renderedTree).toBeTruthy();
-      const auth0El = findAuth0Provider(renderedTree);
-      expect(auth0El).toBeTruthy();
-
-      const { domain, clientId, authorizationParams } = auth0El!.props;
-
-      if (!env.domain || !env.clientId) {
-        // Expect window fallback values
-        expect(domain).toBe('win-domain');
-        expect(clientId).toBe('win-client-id');
-        expect(authorizationParams).toMatchObject({
-          redirect_uri: window.location.origin,
-          audience: 'win-audience',
-          scope: expect.stringContaining('read:drivers'),
-        });
-      } else {
-        // Env already present—assert we still used env (consistent behavior)
-        expect(domain).toBe(env.domain);
-        expect(clientId).toBe(env.clientId);
-        if (env.audience) {
-          expect(authorizationParams).toMatchObject({
-            redirect_uri: window.location.origin,
-            audience: env.audience,
-            scope: expect.stringContaining('read:drivers'),
-          });
-        }
-      }
-    },
-    15000
-  );
-
-  it(
-    'throws a clear error if neither env nor window config is provided (only when both truly absent)',
-    async () => {
-      const env = getEnvAuth0();
-
-      if (env.domain || env.clientId) {
-        // Env provided by the runner—nothing to throw. Just assert import succeeds.
-        await expect(import('./main')).resolves.toBeTruthy();
-        expect(renderedTree).not.toBeNull();
-        return;
-      }
-
-      // Ensure window vars are absent
-      delete (window as any).VITE_AUTH0_DOMAIN;
-      delete (window as any).VITE_AUTH0_CLIENT_ID;
-      delete (window as any).VITE_AUTH0_AUDIENCE;
-
-      await expect(import('./main')).rejects.toThrow(/Auth0 configuration is required/i);
-      expect(renderedTree).toBeNull();
-    },
-    15000
-  );
+  it('Branch B: falls back to window.VITE_* when env is absent', async () => {
+    vi.resetModules();
+    vi.unstubAllEnvs?.();
+  
+    // Make env keys explicitly falsy so the env-branch is skipped
+    vi.stubEnv('VITE_AUTH0_DOMAIN', '');
+    vi.stubEnv('VITE_AUTH0_CLIENT_ID', '');
+    vi.stubEnv('VITE_AUTH0_AUDIENCE', '');
+  
+    // Provide window fallbacks
+    (window as any).VITE_AUTH0_DOMAIN = 'win-domain';
+    (window as any).VITE_AUTH0_CLIENT_ID = 'win-client-id';
+    (window as any).VITE_AUTH0_AUDIENCE = 'win-audience';
+  
+    await import('./main');
+  
+    expect(renderedTree).toBeTruthy();
+    const auth0El = findAuth0Provider(renderedTree);
+    expect(auth0El).toBeTruthy();
+  
+    const { domain, clientId, authorizationParams } = auth0El!.props;
+    expect(domain).toBe('win-domain');
+    expect(clientId).toBe('win-client-id');
+    expect(authorizationParams).toMatchObject({
+      redirect_uri: window.location.origin,
+      audience: 'win-audience',
+      scope: expect.stringContaining('read:drivers'),
+    });
+  } ,20000);
+  
+  it('Branch C: throws when neither env nor window config is provided', async () => {
+    vi.resetModules();
+    vi.unstubAllEnvs?.();
+  
+    // Explicitly falsy env keys
+    vi.stubEnv('VITE_AUTH0_DOMAIN', '');
+    vi.stubEnv('VITE_AUTH0_CLIENT_ID', '');
+    vi.stubEnv('VITE_AUTH0_AUDIENCE', '');
+  
+    // Ensure no window fallbacks
+    delete (window as any).VITE_AUTH0_DOMAIN;
+    delete (window as any).VITE_AUTH0_CLIENT_ID;
+    delete (window as any).VITE_AUTH0_AUDIENCE;
+  
+    await expect(import('./main')).rejects.toThrow(/Auth0 configuration is required/i);
+    expect(renderedTree).toBeNull();
+  } ,20000);
 });
