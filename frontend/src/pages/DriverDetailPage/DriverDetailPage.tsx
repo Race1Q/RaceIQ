@@ -31,6 +31,7 @@ const DriverDetailPage: React.FC = () => {
 
   // 2. AUTHENTICATED FETCH HELPER
   const authedFetch = useCallback(async (url: string) => {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
     const token = await getAccessTokenSilently({
       authorizationParams: { 
         audience: import.meta.env.VITE_AUTH0_AUDIENCE, 
@@ -39,10 +40,7 @@ const DriverDetailPage: React.FC = () => {
     });
     const headers = new Headers();
     headers.set('Authorization', `Bearer ${token}`);
-    
-    console.log('Making request to:', url); // Debug log
-    
-    const response = await fetch(url, { headers });
+    const response = await fetch(`${apiBaseUrl}${url}`, { headers });
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }

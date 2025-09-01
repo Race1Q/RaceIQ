@@ -42,7 +42,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       this.logger.log(`JWT payload: ${JSON.stringify(payload, null, 2)}`);
       
       if (!auth0Sub) {
-        this.logger.error('No sub claim found in JWT payload');
         throw new Error('No sub claim found in JWT payload');
       }
 
@@ -52,7 +51,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       return payload;
     } catch (error) {
       this.logger.error(`Error in JWT validation: ${error.message}`, error.stack);
-      this.logger.error(`JWT validation failed for payload: ${JSON.stringify(payload, null, 2)}`);
       throw error;
     }
   }
