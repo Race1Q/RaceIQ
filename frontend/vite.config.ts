@@ -1,22 +1,44 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  server: { // <-- Add this server block
+
+  server: {
     proxy: {
-      // All requests to /api will be proxied
       '/api': {
-        target: 'http://localhost:3000', // NestJS backend
+        target: 'http://localhost:3000',
         changeOrigin: true,
       },
     },
   },
+
   test: {
     environment: 'jsdom',
-    globals: true,                 // lets you use describe/it/expect without imports
-    setupFiles: ['./src/setupTests.ts'], // your existing setup (cleanup + matchMedia polyfill)
+    globals: true,
+    setupFiles: ['./src/setupTests.ts'],
     css: true,
+
+    clearMocks: true,
+    restoreMocks: true,
+    mockReset: true,
+    testTimeout: 20000,
+
+    // deps: { inline: ['recharts', 'lucide-react'] },
+
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: 'coverage',
+      reporter: ['text', 'lcov', 'html'],
+      include: ['src/**/*.{ts,tsx,js,jsx}'],
+      exclude: [
+        'src/**/__tests__/**',
+        'src/**/*.test.*',
+        'src/**/*.spec.*',
+        'src/vite-env.d.ts',
+        // 'src/**/*.stories.*',
+        // 'src/**/mocks/**',
+      ],
+    },
   },
-})
+});

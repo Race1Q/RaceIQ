@@ -37,6 +37,7 @@ const config: Config = {
   ],
 
   coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
 
   // Optional helpers:
   // clearMocks: true,
