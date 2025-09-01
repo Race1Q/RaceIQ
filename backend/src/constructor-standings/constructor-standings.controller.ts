@@ -17,8 +17,10 @@ export class ConstructorStandingsController {
     return { message: `Ingestion for constructor standings season ${season} started.` };
   }
 
-  @Get(':season')
+  
+  @UseGuards(JwtAuthGuard, ScopesGuard)
   @Scopes('read:standings') // Assumes this scope exists
+  @Get(':season')
   async getStandings(@Param('season', ParseIntPipe) season: number) {
     return this.standingsService.getStandingsBySeason(season);
   }

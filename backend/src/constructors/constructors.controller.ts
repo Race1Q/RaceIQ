@@ -1,5 +1,5 @@
 // backend/src/constructors/constructors.controller.ts
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Param } from '@nestjs/common';
 import { ConstructorsService } from './constructors.service';
 import { Constructor } from './entities/constructors.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -22,6 +22,14 @@ export class ConstructorsController {
   @Scopes('read:constructors') // Assumes this scope exists
   async getAllConstructors(): Promise<Constructor[]> {
     return this.constructorsService.getAllConstructors();
+  }
+
+  @Get('by-api-id/:constructor_id')
+  @Scopes('read:constructors')
+  async getConstructorByApiId(
+    @Param('constructor_id') constructor_id: string
+  ): Promise<Constructor> {
+    return this.constructorsService.findByApiId(constructor_id);
   }
 }
 

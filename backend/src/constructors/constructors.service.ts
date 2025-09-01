@@ -53,4 +53,11 @@ export class ConstructorsService {
     if (error) throw new Error('Failed to fetch all constructors');
     return data;
   }
+
+  async findByApiId(constructor_id: string): Promise<Constructor> {
+    const constructor = await this.getAllConstructors();
+    const found = constructor.find(c => c.constructor_id === constructor_id);
+    if (!found) throw new Error(`Constructor ${constructor_id} not found`);
+    return found;
+  }
 }
