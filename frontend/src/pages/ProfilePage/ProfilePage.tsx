@@ -75,9 +75,9 @@ const ProfilePage: React.FC = () => {
       try {
         setLoading(true);
         const [userData, constructorsData, driversData] = await Promise.all([
-          authedFetch(buildApiUrl('/api/users/me')),
-          authedFetch(buildApiUrl('/api/constructors')),
-          authedFetch(buildApiUrl('/api/drivers'))
+          authedFetch('/api/users/me'),
+          authedFetch('/api/constructors'),
+          authedFetch('/api/drivers')
         ]);
 
         setFormData(prev => ({
@@ -141,7 +141,7 @@ const ProfilePage: React.FC = () => {
         favorite_driver_id: formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver),
       };
 
-      await authedFetch(buildApiUrl('/api/users/profile'), {
+              await authedFetch('/api/users/profile', {
         method: 'PATCH',
         body: JSON.stringify(payload),
       });
