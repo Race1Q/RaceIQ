@@ -8,5 +8,17 @@
     ".mjs": "application/javascript",
     ".css": "text/css",
     ".html": "text/html"
-  }
+  },
+  "routes": [
+    {
+      "route": "/api/*",
+      "allowedRoles": ["anonymous", "authenticated"]
+    }
+  ],
+  "platformErrorOverrides": [
+    {
+      "errorType": "NotFound",
+      "serve": "/index.html"
+    }
+  ]
 }

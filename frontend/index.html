@@ -5,7 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/gauge.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RaceIQ</title>
-    <script src="/config.js"></script>
+    <script>
+      // Load the appropriate config file based on environment
+      const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+      const configFile = isProduction ? '/config.production.js' : '/config.js';
+      
+      const script = document.createElement('script');
+      script.src = configFile;
+      document.head.appendChild(script);
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Damion&display=swap" rel="stylesheet">
