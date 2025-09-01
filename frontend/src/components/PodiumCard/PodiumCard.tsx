@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, VStack, Heading, Text } from '@chakra-ui/react';
-import styles from './PodiumCard.module.css';
+import { Box, VStack, Heading, Text, Image, HStack } from '@chakra-ui/react';
 
 interface PodiumCardProps {
   position: number;
@@ -30,28 +29,52 @@ const PodiumCard: React.FC<PodiumCardProps> = ({
 
   return (
     <Box
-      className={styles.card}
-      style={{ '--accent-color': accentColor } as React.CSSProperties}
+      position="relative"
+      bg="bg-surface"
+      borderRadius="lg"
+      borderWidth="2px"
+      borderColor={accentColor}
+      p="md"
+      minH="200px"
+      display="flex"
+      flexDirection="column"
+      justifyContent="space-between"
+      boxShadow="lg"
+      _hover={{ transform: 'translateY(-2px)', boxShadow: 'xl' }}
+      transition="all 0.2s"
     >
-      <Text className={styles.positionIndicator}>{getPositionText(position)}</Text>
+      <Text
+        position="absolute"
+        top="2"
+        right="2"
+        fontSize="sm"
+        fontWeight="bold"
+        color="text-secondary"
+      >
+        {getPositionText(position)}
+      </Text>
       
-      {/* Central text content */}
-      <VStack className={styles.textContent} align="flex-start">
-        {/* VStack to group driver and team name */}
-        <VStack align="flex-start" spacing={1}> {/* CHANGED: Added spacing */}
-          <Heading className={styles.driverName}>{driverName}</Heading>
-          <Text className={styles.teamName}>{teamName}</Text>
-        </VStack>
+      <VStack align="flex-start" spacing="sm" flex="1" justify="center">
+        <Heading size="md" color="text-primary" fontFamily="heading">
+          {driverName}
+        </Heading>
+        <Text color="text-secondary" fontSize="sm">
+          {teamName}
+        </Text>
       </VStack>
 
-      {/* Points are positioned absolutely via CSS */}
-      <Text className={styles.points}>{points}Pts</Text>
-
-      <img
-        src={driverImageUrl}
-        alt={driverName}
-        className={styles.driverImage}
-      />
+      <HStack justify="space-between" align="flex-end">
+        <Text fontSize="lg" fontWeight="bold" color="text-primary">
+          {points}Pts
+        </Text>
+        <Image
+          src={driverImageUrl}
+          alt={driverName}
+          boxSize="60px"
+          borderRadius="full"
+          objectFit="cover"
+        />
+      </HStack>
     </Box>
   );
 };

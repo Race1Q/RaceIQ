@@ -1,9 +1,8 @@
 import React from 'react';
-import { Box, Text } from '@chakra-ui/react';
+import { Box, Text, VStack, Heading } from '@chakra-ui/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { Race } from '../../data/types';
 import { teamColors } from '../../lib/assets';
-import styles from './LapPositionChart.module.css';
 
 interface LapPositionChartProps {
   race: Race;
@@ -26,10 +25,10 @@ const LapPositionChart: React.FC<LapPositionChartProps> = ({ race }) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <Box className={styles.tooltip}>
-          <Text className={styles.tooltipLabel}>Lap {label}</Text>
+        <Box bg="bg-surface" p="sm" borderRadius="md" borderWidth="1px" borderColor="border-primary" boxShadow="lg">
+          <Text color="text-primary" fontWeight="bold">Lap {label}</Text>
           {payload.map((entry: any, index: number) => (
-            <Text key={index} className={styles.tooltipValue} style={{ color: entry.color }}>
+            <Text key={index} color="text-secondary">
               {entry.name}: P{entry.value}
             </Text>
           ))}
@@ -40,20 +39,20 @@ const LapPositionChart: React.FC<LapPositionChartProps> = ({ race }) => {
   };
 
   return (
-    <Box className={styles.container}>
-      <Text className={styles.title}>Lap-by-Lap Positions</Text>
+    <VStack spacing="lg" bg="bg-surface" p="lg" borderRadius="lg" borderWidth="1px" borderColor="border-primary" h="100%">
+      <Heading as="h3" size="md" fontFamily="heading" color="text-primary">Lap-by-Lap Positions</Heading>
       
-      <Box className={styles.chartContainer}>
-        <ResponsiveContainer width="100%" height={300}>
+      <Box w="100%" h="300px">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+            <CartesianGrid strokeDasharray="3 3" stroke="border-primary" />
             <XAxis 
               dataKey="lap" 
-              tick={{ fill: "#A0A0A0" }}
+              tick={{ fill: "text-secondary" }}
               fontSize={12}
             />
             <YAxis 
-              tick={{ fill: "#A0A0A0" }}
+              tick={{ fill: "text-secondary" }}
               fontSize={12}
               reversed={true}
               domain={[1, 10]}
@@ -80,7 +79,7 @@ const LapPositionChart: React.FC<LapPositionChartProps> = ({ race }) => {
           </LineChart>
         </ResponsiveContainer>
       </Box>
-    </Box>
+    </VStack>
   );
 };
 

@@ -1,7 +1,6 @@
 import React from 'react';
-import { Box, Text } from '@chakra-ui/react';
+import { Box, Text, VStack, Heading } from '@chakra-ui/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import styles from './PaceDistributionChart.module.css';
 
 interface PaceDistributionChartProps {
   data: number[];
@@ -18,9 +17,9 @@ const PaceDistributionChart: React.FC<PaceDistributionChartProps> = ({ data }) =
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <Box className={styles.tooltip}>
-          <Text className={styles.tooltipLabel}>Lap {label}</Text>
-          <Text className={styles.tooltipValue}>
+        <Box bg="bg-surface" p="sm" borderRadius="md" borderWidth="1px" borderColor="border-primary" boxShadow="lg">
+          <Text color="text-primary" fontWeight="bold">Lap {label}</Text>
+          <Text color="text-secondary">
             Time: {payload[0].payload.formattedTime}
           </Text>
         </Box>
@@ -30,32 +29,32 @@ const PaceDistributionChart: React.FC<PaceDistributionChartProps> = ({ data }) =
   };
 
   return (
-    <Box className={styles.container}>
-      <Text className={styles.title}>Pace Distribution</Text>
+    <VStack spacing="lg" bg="bg-surface" p="lg" borderRadius="lg" borderWidth="1px" borderColor="border-primary" h="100%">
+      <Heading as="h3" size="md" fontFamily="heading" color="text-primary">Pace Distribution</Heading>
       
-      <Box className={styles.chartContainer}>
-        <ResponsiveContainer width="100%" height={200}>
+      <Box w="100%" h="200px">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+            <CartesianGrid strokeDasharray="3 3" stroke="border-primary" />
             <XAxis 
               dataKey="lap" 
-              tick={{ fill: "#A0A0A0" }}
+              tick={{ fill: "text-secondary" }}
               fontSize={12}
             />
             <YAxis 
-              tick={{ fill: "#A0A0A0" }}
+              tick={{ fill: "text-secondary" }}
               fontSize={12}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar 
               dataKey="time" 
-              fill="#e10600"
+              fill="brand.red"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>
         </ResponsiveContainer>
       </Box>
-    </Box>
+    </VStack>
   );
 };
 

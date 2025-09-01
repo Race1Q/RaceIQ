@@ -1,7 +1,6 @@
 import React from 'react';
-import { Box, Text } from '@chakra-ui/react';
+import { Box, Text, HStack, VStack, Heading, useTheme } from '@chakra-ui/react';
 import type { Race } from '../../data/types';
-import styles from './TrackMap.module.css';
 
 interface TrackMapProps {
   coords: string;
@@ -10,6 +9,8 @@ interface TrackMapProps {
 }
 
 const TrackMap: React.FC<TrackMapProps> = ({ coords, trackName, race }) => {
+  const theme = useTheme(); // Access the theme for colors
+
   // Split coordinates into sectors
   const coordArray = coords.split(' ').map(coord => coord.split(',').map(Number));
   const totalPoints = coordArray.length;
@@ -20,76 +21,34 @@ const TrackMap: React.FC<TrackMapProps> = ({ coords, trackName, race }) => {
   const sector2Coords = coordArray.slice(sector1End, sector2End).map(([x, y]) => `${x},${y}`).join(' ');
   const sector3Coords = coordArray.slice(sector2End).map(([x, y]) => `${x},${y}`).join(' ');
 
+  const LegendItem = ({ color, label }: { color: string; label: string }) => (
+    <HStack align="center" spacing="sm">
+      <Box w="20px" h="4px" bg={color} borderRadius="full" />
+      <Text fontSize="sm" color="text-secondary">{label}</Text>
+    </HStack>
+  );
+
   return (
-    <Box className={styles.container}>
-      <Text className={styles.title}>Track Layout</Text>
-      
-      <Box className={styles.mapContainer}>
-        <svg
-          viewBox="0 0 400 100"
-          className={styles.trackSvg}
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {/* Sector 1 - Red */}
-          <polyline
-            points={sector1Coords}
-            className={styles.sector1}
-            fill="none"
-            strokeWidth="3"
-          />
-          
-          {/* Sector 2 - Blue */}
-          <polyline
-            points={sector2Coords}
-            className={styles.sector2}
-            fill="none"
-            strokeWidth="3"
-          />
-          
-          {/* Sector 3 - Yellow */}
-          <polyline
-            points={sector3Coords}
-            className={styles.sector3}
-            fill="none"
-            strokeWidth="3"
-          />
-          
-          {/* Start/Finish line */}
-          <line
-            x1="10"
-            y1="50"
-            x2="30"
-            y2="50"
-            className={styles.startFinish}
-            strokeWidth="4"
-          />
-          
-          {/* Track name label */}
-          <text x="200" y="95" className={styles.trackLabel}>
+    <VStack w="100%" h="100%" spacing="md" bg="bg-surface" p="lg" borderRadius="lg" borderWidth="1px" borderColor="border-primary">
+      <Heading as="h3" size="md" fontFamily="heading" color="text-primary">Track Layout</Heading>
+      <Box w="100%" flex="1">
+        <svg viewBox="0 0 400 100" width="100%" height="100%">
+          <polyline points={sector1Coords} fill="none" stroke={theme.colors.red[500]} strokeWidth="3" />
+          <polyline points={sector2Coords} fill="none" stroke={theme.colors.blue[500]} strokeWidth="3" />
+          <polyline points={sector3Coords} fill="none" stroke={theme.colors.yellow[400]} strokeWidth="3" />
+          <line x1="10" y1="50" x2="30" y2="50" stroke="text-primary" strokeWidth="4" />
+          <text x="200" y="95" fill="text-secondary" fontSize="12px" textAnchor="middle" fontFamily={theme.fonts.body}>
             {trackName}
           </text>
         </svg>
       </Box>
-      
-      <Box className={styles.legend}>
-        <Box className={styles.legendItem}>
-          <Box className={styles.legendSector1} />
-          <Text className={styles.legendText}>Sector 1</Text>
-        </Box>
-        <Box className={styles.legendItem}>
-          <Box className={styles.legendSector2} />
-          <Text className={styles.legendText}>Sector 2</Text>
-        </Box>
-        <Box className={styles.legendItem}>
-          <Box className={styles.legendSector3} />
-          <Text className={styles.legendText}>Sector 3</Text>
-        </Box>
-        <Box className={styles.legendItem}>
-          <Box className={styles.legendLine} />
-          <Text className={styles.legendText}>Start/Finish</Text>
-        </Box>
-      </Box>
-    </Box>
+      <HStack spacing="md" justify="center" wrap="wrap">
+        <LegendItem color="red.500" label="Sector 1" />
+        <LegendItem color="blue.500" label="Sector 2" />
+        <LegendItem color="yellow.400" label="Sector 3" />
+        <LegendItem color="text-primary" label="Start/Finish" />
+      </HStack>
+    </VStack>
   );
 };
 
