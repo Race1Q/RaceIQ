@@ -6,7 +6,14 @@ export function getApiBaseUrl(): string {
   }
   
   // In production, use the environment variable
-  return import.meta.env.VITE_BACKEND_URL || '';
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  
+  // If VITE_BACKEND_URL is not set, use the hardcoded fallback for Azure
+  if (!backendUrl || backendUrl === '') {
+    return 'https://raceiq-api.azurewebsites.net';
+  }
+  
+  return backendUrl;
 }
 
 // Helper function to build full API URLs
