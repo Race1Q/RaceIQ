@@ -7,6 +7,38 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  // Simple test endpoint to check if backend is working
+  @Get('test')
+  async testBackend() {
+    try {
+      // Test Supabase connection
+      const { data, error } = await this.usersService.supabaseService.client
+        .from('users')
+        .select('count')
+        .limit(1);
+      
+      if (error) {
+        return {
+          status: 'error',
+          message: 'Supabase connection failed',
+          error: error.message,
+        };
+      }
+      
+      return {
+        status: 'success',
+        message: 'Backend and Supabase are working',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: 'Backend test failed',
+        error: error.message,
+      };
+    }
+  }
+
   // Test endpoint to check if user creation is working
   @Get('me')
   @UseGuards(JwtAuthGuard)

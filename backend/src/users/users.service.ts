@@ -7,7 +7,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(public readonly supabaseService: SupabaseService) {}
 
   async findByAuth0Sub(auth0Sub: string): Promise<User | null> {
     const { data, error } = await this.supabaseService.client
@@ -25,14 +25,14 @@ export class UsersService {
       throw error;
     }
 
-    return data;
+    return data as User;
   }
 
   async createUser(auth0Sub: string, email?: string): Promise<User> {
     try {
       this.logger.log(`Attempting to create user with auth0_sub: ${auth0Sub}, email: ${email}`);
       
-      const newUser: User = {
+      const newUser: Omit<User, 'id'> = {
         auth0_sub: auth0Sub,
         username: null,
         email: email || null,
@@ -56,7 +56,7 @@ export class UsersService {
       }
 
       this.logger.log(`Successfully created new user with auth0_sub: ${auth0Sub}`);
-      return data;
+      return data as User;
     } catch (error) {
       this.logger.error(`Failed to create user for auth0_sub: ${auth0Sub}`, error);
       throw error;
@@ -67,8 +67,17 @@ export class UsersService {
     try {
       this.logger.log(`findOrCreateUser called for auth0_sub: ${auth0Sub}, email: ${email}`);
       
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Database operation timed out after 10 seconds')), 10000);
+      });
+      
       // First try to find existing user
-      const existingUser = await this.findByAuth0Sub(auth0Sub);
+      this.logger.log(`Searching for existing user with auth0_sub: ${auth0Sub}`);
+      const existingUser = await Promise.race([
+        this.findByAuth0Sub(auth0Sub),
+        timeoutPromise
+      ]);
       
       if (existingUser) {
         this.logger.log(`Found existing user for auth0_sub: ${auth0Sub}`);
@@ -78,7 +87,11 @@ export class UsersService {
       this.logger.log(`No existing user found for auth0_sub: ${auth0Sub}, creating new user`);
       
       // If user doesn't exist, create them
-      const newUser = await this.createUser(auth0Sub, email);
+      const newUser = await Promise.race([
+        this.createUser(auth0Sub, email),
+        timeoutPromise
+      ]);
+      
       this.logger.log(`Successfully created new user for auth0_sub: ${auth0Sub}`);
       return newUser;
     } catch (error) {
@@ -104,6 +117,6 @@ export class UsersService {
       throw error;
     }
 
-    return data;
+    return data as User;
  }
 }
