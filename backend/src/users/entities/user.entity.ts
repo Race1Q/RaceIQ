@@ -1,6 +1,7 @@
 // src/users/entities/user.entity.ts
 
 export class User {
+    id?: number; // Supabase auto-generated ID
     auth0_sub: string; // Primary key
     username: string | null;
     email: string | null;
@@ -8,4 +9,4 @@ export class User {
     favorite_driver_id: number | null;
     role: string;
     created_at: Date;
-  }
+}
