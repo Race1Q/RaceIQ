@@ -211,7 +211,8 @@ function AppContent() {
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/constructors" element={<ConstructorsStandings />} />
-        <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
+        <Route path="/constructors/:id" element={<ConstructorDetails />} />
+        
 
         {/* PROTECTED ROUTES */}
         <Route

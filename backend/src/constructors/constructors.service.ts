@@ -60,4 +60,17 @@ export class ConstructorsService {
     if (!found) throw new Error(`Constructor ${constructor_id} not found`);
     return found;
   }
+
+  async getConstructorById(id: number): Promise<Constructor> {
+    const { data, error } = await this.supabaseService.client
+      .from('constructors')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      throw new Error(`Constructor with id ${id} not found`);
+    }
+    return data as Constructor;
+  }
 }

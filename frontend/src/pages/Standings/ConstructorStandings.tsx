@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useToast, Box, Flex, Text } from '@chakra-ui/react';
 import { Select } from 'chakra-react-select';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
 
@@ -12,7 +12,6 @@ interface ApiConstructor {
   id: number;
   name: string;
   nationality: string;
-  constructor_id: string; // Important: use this for navigation
 }
 
 interface ConstructorStanding {
@@ -33,14 +32,12 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 const ConstructorStandings: React.FC = () => {
   const { getAccessTokenSilently } = useAuth0();
   const toast = useToast();
-  const navigate = useNavigate();
 
   const [standings, setStandings] = useState<ConstructorStanding[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string>('All');
   const [selectedSeason, setSelectedSeason] = useState<number>(new Date().getFullYear());
 
-  // Generate season options from 2025 → 1950
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
     for (let year = 2025; year >= 1950; year--) {
@@ -52,23 +49,14 @@ const ConstructorStandings: React.FC = () => {
   const authedFetch = useCallback(
     async (url: string) => {
       const token = await getAccessTokenSilently({
-        authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-          scope: 'read:standings',
-        },
+        authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE, scope: 'read:standings' },
       });
 
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(
-          `Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`
-        );
+        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`);
       }
-
       return response.json();
     },
     [getAccessTokenSilently]
@@ -95,7 +83,6 @@ const ConstructorStandings: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchStandings();
   }, [authedFetch, selectedSeason, toast]);
 
@@ -116,7 +103,6 @@ const ConstructorStandings: React.FC = () => {
 
   return (
     <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
-      
       {/* Season Selector */}
       <Box mb={4} maxW="200px">
         <Select
@@ -171,33 +157,32 @@ const ConstructorStandings: React.FC = () => {
           return constructors
             .sort((a, b) => a.position - b.position)
             .map((standing) => (
-              <Flex
-                key={standing.constructor_id}
-                minW="700px"
-                px={4}
-                py={4}
-                bgGradient={`linear(to-br, ${teamColor} 0%, rgba(0,0,0,0.2) 100%)`}
-                borderRadius="xl"
-                alignItems="center"
-                justifyContent="space-between"
-                _hover={{
-                  transform: 'translateY(-2px)',
-                  boxShadow: 'lg',
-                  transition: 'all 0.2s ease-in-out',
-                  cursor: 'pointer',
-                }}
-                color={textColor}
-                display="grid"
-                gridTemplateColumns="60px 1fr 100px 80px 1fr"
-                columnGap={4}
-                onClick={() => navigate(`/constructors/${standing.constructor.constructor_id}`)} // ✅ Navigate using constructor_id
-              >
-                <Text textAlign="center">{standing.position}</Text>
-                <Text>{standing.constructor.name}</Text>
-                <Text textAlign="right">{standing.points}</Text>
-                <Text textAlign="right">{standing.wins}</Text>
-                <Text textAlign="right">{standing.constructor.nationality}</Text>
-              </Flex>
+              <Link key={standing.constructor_id} to={`/constructors/${standing.constructor_id}`}>
+                <Flex
+                  minW="700px"
+                  px={4}
+                  py={4}
+                  bgGradient={`linear(to-br, ${teamColor} 0%, rgba(0,0,0,0.2) 100%)`}
+                  borderRadius="xl"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  _hover={{
+                    transform: 'translateY(-2px)',
+                    boxShadow: 'lg',
+                    transition: 'all 0.2s ease-in-out',
+                  }}
+                  color={textColor}
+                  display="grid"
+                  gridTemplateColumns="60px 1fr 100px 80px 1fr"
+                  columnGap={4}
+                >
+                  <Text textAlign="center">{standing.position}</Text>
+                  <Text>{standing.constructor.name}</Text>
+                  <Text textAlign="right">{standing.points}</Text>
+                  <Text textAlign="right">{standing.wins}</Text>
+                  <Text textAlign="right">{standing.constructor.nationality}</Text>
+                </Flex>
+              </Link>
             ));
         })}
       </Flex>
@@ -206,6 +191,8 @@ const ConstructorStandings: React.FC = () => {
 };
 
 export default ConstructorStandings;
+
+
 
 
 
