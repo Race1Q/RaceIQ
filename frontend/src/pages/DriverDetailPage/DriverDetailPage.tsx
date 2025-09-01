@@ -14,6 +14,7 @@ import { teamColors } from '../../lib/teamColors';
 import { getCountryFlagUrl } from '../../lib/assets';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import styles from './DriverDetailPage.module.css';
+import { buildApiUrl } from '../../lib/api';
 
 const DriverDetailPage: React.FC = () => {
   // 1. STATE AND HOOKS SETUP
@@ -55,45 +56,48 @@ const DriverDetailPage: React.FC = () => {
       return;
     }
 
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    const fetchDriverData = async () => {
       try {
-        const [details, performance] = await Promise.all([
-          authedFetch(`/api/drivers/${numericDriverId}/details`),
-          authedFetch(`/api/drivers/${numericDriverId}/performance/2025`)
+        setLoading(true);
+        setError(null);
+
+        const [driverDetails, driverPerformance] = await Promise.all([
+          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/details`)),
+          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/performance/2025`))
         ]);
 
         const flattenedData = {
-          id: details.driverId,
-          fullName: details.fullName,
-          firstName: details.firstName,
-          lastName: details.lastName,
-          countryCode: details.countryCode,
-          dateOfBirth: details.dateOfBirth,
-          teamName: details.team.name,
-          funFact: details.profile.funFact,
+          id: driverDetails.driverId,
+          fullName: driverDetails.fullName,
+          firstName: driverDetails.firstName,
+          lastName: driverDetails.lastName,
+          countryCode: driverDetails.countryCode,
+          dateOfBirth: driverDetails.dateOfBirth,
+          teamName: driverDetails.team.name,
+          funFact: driverDetails.profile.funFact,
           // Use driverHeadshots as primary source, fallback to API imageUrl
-          imageUrl: driverHeadshots[details.fullName] || details.profile.imageUrl,
-          wins: details.careerStats.wins,
-          podiums: details.careerStats.podiums,
-          fastestLaps: details.careerStats.fastestLaps,
-          points: details.careerStats.totalPoints,
-          firstRace: details.careerStats.firstRace,
-          championshipStanding: `P${performance.championshipStanding}`,
-          winsPerSeason: performance.winsPerSeason,
+          imageUrl: driverHeadshots[driverDetails.fullName] || driverDetails.profile.imageUrl,
+          wins: driverDetails.careerStats.wins,
+          podiums: driverDetails.careerStats.podiums,
+          fastestLaps: driverDetails.careerStats.fastestLaps,
+          points: driverDetails.careerStats.totalPoints,
+          firstRace: driverDetails.careerStats.firstRace,
+          championshipStanding: `P${driverPerformance.championshipStanding}`,
+          winsPerSeason: driverPerformance.winsPerSeason,
         };
 
         setDriverData(flattenedData);
         setThemeColor(teamColors[flattenedData.teamName] || '#FF1801');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load driver data.');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to load driver data.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    if (numericDriverId) {
+      fetchDriverData();
+    }
 
     return () => {
       setThemeColor('#FF1801'); // Reset theme color on unmount

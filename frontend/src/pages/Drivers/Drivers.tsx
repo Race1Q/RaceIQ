@@ -11,6 +11,7 @@ import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamLogoMap } from '../../lib/teamAssets';
+import { buildApiUrl } from '../../lib/api';
 
 // Interfaces
 interface ApiDriver { id: number; full_name: string; driver_number: number | null; country_code: string | null; team_name: string; }
@@ -46,7 +47,7 @@ const Drivers = () => {
       try {
         setLoading(true);
         setError(null);
-        const apiDrivers: ApiDriver[] = await authedFetch('/api/drivers/by-standings/2025');
+        const apiDrivers: ApiDriver[] = await authedFetch(buildApiUrl('/api/drivers/by-standings/2025'));
         const hydratedDrivers = apiDrivers.map(driver => ({
           ...driver,
           headshot_url: driverHeadshots[driver.full_name] || "",
