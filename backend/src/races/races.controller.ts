@@ -1,40 +1,23 @@
-// src/races/races.controller.ts
-import { Controller, Get, Post, Query, Param } from '@nestjs/common';
-// The import path is updated to match your file name 'races-ingest.services'
-import { RaceIngestService } from './races-ingest.services';
+// backend/src/races/races.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RacesService } from './races.service';
-import { Race } from './races.entity';
+import { RaceResponseDto } from './dto';
 
+@ApiTags('races')
 @Controller('races')
 export class RacesController {
-  constructor(
-    private readonly racesService: RacesService,
-    private readonly raceIngestService: RaceIngestService,
-  ) {}
-
-  @Post('ingest')
-  async ingestAllRaces() {
-    return this.raceIngestService.ingestAllRaces();
-  }
+  constructor(private readonly racesService: RacesService) {}
 
   @Get()
-  async getAllRaces(): Promise<Race[]> {
-    return this.racesService.getAllRaces();
-  }
-
-  @Get('test-connection')
-  async testConnection() {
-    const result = await this.racesService.testConnection();
-    return { success: result };
-  }
-
-  @Get('search')
-  async searchRaces(@Query('q') query: string): Promise<Race[]> {
-    return this.racesService.searchRaces(query);
-  }
-
-  @Get('season/:season')
-  async getRacesBySeason(@Param('season') season: string): Promise<Race[]> {
-    return this.racesService.getRacesBySeason(season);
+  @ApiOperation({ summary: 'Get all races for the 2025 season' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Successfully retrieved all races for the 2025 season', 
+    type: [RaceResponseDto],
+  })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async findAllRacesFor2025(): Promise<RaceResponseDto[]> {
+    return this.racesService.findAllRacesFor2025();
   }
 }

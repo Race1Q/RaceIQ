@@ -9,16 +9,9 @@ import { Scopes } from '../auth/scopes.decorator';
 @UseGuards(JwtAuthGuard, ScopesGuard)
 export class ConstructorStandingsController {
   constructor(private readonly standingsService: ConstructorStandingsService) {}
-
-  @Post('ingest/:season')
-  @Scopes('write:standings') // Assumes this scope exists
-  async ingestStandings(@Param('season', ParseIntPipe) season: number) {
-    this.standingsService.ingestStandingsForSeason(season);
-    return { message: `Ingestion for constructor standings season ${season} started.` };
-  }
-
   
   @UseGuards(JwtAuthGuard, ScopesGuard)
+  @Get(':season')
   @Scopes('read:standings') // Assumes this scope exists
   @Get(':season')
   async getStandings(@Param('season', ParseIntPipe) season: number) {

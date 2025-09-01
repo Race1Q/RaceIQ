@@ -2,6 +2,12 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { Driver } from './entities/driver.entity';
+import { 
+  DriverResponseDto, 
+  DriverStandingsResponseDto, 
+  DriverDetailsResponseDto, 
+  DriverPerformanceResponseDto 
+} from './dto';
 
 @Injectable()
 export class DriversService {
@@ -14,7 +20,7 @@ export class DriversService {
     return 'id, driver_number, first_name, last_name, name_acronym, country_code, date_of_birth';
   }
 
-  async getAllDrivers(): Promise<Driver[]> {
+  async getAllDrivers(): Promise<DriverResponseDto[]> {
     const { data, error } = await this.supabaseService.client
       .from('drivers')
       .select(this.selectFields);
@@ -23,10 +29,10 @@ export class DriversService {
       this.logger.error('Failed to fetch all drivers', error);
       throw new InternalServerErrorException('Failed to fetch all drivers');
     }
-    return (data as unknown as Driver[]) || [];
+    return (data as unknown as DriverResponseDto[]) || [];
   }
 
-  async searchDrivers(query: string): Promise<Driver[]> {
+  async searchDrivers(query: string): Promise<DriverResponseDto[]> {
     const { data, error } = await this.supabaseService.client
       .from('drivers')
       .select(this.selectFields)
@@ -37,10 +43,10 @@ export class DriversService {
       this.logger.error('Failed to search drivers', error);
       throw new InternalServerErrorException('Failed to search drivers');
     }
-    return (data as unknown as Driver[]) || [];
+    return (data as unknown as DriverResponseDto[]) || [];
   }
 
-  async findDriversByStandings(season: number): Promise<any[]> {
+  async findDriversByStandings(season: number): Promise<DriverStandingsResponseDto[]> {
     const { data, error } = await this.supabaseService.client
       .rpc('get_drivers_sorted_by_standings', { p_season: season });
 
@@ -52,7 +58,7 @@ export class DriversService {
     return data ?? [];
   }
 
-  async findOneDetails(driverId: number): Promise<any> {
+  async findOneDetails(driverId: number): Promise<DriverDetailsResponseDto> {
     const { data, error } = await this.supabaseService.client
       .rpc('get_driver_details', { p_driver_id: driverId });
 
@@ -63,7 +69,7 @@ export class DriversService {
     return data;
   }
 
-  async findOnePerformance(driverId: number, season: string): Promise<any> { // <-- Changed to string
+  async findOnePerformance(driverId: number, season: string): Promise<DriverPerformanceResponseDto> {
     const { data, error } = await this.supabaseService.client
       .rpc('get_driver_performance', { p_driver_id: driverId, p_season: season });
 

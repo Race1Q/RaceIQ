@@ -19,6 +19,7 @@ import { Select } from 'chakra-react-select';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
+import { buildApiUrl } from '../../lib/api';
 
 // Define the shape for our select options
 type SelectOption = { value: number; label: string };
@@ -70,21 +71,20 @@ const ProfilePage: React.FC = () => {
 
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-
-        const [profileData, constructorsData, driversData] = await Promise.all([
-          authedFetch('/api/users/me'),
-          authedFetch('/api/constructors'),
-          authedFetch('/api/drivers')
+        const [userData, constructorsData, driversData] = await Promise.all([
+          authedFetch(buildApiUrl('/api/users/me')),
+          authedFetch(buildApiUrl('/api/constructors')),
+          authedFetch(buildApiUrl('/api/drivers'))
         ]);
 
         setFormData(prev => ({
           ...prev,
-          username: profileData.databaseUser?.username || user?.name || '',
-          favoriteTeam: profileData.databaseUser?.favorite_constructor_id || '',
-          favoriteDriver: profileData.databaseUser?.favorite_driver_id || '',
+          username: userData.databaseUser?.username || user?.name || '',
+          favoriteTeam: userData.databaseUser?.favorite_constructor_id || '',
+          favoriteDriver: userData.databaseUser?.favorite_driver_id || '',
         }));
         setConstructorOptions(constructorsData);
         setDriverOptions(driversData);
@@ -105,7 +105,7 @@ const ProfilePage: React.FC = () => {
 
     // 2. Wait until the user exists AND the loading is complete
     if (user && !isLoading) {
-      fetchInitialData();
+      fetchData();
     }
   // 3. Add isLoading to the dependency array
   }, [user, isLoading, authedFetch, toast]);
@@ -141,7 +141,7 @@ const ProfilePage: React.FC = () => {
         favorite_driver_id: formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver),
       };
 
-      await authedFetch('/api/users/profile', {
+      await authedFetch(buildApiUrl('/api/users/profile'), {
         method: 'PATCH',
         body: JSON.stringify(payload),
       });
