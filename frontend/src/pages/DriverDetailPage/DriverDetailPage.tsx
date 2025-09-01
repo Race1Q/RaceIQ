@@ -40,7 +40,20 @@ const DriverDetailPage: React.FC = () => {
     });
     const headers = new Headers();
     headers.set('Authorization', `Bearer ${token}`);
-    const response = await fetch(`${apiBaseUrl}${url}`, { headers });
+    
+    // Fix URL construction to avoid double slashes
+    let fullUrl;
+    if (import.meta.env.DEV) {
+      // In development, use relative URL (Vite proxy will handle it)
+      fullUrl = url;
+    } else {
+      // In production, construct full URL
+      fullUrl = `${apiBaseUrl}${url}`;
+    }
+    
+    console.log('Making request to:', fullUrl); // Debug log
+    
+    const response = await fetch(fullUrl, { headers });
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
@@ -62,8 +75,8 @@ const DriverDetailPage: React.FC = () => {
         setError(null);
 
         const [driverDetails, driverPerformance] = await Promise.all([
-          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/details`)),
-          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/performance/2025`))
+          authedFetch(`/api/drivers/${numericDriverId}/details`),
+          authedFetch(`/api/drivers/${numericDriverId}/performance/2025`)
         ]);
 
         const flattenedData = {

@@ -47,7 +47,7 @@ const Drivers = () => {
       try {
         setLoading(true);
         setError(null);
-        const apiDrivers: ApiDriver[] = await authedFetch(buildApiUrl('/api/drivers/by-standings/2025'));
+        const apiDrivers: ApiDriver[] = await authedFetch('/api/drivers/by-standings/2025');
         const hydratedDrivers = apiDrivers.map(driver => ({
           ...driver,
           headshot_url: driverHeadshots[driver.full_name] || "",
