@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { buildApiUrl } from '../lib/api';
 
 export const useUserRegistration = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -13,7 +14,7 @@ export const useUserRegistration = () => {
         },
       });
 
-      const response = await fetch('/api/users/ensure-exists', {
+      const response = await fetch(buildApiUrl('/api/users/ensure-exists'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

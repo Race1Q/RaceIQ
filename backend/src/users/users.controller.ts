@@ -43,11 +43,18 @@ export class UsersController {
     try {
       const auth0Sub = req.user.sub;
       const email = req.user.email; // Get email from JWT payload
+      
+      // Check if user already exists first
+      const existingUser = await this.usersService.findByAuth0Sub(auth0Sub);
+      const wasCreated = !existingUser;
+      
+      // Find or create user
       const user = await this.usersService.findOrCreateUser(auth0Sub, email);
+      
       return {
         message: 'User ensured successfully',
         user,
-        wasCreated: !req.user.user, // If req.user.user doesn't exist, it was just created
+        wasCreated,
       };
     } catch (error) {
       return {
