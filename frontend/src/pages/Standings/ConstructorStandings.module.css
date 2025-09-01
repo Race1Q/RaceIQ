@@ -1,0 +1,61 @@
+.standingsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    margin-top: var(--space-lg);
+  }
+  
+  .constructorCard {
+    background-color: var(--color-bg-surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-lg);
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .constructorCard:hover {
+    transform: translateY(-4px);
+  }
+  
+  .constructorMeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-md);
+    font-size: var(--font-size-md);
+    color: var(--color-text-default);
+  }
+  
+  .position {
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+  }
+  
+  .points {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+  }
+  
+  .wins {
+    font-size: var(--font-size-md);
+  }
+  
+  .nationality {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+  
+  .errorState {
+    color: var(--color-primary-red-light);
+    text-align: center;
+    font-size: 1.2rem;
+    padding: var(--space-xl);
+  }
+  
+  .noConstructors {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    padding: var(--space-lg);
+  }
+  

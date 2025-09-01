@@ -9,9 +9,11 @@ import { Scopes } from '../auth/scopes.decorator';
 @UseGuards(JwtAuthGuard, ScopesGuard)
 export class ConstructorStandingsController {
   constructor(private readonly standingsService: ConstructorStandingsService) {}
-
+  
+  @UseGuards(JwtAuthGuard, ScopesGuard)
   @Get(':season')
   @Scopes('read:standings') // Assumes this scope exists
+  @Get(':season')
   async getStandings(@Param('season', ParseIntPipe) season: number) {
     return this.standingsService.getStandingsBySeason(season);
   }

@@ -23,6 +23,9 @@ import { RoleProvider, useRole } from '../context/RoleContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
+import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
+import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
+
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
@@ -111,6 +114,7 @@ function Navbar() {
   const isAboutActive = useActiveRoute('/about');
   const isAdminActive = useActiveRoute('/admin');
   const isProfileActive = useActiveRoute('/profile');
+  const isConstructorsActive = useActiveRoute('/constructors');
 
   return (
     <nav className={styles.navbar}>
@@ -138,6 +142,13 @@ function Navbar() {
               Drivers
             </Link>
             <Link 
+              to="/constructors" 
+              className={`${styles.navLink} ${isConstructorsActive ? styles.navLinkActive : ''}`} 
+            >
+              Constructors
+            </Link>
+
+            <Link 
               to="/races" 
               className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
             >
@@ -156,6 +167,7 @@ function Navbar() {
               >
                 Admin
               </Link>
+              
             )}
           </div>
           <div className={styles.navRight}>
@@ -198,6 +210,8 @@ function AppContent() {
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
+        <Route path="/constructors" element={<ConstructorsStandings />} />
+        <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
 
         {/* PROTECTED ROUTES */}
         <Route

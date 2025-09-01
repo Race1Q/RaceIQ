@@ -44,9 +44,13 @@ export class ConstructorStandingsService {
       .select('*, constructor:constructors(name, nationality)')
       .eq('season', season)
       .order('position', { ascending: true });
-      
+  
     if (error) throw new Error(`Failed to fetch standings for season ${season}`);
-    return data;
+    return data.map(d => ({
+      ...d,
+      teamName: d.constructor?.name || 'Unknown',
+    }));
   }
+  
 }
 
