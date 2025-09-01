@@ -17,12 +17,4 @@ export class AppController {
       timestamp: new Date().toISOString(),
     };
   }
-
-  @Get('test-auth')
-  testAuth(): { message: string; timestamp: string } {
-    return {
-      message: 'Backend is accessible without authentication',
-      timestamp: new Date().toISOString(),
-    };
-  }
 }

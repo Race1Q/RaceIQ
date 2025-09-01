@@ -34,28 +34,12 @@ const Drivers = () => {
       });
       const headers = new Headers();
       headers.set('Authorization', `Bearer ${token}`);
-      
-      console.log('Making request to:', url); // Debug log
-      
       const response = await fetch(url, { headers });
-      console.log('Response status:', response.status); // Debug log
-      
       if (!response.ok) {
           const errorBody = await response.text();
-          console.log('Error response body:', errorBody); // Debug log
           throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`);
       }
-      
-      const responseText = await response.text();
-      console.log('Response body:', responseText); // Debug log
-      
-      try {
-          return JSON.parse(responseText);
-      } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.error('Response that failed to parse:', responseText);
-          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
-      }
+      return response.json();
   }, [getAccessTokenSilently]);
 
   useEffect(() => {
@@ -63,7 +47,7 @@ const Drivers = () => {
       try {
         setLoading(true);
         setError(null);
-        const apiDrivers: ApiDriver[] = await authedFetch('/api/drivers/by-standings/2025');
+        const apiDrivers: ApiDriver[] = await authedFetch(buildApiUrl('/api/drivers/by-standings/2025'));
         const hydratedDrivers = apiDrivers.map(driver => ({
           ...driver,
           headshot_url: driverHeadshots[driver.full_name] || "",
