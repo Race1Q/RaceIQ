@@ -3,13 +3,12 @@ import { Link } from 'react-router-dom';
 import InfoBlock from '../InfoBlock/InfoBlock';
 import styles from './KeyInfoBar.module.css';
 import { Trophy, TrendingUp, Calendar, ArrowLeft, Star } from 'lucide-react';
+import { teamLogoMap } from '../../lib/teamAssets';
 
 type FirstRace = { year: string; event: string };
 
 interface DriverData {
   team: string;
-  teamLogoUrl: string;
-  teamLogoWhiteUrl: string;
   championshipStanding: string;
   points: number;
   wins: number;
@@ -22,20 +21,6 @@ interface KeyInfoBarProps {
 }
 
 const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver }) => {
-  const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    const tried = img.getAttribute('data-tried') || '0';
-    if (tried === '0') {
-      const alt = img.getAttribute('data-fallback');
-      if (alt) {
-        img.setAttribute('data-tried', '1');
-        img.src = alt;
-        return;
-      }
-    }
-    img.src = '/gauge.svg';
-    img.setAttribute('data-tried', '2');
-  };
   return (
     <div className={styles.keyInfoBar}>
       <Link to="/drivers" className={styles.backButton} aria-label="Back to all drivers">
@@ -44,25 +29,9 @@ const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver }) => {
 
       <div className={styles.teamLogoWrapper}>
         <img
-          src={driver.teamLogoUrl}
-          data-fallback={driver.teamLogoWhiteUrl}
-          data-tried="0"
+          src={teamLogoMap[driver.team] || teamLogoMap["Default"]}
           alt={`${driver.team} logo`}
           className={`${styles.teamLogo} ${styles.logoColor}`}
-          onError={handleLogoError}
-          referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
-          loading="lazy"
-        />
-        <img
-          src={driver.teamLogoWhiteUrl}
-          data-fallback={driver.teamLogoUrl}
-          data-tried="0"
-          alt={`${driver.team} logo`}
-          className={`${styles.teamLogo} ${styles.logoWhite}`}
-          onError={handleLogoError}
-          referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
           loading="lazy"
         />
       </div>

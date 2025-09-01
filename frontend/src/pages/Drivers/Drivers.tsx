@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useToast } from '@chakra-ui/react';
+import { Link } from 'react-router-dom';
 import styles from './Drivers.module.css';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
@@ -118,6 +119,10 @@ const Drivers = () => {
                     />
                     <div className={styles.driverRow}>
                       {driversInTeam.map(driver => {
+                        // The driver object from the API must contain both a unique slug and the numeric id.
+                        // For example: { id: 1, slug: 'max_verstappen', full_name: 'Max Verstappen', ... }
+                        const driverSlug = driver.full_name.toLowerCase().replace(/ /g, '_');
+                        
                         const driverCardData = {
                           id: driver.full_name.toLowerCase().replace(/ /g, '_'),
                           name: driver.full_name,
@@ -127,7 +132,17 @@ const Drivers = () => {
                           image: driver.headshot_url,
                           team_color: driver.team_color,
                         };
-                        return <DriverProfileCard key={driver.id} driver={driverCardData} />;
+                        
+                        return (
+                          // THE FIX: Add the `state` prop to the Link component.
+                          <Link 
+                            key={driver.id}
+                            to={`/drivers/${driverSlug}`} 
+                            state={{ driverId: driver.id }} // <-- THIS IS THE CRITICAL FIX
+                          >
+                            <DriverProfileCard driver={driverCardData} />
+                          </Link>
+                        );
                       })}
                     </div>
                   </div>

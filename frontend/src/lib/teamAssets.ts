@@ -1,16 +1,14 @@
-// frontend/src/lib/teamAssets.ts
-
-// This maps a team's name to the path of its logo in the /assets/ directory.
-// IMPORTANT: Adjust these filenames to match your actual logo files.
+// This map connects a team's name from the API to a local SVG file in your project.
 export const teamLogoMap: { [key: string]: string } = {
-  "Mercedes": "/assets/Mercedes_F1_Logo.svg.png",
-  "Red Bull": "/assets/Red_Bull_Racing_logo.svg.png",
-  "Ferrari": "/assets/Ferrari-Logo.png",
-  "McLaren": "/assets/McLaren_Racing_logo.svg.png",
-  "Aston Martin": "/assets/aston-martin-f1-seeklogo-2.svg",
-  "Alpine F1 Team": "/assets/Alpine_F1_Team_Logo.svg.png",
-  "Williams": "/assets/Williams_Racing_logo.svg.png",
-  "Haas F1 Team": "/assets/Haas_F1_Team_Logo.svg.png",
-  "Sauber": "/assets/Sauber_F1_Team_logo.svg.png",
-  "RB F1 Team": "/assets/Logotipo_da_RB_F1_Team.png",
+  "Red Bull Racing": "/assets/logos/red-bull-racing.svg",
+  "Mercedes": "/assets/logos/mercedes.svg",
+  "Ferrari": "/assets/logos/ferrari.svg",
+  "McLaren": "/assets/logos/mclaren.svg",
+  "Aston Martin": "/assets/logos/aston-martin.svg",
+  "Alpine": "/assets/logos/alpine.svg",
+  "Williams": "/assets/logos/williams.svg",
+  "Haas F1 Team": "/assets/logos/haas.svg",
+  "AlphaTauri": "/assets/logos/alphatauri.svg",
+  "Alfa Romeo": "/assets/logos/alfaromeo.svg",
+  "Default": "/assets/logos/f1-logo.svg" // A fallback logo
 };
