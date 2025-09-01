@@ -8,25 +8,23 @@ import theme from './theme';
 
 // Get Auth0 configuration from runtime environment variables
 const getAuth0Config = () => {
-  // For local development, use import.meta.env
-  if (import.meta.env.VITE_AUTH0_DOMAIN && import.meta.env.VITE_AUTH0_CLIENT_ID) {
-    return {
-      domain: import.meta.env.VITE_AUTH0_DOMAIN,
-      clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
-      audience: import.meta.env.VITE_AUTH0_AUDIENCE
-    };
+  const requiredEnvVars = [
+    'VITE_AUTH0_DOMAIN',
+    'VITE_AUTH0_CLIENT_ID',
+    'VITE_AUTH0_AUDIENCE',
+  ];
+
+  for (const envVar of requiredEnvVars) {
+    if (!import.meta.env[envVar]) {
+      throw new Error(`Missing environment variable: ${envVar}`);
+    }
   }
-  
-  // For Azure Static Web Apps, use window variables
-  const domain = (window as any).VITE_AUTH0_DOMAIN;
-  const clientId = (window as any).VITE_AUTH0_CLIENT_ID;
-  const audience = (window as any).VITE_AUTH0_AUDIENCE;
-  
-  if (!domain || !clientId) {
-    throw new Error('Auth0 configuration is required. Check environment variables.');
-  }
-  
-  return { domain, clientId, audience };
+
+  return {
+    domain: import.meta.env.VITE_AUTH0_DOMAIN,
+    clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
+    audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+  };
 };
 
 const auth0Config = getAuth0Config();
