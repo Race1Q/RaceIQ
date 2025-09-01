@@ -1,25 +1,80 @@
-// src/races/races.service.ts
-import { Injectable, Logger } from '@nestjs/common';
+// backend/src/races/races.service.ts
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { Race } from './races.entity';
-// Import SeasonsService to get season data
-import { SeasonsService } from '../seasons/seasons.service';
+import { RaceResponseDto } from './dto';
 
 @Injectable()
 export class RacesService {
-  private readonly logger = new Logger(RacesService.name);
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  // Inject the SeasonsService
-  constructor(
-    private readonly supabaseService: SupabaseService,
-    private readonly seasonsService: SeasonsService,
-  ) {}
+  async findAllRacesFor2025(): Promise<RaceResponseDto[]> {
+    // First, find the season ID for the year 2025
+    const { data: seasonData, error: seasonError } = await this.supabaseService.client
+      .from('seasons')
+      .select('id')
+      .eq('year', 2025)
+      .single();
 
-  async testConnection(): Promise<boolean> {
-    const { data } = await this.supabaseService.client.from('races').select('*').limit(1);
-    return !!data;
+    if (seasonError || !seasonData) {
+      throw new InternalServerErrorException('Could not find season data for 2025');
+    }
+
+    const seasonId = seasonData.id;
+
+    // Now, fetch all races for that season ID
+    const { data, error } = await this.supabaseService.client
+      .from('races')
+      .select('*')
+      .eq('season_id', seasonId)
+      .order('date', { ascending: true });
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to fetch races for 2025');
+    }
+    
+    // Convert Race[] to RaceResponseDto[] and ensure id is defined
+    return (data ?? []).map(race => ({
+      id: race.id!,
+      season_id: race.season_id,
+      circuit_id: race.circuit_id,
+      round: race.round,
+      name: race.name,
+      date: race.date,
+      time: race.time
+    }));
   }
 
+  // Method for other services that need races by season
+  async getRacesBySeason(seasonYear: string): Promise<Race[]> {
+    // Find the season record
+    const { data: seasonData, error: seasonError } = await this.supabaseService.client
+      .from('seasons')
+      .select('id')
+      .eq('year', parseInt(seasonYear))
+      .single();
+
+    if (seasonError || !seasonData) {
+      return []; // Return empty array if season not found
+    }
+
+    const seasonId = seasonData.id;
+
+    // Fetch races for that season
+    const { data, error } = await this.supabaseService.client
+      .from('races')
+      .select('*')
+      .eq('season_id', seasonId)
+      .order('round', { ascending: true });
+
+    if (error) {
+      return []; // Return empty array on error
+    }
+    
+    return data ?? [];
+  }
+
+  // Method for other services that need all races
   async getAllRaces(): Promise<Race[]> {
     const { data, error } = await this.supabaseService.client
       .from('races')
@@ -27,54 +82,8 @@ export class RacesService {
       .order('round', { ascending: true });
 
     if (error) {
-      this.logger.error('Failed to fetch all races', error);
-      throw new Error('Failed to fetch all races');
+      return []; // Return empty array on error
     }
-
-    return data;
-  }
-
-  async searchRaces(query: string): Promise<Race[]> {
-    const { data, error } = await this.supabaseService.client
-      .from('races')
-      .select('*')
-      .ilike('name', `%${query}%`)
-      .order('name', { ascending: true });
-
-    if (error) {
-      this.logger.error('Failed to search races', error);
-      throw new Error('Failed to search races');
-    }
-
-    return data;
-  }
-
-  /**
-   * Retrieves all races for a given season year.
-   * @param seasonYear The year of the season as a string (e.g., '2025').
-   * @returns A promise of an array of Race objects.
-   */
-  async getRacesBySeason(seasonYear: string): Promise<Race[]> {
-    // Find the season record using the SeasonsService
-    const seasonRecord = await this.seasonsService.getSeasonByYear(seasonYear);
-
-    if (!seasonRecord) {
-      this.logger.warn(`Season '${seasonYear}' not found.`);
-      return [];
-    }
-
-    // Use the retrieved season ID to query the races table
-    const { data, error } = await this.supabaseService.client
-      .from('races')
-      .select('*')
-      .eq('season_id', seasonRecord.id!)
-      .order('round', { ascending: true });
-
-    if (error) {
-      this.logger.error(`Failed to fetch races for season ${seasonYear}`, error);
-      throw new Error('Failed to fetch races by season');
-    }
-    
-    return data;
+    return data ?? [];
   }
 }
