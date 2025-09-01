@@ -22,6 +22,31 @@ export class RaceResultsService {
 
     return data as RaceResultRow[];
   }
+
+  async getByConstructor(constructorId: number): Promise<RaceResultRow[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('race_results')
+      .select('*')
+      .eq('constructor_id', constructorId);
+
+    if (error) {
+      this.logger.error(`Failed to fetch race_results for constructor_id ${constructorId}`, error);
+      throw new Error(`Failed to fetch race_results: ${error.message}`);
+    }
+
+    return data as RaceResultRow[];
+  }
+
+  async getConstructorStats(constructorId: number) {
+    const results = await this.getByConstructor(constructorId);
+
+    const totalRaces = results.length;
+    const wins = results.filter(r => Number(r.position) === 1).length;
+    const podiums = results.filter(r => Number(r.position) <= 3).length;
+    const totalPoints = results.reduce((acc, r) => acc + Number(r.points), 0);
+
+    return { totalRaces, wins, podiums, totalPoints };
+  }
 }
 
 

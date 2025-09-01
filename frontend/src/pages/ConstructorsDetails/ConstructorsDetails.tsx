@@ -1,91 +1,106 @@
-// frontend/src/pages/Constructors/ConstructorDetails.tsx
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// src/pages/Constructors/ConstructorDetails.tsx
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, VStack, HStack, useToast } from '@chakra-ui/react';
+import { Box, Flex, Text, useToast, Container } from '@chakra-ui/react';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import HeroSection from '../../components/HeroSection/HeroSection';
 import { teamColors } from '../../lib/teamColors';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
-// Backend entity interface
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@chakra-ui/react';
+
+
+ interface RaceResultRow {
+    id?: number;
+    session_id: number;
+    driver_id: number;
+    constructor_id: number;
+    position: number;
+    points: number;
+    grid: number;
+    laps: number;
+    time_ms: number | null;
+    status: string;
+  }
+
 interface Constructor {
   id: number;
   name: string;
   nationality: string;
   url: string;
-  constructor_id: string; // API string ID
 }
 
-interface ConstructorStanding {
-  season: number;
-  points: number;
-  wins: number;
-  position: number;
-}
+interface ConstructorStats {
+    totalRaces: number;
+    wins: number;
+    podiums: number;
+    totalPoints: number;
+  }
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const ConstructorDetails: React.FC = () => {
-  const { constructorId } = useParams<{ constructorId: string }>();
+  const { id } = useParams<{ id: string }>();
+  const numericId = id ? Number(id) : null;
+
   const { getAccessTokenSilently } = useAuth0();
   const toast = useToast();
 
   const [constructor, setConstructor] = useState<Constructor | null>(null);
-  const [standings, setStandings] = useState<ConstructorStanding[]>([]);
+  const [raceResults, setRaceResults] = useState<RaceResultRow[]>([]);
+  const [stats, setStats] = useState<ConstructorStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const authedFetch = useCallback(async (url: string) => {
-    const token = await getAccessTokenSilently({
-      authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: 'read:standings',
-      },
-    });
+  const authedFetch = useCallback(
+    async (url: string, scope: string) => {
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          scope
+        },
+      });
 
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(
-        `Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`
-      );
-    }
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(
+          `Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`
+        );
+      }
 
-    return response.json();
-  }, [getAccessTokenSilently]);
+      return response.json();
+    },
+    [getAccessTokenSilently]
+  );
 
   useEffect(() => {
-    const fetchConstructorDetails = async () => {
+    const fetchData = async () => {
+      if (!numericId) return;
+
       setLoading(true);
       try {
-        // Fetch constructor info from backend
+        // Fetch constructor info
         const constructorData: Constructor = await authedFetch(
-          `${BACKEND_URL}/api/constructors/${constructorId}`
+          `${BACKEND_URL}/api/constructors/${numericId}`,
+          'read:constructors'
         );
-
         setConstructor(constructorData);
 
-        // Fetch constructor standings (historical)
-        const standingsData: ConstructorStanding[] = await authedFetch(
-          `${BACKEND_URL}/api/constructor-standings/history/${constructorData.id}`
+        // Fetch constructor stats
+        const statsData: ConstructorStats = await authedFetch(
+          `${BACKEND_URL}/api/race-results/constructor/${numericId}/stats`,
+          'read:race-results'
         );
-
-        setStandings(standingsData);
+        setStats(statsData);
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
+        const errorMessage = err instanceof Error ? err.message : 'Unexpected error';
         toast({
-          title: 'Failed to load constructor data',
+          title: 'Failed to fetch constructor details',
           description: errorMessage,
           status: 'error',
           duration: 5000,
@@ -96,59 +111,95 @@ const ConstructorDetails: React.FC = () => {
       }
     };
 
-    if (constructorId) fetchConstructorDetails();
-  }, [constructorId, authedFetch, toast]);
-
-  const totalPoints = useMemo(() => standings.reduce((acc, s) => acc + s.points, 0), [standings]);
-  const totalWins = useMemo(() => standings.reduce((acc, s) => acc + s.wins, 0), [standings]);
+    fetchData();
+  }, [numericId, authedFetch, toast]);
 
   if (loading) return <F1LoadingSpinner text="Loading Constructor Details..." />;
+  if (!constructor) return <Text>Constructor not found.</Text>;
 
-  if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
+  const teamColor = teamColors[constructor.name] || 'FF1801';
+  const gradientBg = `linear-gradient(135deg, #${teamColor} 0%, rgba(0,0,0,0.2) 100%)`;
 
-  const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
+  // Compute summary stats
+  
 
   return (
-    <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
-      <VStack spacing={6} align="stretch">
-        <Box>
-          <Text fontSize="3xl" fontWeight="bold" color={teamColor}>
+    <>
+      <HeroSection backgroundImageUrl="">
+        <Flex
+          direction="column"
+          align="center"
+          justify="center"
+          textAlign="center"
+          bgGradient={gradientBg}
+          color="white"
+          minH="300px"
+          p={8}
+          borderRadius="lg"
+        >
+          <Text fontSize={['3xl', '4xl', '5xl']} fontWeight="bold">
             {constructor.name}
           </Text>
-          <Text fontSize="md" color="gray.300">
+          <Text fontSize={['md', 'lg', 'xl']} mt={2}>
             Nationality: {constructor.nationality}
           </Text>
-        </Box>
-
-        <Flex gap={6} wrap="wrap">
-          <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-            <Text fontSize="lg" fontWeight="bold">Total Points</Text>
-            <Text fontSize="2xl" fontWeight="bold">{totalPoints}</Text>
-          </Box>
-          <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-            <Text fontSize="lg" fontWeight="bold">Total Wins</Text>
-            <Text fontSize="2xl" fontWeight="bold">{totalWins}</Text>
-          </Box>
+          {constructor.url && (
+            <a
+              href={constructor.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'white', textDecoration: 'underline', marginTop: '0.5rem' }}
+            >
+              Official Website
+            </a>
+          )}
         </Flex>
+      </HeroSection>
 
-        <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold" mb={2}>
-            Historical Points by Season
+      {/* Stats Box */}
+      <Container maxW="1400px" mt={8}>
+        <Box bg="gray.800" p={6} borderRadius="lg" color="white">
+          <Text fontSize="2xl" fontWeight="bold" mb={4}>
+            Career Stats
           </Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={standings.sort((a, b) => a.season - b.season)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-              <XAxis dataKey="season" stroke="white" />
-              <YAxis stroke="white" />
-              <Tooltip />
-              <Line type="monotone" dataKey="points" stroke={teamColor} strokeWidth={3} />
-            </LineChart>
-          </ResponsiveContainer>
+          <Flex gap={6} flexWrap="wrap">
+            <Box>
+              <Text fontWeight="bold">Races:</Text>
+              <Text>{stats?.totalRaces}</Text>
+            </Box>
+            <Box>
+              <Text fontWeight="bold">Wins:</Text>
+              <Text>{stats?.wins}</Text>
+            </Box>
+            <Box>
+              <Text fontWeight="bold">Podiums:</Text>
+              <Text>{stats?.podiums}</Text>
+            </Box>
+            <Box>
+              <Text fontWeight="bold">Points:</Text>
+              <Text>{stats?.totalPoints}</Text>
+            </Box>
+          </Flex>
         </Box>
-      </VStack>
-    </Box>
+      </Container>
+
+      <Container maxW="1400px" mt={4}>
+  <Link to="/constructors">
+    <Button leftIcon={<ArrowLeft />} colorScheme="blue" variant="outline">
+      Back to Constructor Standings
+    </Button>
+  </Link>
+</Container>
+    </>
   );
 };
 
 export default ConstructorDetails;
+
+
+
+
+
+
+
 
