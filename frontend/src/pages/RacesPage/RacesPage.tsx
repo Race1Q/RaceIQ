@@ -38,8 +38,8 @@ const RacesPage: React.FC = () => {
           disableOverlay
         />
         <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
-          <Flex direction="column" align="center" justify="center" minH="30vh" gap={4}>
-            <Text fontSize="xl" color="text-primary">Please signup / login</Text>
+          <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
+            <Text fontSize="xl" color="text-primary">Please signup / login to view races.</Text>
             <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
           </Flex>
         </Container>

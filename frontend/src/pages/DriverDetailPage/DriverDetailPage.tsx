@@ -9,7 +9,6 @@ import DashboardGrid from '../../components/DashboardGrid/DashboardGrid';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import KeyInfoBar from '../../components/KeyInfoBar/KeyInfoBar';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
-import { useTheme } from '../../context/ThemeContext';
 import { teamColors } from '../../lib/teamColors';
 import { getCountryFlagUrl } from '../../lib/assets';
 import { driverHeadshots } from '../../lib/driverHeadshots';
@@ -22,7 +21,6 @@ const DriverDetailPage: React.FC = () => {
   // 1. STATE AND HOOKS SETUP
   const { getAccessTokenSilently } = useAuth0();
   const location = useLocation();
-  const { setThemeColor } = useTheme();
 
   // This is the numeric ID passed via <Link state={{...}}> from the main /drivers page
   const numericDriverId = location.state?.driverId;
@@ -91,7 +89,6 @@ const DriverDetailPage: React.FC = () => {
         };
 
         setDriverData(flattenedData);
-        setThemeColor(teamColors[flattenedData.teamName] || '#FF1801');
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to load driver data.');
       } finally {
@@ -102,11 +99,7 @@ const DriverDetailPage: React.FC = () => {
     if (numericDriverId) {
       fetchDriverData();
     }
-
-    return () => {
-      setThemeColor('#FF1801'); // Reset theme color on unmount
-    };
-  }, [numericDriverId, authedFetch, setThemeColor]);
+  }, [numericDriverId, authedFetch]);
 
   // 4. RENDER LOADING AND ERROR STATES
   if (loading) {

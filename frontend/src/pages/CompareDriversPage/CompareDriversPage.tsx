@@ -19,6 +19,7 @@ import {
   Td,
   TableContainer,
   useToast,
+  Button,
 } from '@chakra-ui/react';
 
 // Import project-specific components and helpers
@@ -46,7 +47,7 @@ interface DriverDetails {
 }
 
 const CompareDriversPage = () => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
   const toast = useToast();
 
   // State Management
@@ -74,6 +75,11 @@ const CompareDriversPage = () => {
   // Effect 1: Fetch the list of all drivers for the dropdowns
   useEffect(() => {
     const fetchDriverList = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        setError(null);
+        return;
+      }
       setLoading(true);
       try {
         const driversList = await authedFetch('/api/drivers/by-standings/2025');
@@ -87,11 +93,15 @@ const CompareDriversPage = () => {
       }
     };
     fetchDriverList();
-  }, [authedFetch, toast]);
+  }, [authedFetch, toast, isAuthenticated]);
   
   // Helper function to fetch and process data for a single driver
   const fetchAndSetDriverData = async (driverId: string, setDriver: React.Dispatch<React.SetStateAction<DriverDetails | null>>) => {
     if (!driverId) {
+      setDriver(null);
+      return;
+    }
+    if (!isAuthenticated) {
       setDriver(null);
       return;
     }
@@ -158,6 +168,17 @@ const CompareDriversPage = () => {
       )}
     </VStack>
   );
+
+  if (!isAuthenticated) {
+    return (
+      <Box p={{ base: 'md', md: 'xl' }}>
+        <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
+          <Text fontSize="xl" color="text-secondary">Please signup / login to compare</Text>
+          <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
+        </Flex>
+      </Box>
+    );
+  }
 
   return (
     <Box p={{ base: 'md', md: 'xl' }}>
