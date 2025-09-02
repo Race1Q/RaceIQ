@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Flex, Box, Text, VStack, Button } from '@chakra-ui/react';
-import { useParams, useLocation, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowLeft } from 'lucide-react';
 
@@ -16,6 +16,8 @@ import { driverHeadshots } from '../../lib/driverHeadshots';
 import styles from './DriverDetailPage.module.css';
 import { buildApiUrl } from '../../lib/api';
 
+// Using shared buildApiUrl to construct API URLs
+
 const DriverDetailPage: React.FC = () => {
   // 1. STATE AND HOOKS SETUP
   const { getAccessTokenSilently } = useAuth0();
@@ -30,8 +32,9 @@ const DriverDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // 2. AUTHENTICATED FETCH HELPER
-  const authedFetch = useCallback(async (url: string) => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+  const authedFetch = useCallback(async (path: string) => {
+    const url = buildApiUrl(path);
+    
     const token = await getAccessTokenSilently({
       authorizationParams: { 
         audience: import.meta.env.VITE_AUTH0_AUDIENCE, 
@@ -40,7 +43,8 @@ const DriverDetailPage: React.FC = () => {
     });
     const headers = new Headers();
     headers.set('Authorization', `Bearer ${token}`);
-    const response = await fetch(`${apiBaseUrl}${url}`, { headers });
+    
+    const response = await fetch(url, { headers });
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
@@ -61,9 +65,10 @@ const DriverDetailPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
+        // Fetching details and performance data in parallel
         const [driverDetails, driverPerformance] = await Promise.all([
-          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/details`)),
-          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/performance/2025`))
+          authedFetch(`/api/drivers/${numericDriverId}/details`),
+          authedFetch(`/api/drivers/${numericDriverId}/performance/2025`)
         ]);
 
         const flattenedData = {
@@ -75,7 +80,6 @@ const DriverDetailPage: React.FC = () => {
           dateOfBirth: driverDetails.dateOfBirth,
           teamName: driverDetails.team.name,
           funFact: driverDetails.profile.funFact,
-          // Use driverHeadshots as primary source, fallback to API imageUrl
           imageUrl: driverHeadshots[driverDetails.fullName] || driverDetails.profile.imageUrl,
           wins: driverDetails.careerStats.wins,
           podiums: driverDetails.careerStats.podiums,
@@ -127,7 +131,6 @@ const DriverDetailPage: React.FC = () => {
   // 5. RENDER THE PAGE WITH LIVE DATA
   return (
     <>
-
       <HeroSection backgroundImageUrl={driverData.imageUrl || "https://default-hero-image.url/bg.jpeg"}>
         <div className={styles.heroContentLayout}>
           <div className={styles.heroTitleBlock}>
@@ -144,7 +147,6 @@ const DriverDetailPage: React.FC = () => {
             />
             <div className={styles.bioText}>
               <span>Born: {new Date(driverData.dateOfBirth).toLocaleDateString()}</span>
-              {/* Age can be calculated if needed */}
             </div>
           </div>
         </div>
@@ -170,5 +172,3 @@ const DriverDetailPage: React.FC = () => {
 };
 
 export default DriverDetailPage;
-
-
