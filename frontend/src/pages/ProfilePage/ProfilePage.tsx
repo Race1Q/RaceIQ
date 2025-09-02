@@ -20,6 +20,7 @@ import HeroSection from '../../components/HeroSection/HeroSection';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
 import { buildApiUrl } from '../../lib/api';
+import { sendRaceUpdate } from '../../services/notifications';
 
 // Define the shape for our select options
 type SelectOption = { value: number; label: string };
@@ -39,6 +40,7 @@ const ProfilePage: React.FC = () => {
   const [driverOptions, setDriverOptions] = useState<{ id: number; name: string }[]>([]);
   const [constructorOptions, setConstructorOptions] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [sending, setSending] = useState<boolean>(false);
 
   const authedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = await getAccessTokenSilently({
@@ -172,6 +174,61 @@ const ProfilePage: React.FC = () => {
        duration: 5000,
        isClosable: true,
      });
+  };
+
+  const handleSendRaceInfo = async () => {
+    try {
+      setSending(true);
+      if (!user?.email) throw new Error('No email associated with the authenticated user');
+
+      const races = await authedFetch(buildApiUrl('/api/races'));
+      const now = new Date();
+      const upcoming = (races || []).filter((r: any) => {
+        const date = new Date(r.date);
+        return date.getFullYear() === 2025 && date >= now;
+      });
+
+      if (!upcoming.length) {
+        toast({
+          title: 'No upcoming 2025 races',
+          description: 'There are no upcoming races remaining for 2025.',
+          status: 'info',
+          duration: 4000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      const lines = upcoming.map((r: any) => {
+        const date = new Date(r.date);
+        const dateStr = date.toISOString().slice(0, 10);
+        return `• Round ${r.round}: ${r.name} on ${dateStr}`;
+      });
+      const message = `Upcoming 2025 Races:\n\n${lines.join('\n')}`;
+
+      await sendRaceUpdate({
+        recipientEmail: user.email,
+        raceDetails: message,
+      });
+
+      toast({
+        title: 'Email sent',
+        description: 'We emailed you the list of upcoming 2025 races.',
+        status: 'success',
+        duration: 4000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to send email',
+        description: error.message || 'An error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const customSelectStyles = {
@@ -315,6 +372,19 @@ const ProfilePage: React.FC = () => {
             </Box>
             <Divider borderColor="var(--color-border-gray)" />
             <HStack spacing={4} justify="flex-end">
+              <Button
+                onClick={handleSendRaceInfo}
+                bg="var(--dynamic-accent-color, var(--color-primary-red))"
+                color="var(--color-text-light)"
+                isDisabled={sending}
+                _hover={{
+                  bg: 'var(--color-primary-red-dark)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 15px rgba(225, 6, 0, 0.3)'
+                }}
+              >
+                {sending ? 'Sending…' : 'Get race info'}
+              </Button>
               <Button
                 onClick={handleDeleteAccount}
                 variant="outline"
