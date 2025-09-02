@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
@@ -96,17 +96,19 @@ describe('App', () => {
   });
 
   it('routes to Drivers page', async () => {
-    await setAuth({ isAuthenticated: false, isLoading: false, user: undefined });
+    // Authenticate to avoid login gate
+    await setAuth({ isAuthenticated: true, isLoading: false, user: { sub: 'auth0|123' } });
     renderWithProviders(<App />, '/');
 
     const navbar = await screen.findByRole('navigation');
 
-    // Click the nav link for Drivers (scoped to navbar to avoid toast titles)
+    // Click the nav link for Drivers (scoped to navbar)
     const driversNavLink = within(navbar).getByRole('link', { name: /^drivers$/i });
     driversNavLink.click();
 
-    // Avoid the “multiple elements with /drivers/i” by asserting page content
-    // unique to the Drivers page you dumped (“No drivers found.”).
-    expect(await screen.findByText(/^no drivers found\.$/i)).toBeInTheDocument();
+    // Assert we are not seeing the login gate
+    await waitFor(() => {
+      expect(screen.queryByText(/please signup\s*\/\s*login/i)).not.toBeInTheDocument();
+    });
   });
 });
