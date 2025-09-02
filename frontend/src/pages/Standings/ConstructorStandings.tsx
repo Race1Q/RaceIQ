@@ -1,7 +1,7 @@
 // src/pages/Standings/ConstructorStandings.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useToast, Box, Flex, Text } from '@chakra-ui/react';
+import { useToast, Box, Flex, Text, Button } from '@chakra-ui/react';
 import { Select } from 'chakra-react-select';
 import { useNavigate } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -31,7 +31,7 @@ type SeasonOption = { value: number; label: string };
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const ConstructorStandings: React.FC = () => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -76,6 +76,10 @@ const ConstructorStandings: React.FC = () => {
 
   useEffect(() => {
     const fetchStandings = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const data: ConstructorStanding[] = await authedFetch(
@@ -97,7 +101,7 @@ const ConstructorStandings: React.FC = () => {
     };
 
     fetchStandings();
-  }, [authedFetch, selectedSeason, toast]);
+  }, [authedFetch, selectedSeason, toast, isAuthenticated]);
 
   const { orderedTeamNames, groupedConstructors } = useMemo(() => {
     const groups: GroupedConstructors = {};
@@ -112,10 +116,21 @@ const ConstructorStandings: React.FC = () => {
 
   const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
 
+  if (!isAuthenticated) {
+    return (
+      <Box p={["4", "6", "8"]}>
+        <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
+          <Text fontSize="xl">Please signup / login</Text>
+          <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
+        </Flex>
+      </Box>
+    );
+  }
+
   if (loading) return <F1LoadingSpinner text="Loading Constructor Standings..." />;
 
   return (
-    <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
+    <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
       
       {/* Season Selector */}
       <Box mb={4} maxW="200px">

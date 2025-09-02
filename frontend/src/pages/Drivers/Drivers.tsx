@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useToast } from '@chakra-ui/react';
+import { useToast, Button, Box, Flex, Text } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import styles from './Drivers.module.css';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -19,7 +19,7 @@ interface Driver extends ApiDriver { headshot_url: string; team_color: string; }
 type GroupedDrivers = { [teamName: string]: Driver[] };
 
 const Drivers = () => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
   const toast = useToast();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +44,11 @@ const Drivers = () => {
 
   useEffect(() => {
     const fetchAndProcessDrivers = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        setError(null);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
@@ -66,7 +71,7 @@ const Drivers = () => {
       }
     };
     fetchAndProcessDrivers();
-  }, [authedFetch, toast]);
+  }, [authedFetch, toast, isAuthenticated]);
 
   const { orderedTeamNames, groupedDrivers } = useMemo(() => {
     const groups = drivers.reduce<GroupedDrivers>((acc, driver) => {
@@ -83,6 +88,17 @@ const Drivers = () => {
   const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
   // Create the list of tabs for the UI
   const filterTabs = ["All", ...orderedTeamNames];
+
+  if (!isAuthenticated) {
+    return (
+      <Box className="pageContainer">
+        <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
+          <Text fontSize="xl">Please signup / login</Text>
+          <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
+        </Flex>
+      </Box>
+    );
+  }
 
   return (
     <div className="pageContainer">

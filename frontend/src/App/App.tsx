@@ -25,6 +25,7 @@ import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
+import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
 
 
 function HomePage() {
@@ -115,6 +116,7 @@ function Navbar() {
   const isAdminActive = useActiveRoute('/admin');
   const isProfileActive = useActiveRoute('/profile');
   const isConstructorsActive = useActiveRoute('/constructors');
+  const isCompareActive = useActiveRoute('/compare');
 
   return (
     <nav className={styles.navbar}>
@@ -146,6 +148,12 @@ function Navbar() {
               className={`${styles.navLink} ${isConstructorsActive ? styles.navLinkActive : ''}`} 
             >
               Constructors
+            </Link>
+            <Link 
+              to="/compare" 
+              className={`${styles.navLink} ${isCompareActive ? styles.navLinkActive : ''}`} 
+            >
+              Compare
             </Link>
 
             <Link 
@@ -212,6 +220,7 @@ function AppContent() {
         <Route path="/races" element={<RacesPage />} />
         <Route path="/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
+        <Route path="/compare" element={<CompareDriversPage />} />
 
         {/* PROTECTED ROUTES */}
         <Route
