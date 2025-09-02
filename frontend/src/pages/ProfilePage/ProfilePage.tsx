@@ -46,7 +46,7 @@ const ProfilePage: React.FC = () => {
     const token = await getAccessTokenSilently({
       authorizationParams: {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "read:drivers", // Request necessary permissions
+        scope: "read:drivers read:constructors", // Need both for dropdowns
       },
     });
 
@@ -118,7 +118,10 @@ const ProfilePage: React.FC = () => {
   );
 
   const transformedDriverOptions = useMemo(() =>
-    driverOptions.map(driver => ({ value: driver.id, label: driver.name })),
+    driverOptions.map((driver: any) => {
+      const label = driver.full_name || driver.name || [driver.first_name, driver.last_name].filter(Boolean).join(' ');
+      return { value: driver.id, label };
+    }),
     [driverOptions]
   );
 
@@ -147,6 +150,13 @@ const ProfilePage: React.FC = () => {
         method: 'PATCH',
         body: JSON.stringify(payload),
       });
+
+      // Optimistically sync local state with saved values
+      setFormData(prev => ({
+        ...prev,
+        favoriteTeam: payload.favorite_constructor_id === null ? '' : Number(payload.favorite_constructor_id),
+        favoriteDriver: payload.favorite_driver_id === null ? '' : Number(payload.favorite_driver_id),
+      }));
 
       toast({
         title: 'Changes saved',

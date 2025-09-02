@@ -43,11 +43,14 @@ export class UsersController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req: any) {
-    // This will show us what's in req.user after JWT validation
+    // Ensure we return the actual database user record based on the JWT subject
+    const auth0Sub = req.user?.sub;
+    const email = req.user?.email;
+    const user = await this.usersService.findOrCreateUser(auth0Sub, email);
     return {
       message: 'Current user data',
       jwtPayload: req.user,
-      databaseUser: req.user?.user, // This should contain our database user record
+      databaseUser: user,
     };
   }
 
