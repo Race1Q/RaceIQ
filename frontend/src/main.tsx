@@ -47,11 +47,7 @@ root.render(
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
         // 1. Added 'read:drivers' back to the scope
-<<<<<<< HEAD
         scope: "openid profile email read:drivers read:standings read:constructors read:races read:race-results" 
-=======
-        scope: "openid profile email read:drivers read:standings read:constructors read:race-results" 
->>>>>>> origin/feat/HomePageUpdate
       }}
       // 2. Added the two props for Refresh Token Rotation
       useRefreshTokens={true}
