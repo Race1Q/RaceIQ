@@ -17,19 +17,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
 
       - name: Install dependencies
-        run: cd ${{ matrix.project }} && npm install
+        working-directory: ${{ matrix.project }}
+        run: npm ci
 
       - name: Run tests with coverage
-        run: cd ${{ matrix.project }} && npm run test:cov
+        working-directory: ${{ matrix.project }}
+        run: npm run test:cov
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        if: always() # upload even if tests fail in one matrix leg
+        uses: codecov/codecov-action@v5
         with:
           files: ${{ matrix.project }}/coverage/lcov.info
+          flags: ${{ matrix.project }}         # lets you see per-project in Codecov
+          fail_ci_if_error: true
+          verbose: true
