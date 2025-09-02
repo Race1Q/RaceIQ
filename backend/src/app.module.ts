@@ -22,6 +22,7 @@ import { QualifyingResultsModule } from './qualifyingResults/qualifyingResults.m
 import { PitStopsModule } from './pitStops/pitStops.module';
 import { LapsModule } from './laps/laps.module';
 import { UsersModule } from './users/users.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UsersModule } from './users/users.module';
     PitStopsModule,
     LapsModule,
     UsersModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
