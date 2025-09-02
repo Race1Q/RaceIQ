@@ -54,3 +54,17 @@
 - backend/src/drivers/entities/driver.entity.spec.ts: Validates Driver entity fields, relations, and construction defaults.
 - backend/src/supabase/supabase.module.spec.ts: Ensures SupabaseModule compiles and exports its service.
 - backend/src/supabase/supabase.service.spec.ts: Tests Supabase service initializes client and wraps basic calls.
+- backend/src/notifications/notifications.service.spec.ts: Verifies email notification retry strategy (success on later attempt) and failure after all attempts.
+- backend/src/notifications/notifications.controller.spec.ts: Validates payload validation (400), success mapping (201), and error propagation.
+- backend/src/raceResults/raceResults.service.spec.ts: Returns rows on success and throws on Supabase error for a session.
+- backend/src/raceResults/raceResults.controller.spec.ts: GET by session returns rows, POST ingest returns created/updated summary.
+- backend/src/seasons/seasons.service.spec.ts: Tests connection probe, list retrieval, and get-by-year including not-found and error cases.
+- backend/src/seasons/seasons-ingest.service.spec.ts: Handles paginated fetch and counts created/updated via Supabase lookups and inserts.
+- backend/src/seasons/seasons.controller.spec.ts: POST /seasons/ingest returns 201 with ingestion summary.
+- backend/src/constructors/constructors.service.spec.ts: Ingest deduplicates and upserts constructors, lists all, and finds by API id.
+- backend/src/constructors/constructors.controller.spec.ts: POST /constructors/ingest (201), GET list, and GET by-api-id with guards overridden.
+- backend/src/constructorStandings/constructorStandings.service.spec.ts: Fetches/gets constructor standings and processes rows as created/updated/skipped.
+- backend/src/constructorStandings/constructorStandings.controller.spec.ts: POST ingest (201) and GET :season return summary (per current controller behavior).
+- backend/src/admin/admin.controller.spec.ts: Admin dashboard returns stats; admin/me returns token claim subset with guards overridden.
+- backend/src/driverStandings/driverStandings.service.spec.ts: Tests connection, list, by-race/by-driver/by-season retrieval, and search behavior.
+- backend/src/driverStandings/driverStandings.controller.spec.ts: POST ingest (201) and GET endpoints for all/test/race/driver/season/search return expected results.
