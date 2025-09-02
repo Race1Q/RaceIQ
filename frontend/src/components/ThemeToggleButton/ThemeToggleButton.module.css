@@ -1,4 +1,4 @@
-/* ThemeToggleButton Component Styles */
+/* ThemeToggleButton Component Styles
 
 .themeToggleButton {
   transition: all 0.3s ease;
@@ -12,4 +12,4 @@
 .themeToggleButton:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(var(--dynamic-accent-rgb, 255, 24, 1), 0.3);
-}
+} */

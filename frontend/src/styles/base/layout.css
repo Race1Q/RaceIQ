@@ -1,8 +1,0 @@
-/* frontend/src/styles/base/layout.css */
-.pageContainer {
-  width: 100%;
-  max-width: 1600px; /* Sets a max width for very large screens */
-  margin: 0 auto;
-  /* Adds consistent left/right/bottom padding */
-  padding: 0 var(--space-lg) var(--space-lg) var(--space-lg);
-}
