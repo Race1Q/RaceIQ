@@ -9,7 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         project: [ frontend, backend ]
@@ -17,26 +16,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20   # safer for Supabase SDK warnings; fine for frontend too
           cache: npm
-          cache-dependency-path: ${{ matrix.project }}/package-lock.json
 
       - name: Install dependencies
-        working-directory: ${{ matrix.project }}
-        run: npm ci
+        run: cd ${{ matrix.project }} && npm install
 
       - name: Run tests with coverage
-        working-directory: ${{ matrix.project }}
-        run: npm run test:cov
+        run: cd ${{ matrix.project }} && npm run test:cov
 
       - name: Upload coverage to Codecov
-        if: always() # upload even if tests fail in one matrix leg
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v4
         with:
           files: ${{ matrix.project }}/coverage/lcov.info
-          flags: ${{ matrix.project }}         # lets you see per-project in Codecov
-          fail_ci_if_error: true
-          verbose: true
+          flags: ${{ matrix.project }}         # <- so you get “frontend” and “backend” flags
+          # token: ${{ secrets.CODECOV_TOKEN }}  # ONLY if your repo/branch requires token
