@@ -21,14 +21,17 @@ describe("LoginButton", () => {
     loginWithRedirectMock.mockClear();
   });
 
-  it("renders the Log In button", () => {
+  it("renders the Login or Sign Up button", () => {
     render(<LoginButton />);
-    expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
+    // Prefer accessible name first
+    const btn = screen.getByRole("button", { name: /login or sign up/i });
+    expect(btn).toBeInTheDocument();
   });
 
   it("calls loginWithRedirect when clicked", async () => {
     render(<LoginButton />);
-    await userEvent.click(screen.getByRole("button", { name: /log in/i }));
+    const btn = screen.getByRole("button", { name: /login or sign up/i });
+    await userEvent.click(btn);
     expect(loginWithRedirectMock).toHaveBeenCalledTimes(1);
   });
 });

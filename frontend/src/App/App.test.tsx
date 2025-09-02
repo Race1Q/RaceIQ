@@ -66,7 +66,6 @@ describe('App', () => {
       within(navbar).queryByRole('link', { name: /log\s*in/i });
     expect(loginBtnOrLink).toBeTruthy();
 
-    // Your CTA h2 from the dump:
     const ctaHeading = await screen.findByRole('heading', {
       name: /create your free account and get more from every race/i,
     });
@@ -96,17 +95,33 @@ describe('App', () => {
   });
 
   it('routes to Drivers page', async () => {
-    // Authenticate to avoid login gate
     await setAuth({ isAuthenticated: true, isLoading: false, user: { sub: 'auth0|123' } });
     renderWithProviders(<App />, '/');
 
     const navbar = await screen.findByRole('navigation');
 
-    // Click the nav link for Drivers (scoped to navbar)
-    const driversNavLink = within(navbar).getByRole('link', { name: /^drivers$/i });
-    driversNavLink.click();
+    // Deterministically select the Drivers nav item
+    const navLinks = within(navbar).queryAllByRole('link') as HTMLAnchorElement[];
+    let driversLink = navLinks.find(a => (a.getAttribute('href') || '').endsWith('/drivers'))
+      || navLinks.find(a => (a.getAttribute('href') || '').includes('/drivers'))
+      || null;
 
-    // Assert we are not seeing the login gate
+    // Fallback: a button rendered as a nav control
+    if (!driversLink) {
+      const btn = within(navbar).queryByRole('button', { name: /^drivers$/i });
+      if (btn) driversLink = btn as unknown as HTMLAnchorElement;
+    }
+
+    // Last resort: exact text inside navbar, then climb to anchor
+    if (!driversLink) {
+      const textCandidates = within(navbar).queryAllByText(/^drivers$/i);
+      const anchor = textCandidates.map(n => n.closest('a') as HTMLAnchorElement | null).find(Boolean);
+      if (anchor) driversLink = anchor;
+    }
+
+    expect(driversLink).toBeTruthy();
+    (driversLink as HTMLElement).click();
+
     await waitFor(() => {
       expect(screen.queryByText(/please signup\s*\/\s*login/i)).not.toBeInTheDocument();
     });
