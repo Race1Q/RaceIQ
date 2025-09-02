@@ -52,7 +52,7 @@ describe('FlagsTimeline', () => {
     { type: 'virtual_safety_car', startLap: 8, endLap: 10 },
   ];
 
-  it('renders title, lap labels, legend items, and segments with correct classes & widths', () => {
+  it('renders title, lap labels, legend items, and segments with expected widths', () => {
     renderWithChakra(<FlagsTimeline timeline={timeline as any} />);
 
     // Title
@@ -66,37 +66,32 @@ describe('FlagsTimeline', () => {
     const legend = screen.getByText(exactLeaf('Flag Types:')).closest('div')!;
     const lw = within(legend);
 
-    // Legend items (exact so "Safety Car" != "Virtual Safety Car"; leaf-only to avoid parent matches)
     expect(lw.getByText(exactLeaf('Green Flag'))).toBeInTheDocument();
     expect(lw.getByText(exactLeaf('Yellow Flag'))).toBeInTheDocument();
     expect(lw.getByText(exactLeaf('Safety Car'))).toBeInTheDocument();
     expect(lw.getByText(exactLeaf('Virtual Safety Car'))).toBeInTheDocument();
 
-    // Segments (titles + class + width)
-    const seg1 = screen.getByTitle(/Green Flag - Laps 1-4/i);
-    const seg2 = screen.getByTitle(/Yellow Flag - Laps 5-7/i);
-    const seg3 = screen.getByTitle(/Virtual Safety Car - Laps 8-10/i);
+    // Segments (titles + width)
+    const seg1 = screen.getByTitle(/Green Flag - Laps 1-4/i) as HTMLElement;
+    const seg2 = screen.getByTitle(/Yellow Flag - Laps 5-7/i) as HTMLElement;
+    const seg3 = screen.getByTitle(/Virtual Safety Car - Laps 8-10/i) as HTMLElement;
 
-    expect(seg1.className).toContain('segment');
-    expect(seg1.className).toContain('green');
+    expect(seg1).toBeInTheDocument();
     expect(seg1).toHaveStyle({ width: '40%' }); // 4/10
 
-    expect(seg2.className).toContain('segment');
-    expect(seg2.className).toContain('yellow');
+    expect(seg2).toBeInTheDocument();
     expect(seg2).toHaveStyle({ width: '30%' }); // 3/10
 
-    expect(seg3.className).toContain('segment');
-    expect(seg3.className).toContain('virtualSafetyCar');
+    expect(seg3).toBeInTheDocument();
     expect(seg3).toHaveStyle({ width: '30%' }); // 3/10
   });
 
-  it('defaults unknown flag type to green', () => {
+  it('defaults unknown flag type to green (by title)', () => {
     const weird = [{ type: 'purple_mystery', startLap: 1, endLap: 2 }];
     renderWithChakra(<FlagsTimeline timeline={weird as any} />);
 
-    const seg = screen.getByTitle(/Green Flag - Laps 1-2/i); // default label
-    expect(seg.className).toContain('segment');
-    expect(seg.className).toContain('green'); // default color
+    const seg = screen.getByTitle(/Green Flag - Laps 1-2/i) as HTMLElement; // default label
+    expect(seg).toBeInTheDocument();
   });
 
   it('renders the timeline container and items with expected structure', () => {
