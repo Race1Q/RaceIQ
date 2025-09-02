@@ -1,9 +1,8 @@
 import React from 'react';
-import { Box, Text, VStack, HStack } from '@chakra-ui/react';
+import { Box, Text, VStack, HStack, Heading, Progress } from '@chakra-ui/react';
 import { Sun, Cloud, CloudRain, Wind, Thermometer, Flag, MapPin, Route } from 'lucide-react';
 import type { WeatherInfo, Race } from '../../data/types';
 import { mockRaces } from '../../data/mockRaces';
-import styles from './WeatherCard.module.css';
 
 interface WeatherCardProps {
   weather: WeatherInfo;
@@ -32,93 +31,88 @@ const WeatherCard: React.FC<WeatherCardProps> = ({ weather, race }) => {
   };
 
   return (
-    <Box className={styles.container}>
-      {/* Track Stats Section - Now First */}
-      <Box className={styles.trackStatsSection}>
-        <Text className={styles.trackStatsTitle}>Track Information</Text>
+    <VStack spacing="lg" bg="bg-surface" p="lg" borderRadius="lg" borderWidth="1px" borderColor="border-primary" h="100%">
+      {/* Track Stats Section */}
+      <Box w="100%">
+        <Heading as="h3" size="md" fontFamily="heading" color="text-primary" mb="md">
+          Track Information
+        </Heading>
         
-        <VStack className={styles.trackStatsContainer} spacing={3}>
-          <HStack className={styles.trackStatItem}>
-            <Flag size={16} className={styles.trackStatIcon} />
-            <Box className={styles.trackStatContent}>
-              <Text className={styles.trackStatLabel}>LAPS</Text>
-              <Box className={styles.trackStatBarContainer}>
-                <Box 
-                  className={styles.trackStatBar}
-                  style={{ width: `${getBarWidth(race.totalLaps, maxLaps)}%` }}
-                />
-              </Box>
-              <Text className={styles.trackStatValue}>{race.totalLaps}</Text>
-            </Box>
-          </HStack>
+        <VStack spacing="md" align="stretch">
+          <Box>
+            <HStack justify="space-between" mb="sm">
+              <HStack spacing="sm">
+                <Box as={Flag} size="16px" color="text-secondary" />
+                <Text fontSize="sm" color="text-secondary" fontWeight="medium">LAPS</Text>
+              </HStack>
+              <Text fontSize="sm" color="text-primary" fontWeight="bold">{race.totalLaps}</Text>
+            </HStack>
+            <Progress value={getBarWidth(race.totalLaps, maxLaps)} size="sm" colorScheme="red" borderRadius="full" />
+          </Box>
 
-          <HStack className={styles.trackStatItem}>
-            <MapPin size={16} className={styles.trackStatIcon} />
-            <Box className={styles.trackStatContent}>
-              <Text className={styles.trackStatLabel}>CIRCUIT LENGTH</Text>
-              <Box className={styles.trackStatBarContainer}>
-                <Box 
-                  className={styles.trackStatBar}
-                  style={{ width: `${getBarWidth(race.circuitLength, maxCircuitLength)}%` }}
-                />
+          <Box>
+            <HStack justify="space-between" mb="sm">
+              <HStack spacing="sm">
+                <Box as={Flag} size="16px" color="text-secondary" />
+                <Text fontSize="sm" color="text-secondary" fontWeight="medium">CIRCUIT LENGTH</Text>
+              </HStack>
+              <Text fontSize="sm" color="text-primary" fontWeight="bold">{race.circuitLength} km</Text>
+            </HStack>
+            <Progress value={getBarWidth(race.circuitLength, maxCircuitLength)} size="sm" colorScheme="blue" borderRadius="full" />
               </Box>
-              <Text className={styles.trackStatValue}>{race.circuitLength} km</Text>
-            </Box>
-          </HStack>
 
-          <HStack className={styles.trackStatItem}>
-            <Route size={16} className={styles.trackStatIcon} />
-            <Box className={styles.trackStatContent}>
-              <Text className={styles.trackStatLabel}>RACE DISTANCE</Text>
-              <Box className={styles.trackStatBarContainer}>
-                <Box 
-                  className={styles.trackStatBar}
-                  style={{ width: `${getBarWidth(race.raceDistance, maxRaceDistance)}%` }}
-                />
-              </Box>
-              <Text className={styles.trackStatValue}>{race.raceDistance} km</Text>
-            </Box>
-          </HStack>
+          <Box>
+            <HStack justify="space-between" mb="sm">
+              <HStack spacing="sm">
+                <Box as={Route} size="16px" color="text-secondary" />
+                <Text fontSize="sm" color="text-secondary" fontWeight="medium">RACE DISTANCE</Text>
+              </HStack>
+              <Text fontSize="sm" color="text-primary" fontWeight="bold">{race.raceDistance} km</Text>
+            </HStack>
+            <Progress value={getBarWidth(race.raceDistance, maxRaceDistance)} size="sm" colorScheme="green" borderRadius="full" />
+          </Box>
         </VStack>
       </Box>
 
-      {/* Weather Conditions Section - Now Second */}
-      <Box className={styles.weatherSection}>
-        <Text className={styles.title}>Weather Conditions</Text>
+      {/* Weather Conditions Section */}
+      <Box w="100%">
+        <Heading as="h3" size="md" fontFamily="heading" color="text-primary" mb="md">
+          Weather Conditions
+        </Heading>
         
-        <VStack className={styles.weatherContainer} spacing={4}>
-          <HStack className={styles.weatherItem}>
-            <Box className={styles.iconContainer}>
+        <VStack spacing="md" align="stretch">
+          <HStack spacing="md">
+            <Box p="sm" bg="bg-surface-raised" borderRadius="md">
               {getWeatherIcon(weather.condition)}
             </Box>
-            <Box className={styles.weatherContent}>
-              <Text className={styles.weatherLabel}>Air Temperature</Text>
-              <Text className={styles.weatherValue}>{weather.airTemp}°C</Text>
+            <Box>
+              <Text fontSize="sm" color="text-secondary">Air Temperature</Text>
+              <Text fontSize="lg" color="text-primary" fontWeight="bold">{weather.airTemp}°C</Text>
             </Box>
           </HStack>
 
-          <HStack className={styles.weatherItem}>
-            <Box className={styles.iconContainer}>
-              <Thermometer size={24} />
+          <HStack spacing="md">
+            <Box p="sm" bg="bg-surface-raised" borderRadius="md">
+              <Box as={Thermometer} size="24px" color="text-secondary" />
             </Box>
-            <Box className={styles.weatherContent}>
-              <Text className={styles.weatherLabel}>Track Temperature</Text>
-              <Text className={styles.weatherValue}>{weather.trackTemp}°C</Text>
+            <Box>
+              <Text fontSize="sm" color="text-secondary">Track Temperature</Text>
+              <Text fontSize="lg" color="text-primary" fontWeight="bold">{weather.trackTemp}°C</Text>
             </Box>
           </HStack>
 
-          <HStack className={styles.weatherItem}>
-            <Box className={styles.iconContainer}>
-              <Wind size={24} />
+          <HStack spacing="md">
+            <Box p="sm" bg="bg-surface-raised" borderRadius="md">
+              <Box as={Wind} size="24px" color="text-secondary" />
             </Box>
-            <Box className={styles.weatherContent}>
-              <Text className={styles.weatherLabel}>Wind Speed</Text>
-              <Text className={styles.weatherValue}>{weather.windSpeed} km/h</Text>
+            <Box>
+              <Text fontSize="sm" color="text-secondary">Wind Speed</Text>
+              <Text fontSize="lg" color="text-primary" fontWeight="bold">{weather.windSpeed} km/h</Text>
             </Box>
           </HStack>
         </VStack>
       </Box>
-    </Box>
+    </VStack>
   );
 };
 

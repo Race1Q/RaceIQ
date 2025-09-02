@@ -1,7 +1,6 @@
 import React from 'react';
-import { Box, Text, HStack, VStack } from '@chakra-ui/react';
+import { Box, Text, HStack, VStack, Heading } from '@chakra-ui/react';
 import { Clock, Zap } from 'lucide-react';
-import styles from './FastestLapCard.module.css';
 
 interface FastestLapCardProps {
   driver: string;
@@ -15,21 +14,25 @@ const FastestLapCard: React.FC<FastestLapCardProps> = ({ driver, time, teamColor
 
   return (
     <Box 
-      className={styles.container}
-      style={{ 
-        background: `linear-gradient(135deg, ${gradientColor} 0%, ${gradientColorDark} 100%)`
-      }}
+      bg={`linear-gradient(135deg, ${gradientColor} 0%, ${gradientColorDark} 100%)`}
+      p="lg"
+      borderRadius="lg"
+      color="white"
+      h="100%"
+      display="flex"
+      flexDirection="column"
+      justifyContent="space-between"
     >
-      <HStack className={styles.header}>
-        <Clock size={20} className={styles.icon} />
-        <Text className={styles.title}>Fastest Lap</Text>
+      <HStack spacing="sm" mb="md">
+        <Box as={Clock} size="20px" />
+        <Heading as="h4" size="sm">Fastest Lap</Heading>
       </HStack>
       
-      <VStack className={styles.content} spacing={2}>
-        <Text className={styles.time}>{time}</Text>
-        <HStack className={styles.driverInfo}>
-          <Zap size={16} className={styles.driverIcon} />
-          <Text className={styles.driverName}>{driver}</Text>
+      <VStack spacing="sm" align="center">
+        <Text fontSize="3xl" fontWeight="bold">{time}</Text>
+        <HStack spacing="sm">
+          <Box as={Zap} size="16px" />
+          <Text fontSize="md" fontWeight="medium">{driver}</Text>
         </HStack>
       </VStack>
     </Box>
