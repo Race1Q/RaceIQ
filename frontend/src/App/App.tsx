@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Gauge } from 'lucide-react';
+import { Box, Flex, HStack, Button, Text, Container, VStack, Heading, SimpleGrid } from '@chakra-ui/react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import F1LoadingSpinner from '../components/F1LoadingSpinner/F1LoadingSpinner';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
 import { f1ApiService } from '../services/f1Api';
 import type { Race } from '../services/f1Api';
-import styles from './App.module.css';
 import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
@@ -18,7 +18,6 @@ import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
-import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { RoleProvider, useRole } from '../context/RoleContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
@@ -45,63 +44,62 @@ function HomePage() {
   }
 
   return (
-    <>
-      {/* Hero Section */}
+    <Box>
       <HeroSection
         title="Track Every F1 Appearance"
         subtitle="View race results and appearances for your favourite drivers and teams — across sports."
-        backgroundImageUrl="https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg"
+        backgroundImageUrl="[https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg](https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg)"
       />
       
-      {/* Hero Buttons */}
-     
-
-      {/* Public Data Preview / Personalized Feed */}
-      <section className={styles.dataSection}>
-        <div className={styles.container}>
+      <Box as="section" bg="bg-surface" py="80px">
+        <Container maxW="1200px">
           {isAuthenticated ? (
-            <div className={styles.personalizedFeed}>
-              <h2>Welcome back, {user?.name}!</h2>
-              <p>Your personalized F1 feed will appear here.</p>
-            </div>
+            <VStack>
+              <Heading color="brand.red">Welcome back, {user?.name}!</Heading>
+              <Text color="text-secondary">Your personalized F1 feed will appear here.</Text>
+            </VStack>
           ) : (
-            <div className={styles.publicData}>
-              <h2>Recent Races</h2>
-
-              {/* Supabase DB connectivity check */}
-
-
-              <div className={styles.racesGrid}>
+            <VStack spacing={12}>
+              <Heading color="text-primary">Recent Races</Heading>
+              <SimpleGrid columns={{ base: 1, md: 3 }} gap="lg">
                 {recentRaces.map((race: Race) => (
-                  <div key={race.id} className={styles.raceCard}>
-                    <h3>{race.name}</h3>
-                    <p className={styles.raceDate}>{new Date(race.date).toLocaleDateString()}</p>
-                    <div className={styles.raceResult}>
-                      <p><strong>Winner:</strong> {race.winner}</p>
-                      <p><strong>Team:</strong> {race.team}</p>
-                      <p><strong>Circuit:</strong> {race.circuit}</p>
-                    </div>
-                  </div>
+                  <Box
+                    key={race.id}
+                    bg="bg-surface-raised"
+                    border="1px solid"
+                    borderColor="border-primary"
+                    borderRadius="lg"
+                    p="lg"
+                    transition="all 0.3s ease"
+                    _hover={{ transform: 'translateY(-5px)', boxShadow: 'lg', borderColor: 'brand.red' }}
+                  >
+                    <Heading as="h3" color="brand.red" size="md" mb="sm">{race.name}</Heading>
+                    <Text color="text-muted" fontSize="sm" mb="md">{new Date(race.date).toLocaleDateString()}</Text>
+                    <VStack align="start">
+                      <Text><Text as="strong">Winner:</Text> {race.winner}</Text>
+                      <Text><Text as="strong">Team:</Text> {race.team}</Text>
+                      <Text><Text as="strong">Circuit:</Text> {race.circuit}</Text>
+                    </VStack>
+                  </Box>
                 ))}
-              </div>
-            </div>
+              </SimpleGrid>
+            </VStack>
           )}
-        </div>
-      </section>
+        </Container>
+      </Box>
 
-      {/* Call to Action */}
       {!isAuthenticated && (
-        <section className={styles.ctaSection}>
-          <div className={styles.container}>
-            <div className={styles.ctaContent}>
-              <h2>Create your free account and get more from every race.</h2>
-              <p>Track your favorite drivers, get personalized insights, and never miss a race.</p>
+        <Box as="section" bgGradient="linear(to-r, brand.red, brand.redDark)" py="80px" textAlign="center">
+          <Container maxW="600px">
+            <VStack spacing="xl">
+              <Heading size="lg" color="white">Create your free account and get more from every race.</Heading>
+              <Text fontSize="lg" color="gray.200">Track your favorite drivers, get personalized insights, and never miss a race.</Text>
               <LoginButton />
-            </div>
-          </div>
-        </section>
+            </VStack>
+          </Container>
+        </Box>
       )}
-    </>
+    </Box>
   );
 }
 
@@ -109,105 +107,85 @@ function Navbar() {
   const { isAuthenticated } = useAuth0();
   const { role } = useRole();
   const navigate = useNavigate();
-  const isHomeActive = useActiveRoute('/');
-  const isDriversActive = useActiveRoute('/drivers');
-  const isRacesActive = useActiveRoute('/races');
-  const isAboutActive = useActiveRoute('/about');
-  const isAdminActive = useActiveRoute('/admin');
-  const isProfileActive = useActiveRoute('/profile');
-  const isConstructorsActive = useActiveRoute('/constructors');
-  const isCompareActive = useActiveRoute('/compare');
+  const isRouteActive = useActiveRoute;
+
+  const navLinks = [
+    { path: '/', label: 'Home' },
+    { path: '/drivers', label: 'Drivers' },
+    { path: '/constructors', label: 'Constructors' },
+    { path: '/compare', label: 'Compare' },
+    { path: '/races', label: 'Races' },
+    { path: '/about', label: 'About' },
+  ];
+
+  if (role === 'admin') {
+    navLinks.push({ path: '/admin', label: 'Admin' });
+  }
 
   return (
-    <nav className={styles.navbar}>
-      <div className={styles.navContainer}>
-        <div className={styles.navLogo}>
-          <Link to="/" style={{ textDecoration: 'none' }} aria-label="Go to home">
-            <div className={styles.logoContainer}>
-              <Gauge size={24} />
-              <h2 className={styles.logoText}>RaceIQ</h2>
-            </div>
-          </Link>
-        </div>
-        <div className={styles.navLinks}>
-          <div className={styles.navCenter}>
-            <Link 
-              to="/" 
-              className={`${styles.navLink} ${isHomeActive ? styles.navLinkActive : ''}`}
+    <Box as="nav" bg="bg-surface-raised" borderBottom="2px solid" borderColor="brand.red" position="sticky" top="0" zIndex="sticky">
+      <Flex maxW="1200px" mx="auto" px="md" h="70px" justify="space-between" align="center">
+        <HStack as={Link} to="/" spacing="sm" textDecor="none">
+          <Gauge size={24} color="var(--chakra-colors-brand-red)" />
+          <Text as="h2" color="brand.red" fontFamily="heading" fontSize="1.8rem" fontWeight="bold" letterSpacing="1px">
+            RaceIQ
+          </Text>
+        </HStack>
+        
+        <HStack spacing="lg" display={{ base: 'none', md: 'flex' }}>
+          {navLinks.map(({ path, label }) => (
+            <Button
+              key={path}
+              as={Link}
+              to={path}
+              variant="link"
+              color={isRouteActive(path) ? 'brand.red' : 'text-primary'}
+              fontFamily="heading"
+              fontWeight="500"
+              _hover={{ color: 'brand.red', textDecor: 'none' }}
+              position="relative"
+              _after={{
+                content: '""',
+                position: 'absolute',
+                width: isRouteActive(path) ? '100%' : '0',
+                height: '2px',
+                bottom: '-5px',
+                left: 0,
+                bgColor: 'brand.red',
+                transition: 'width 0.3s ease',
+              }}
             >
-              Home
-            </Link>
-            <Link 
-              to="/drivers" 
-              className={`${styles.navLink} ${isDriversActive ? styles.navLinkActive : ''}`}
-            >
-              Drivers
-            </Link>
-            <Link 
-              to="/constructors" 
-              className={`${styles.navLink} ${isConstructorsActive ? styles.navLinkActive : ''}`} 
-            >
-              Constructors
-            </Link>
-            <Link 
-              to="/compare" 
-              className={`${styles.navLink} ${isCompareActive ? styles.navLinkActive : ''}`} 
-            >
-              Compare
-            </Link>
+              {label}
+            </Button>
+          ))}
+        </HStack>
 
-            <Link 
-              to="/races" 
-              className={`${styles.navLink} ${isRacesActive ? styles.navLinkActive : ''}`}
+        <HStack spacing="sm">
+          <ThemeToggleButton />
+          {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+          {isAuthenticated && (
+            <Button
+              variant="outline"
+              borderColor="brand.red"
+              color="brand.red"
+              _hover={{ bg: 'brand.red', color: 'white' }}
+              onClick={() => navigate('/profile')}
+              isActive={isRouteActive('/profile')}
             >
-              Races
-            </Link>
-            <Link 
-              to="/about" 
-              className={`${styles.navLink} ${isAboutActive ? styles.navLinkActive : ''}`}
-            >
-              About
-            </Link>
-            {role === 'admin' && (
-              <Link 
-                to="/admin" 
-                className={`${styles.navLink} ${isAdminActive ? styles.navLinkActive : ''}`}
-              >
-                Admin
-              </Link>
-              
-            )}
-          </div>
-          <div className={styles.navRight}>
-            <ThemeToggleButton />
-            {isAuthenticated ? <LogoutButton /> : <LoginButton />}
-            {isAuthenticated && (
-              <button 
-                onClick={() => navigate('/profile')}
-                className={isProfileActive ? styles.navLinkActive : ''}
-              >
-                My Profile
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </nav>
+              My Profile
+            </Button>
+          )}
+        </HStack>
+      </Flex>
+    </Box>
   );
 }
 
 function AppContent() {
-  const { themeColor, themeRgbColor } = useTheme();
   useScrollToTop();
 
   return (
-    <div 
-      className={styles.app}
-      style={{
-        '--dynamic-accent-color': themeColor,
-        '--dynamic-accent-rgb': themeRgbColor,
-      } as React.CSSProperties}
-    >
+    <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
       <Navbar />
       
       {/* Routes */}
@@ -246,33 +224,31 @@ function AppContent() {
       <BackToTopButton />
 
       {/* Footer */}
-      <footer className={styles.footer}>
-        <div className={styles.container}>
-          <div className={styles.footerContent}>
-            <div className={styles.footerLinks}>
-              <a href="#api-docs" className={styles.footerLink}>API Docs</a>
-              <a href="#privacy" className={styles.footerLink}>Privacy Policy</a>
-              <a href="#contact" className={styles.footerLink}>Contact</a>
-            </div>
-            <p className={styles.footerCopyright}>
-              ©2025 RaceIQ. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      <Box as="footer" bg="bg-surface-raised" borderTop="2px solid" borderColor="brand.red" py="xl" mt="auto">
+        <Container maxW="1200px">
+          <Flex justify="space-between" align="center" wrap="wrap" gap="md">
+            <HStack spacing="lg">
+              <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+              <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
+              <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
+            </HStack>
+            <Text color="text-muted" fontSize="sm">
+              ©{new Date().getFullYear()} RaceIQ. All rights reserved.
+            </Text>
+          </Flex>
+        </Container>
+      </Box>
+    </Box>
   );
 }
 
 function App() {
   return (
-    <ThemeProvider>
-      <RoleProvider>
-        <UserRegistrationHandler>
-          <AppContent />
-        </UserRegistrationHandler>
-      </RoleProvider>
-    </ThemeProvider>
+    <RoleProvider>
+      <UserRegistrationHandler>
+        <AppContent />
+      </UserRegistrationHandler>
+    </RoleProvider>
   );
 }
 

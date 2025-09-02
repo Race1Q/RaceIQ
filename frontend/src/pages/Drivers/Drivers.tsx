@@ -1,10 +1,7 @@
-// frontend/src/pages/Drivers/Drivers.tsx
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useToast, Button, Box, Flex, Text } from '@chakra-ui/react';
+import { useToast, Button, Box, Flex, Text, Container, SimpleGrid, VStack, HStack } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import styles from './Drivers.module.css';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
 import TeamBanner from '../../components/TeamBanner/TeamBanner';
@@ -24,8 +21,6 @@ const Drivers = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // 1. RE-INTRODUCE state for the selected team filter
   const [selectedTeam, setSelectedTeam] = useState<string>("All");
 
   const authedFetch = useCallback(async (url: string) => {
@@ -84,16 +79,14 @@ const Drivers = () => {
     return { orderedTeamNames: orderedTeams, groupedDrivers: groups };
   }, [drivers]);
 
-  // Create the list of teams to display based on the filter
   const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
-  // Create the list of tabs for the UI
   const filterTabs = ["All", ...orderedTeamNames];
 
   if (!isAuthenticated) {
     return (
-      <Box className="pageContainer">
+      <Box p={{ base: 'md', md: 'xl' }}>
         <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
-          <Text fontSize="xl">Please signup / login</Text>
+          <Text fontSize="xl" color="text-primary">Please signup / login to view drivers.</Text>
           <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
         </Flex>
       </Box>
@@ -101,77 +94,93 @@ const Drivers = () => {
   }
 
   return (
-    <div className="pageContainer">
-      {loading && <F1LoadingSpinner text="Loading Drivers..." />}
-      {error && <div className={styles.errorState}>{error}</div>}
-      
-      {!loading && !error && (
-        <>
-          {/* 2. ADD the filter tabs UI at the top of the page content */}
-          <div className={styles.tabsContainer}>
-            {filterTabs.map(team => (
-              <button
-                key={team}
-                className={`${styles.tab} ${selectedTeam === team ? styles.activeTab : ''}`}
-                onClick={() => setSelectedTeam(team)}
-              >
-                {team}
-              </button>
-            ))}
-          </div>
+    <Box bg="bg-primary" color="text-primary" minH="100vh" py="lg">
+      <Container maxW="1600px">
+        {loading && <F1LoadingSpinner text="Loading Drivers..." />}
+        {error && <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">{error}</Text>}
+        
+        {!loading && !error && (
+          <>
+            <HStack
+              spacing="lg"
+              borderBottom="1px solid"
+              borderColor="border-primary"
+              mb="xl"
+              overflowX="auto"
+              pb={2}
+              sx={{ '&::-webkit-scrollbar': { display: 'none' }, 'scrollbarWidth': 'none' }}
+            >
+              {filterTabs.map(team => (
+                <Button
+                  key={team}
+                  variant="ghost"
+                  onClick={() => setSelectedTeam(team)}
+                  isActive={selectedTeam === team}
+                  fontFamily="heading"
+                  fontWeight="bold"
+                  color="text-muted"
+                  pb="sm"
+                  borderRadius={0}
+                  borderBottom="3px solid"
+                  borderColor={selectedTeam === team ? 'brand.red' : 'transparent'}
+                  _active={{ color: 'text-primary' }}
+                  _hover={{ color: 'text-primary', bg: 'transparent' }}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  {team}
+                </Button>
+              ))}
+            </HStack>
 
-          <div className={styles.teamsContainer}>
-            {/* 3. MAP over the filtered list of teams */}
-            {teamsToRender.length > 0 ? (
-                teamsToRender.map(teamName => {
-                const driversInTeam = groupedDrivers[teamName];
-                if (!driversInTeam || driversInTeam.length === 0) return null;
+            <VStack spacing="xl" align="stretch">
+              {teamsToRender.length > 0 ? (
+                  teamsToRender.map(teamName => {
+                  const driversInTeam = groupedDrivers[teamName];
+                  if (!driversInTeam || driversInTeam.length === 0) return null;
 
-                return (
-                  <div key={teamName} className={styles.teamSection}>
-                    <TeamBanner 
-                      teamName={teamName}
-                      logoUrl={teamLogoMap[teamName] || ''}
-                      teamColor={teamColors[teamName] || teamColors['Default']}
-                    />
-                    <div className={styles.driverRow}>
-                      {driversInTeam.map(driver => {
-                        // The driver object from the API must contain both a unique slug and the numeric id.
-                        // For example: { id: 1, slug: 'max_verstappen', full_name: 'Max Verstappen', ... }
-                        const driverSlug = driver.full_name.toLowerCase().replace(/ /g, '_');
-                        
-                        const driverCardData = {
-                          id: driver.full_name.toLowerCase().replace(/ /g, '_'),
-                          name: driver.full_name,
-                          number: driver.driver_number ? String(driver.driver_number) : 'N/A',
-                          team: driver.team_name,
-                          nationality: driver.country_code || 'N/A',
-                          image: driver.headshot_url,
-                          team_color: driver.team_color,
-                        };
-                        
-                        return (
-                          // THE FIX: Add the `state` prop to the Link component.
-                          <Link 
-                            key={driver.id}
-                            to={`/drivers/${driverSlug}`} 
-                            state={{ driverId: driver.id }} // <-- THIS IS THE CRITICAL FIX
-                          >
-                            <DriverProfileCard driver={driverCardData} />
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-                <div className={styles.noDrivers}>No drivers found.</div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+                  return (
+                    <VStack key={teamName} align="stretch">
+                      <TeamBanner 
+                        teamName={teamName}
+                        logoUrl={teamLogoMap[teamName] || ''}
+                        teamColor={teamColors[teamName] || teamColors['Default']}
+                      />
+                      <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
+                        {driversInTeam.map(driver => {
+                          const driverSlug = driver.full_name.toLowerCase().replace(/ /g, '_');
+                          
+                          const driverCardData = {
+                            id: driver.full_name.toLowerCase().replace(/ /g, '_'),
+                            name: driver.full_name,
+                            number: driver.driver_number ? String(driver.driver_number) : 'N/A',
+                            team: driver.team_name,
+                            nationality: driver.country_code || 'N/A',
+                            image: driver.headshot_url,
+                            team_color: driver.team_color,
+                          };
+                          
+                          return (
+                            <Link 
+                              key={driver.id}
+                              to={`/drivers/${driverSlug}`} 
+                              state={{ driverId: driver.id }}
+                            >
+                              <DriverProfileCard driver={driverCardData} />
+                            </Link>
+                          );
+                        })}
+                      </SimpleGrid>
+                    </VStack>
+                  );
+                })
+              ) : (
+                  <Text textAlign="center">No drivers found.</Text>
+              )}
+            </VStack>
+          </>
+        )}
+      </Container>
+    </Box>
   );
 };
 

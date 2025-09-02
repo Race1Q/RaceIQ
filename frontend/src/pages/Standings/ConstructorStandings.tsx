@@ -120,7 +120,7 @@ const ConstructorStandings: React.FC = () => {
     return (
       <Box p={["4", "6", "8"]}>
         <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
-          <Text fontSize="xl">Please signup / login</Text>
+          <Text fontSize="xl">Please signup / login to view constructor standings.</Text>
           <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
         </Flex>
       </Box>
