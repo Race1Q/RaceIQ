@@ -4,46 +4,40 @@ import type { Config } from 'jest';
 const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
+
+  // Roots for test discovery
   roots: ['<rootDir>/src', '<rootDir>/test'],
+
+  // File extensions Jest will handle
   moduleFileExtensions: ['ts', 'js', 'json'],
 
-  // Load .env BEFORE tests (uses DOTENV_CONFIG_PATH from your npm script)
+  // Ensure .env.test is loaded before tests
   setupFiles: ['dotenv/config'],
 
-  // Per-test hooks/utilities (no top-level await here)
+  // Hooks/utilities for tests (optional)
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 
-  // --- Coverage focus ---
+  // Coverage settings
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
   collectCoverageFrom: [
     'src/**/*.{ts,js}',
 
-    // Explicitly INCLUDE main.ts so bootstrap logic counts
-    'src/main.ts',
-
-    // Exclude boilerplate / noise
+    // Exclude files that don’t need unit tests
     '!src/**/*.module.ts',
-
-    // Pure data/shape classes (no logic to test)
     '!src/**/dto/**',
     '!src/**/entities/**',
-
-    // Ingestion & scripts (infra-level, usually integration-tested separately)
-    '!src/**/*ingest*.ts',
-    '!src/**/*-ingestion.service.ts',
-
-    // Optionally ignore generated or infra folders
     '!src/**/migrations/**',
     '!src/**/seed/**',
+    '!src/main.ts',
+    '!**/*.spec.{ts,js}',
   ],
 
-  coverageDirectory: '<rootDir>/coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-
-  // Optional helpers:
-  // clearMocks: true,
-  // coverageThreshold: {
-  //   global: { branches: 20, functions: 30, lines: 30, statements: 30 },
-  // },
+  // Stability improvements
+  clearMocks: true,
+  restoreMocks: true,
+  maxWorkers: 1, // keep single-threaded to avoid Jest spawn issues in CI
 };
 
 export default config;

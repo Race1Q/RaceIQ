@@ -20,16 +20,22 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
         run: cd ${{ matrix.project }} && npm install
 
       - name: Run tests with coverage
+        id: test
         run: cd ${{ matrix.project }} && npm run test:cov
 
+      # Always attempt to upload, even if tests step failed (non-zero exit)
       - name: Upload coverage to Codecov
+        if: always()
         uses: codecov/codecov-action@v4
         with:
           files: ${{ matrix.project }}/coverage/lcov.info
+          flags: ${{ matrix.project }}
+          # token: ${{ secrets.CODECOV_TOKEN }}  # leave commented unless your repo/branch requires a token
+          fail_ci_if_error: false
