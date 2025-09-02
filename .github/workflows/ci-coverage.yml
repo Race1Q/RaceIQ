@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # The env block has been removed from this step
 
       - name: Install dependencies
         run: cd ${{ matrix.project }} && npm install
@@ -28,6 +29,10 @@ jobs:
       # Let tests fail without aborting the job so we can still upload coverage
       - name: Run tests with coverage
         run: cd ${{ matrix.project }} && npm run test:cov
+        # THIS IS THE CORRECT PLACEMENT for the env block
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         continue-on-error: true
 
       # Always try to upload coverage, even if tests failed
@@ -37,5 +42,5 @@ jobs:
         with:
           files: ${{ matrix.project }}/coverage/lcov.info
           flags: ${{ matrix.project }}
-          token: ${{ secrets.CODECOV_TOKEN }}  # keep for PRs / protected branches
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
