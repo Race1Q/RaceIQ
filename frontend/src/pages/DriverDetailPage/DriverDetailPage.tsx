@@ -115,8 +115,8 @@ const DriverDetailPage: React.FC = () => {
 
   if (error || !driverData) {
     return (
-      <Container centerContent>
-        <VStack spacing={4} mt={10} color="white">
+      <Container centerContent bg="var(--color-background-dark)" color="var(--color-text-light)">
+        <VStack spacing={4} mt={10}>
           <Text fontSize="2xl">{error || 'Driver data could not be loaded.'}</Text>
           <Link to="/drivers">
             <Button leftIcon={<ArrowLeft />} colorScheme="red" variant="outline">
@@ -152,7 +152,7 @@ const DriverDetailPage: React.FC = () => {
         </div>
       </HeroSection>
 
-      <Container maxWidth="1400px">
+      <Container maxWidth="1400px" bg="var(--color-background-dark)" color="var(--color-text-light)">
         <KeyInfoBar driver={{
           ...driverData,
           fullName: driverData.fullName,
@@ -160,7 +160,7 @@ const DriverDetailPage: React.FC = () => {
         }} />
       </Container>
 
-      <Container maxWidth="1400px" paddingX={['1rem', '2rem', '3rem']} paddingY="2rem">
+      <Container maxWidth="1400px" paddingX={['1rem', '2rem', '3rem']} paddingY="2rem" bg="var(--color-background-dark)" color="var(--color-text-light)">
         <Flex direction={['column', 'column', 'row']} gap={6}>
           <Box flex={1}>
             <DashboardGrid driver={driverData} />

@@ -126,14 +126,26 @@ const ConstructorStandings: React.FC = () => {
           placeholder="Select season"
           isClearable={false}
           chakraStyles={{
-            control: (provided) => ({ ...provided, bg: 'gray.700', color: 'white', borderColor: 'gray.600' }),
-            menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
+            control: (provided) => ({
+              ...provided,
+              backgroundColor: 'var(--color-surface-gray)',
+              color: 'var(--color-text-light)',
+              borderColor: 'var(--color-border-gray)'
+            }),
+            menu: (provided) => ({
+              ...provided,
+              backgroundColor: 'var(--color-surface-gray)',
+              color: 'var(--color-text-light)'
+            }),
             option: (provided, state) => ({
               ...provided,
-              bg: state.isFocused ? 'gray.600' : 'gray.700',
-              color: 'white',
+              backgroundColor: state.isFocused ? 'var(--color-surface-gray-light)' : 'var(--color-surface-gray)',
+              color: 'var(--color-text-light)'
             }),
-            singleValue: (provided) => ({ ...provided, color: 'white' }),
+            singleValue: (provided) => ({
+              ...provided,
+              color: 'var(--color-text-light)'
+            }),
           }}
         />
       </Box>
@@ -143,10 +155,10 @@ const ConstructorStandings: React.FC = () => {
         minW="700px"
         px={4}
         py={4}
-        bg="gray.800"
+        bg="var(--color-surface-gray)"
         borderRadius="md"
         fontWeight="bold"
-        color="#fff"
+        color="var(--color-text-light)"
         display="grid"
         gridTemplateColumns="60px 1fr 100px 80px 1fr"
         columnGap={4}
@@ -176,7 +188,7 @@ const ConstructorStandings: React.FC = () => {
                 minW="700px"
                 px={4}
                 py={4}
-                bgGradient={`linear(to-br, ${teamColor} 0%, rgba(0,0,0,0.2) 100%)`}
+                bgGradient={`linear(to-br, ${teamColor} 0%, rgba(0,0,0,0.15) 100%)`}
                 borderRadius="xl"
                 alignItems="center"
                 justifyContent="space-between"
@@ -186,7 +198,7 @@ const ConstructorStandings: React.FC = () => {
                   transition: 'all 0.2s ease-in-out',
                   cursor: 'pointer',
                 }}
-                color={textColor}
+                color="var(--color-static-white)"
                 display="grid"
                 gridTemplateColumns="60px 1fr 100px 80px 1fr"
                 columnGap={4}

@@ -85,7 +85,7 @@ const Drivers = () => {
   const filterTabs = ["All", ...orderedTeamNames];
 
   return (
-    <div className="pageContainer">
+    <div className="pageContainer" style={{ backgroundColor: 'var(--color-background-dark)', color: 'var(--color-text-light)' }}>
       {loading && <F1LoadingSpinner text="Loading Drivers..." />}
       {error && <div className={styles.errorState}>{error}</div>}
       
