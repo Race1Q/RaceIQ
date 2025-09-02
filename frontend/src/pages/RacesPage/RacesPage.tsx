@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Container, Box, Tabs, TabList, TabPanels, Tab, TabPanel, VStack, Grid, useTheme } from '@chakra-ui/react';
+import { Container, Box, Tabs, TabList, TabPanels, Tab, TabPanel, VStack, Grid, useTheme, Flex, Text, Button } from '@chakra-ui/react';
+import { useAuth0 } from '@auth0/auth0-react';
 
 // Import all the refactored child components
 import RaceHeader from '../../components/RaceHeader/RaceHeader';
@@ -22,9 +23,29 @@ import { teamColors } from '../../lib/assets';
 import type { Race } from '../../data/types';
 
 const RacesPage: React.FC = () => {
+  const { isAuthenticated, loginWithRedirect } = useAuth0();
   const [selectedRaceId, setSelectedRaceId] = useState('monza_2024');
   const selectedRace = mockRaces.find(race => race.id === selectedRaceId) || mockRaces[0];
   const theme = useTheme();
+
+  if (!isAuthenticated) {
+    return (
+      <Box bg="bg-primary">
+        <HeroSection
+          title="Race Analytics"
+          subtitle="A deep dive into the strategy, performance, and key moments from every Grand Prix."
+          backgroundColor={theme.colors.brand.red}
+          disableOverlay
+        />
+        <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
+          <Flex direction="column" align="center" justify="center" minH="30vh" gap={4}>
+            <Text fontSize="xl" color="text-primary">Please signup / login</Text>
+            <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
+          </Flex>
+        </Container>
+      </Box>
+    );
+  }
 
   return (
     <Box bg="bg-primary">
