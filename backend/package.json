@@ -13,16 +13,15 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "ingest:drivers": "node -r ts-node/register scripts/ingest-drivers.ts",
     "ingest:constructors": "node -r ts-node/register scripts/ingest-constructors.ts",
     "ingest:circuits": "node -r ts-node/register scripts/ingest-circuits.ts",
     "ingest:countries": "node -r ts-node/register scripts/ingest-countries.ts",
-    "migrate:auth0-users": "node -r ts-node/register scripts/migrate-auth0-users.ts"
+    "migrate:auth0-users": "node -r ts-node/register scripts/migrate-auth0-users.ts", "test": "cross-env DOTENV_CONFIG_PATH=./.env.test NODE_ENV=test jest --runInBand",
+  "test:cov": "cross-env DOTENV_CONFIG_PATH=./.env.test NODE_ENV=test jest --coverage --runInBand"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -59,36 +58,21 @@
     "@types/node": "^22.17.2",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
+    "cross-env": "^10.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
-    "jest": "^30.0.0",
+    "jest": "^30.1.2",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
-    "ts-jest": "^29.2.5",
+    "ts-jest": "^29.4.1",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
+  
 }
