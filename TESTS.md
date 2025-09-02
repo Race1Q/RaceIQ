@@ -1,277 +1,70 @@
-Testing Checklist
-About Page — Manual Test Checklist
-
-This checklist is for manual, human-driven testing of the About page.
-
-Load & Stability
-
- Page renders without crashing (no blank screen)
-
- Browser console has no errors/warnings
-
-Hero
-
- Title shows: “Beyond the Finish Line”
-
- Subtitle shows
-
- Background image loads (no broken image icon)
-
-"What We Offer" (Features)
-
- Section heading: "What We Offer"
-
- Exactly 3 feature cards render
-
- Each card has icon, title, and description
-
- Card hover elevates (shadow + translateY)
-
-"The Team"
-
- Section heading: "The Team"
-
- Exactly 6 team members render (names + roles)
-
- Cards are evenly spaced on desktop
-
- On small screens, grid wraps cleanly (no overlap/cut-off)
-
-"Powered By"
-
- Section heading: "Powered By"
-
- Tech items visible: React, NestJS, Supabase, Auth0, OpenF1 API
-
- For items with logos: images render and use correct alt
-
- For OpenF1 API (no logo): icon renders (no console error)
-
-Navigation & Consistency
-
- Page uses site font/colors (consistent with Home)
-
- Header/footer links work as expected; logo returns to Home
-
-Accessibility
-
- All images have alt text (except purely decorative)
-
- You can Tab through interactive elements in a logical order
-
- Text contrast is readable on dark background
-
-Responsive (DevTools device toolbar)
-
- ~768px: headings shrink; grid reflows (no overflow)
-
- ~480px: typography scales; nothing clipped off-screen
-
-Drivers Page — Automated Test Checklist
-
-This checklist outlines the automated tests you have implemented for the Drivers page. All of these tests are running successfully and are an integral part of your continuous integration and development process.
-
-Drivers.test.tsx
-
- Loading and Success State: The component shows a loading spinner initially and then successfully renders team tabs and driver cards after a successful API fetch.
-
- Filtering Functionality: Clicking a team tab correctly filters the displayed driver cards and updates the active tab's styling.
-
- Error Handling: When the API fetch fails, the component renders an error message and triggers a toast notification with the correct information.
-
- Empty State Handling: The component correctly renders a "No drivers found." message when the API returns an empty list of drivers.
-
-Admin Page — Automated Test Checklist
-
-The Admin page is mostly static UI, so automated tests focus on structure and CSS class consistency.
-
-Admin.test.tsx
-
- Main Title and Section: Renders the "Admin Dashboard" title and "System Overview" heading.
-
- Statistics Grid: Renders exactly 4 stat cards with the correct titles, values, and subtitles.
-
- Admin Tools: Renders the Quick Actions card with 3 action buttons: Refresh Data Cache, View System Logs, and Manage Users.
-
- Recent Activity: Renders the Recent Activity list with exactly 5 items.
-
- Admin Features: Renders the Admin Features section with one title and two description paragraphs, each using the correct adminFeaturesDescription class.
-
-main.tsx — Automated Test Checklist
-
-Goal: Ensure the root entry correctly composes providers and renders without side effects.
-
-main.test.tsx
-
- Renders Without Crashing: Rendering main.tsx bootstraps the app without throwing.
-
- Providers Wrap Correctly: Confirms the presence of provider effects (e.g., theme class on body, or a known element that only appears when providers mount).
-
- Auth0 Provider Config: Auth0Provider receives domain/clientId/audience from import.meta.env (or window.* on SWA).
-
- Router Boots: Root route renders expected content (e.g., landing hero, top nav).
-
- No Network on Boot: global.fetch is mocked; no unintended API calls run during initial mount.
-
- Responsive Determinism: window.matchMedia mocked to desktop to avoid layout-dependent flakiness.
-
- Portal Safety (If Used): Chakra portals (modals/toasts) render without error.
-
- Accessibility Baseline: First focusable element is reachable via Tab.
-
-App.tsx — Automated Test Checklist
-
-Goal: Verify routing, top-level layout, auth-driven UI, and that gates/loaders don’t block the UI in tests.
-
-App.test.tsx
-
- Unauthenticated Navbar: Navbar renders links Home, Drivers, Races, About.
-
- Login CTA Visible: When unauthenticated, at least one Log In button is visible.
-
- Hero Renders on Home: Hero heading and subtitle render on root route.
-
- Authenticated Navbar: When authenticated, navbar shows My Profile and Log Out.
-
- Route Mounting: Navigating to /drivers mounts the Drivers page.
-
- Responsive Stability: window.matchMedia mocked to desktop so nav isn’t hidden.
-
- Auth Gate Bypass: Role/onboarding gates are mocked to ready (no “setting up your account” blockers).
-
- Isolation: API services (f1ApiService) mocked to prevent real network calls.
-
- Accessible Queries: Tests rely on getByRole / findByRole selectors (no brittle queries).
-
-Components — Automated Test Checklist
-HeroSection.test.tsx
-
- Default Render: Renders title and subtitle when provided via props.
-
- Children Override: Custom children replace the default title/subtitle.
-
- Background Image: Applies backgroundImage when backgroundColor is not provided.
-
- Background Color: Uses backgroundColor and disables image when provided.
-
- Overlay Disabled: disableOverlay=true sets overlay background to none.
-
- Overlay Enabled: Default overlay renders gradient background.
-
- Responsive Titles: Headings scale correctly under 768px and 480px (manual DevTools check).
-
-HistoricalStatsTable.test.tsx
-
- Title & Headers: Renders “Historical Statistics” title and column headers Statistic / Value.
-
- Lap Record Row: Displays lap record time and driver subtext.
-
- Previous Winner Row: Displays previous winner name correctly.
-
- Row Count: Exactly 2 rows render in <tbody>.
-
- Icons: Clock and Trophy icons render inside their respective rows (smoke-checked via <svg> count).
-
-BackToTopButton.test.tsx
-
- Button does not render when scrollY <= 300.
-
- Button appears when scrollY > 300.
-
- Button hides again when scrolling back above threshold.
-
- Clicking the button triggers window.scrollTo({ top: 0, behavior: "smooth" }).
-
-DashboardGrid.test.tsx
-
- Renders DriverDetailProfile with correct driver props.
-
- Renders three StatCards with Wins, Podiums, and Fastest Laps.
-
- Renders WinsPerSeasonChart and LapByLapChart with correct data.
-
- Falls back to default team color (#e10600) if team not found.
-
-DriverList.test.tsx
-
- Renders all drivers with number, name, and team.
-
- Highlights active driver with team color.
-
- Clicking a driver calls setSelectedDriverId.
-
- Search filters drivers by name/team.
-
-DriverProfileCard.test.tsx
-
- Splits driver first/last name correctly.
-
- Displays driver number and headshot (placeholder fallback).
-
- Applies gradient background using team color.
-
- Shows nationality flag with react-country-flag.
-
- Renders bottom “View Profile” section with hover styling.
-
-F1LoadingSpinner.test.tsx
-
- Renders loading text from props.
-
- Displays speedometer container, dial, and needle.
-
- Renders 7 markings and 7 numbers.
-
- Spot-check: “300” is visible.
-
-FastestLapCard.test.tsx
-
- Renders title "Fastest Lap".
-
- Displays lap time and driver name.
-
- Shows Zap icon.
-
- Applies gradient background using teamColor (fallback red).
-
-FeaturedDriverCard.test.tsx
-
- Renders title, driver name, team, points.
-
- Displays driver image with correct alt/src.
-
- Renders ArrowUpRight icon button.
-
- Applies background using accentColor.
-
-FlagsTimeline.test.tsx
-
- Renders title "Race Timeline".
-
- Displays lap labels (Lap 1 … Lap N).
-
- Segments have correct width, class, tooltip.
-
- Legend includes Green, Yellow, Safety Car, VSC.
-
- Defaults unknown flag type to Green Flag.
-
-ProfilePage.test.tsx
-
- Shows toast when clicking Delete Account.
-
- Toggles notifications switch on/off.
-
- Updates username, team, driver fields and saves via PATCH with correct payload and toast.
-
-🛡️ Auth0 Configuration
-
-This project uses Auth0 for authentication.
-
-Local Development
-
-Create a .env file in frontend/ with:
-
-VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com
-VITE_AUTH0_CLIENT_ID=your-client-id
-VITE_AUTH0_AUDIENCE=your-api-audience
+# Automated Test Catalog
+
+## Frontend (Vitest)
+
+- src/0.main.test.tsx: Bootstraps main entry with providers and verifies environment-driven Auth0 config and routing renders without errors.
+- src/App/App.test.tsx: Checks unauthenticated vs authenticated navbar, and that clicking Drivers navigates to the Drivers page content.
+- src/components/BackToTopButton/BackToTopButton.test.tsx: Ensures the button appears after scrolling threshold and clicking it initiates a scroll-to-top action.
+- src/components/DashboardGrid/DashboardGrid.test.tsx: Renders profile and stat cards with provided data and falls back to a default team color when unknown.
+- src/components/DriverList/DriversList.test.tsx: Renders a list of drivers with number/name/team and supports selection and filtering interactions.
+- src/components/DriverProfileCard/DriverProfileCard.test.tsx: Splits full name into first/last and displays number, image, nationality flag, and a View Profile section.
+- src/components/F1LoadingSpinner/F1LoadingSpinner.test.tsx: Shows loading text, dial, needle, and expected speed markings for a spinner component.
+- src/components/FastestLapCard/FastestLapCard.test.tsx: Displays fastest lap title, time, driver name, and tolerates optional teamColor styling.
+- src/components/FeaturedDriverCard/FeaturedDriverCard.test.tsx: Renders driver name, team, points, image, and an action icon with accent styling.
+- src/components/FlagsTimeline/FlagsTimeline.test.tsx: Renders timeline title, legend, and segments with calculated widths for race flags (including default behavior).
+- src/components/HeroSection/HeroSection.test.tsx: Renders title/subtitle or custom children and keeps/removes overlay based on the disableOverlay prop.
+- src/components/HistoricalStatsTable/HistoricalStatsTable.test.tsx: Renders a small table with a title, headers, lap record, and previous winner rows.
+- src/components/LoginButton/LoginButton.test.tsx: Shows the Log In control and integrates with Chakra rendering.
+- src/components/LogoutButton/LogoutButton.test.tsx: Shows the Log Out control for authenticated users.
+- src/components/UserRegistrationHandler/UserRegistrationHandler.test.tsx: Ensures user registration is attempted on auth, handles success, existing user, and transient error with retry.
+- src/components/WeatherCard/WeatherCard.test.tsx: Renders race track stats and weather values, and selects appropriate weather icon based on condition.
+- src/components/WinsPerSeasonChart/WinsPerSeasonChart.test.tsx: Renders a chart with expected series/labels based on provided wins-per-season data.
+- src/pages/AboutUs/AboutUs.test.tsx: Renders About page headings and the expected number of team members.
+- src/pages/Admin/Admin.test.tsx: Renders Admin page title/sections and a fixed set of stat cards.
+- src/pages/Drivers/Drivers.test.tsx: Shows loading state, tabs per team, and driver cards for each team once data resolves.
+- src/pages/ProfilePage/ProfilePage.test.tsx: Loads profile data, supports editing/toggling settings, and shows delete confirmation toast (network mocked).
+- src/pages/Standings/ConstructorStandings.test.tsx: Fetches and displays constructor standings for a season and refetches when the season selection changes.
+- src/theme.test.tsx: Verifies theme config presence, fonts, global styles object, and that a ChakraProvider can render with the theme.
+
+## Backend (Jest)
+
+- backend/test/main.bootstrap.spec.ts: Boots the NestJS testing application and ensures it initializes successfully.
+- backend/src/app.controller.spec.ts: Verifies the root controller returns the expected greeting/health response.
+- backend/src/auth/auth.module.spec.ts: Ensures the AuthModule compiles and wires up providers correctly.
+- backend/src/auth/jwt-auth.guard.spec.ts: Asserts the JWT auth guard permits/denies access based on token validity/context.
+- backend/src/auth/jwt.strategy.spec.ts: Ensures the JWT strategy validates tokens and extracts payload as expected.
+- backend/src/auth/scopes.decorator.spec.ts: Confirms custom decorator attaches scope metadata to route handlers.
+- backend/src/auth/scopes.guard.spec.ts: Checks scope guard enforces required scopes from metadata against request user scopes.
+- backend/src/circuits/circuits.module.spec.ts: Ensures CircuitsModule compiles and its providers are available.
+- backend/src/circuits/circuits.controller.spec.ts: Verifies circuits controller endpoints call service and return expected shapes.
+- backend/src/circuits/circuits.entity.spec.ts: Validates Circuits entity schema/columns and basic construction.
+- backend/src/circuits/circuits-ingest.service.spec.ts: Tests ingest service transforms and persists circuit data from external sources.
+- backend/src/circuits/circuits.service.spec.ts: Verifies service methods fetch, map, and return circuit data.
+- backend/src/countries/countries.module.spec.ts: Ensures CountriesModule compiles and providers resolve.
+- backend/src/countries/countries.controller.spec.ts: Verifies countries controller routes and responses using service stubs.
+- backend/src/countries/countries.entity.spec.ts: Validates Countries entity fields and instantiation.
+- backend/src/countries/countries-ingest.service.spec.ts: Tests ingest logic for countries data normalization and storage.
+- backend/src/countries/countries.service.spec.ts: Verifies countries service CRUD/query methods behavior.
+- backend/src/drivers/drivers.controller.spec.ts: Verifies drivers controller endpoints delegate to service and return DTOs.
+- backend/src/drivers/drivers.service.spec.ts: Tests driver service methods (lookup, standings, performance aggregation) with mocks.
+- backend/src/drivers/dto/driver-details-response.dto.spec.ts: Ensures the driver details DTO builds correct response shape from entities.
+- backend/src/drivers/dto/driver-performance-response.dto.spec.ts: Validates the performance DTO maps lap/time metrics into API format.
+- backend/src/drivers/dto/driver-response.dto.spec.ts: Checks base driver DTO mapping of core fields.
+- backend/src/drivers/dto/driver-standings-response.dto.spec.ts: Confirms standings DTO serialization for position/points/wins.
+- backend/src/drivers/entities/driver.entity.spec.ts: Validates Driver entity fields, relations, and construction defaults.
+- backend/src/supabase/supabase.module.spec.ts: Ensures SupabaseModule compiles and exports its service.
+- backend/src/supabase/supabase.service.spec.ts: Tests Supabase service initializes client and wraps basic calls.
+- backend/src/notifications/notifications.service.spec.ts: Verifies email notification retry strategy (success on later attempt) and failure after all attempts.
+- backend/src/notifications/notifications.controller.spec.ts: Validates payload validation (400), success mapping (201), and error propagation.
+- backend/src/raceResults/raceResults.service.spec.ts: Returns rows on success and throws on Supabase error for a session.
+- backend/src/raceResults/raceResults.controller.spec.ts: GET by session returns rows, POST ingest returns created/updated summary.
+- backend/src/seasons/seasons.service.spec.ts: Tests connection probe, list retrieval, and get-by-year including not-found and error cases.
+- backend/src/seasons/seasons-ingest.service.spec.ts: Handles paginated fetch and counts created/updated via Supabase lookups and inserts.
+- backend/src/seasons/seasons.controller.spec.ts: POST /seasons/ingest returns 201 with ingestion summary.
+- backend/src/constructors/constructors.service.spec.ts: Ingest deduplicates and upserts constructors, lists all, and finds by API id.
+- backend/src/constructors/constructors.controller.spec.ts: POST /constructors/ingest (201), GET list, and GET by-api-id with guards overridden.
+- backend/src/constructorStandings/constructorStandings.service.spec.ts: Fetches/gets constructor standings and processes rows as created/updated/skipped.
+- backend/src/constructorStandings/constructorStandings.controller.spec.ts: POST ingest (201) and GET :season return summary (per current controller behavior).
+- backend/src/admin/admin.controller.spec.ts: Admin dashboard returns stats; admin/me returns token claim subset with guards overridden.
+- backend/src/driverStandings/driverStandings.service.spec.ts: Tests connection, list, by-race/by-driver/by-season retrieval, and search behavior.
+- backend/src/driverStandings/driverStandings.controller.spec.ts: POST ingest (201) and GET endpoints for all/test/race/driver/season/search return expected results.
