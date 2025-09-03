@@ -63,11 +63,22 @@ const DriverDetailPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Fetching details and performance data in parallel
-        const [driverDetails, driverPerformance] = await Promise.all([
-          authedFetch(`/api/drivers/${numericDriverId}/details`),
-          authedFetch(`/api/drivers/${numericDriverId}/performance/2025`)
-        ]);
+        // Fetch details first
+        const driverDetails = await authedFetch(`/api/drivers/${numericDriverId}/details`);
+
+        // Then attempt performance for current season; handle 404/400 gracefully
+        let driverPerformance: any | null = null;
+        try {
+          const currentSeason = new Date().getFullYear();
+          driverPerformance = await authedFetch(`/api/drivers/${numericDriverId}/performance/${currentSeason}`);
+        } catch (perfErr: any) {
+          const message = perfErr instanceof Error ? perfErr.message : String(perfErr);
+          if (message.includes('404') || message.includes('400')) {
+            driverPerformance = null;
+          } else {
+            throw perfErr;
+          }
+        }
 
         const flattenedData = {
           id: driverDetails.driverId,
@@ -84,8 +95,8 @@ const DriverDetailPage: React.FC = () => {
           fastestLaps: driverDetails.careerStats.fastestLaps,
           points: driverDetails.careerStats.totalPoints,
           firstRace: driverDetails.careerStats.firstRace,
-          championshipStanding: `P${driverPerformance.championshipStanding}`,
-          winsPerSeason: driverPerformance.winsPerSeason,
+          championshipStanding: driverPerformance ? `P${driverPerformance.championshipStanding}` : 'N/A',
+          winsPerSeason: driverPerformance?.winsPerSeason ?? [],
         };
 
         setDriverData(flattenedData);
@@ -148,6 +159,8 @@ const DriverDetailPage: React.FC = () => {
       <Container maxWidth="1400px">
         <KeyInfoBar driver={{
           ...driverData,
+          // Ensure the expected `team` field is present for logo resolution
+          team: driverData.teamName,
           fullName: driverData.fullName,
           imageUrl: driverData.imageUrl
         }} />

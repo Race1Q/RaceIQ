@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import InfoBlock from '../InfoBlock/InfoBlock';
 import styles from './KeyInfoBar.module.css';
 import { Trophy, TrendingUp, Calendar, ArrowLeft, Star } from 'lucide-react';
-import { teamLogoMap } from '../../lib/teamAssets';
+import { getTeamLogo } from '../../lib/teamAssets';
 
 type FirstRace = { year: string; event: string };
 
@@ -29,7 +29,7 @@ const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver }) => {
 
       <div className={styles.teamLogoWrapper}>
         <img
-          src={teamLogoMap[driver.team] || teamLogoMap["Default"]}
+          src={getTeamLogo(driver.team)}
           alt={`${driver.team} logo`}
           className={`${styles.teamLogo} ${styles.logoColor}`}
           loading="lazy"
