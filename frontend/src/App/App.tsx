@@ -7,8 +7,7 @@ import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import F1LoadingSpinner from '../components/F1LoadingSpinner/F1LoadingSpinner';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
-import { f1ApiService } from '../services/f1Api';
-import type { Race } from '../services/f1Api';
+import { apiClient, type RaceDto } from '../services/f1Api';
 import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
@@ -29,12 +28,12 @@ import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
-  const [recentRaces, setRecentRaces] = useState<Race[]>([]);
+  const [recentRaces, setRecentRaces] = useState<RaceDto[]>([]);
 
   useEffect(() => {
     const fetchRecentRaces = async () => {
-      const races = await f1ApiService.getRecentRaces(3);
-      setRecentRaces(races);
+      const races = await apiClient.getRaces(2025);
+      setRecentRaces(races.slice(0, 3));
     };
     fetchRecentRaces();
   }, []);
@@ -62,7 +61,7 @@ function HomePage() {
             <VStack spacing={12}>
               <Heading color="text-primary">Recent Races</Heading>
               <SimpleGrid columns={{ base: 1, md: 3 }} gap="lg">
-                {recentRaces.map((race: Race) => (
+                {recentRaces.map((race: RaceDto) => (
                   <Box
                     key={race.id}
                     bg="bg-surface-raised"
@@ -74,12 +73,8 @@ function HomePage() {
                     _hover={{ transform: 'translateY(-5px)', boxShadow: 'lg', borderColor: 'brand.red' }}
                   >
                     <Heading as="h3" color="brand.red" size="md" mb="sm">{race.name}</Heading>
-                    <Text color="text-muted" fontSize="sm" mb="md">{new Date(race.date).toLocaleDateString()}</Text>
-                    <VStack align="start">
-                      <Text><Text as="strong">Winner:</Text> {race.winner}</Text>
-                      <Text><Text as="strong">Team:</Text> {race.team}</Text>
-                      <Text><Text as="strong">Circuit:</Text> {race.circuit}</Text>
-                    </VStack>
+                    <Text color="text-muted" fontSize="sm" mb="xs">Round {race.round}</Text>
+                    <Text color="text-muted" fontSize="sm">{new Date(race.date).toLocaleDateString()}</Text>
                   </Box>
                 ))}
               </SimpleGrid>
