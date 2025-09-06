@@ -4,24 +4,44 @@ export const circuitFileMap: Record<number, string> = {
     // confirmed from your message:
     297: "hungaroring",
   
-    // examples (fill these with your real IDs when you know them):
-    // 1: "albert-park",
-    // 2: "silverstone",
-    // 3: "monza",
-    // 4: "spa-francorchamps",
-    // 5: "suzuka",
-    // 6: "interlagos",
-    // 7: "yas-marina",
-    // 8: "jeddah-corniche",
-    // 9: "bahrain-international-circuit",
-    // 10: "losail",
-    // 11: "red-bull-ring",
-    // 12: "circuit-gilles-villeneuve",
-    // 13: "zandvoort",
-    // 14: "miami",
-    // 15: "las-vegas",
-    // 16: "cota",
-    // 17: "imola",
-    // 18: "barcelona-catalunya",
+    // Missing circuits - you'll need to add the correct circuit IDs from your database:
+    // Chinese GP (Shanghai International Circuit)
+    // [circuit_id]: "shanghai-international-circuit",
+    
+    // Emilia Romagna GP (Imola)
+    // [circuit_id]: "imola",
+    
+    // Monaco GP
+    // [circuit_id]: "monaco",
+    
+    // Spanish GP (Barcelona-Catalunya)
+    // [circuit_id]: "barcelona-catalunya",
+    
+    // Belgian GP (Spa-Francorchamps)
+    // [circuit_id]: "spa-francorchamps",
+    
+    // Dutch GP (Zandvoort)
+    // [circuit_id]: "zandvoort",
+    
+    // Italian GP (Monza)
+    // [circuit_id]: "monza",
+    
+    // Azerbaijan GP (Baku City Circuit)
+    // [circuit_id]: "baku-city-circuit",
+    
+    // Singapore GP (Marina Bay)
+    // [circuit_id]: "marina-bay",
+    
+    // US GP (Circuit of the Americas) - already exists as cota.geojson
+    // [circuit_id]: "cota",
+    
+    // Mexican GP (Hermanos Rodriguez)
+    // [circuit_id]: "hermanos-rodriguez",
+    
+    // Sao Paulo GP (Interlagos)
+    // [circuit_id]: "interlagos",
+    
+    // Las Vegas GP
+    // [circuit_id]: "las-vegas",
   };
   
