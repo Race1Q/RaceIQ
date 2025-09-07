@@ -1,68 +1,95 @@
 import React from 'react';
-import { Box, VStack, Heading, Text, Container } from '@chakra-ui/react';
+import { Box, Button, Container, Heading, Text, VStack } from '@chakra-ui/react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
+import HeroCanvas from '../HeroCanvas/HeroCanvas';
 
 interface HeroSectionProps {
   title?: string;
   subtitle?: string;
-  backgroundImageUrl?: string;
-  backgroundColor?: string;
-  disableOverlay?: boolean;
-  children?: React.ReactNode;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ 
-  title, 
-  subtitle, 
-  backgroundImageUrl = 'https://upload.wikimedia.org/wikipedia/commons/8/88/Sebastian_Vettel_Red_Bull_Racing_2013_Silverstone_F1_Test_009.jpg',
-  backgroundColor,
-  disableOverlay = false,
-  children
+  title = "Track Every F1 Appearance",
+  subtitle = "View race results and appearances for your favourite drivers and teams — across sports."
 }) => {
+  const { loginWithRedirect } = useAuth0();
+
   return (
     <Box
-      bgImage={backgroundColor ? 'none' : `url(${backgroundImageUrl})`}
-      bgColor={backgroundColor || undefined}
-      bgSize="cover"
-      bgPosition="center"
-      bgRepeat="no-repeat"
-      position="relative"
-      py="xl"
-      minH="400px"
-      display="flex"
-      alignItems="center"
+      w="100%"
+      h="90vh"
+      position="relative" // Parent needs to be relative for absolute children
     >
-      <Box 
-        bg={disableOverlay ? 'none' : 'rgba(0, 0, 0, 0.6)'} 
-        position="absolute"
-        top="0"
-        left="0"
-        right="0"
-        bottom="0"
-      />
-      <Container maxW="1200px" position="relative" zIndex="1">
-        {children ? (
-          children
-        ) : (
-          <VStack spacing="8" textAlign="center">
-            <Heading 
-              as="h1" 
-              size="2xl" 
-              fontFamily="heading" 
-              color="white"
-              textShadow="2px 2px 4px rgba(0,0,0,0.8)"
-            >
-              {title}
-            </Heading>
-            <Text 
-              fontSize="xl" 
-              color="white"
-              textShadow="1px 1px 2px rgba(0,0,0,0.8)"
-            >
-              {subtitle}
-            </Text>
-          </VStack>
-        )}
+      {/* 3D Canvas as the background layer */}
+      <Box position="absolute" top={0} left={0} w="100%" h="100%" zIndex={1}>
+        <HeroCanvas />
+      </Box>
+
+      {/* Text content with higher zIndex to appear on top */}
+      <Container maxW="1400px" h="100%" position="relative" zIndex={2}>
+        <VStack
+          h="100%"
+          spacing={6}
+          align={{ base: 'center', md: 'flex-start' }}
+          justify="center"
+          textAlign={{ base: 'center', md: 'left' }}
+        >
+          <Heading
+            as="h1"
+            fontSize={{ base: '4xl', md: '6xl', lg: '7xl' }}
+            fontWeight="bold"
+            bgGradient="linear(to-r, gray.100, gray.400)"
+            bgClip="text"
+          >
+            {title}
+          </Heading>
+          <Text
+            fontSize={{ base: 'lg', md: 'xl' }}
+            color="gray.300"
+            maxW="600px"
+          >
+            {subtitle}
+          </Text>
+          <Button
+            size="lg"
+            bg="brand.red"
+            color="white"
+            _hover={{ bg: 'brand.redDark' }}
+            px={8}
+            onClick={() => loginWithRedirect()}
+          >
+            Get Started
+          </Button>
+        </VStack>
       </Container>
+      
+      {/* Big scroll arrow - ensure it has the highest zIndex */}
+      <Box
+        position="absolute"
+        bottom="30px"
+        left="50%"
+        transform="translateX(-50%)"
+        color="white"
+        fontSize="6xl"
+        animation="bounceUpDown 2s infinite"
+        cursor="pointer"
+        onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+        _hover={{ opacity: 0.7 }}
+        zIndex={3} // Make sure this is on top
+        sx={{
+          '@keyframes bounceUpDown': {
+            '0%, 100%': {
+              transform: 'translateX(-50%) translateY(0px)',
+            },
+            '50%': {
+              transform: 'translateX(-50%) translateY(-10px)',
+            },
+          },
+        }}
+      >
+        <ChevronDownIcon />
+      </Box>
     </Box>
   );
 };

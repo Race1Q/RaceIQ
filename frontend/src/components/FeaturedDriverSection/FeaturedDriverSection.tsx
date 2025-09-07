@@ -4,6 +4,7 @@ import {
   Box, 
   Container, 
   Grid, 
+  GridItem,
   Image, 
   Heading, 
   Text, 
@@ -46,17 +47,17 @@ const FeaturedDriverSection: React.FC = () => {
         
         // For now, use mock data since the API endpoint might not exist yet
         const mockDriver: FeaturedDriver = {
-          id: 1,
-          full_name: "Max Verstappen",
-          driver_number: 1,
-          country_code: "NL",
-          team_name: "Red Bull Racing",
-          headshot_url: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png",
-          team_color: "#3671C6",
+          id: 81,
+          full_name: "Oscar Piastri",
+          driver_number: 81,
+          country_code: "AU",
+          team_name: "McLaren",
+          headshot_url: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/2col-retina/image.png",
+          team_color: "#FF8700",
           stats: {
-            wins: 19,
-            podiums: 22,
-            points: 575
+            wins: 1,
+            podiums: 4,
+            points: 206
           }
         };
         
@@ -146,7 +147,7 @@ const FeaturedDriverSection: React.FC = () => {
 
   return (
     <Box 
-      bg="bg-secondary" 
+      bg="whiteAlpha.50" 
       position="relative"
       _before={{
         content: '""',
@@ -163,47 +164,65 @@ const FeaturedDriverSection: React.FC = () => {
       }}
     >
       <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1}>
-        <Grid templateColumns={{ base: '1fr', lg: '1fr 2fr' }} gap="lg" alignItems="center">
-          {/* Left Column - Driver Image */}
-          <Flex justify="center" align="center">
-            <Box position="relative">
-              <Box
-                position="relative"
-                borderRadius="full"
-                overflow="hidden"
-                w={{ base: '200px', md: '250px' }}
-                h={{ base: '200px', md: '250px' }}
-                _after={{
-                  content: '""',
-                  position: 'absolute',
-                  top: '-10px',
-                  left: '-10px',
-                  right: '-10px',
-                  bottom: '-10px',
-                  borderRadius: 'full',
-                  background: `linear-gradient(135deg, ${driver.team_color}40, ${driver.team_color}20)`,
-                  zIndex: -1,
-                }}
-              >
-                <Image
-                  src={driver.headshot_url}
-                  alt={`${driver.full_name} headshot`}
-                  w="100%"
-                  h="100%"
-                  objectFit="cover"
-                  borderRadius="full"
-                  border="4px solid"
-                  borderColor="white"
-                  boxShadow="lg"
-                />
+        <Grid templateColumns={{ base: '1fr', lg: '1.5fr 2fr' }} gap={{ base: 6, lg: 12 }} alignItems="center">
+          {/* GridItem 1: The Image (now on the left) */}
+          <GridItem>
+            <Flex justify="center" align="center">
+              <Box position="relative">
+                {/* Define the clip path reusable value */}
+                {(() => {
+                  const rhombusClipPath = 'polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)';
+                  
+                  return (
+                    <Box
+                      position="relative"
+                      w={{ base: '280px', md: '350px', lg: '400px' }}
+                      h={{ base: '300px', md: '375px', lg: '430px' }}
+                      sx={{
+                        clipPath: rhombusClipPath,
+                        // Add a pseudo-element for the checkered border
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          // This gradient creates a checkered pattern
+                          backgroundImage: `repeating-linear-gradient(
+                            -45deg,
+                            rgba(255, 255, 255, 0.8),
+                            rgba(255, 255, 255, 0.8) 10px,
+                            transparent 10px,
+                            transparent 20px
+                          )`,
+                          zIndex: 1,
+                        }
+                      }}
+                    >
+                      <Image
+                        src={driver.headshot_url}
+                        alt={driver.full_name}
+                        objectFit="cover"
+                        w="100%"
+                        h="100%"
+                        position="relative"
+                        zIndex={2}
+                        // Apply the same clip-path but inset slightly to reveal the border
+                        sx={{ clipPath: rhombusClipPath }}
+                      />
+                    </Box>
+                  );
+                })()}
               </Box>
-            </Box>
-          </Flex>
+            </Flex>
+          </GridItem>
 
-          {/* Right Column - Driver Information */}
-          <VStack align="stretch" spacing="md">
-            {/* Header */}
-            <VStack align="flex-start" spacing="sm">
+          {/* GridItem 2: The Text/Stats (now on the right) */}
+          <GridItem>
+            <VStack align="flex-start" spacing={4}>
+              {/* Header */}
+              <VStack align="flex-start" spacing="sm">
               <Text 
                 color="brand.red" 
                 fontWeight="bold" 
@@ -333,7 +352,7 @@ const FeaturedDriverSection: React.FC = () => {
             </SimpleGrid>
 
             {/* Call to Action */}
-            <Flex justify="flex-end" mt="lg">
+            <Flex justify="flex-start" mt="lg">
               <Button
                 bg="brand.red"
                 color="white"
@@ -355,7 +374,8 @@ const FeaturedDriverSection: React.FC = () => {
                 View All Drivers & Stats
               </Button>
             </Flex>
-          </VStack>
+            </VStack>
+          </GridItem>
         </Grid>
       </Container>
     </Box>

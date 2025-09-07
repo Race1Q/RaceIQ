@@ -20,6 +20,8 @@ import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
 import FeaturedDriverSection from '../components/FeaturedDriverSection/FeaturedDriverSection';
 import ComparePreviewSection from '../components/ComparePreviewSection/ComparePreviewSection';
+import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper/ScrollAnimationWrapper';
+import SectionConnector from '../components/SectionConnector/SectionConnector';
 import { RoleProvider, useRole } from '../context/RoleContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
@@ -47,16 +49,18 @@ function HomePage() {
 
   return (
     <Box>
-      <HeroSection
-        title="Track Every F1 Appearance"
-        subtitle="View race results and appearances for your favourite drivers and teams — across sports."
-        backgroundImageUrl="[https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg](https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg)"
-      />
+      <HeroSection />
       
       {!isAuthenticated && (
         <>
-          <FeaturedDriverSection />
-          <ComparePreviewSection />
+          <ScrollAnimationWrapper position="relative">
+            <FeaturedDriverSection />
+            <SectionConnector />
+          </ScrollAnimationWrapper>
+          
+          <ScrollAnimationWrapper delay={0.2}>
+            <ComparePreviewSection />
+          </ScrollAnimationWrapper>
         </>
       )}
       

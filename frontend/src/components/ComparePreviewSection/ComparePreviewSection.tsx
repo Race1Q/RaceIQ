@@ -167,7 +167,7 @@ const ComparePreviewSection: React.FC = () => {
 
   return (
     <Box 
-      bg="bg-primary" 
+      bg="blackAlpha.200" 
       position="relative"
       _before={{
         content: '""',
@@ -188,25 +188,27 @@ const ComparePreviewSection: React.FC = () => {
           {/* Left Column - Information & CTA */}
           <GridItem>
             <VStack align="flex-start" justify="center" spacing="lg" h="full">
-              <Text 
-                color="brand.red" 
-                fontWeight="bold" 
-                fontSize="sm" 
-                textTransform="uppercase" 
-                letterSpacing="wide"
-              >
-                Head-to-Head
-              </Text>
-              
-              <Heading 
-                as="h2" 
-                size="2xl" 
-                color="text-primary"
-                fontFamily="heading"
-                lineHeight="shorter"
-              >
-                Compare Every Stat.
-              </Heading>
+              <VStack align="flex-start" spacing="sm">
+                <Text 
+                  color="brand.red" 
+                  fontWeight="bold" 
+                  fontSize="sm" 
+                  textTransform="uppercase" 
+                  letterSpacing="wide"
+                >
+                  Head-to-Head
+                </Text>
+                
+                <Heading 
+                  as="h2" 
+                  size="2xl" 
+                  color="text-primary"
+                  fontFamily="heading"
+                  lineHeight="shorter"
+                >
+                  Compare Every Stat.
+                </Heading>
+              </VStack>
               
               <Text 
                 color="text-secondary" 
