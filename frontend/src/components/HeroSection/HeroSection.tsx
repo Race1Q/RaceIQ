@@ -1,8 +1,8 @@
+// src/components/HeroSection/HeroSection.tsx
 import React from 'react';
 import { Box, Button, Container, Heading, Text, VStack } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
-import HeroCanvas from '../HeroCanvas/HeroCanvas';
 
 interface HeroSectionProps {
   title?: string;
@@ -19,15 +19,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     <Box
       w="100%"
       h="90vh"
-      position="relative" // Parent needs to be relative for absolute children
+      position="relative"
+      // Restore the background image and gradient overlay
+      bg="linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.pexels.com/photos/12028373/pexels-photo-12028373.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"
+      bgSize="cover"
+      bgPosition="center"
     >
-      {/* 3D Canvas as the background layer */}
-      <Box position="absolute" top={0} left={0} w="100%" h="100%" zIndex={1}>
-        <HeroCanvas />
-      </Box>
-
-      {/* Text content with higher zIndex to appear on top */}
-      <Container maxW="1400px" h="100%" position="relative" zIndex={2}>
+      {/* Text content - zIndex is no longer needed */}
+      <Container maxW="1400px" h="100%" position="relative">
         <VStack
           h="100%"
           spacing={6}
@@ -64,7 +63,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         </VStack>
       </Container>
       
-      {/* Big scroll arrow - ensure it has the highest zIndex */}
+      {/* Big scroll arrow */}
       <Box
         position="absolute"
         bottom="30px"
@@ -76,7 +75,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         cursor="pointer"
         onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
         _hover={{ opacity: 0.7 }}
-        zIndex={3} // Make sure this is on top
         sx={{
           '@keyframes bounceUpDown': {
             '0%, 100%': {
