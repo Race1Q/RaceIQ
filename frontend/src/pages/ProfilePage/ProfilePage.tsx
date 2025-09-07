@@ -21,6 +21,7 @@ import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleBut
 import styles from './ProfilePage.module.css';
 import { buildApiUrl } from '../../lib/api';
 import { sendRaceUpdate } from '../../services/notifications';
+import { useProfileUpdate } from '../../context/ProfileUpdateContext';
 
 // Define the shape for our select options
 type SelectOption = { value: number; label: string };
@@ -28,6 +29,7 @@ type SelectOption = { value: number; label: string };
 const ProfilePage: React.FC = () => {
   // 1. Get the isLoading flag from the hook
   const { user, getAccessTokenSilently, isLoading } = useAuth0();
+  const { triggerRefresh } = useProfileUpdate();
   const toast = useToast();
   
   const [formData, setFormData] = useState({
@@ -157,6 +159,9 @@ const ProfilePage: React.FC = () => {
         favoriteTeam: payload.favorite_constructor_id === null ? '' : Number(payload.favorite_constructor_id),
         favoriteDriver: payload.favorite_driver_id === null ? '' : Number(payload.favorite_driver_id),
       }));
+
+      // Trigger refresh of dashboard widgets
+      triggerRefresh();
 
       toast({
         title: 'Changes saved',

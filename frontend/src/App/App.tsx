@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+// src/App/App.tsx
+
+import { useState, useEffect } from 'react';
+import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Gauge } from 'lucide-react';
 import { Box, Flex, HStack, Button, Text, Container, VStack, Heading, SimpleGrid } from '@chakra-ui/react';
@@ -18,13 +20,20 @@ import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
+import FeaturedDriverSection from '../components/FeaturedDriverSection/FeaturedDriverSection';
+import ComparePreviewSection from '../components/ComparePreviewSection/ComparePreviewSection';
+import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper/ScrollAnimationWrapper';
+import SectionConnector from '../components/SectionConnector/SectionConnector';
 import { RoleProvider, useRole } from '../context/RoleContext';
+import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
+import AppLayout from '../components/layout/AppLayout';
+import DashboardPage from '../pages/Dashboard/DashboardPage';
 
 
 function HomePage() {
@@ -45,20 +54,30 @@ function HomePage() {
 
   return (
     <Box>
-      <HeroSection
-        title="Track Every F1 Appearance"
-        subtitle="View race results and appearances for your favourite drivers and teams — across sports."
-        backgroundImageUrl="[https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg](https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg)"
-      />
+      <HeroSection />
       
-      <Box as="section" bg="bg-surface" py="80px">
-        <Container maxW="1200px">
-          {isAuthenticated ? (
-            <VStack>
-              <Heading color="brand.red">Welcome back, {user?.name}!</Heading>
-              <Text color="text-secondary">Your personalized F1 feed will appear here.</Text>
-            </VStack>
-          ) : (
+      {!isAuthenticated && (
+        <>
+          <ScrollAnimationWrapper position="relative">
+            <FeaturedDriverSection />
+            <SectionConnector />
+          </ScrollAnimationWrapper>
+          
+          <ScrollAnimationWrapper delay={0.2}>
+            <ComparePreviewSection />
+          </ScrollAnimationWrapper>
+        </>
+      )}
+      
+      <Box as="section" bg="bg-surface">
+        <Container maxW="1400px" py="80px">
+          <VStack spacing={12}>
+            {isAuthenticated && (
+              <VStack spacing={4}>
+                <Heading color="brand.red">Welcome back, {user?.name}!</Heading>
+                <Text color="text-secondary">Your personalized F1 feed will appear here.</Text>
+              </VStack>
+            )}
             <VStack spacing={12}>
               <Heading color="text-primary">Recent Races</Heading>
               <SimpleGrid columns={{ base: 1, md: 3 }} gap="lg">
@@ -84,13 +103,13 @@ function HomePage() {
                 ))}
               </SimpleGrid>
             </VStack>
-          )}
+          </VStack>
         </Container>
       </Box>
 
       {!isAuthenticated && (
-        <Box as="section" bgGradient="linear(to-r, brand.red, brand.redDark)" py="80px" textAlign="center">
-          <Container maxW="600px">
+        <Box as="section" bgGradient="linear(to-r, brand.red, brand.redDark)" textAlign="center">
+          <Container maxW="1400px" py="80px">
             <VStack spacing="xl">
               <Heading size="lg" color="white">Create your free account and get more from every race.</Heading>
               <Text fontSize="lg" color="gray.200">Track your favorite drivers, get personalized insights, and never miss a race.</Text>
@@ -107,14 +126,15 @@ function Navbar() {
   const { isAuthenticated } = useAuth0();
   const { role } = useRole();
   const navigate = useNavigate();
-  const isRouteActive = useActiveRoute;
 
   const navLinks = [
-    { path: '/', label: 'Home' },
+    { path: '/', label: isAuthenticated ? 'Dashboard' : 'Home' },
     { path: '/drivers', label: 'Drivers' },
     { path: '/constructors', label: 'Constructors' },
-    { path: '/compare', label: 'Compare' },
-    { path: '/races', label: 'Races' },
+    ...(isAuthenticated ? [
+      { path: '/compare', label: 'Compare' },
+      { path: '/races', label: 'Races' },
+    ] : []),
     { path: '/about', label: 'About' },
   ];
 
@@ -123,7 +143,16 @@ function Navbar() {
   }
 
   return (
-    <Box as="nav" bg="bg-surface-raised" borderBottom="2px solid" borderColor="brand.red" position="sticky" top="0" zIndex="sticky">
+    <Box 
+      as="nav" 
+      bg="blackAlpha.700" 
+      backdropFilter="blur(10px)" 
+      borderBottom="1px solid" 
+      borderColor="whiteAlpha.200"
+      position="sticky" 
+      top="0" 
+      zIndex="sticky"
+    >
       <Flex maxW="1200px" mx="auto" px="md" h="70px" justify="space-between" align="center">
         <HStack as={Link} to="/" spacing="sm" textDecor="none">
           <Gauge size={24} color="var(--chakra-colors-brand-red)" />
@@ -139,7 +168,7 @@ function Navbar() {
               as={Link}
               to={path}
               variant="link"
-              color={isRouteActive(path) ? 'brand.red' : 'text-primary'}
+              color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
               fontFamily="heading"
               fontWeight="500"
               _hover={{ color: 'brand.red', textDecor: 'none' }}
@@ -147,7 +176,7 @@ function Navbar() {
               _after={{
                 content: '""',
                 position: 'absolute',
-                width: isRouteActive(path) ? '100%' : '0',
+                width: useActiveRoute(path) ? '100%' : '0',
                 height: '2px',
                 bottom: '-5px',
                 left: 0,
@@ -170,7 +199,7 @@ function Navbar() {
               color="brand.red"
               _hover={{ bg: 'brand.red', color: 'white' }}
               onClick={() => navigate('/profile')}
-              isActive={isRouteActive('/profile')}
+              isActive={useActiveRoute('/profile')}
             >
               My Profile
             </Button>
@@ -183,10 +212,74 @@ function Navbar() {
 
 function AppContent() {
   useScrollToTop();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth0();
+  
+  // Don't show navbar on driver detail pages (they have their own custom header)
+  const showNavbar = !location.pathname.startsWith('/drivers/') || location.pathname === '/drivers';
+
+  if (isAuthenticated) {
+    return (
+      <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
+        <AppLayout>
+          <Routes>
+            {/* Redirect root to dashboard for authenticated users */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* PROTECTED ROUTES */}
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/drivers" element={<Drivers />} />
+            <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
+            <Route path="/constructors" element={<ConstructorsStandings />} />
+            <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
+            <Route path="/compare" element={<CompareDriversPage />} />
+            <Route path="/races" element={<RacesPage />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* ADMIN only */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </AppLayout>
+
+        <BackToTopButton />
+
+        {/* Footer */}
+        <Box as="footer" bg="bg-surface-raised" borderTop="2px solid" borderColor="brand.red" py="xl" mt="auto">
+          <Container maxW="1200px">
+            <Flex justify="space-between" align="center" wrap="wrap" gap="md">
+              <HStack spacing="lg">
+                <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+                <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
+                <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
+              </HStack>
+              <Text color="text-muted" fontSize="sm">
+                ©{new Date().getFullYear()} RaceIQ. All rights reserved.
+              </Text>
+            </Flex>
+          </Container>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
-      <Navbar />
+      {showNavbar && <Navbar />}
       
       {/* Routes */}
       <Routes>
@@ -199,26 +292,6 @@ function AppContent() {
         <Route path="/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />
-
-        {/* PROTECTED ROUTES */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        
-        {/* ADMIN only */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requireAdmin>
-              <Admin />
-            </ProtectedRoute>
-          }
-        />
       </Routes>
 
       <BackToTopButton />
@@ -245,9 +318,11 @@ function AppContent() {
 function App() {
   return (
     <RoleProvider>
-      <UserRegistrationHandler>
-        <AppContent />
-      </UserRegistrationHandler>
+      <ProfileUpdateProvider>
+        <UserRegistrationHandler>
+          <AppContent />
+        </UserRegistrationHandler>
+      </ProfileUpdateProvider>
     </RoleProvider>
   );
 }

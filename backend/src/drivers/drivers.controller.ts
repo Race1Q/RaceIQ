@@ -3,14 +3,15 @@
 // NOTE: All @UseGuards, @Scopes, and @ApiBearerAuth decorators have been removed
 // to make these GET endpoints publicly accessible.
 
-import { Controller, Get, Post, Query, Logger, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Query, Logger, Param, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { DriversService } from './drivers.service';
 import { 
   DriverResponseDto, 
   DriverStandingsResponseDto, 
   DriverDetailsResponseDto, 
-  DriverPerformanceResponseDto 
+  DriverPerformanceResponseDto,
+  FeaturedDriverResponseDto 
 } from './dto';
 
 @ApiTags('drivers')
@@ -76,5 +77,20 @@ export class DriversController {
     @Param('season') season: string,
   ): Promise<DriverPerformanceResponseDto> {
     return this.driversService.findOnePerformance(id, season);
+  }
+
+  @Get('featured/:season')
+  @ApiOperation({ summary: 'Get featured driver', description: 'Retrieve the current #1 driver with their stats for a specific season' })
+  @ApiParam({ name: 'season', description: 'Season year', example: 2025 })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved featured driver', type: FeaturedDriverResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid season parameter' })
+  @ApiResponse({ status: 404, description: 'No standings found for season' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async findOneFeatured(@Param('season') season: string): Promise<FeaturedDriverResponseDto> {
+    const seasonNumber = parseInt(season, 10);
+    if (isNaN(seasonNumber)) {
+      throw new BadRequestException('Invalid season parameter');
+    }
+    return this.driversService.getFeaturedDriver(seasonNumber);
   }
 }
