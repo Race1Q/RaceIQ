@@ -3,6 +3,11 @@ import React from 'react';
 import { Box, Button, Container, Heading, Text, VStack } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
+import { useParallax } from '../../hooks/useParallax';
+import { gsap } from 'gsap';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
+
+gsap.registerPlugin(ScrollToPlugin);
 
 interface HeroSectionProps {
   title?: string;
@@ -14,19 +19,41 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   subtitle = "View race results and appearances for your favourite drivers and teams — across sports."
 }) => {
   const { loginWithRedirect } = useAuth0();
+  const offsetY = useParallax(0.5);
+
+  const handleScrollDown = () => {
+    const navbarHeight = 70; // The height of your sticky navbar in pixels
+    gsap.to(window, { 
+      duration: 1.5, // Slower scroll duration (1.5 seconds)
+      scrollTo: window.innerHeight - navbarHeight, // Adjusted scroll target
+      ease: 'power2.inOut' 
+    });
+  };
 
   return (
     <Box
       w="100%"
       h="90vh"
       position="relative"
-      // Restore the background image and gradient overlay
-      bg="linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.pexels.com/photos/12028373/pexels-photo-12028373.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')"
-      bgSize="cover"
-      bgPosition="center"
+      overflow="hidden" // Important: hide the parts of the image that move out of view
     >
-      {/* Text content - zIndex is no longer needed */}
-      <Container maxW="1400px" h="100%" position="relative">
+      {/* New dedicated background layer */}
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        w="100%"
+        h="140%" // Make image taller to prevent empty space when scrolling
+        zIndex={1}
+        bgImage="linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.pexels.com/photos/13641535/pexels-photo-13641535.jpeg')"
+        bgSize="cover"
+        bgPosition="top"
+        // Apply the parallax effect
+        style={{ transform: `translateY(${offsetY}px)` }}
+      />
+      
+      {/* Text content now sits on top with a higher zIndex */}
+      <Container maxW="1400px" h="100%" position="relative" zIndex={2}>
         <VStack
           h="100%"
           spacing={6}
@@ -63,7 +90,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         </VStack>
       </Container>
       
-      {/* Big scroll arrow */}
+      {/* Scroll arrow also needs a higher zIndex */}
       <Box
         position="absolute"
         bottom="30px"
@@ -73,8 +100,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         fontSize="6xl"
         animation="bounceUpDown 2s infinite"
         cursor="pointer"
-        onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+        onClick={handleScrollDown}
         _hover={{ opacity: 0.7 }}
+        zIndex={3}
         sx={{
           '@keyframes bounceUpDown': {
             '0%, 100%': {

@@ -140,7 +140,16 @@ function Navbar() {
   }
 
   return (
-    <Box as="nav" bg="bg-surface-raised" borderBottom="2px solid" borderColor="brand.red" position="sticky" top="0" zIndex="sticky">
+    <Box 
+      as="nav" 
+      bg="blackAlpha.700" 
+      backdropFilter="blur(10px)" 
+      borderBottom="1px solid" 
+      borderColor="whiteAlpha.200"
+      position="sticky" 
+      top="0" 
+      zIndex="sticky"
+    >
       <Flex maxW="1200px" mx="auto" px="md" h="70px" justify="space-between" align="center">
         <HStack as={Link} to="/" spacing="sm" textDecor="none">
           <Gauge size={24} color="var(--chakra-colors-brand-red)" />
