@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import InfoBlock from '../InfoBlock/InfoBlock';
 import styles from './KeyInfoBar.module.css';
-import { Trophy, TrendingUp, Calendar, ArrowLeft, Star } from 'lucide-react';
+import { Trophy, TrendingUp, Calendar, Star } from 'lucide-react';
 import { getTeamLogo } from '../../lib/teamAssets';
 
 type FirstRace = { year: string; event: string };
@@ -23,10 +22,6 @@ interface KeyInfoBarProps {
 const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver }) => {
   return (
     <div className={styles.keyInfoBar}>
-      <Link to="/drivers" className={styles.backButton} aria-label="Back to all drivers">
-        <ArrowLeft size={24} />
-      </Link>
-
       <div className={styles.teamLogoWrapper}>
         <img
           src={getTeamLogo(driver.team)}

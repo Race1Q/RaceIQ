@@ -1,7 +1,7 @@
 // src/App/App.tsx
 
 import { useState, useEffect } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Gauge } from 'lucide-react';
 import { Box, Flex, HStack, Button, Text, Container, VStack, Heading, SimpleGrid } from '@chakra-ui/react';
@@ -209,10 +209,14 @@ function Navbar() {
 
 function AppContent() {
   useScrollToTop();
+  const location = useLocation();
+  
+  // Don't show navbar on driver detail pages (they have their own custom header)
+  const showNavbar = !location.pathname.startsWith('/drivers/') || location.pathname === '/drivers';
 
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
-      <Navbar />
+      {showNavbar && <Navbar />}
       
       {/* Routes */}
       <Routes>
