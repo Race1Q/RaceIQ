@@ -15,7 +15,6 @@ import FlagsTimeline from '../../components/FlagsTimeline/FlagsTimeline';
 import PaceDistributionChart from '../../components/PaceDistributionChart/PaceDistributionChart';
 import TireStrategyChart from '../../components/TireStrategyChart/TireStrategyChart';
 import RaceStandingsTable from '../../components/RaceStandingsTable/RaceStandingsTable';
-import HeroSection from '../../components/HeroSection/HeroSection';
 
 // Data and Types
 import { mockRaces } from '../../data/mockRaces';
@@ -31,12 +30,6 @@ const RacesPage: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <Box bg="bg-primary">
-        <HeroSection
-          title="Race Analytics"
-          subtitle="A deep dive into the strategy, performance, and key moments from every Grand Prix."
-          backgroundColor={theme.colors.brand.red}
-          disableOverlay
-        />
         <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
           <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
             <Text fontSize="xl" color="text-primary">Please signup / login to view races.</Text>
@@ -49,13 +42,6 @@ const RacesPage: React.FC = () => {
 
   return (
     <Box bg="bg-primary">
-      <HeroSection
-        title="Race Analytics"
-        subtitle="A deep dive into the strategy, performance, and key moments from every Grand Prix."
-        backgroundColor={theme.colors.brand.red}
-        disableOverlay
-      />
-      
       <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
         <Tabs variant="enclosed-colored" colorScheme="red">
           <TabList>

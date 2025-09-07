@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Gauge } from 'lucide-react';
@@ -18,6 +18,8 @@ import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import HeroSection from '../components/HeroSection/HeroSection';
+import FeaturedDriverSection from '../components/FeaturedDriverSection/FeaturedDriverSection';
+import ComparePreviewSection from '../components/ComparePreviewSection/ComparePreviewSection';
 import { RoleProvider, useRole } from '../context/RoleContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
@@ -51,14 +53,22 @@ function HomePage() {
         backgroundImageUrl="[https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg](https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg)"
       />
       
-      <Box as="section" bg="bg-surface" py="80px">
-        <Container maxW="1200px">
-          {isAuthenticated ? (
-            <VStack>
-              <Heading color="brand.red">Welcome back, {user?.name}!</Heading>
-              <Text color="text-secondary">Your personalized F1 feed will appear here.</Text>
-            </VStack>
-          ) : (
+      {!isAuthenticated && (
+        <>
+          <FeaturedDriverSection />
+          <ComparePreviewSection />
+        </>
+      )}
+      
+      <Box as="section" bg="bg-surface">
+        <Container maxW="1400px" py="80px">
+          <VStack spacing={12}>
+            {isAuthenticated && (
+              <VStack spacing={4}>
+                <Heading color="brand.red">Welcome back, {user?.name}!</Heading>
+                <Text color="text-secondary">Your personalized F1 feed will appear here.</Text>
+              </VStack>
+            )}
             <VStack spacing={12}>
               <Heading color="text-primary">Recent Races</Heading>
               <SimpleGrid columns={{ base: 1, md: 3 }} gap="lg">
@@ -84,13 +94,13 @@ function HomePage() {
                 ))}
               </SimpleGrid>
             </VStack>
-          )}
+          </VStack>
         </Container>
       </Box>
 
       {!isAuthenticated && (
-        <Box as="section" bgGradient="linear(to-r, brand.red, brand.redDark)" py="80px" textAlign="center">
-          <Container maxW="600px">
+        <Box as="section" bgGradient="linear(to-r, brand.red, brand.redDark)" textAlign="center">
+          <Container maxW="1400px" py="80px">
             <VStack spacing="xl">
               <Heading size="lg" color="white">Create your free account and get more from every race.</Heading>
               <Text fontSize="lg" color="gray.200">Track your favorite drivers, get personalized insights, and never miss a race.</Text>
@@ -107,14 +117,15 @@ function Navbar() {
   const { isAuthenticated } = useAuth0();
   const { role } = useRole();
   const navigate = useNavigate();
-  const isRouteActive = useActiveRoute;
 
   const navLinks = [
-    { path: '/', label: 'Home' },
+    { path: '/', label: isAuthenticated ? 'Dashboard' : 'Home' },
     { path: '/drivers', label: 'Drivers' },
     { path: '/constructors', label: 'Constructors' },
-    { path: '/compare', label: 'Compare' },
-    { path: '/races', label: 'Races' },
+    ...(isAuthenticated ? [
+      { path: '/compare', label: 'Compare' },
+      { path: '/races', label: 'Races' },
+    ] : []),
     { path: '/about', label: 'About' },
   ];
 
@@ -139,7 +150,7 @@ function Navbar() {
               as={Link}
               to={path}
               variant="link"
-              color={isRouteActive(path) ? 'brand.red' : 'text-primary'}
+              color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
               fontFamily="heading"
               fontWeight="500"
               _hover={{ color: 'brand.red', textDecor: 'none' }}
@@ -147,7 +158,7 @@ function Navbar() {
               _after={{
                 content: '""',
                 position: 'absolute',
-                width: isRouteActive(path) ? '100%' : '0',
+                width: useActiveRoute(path) ? '100%' : '0',
                 height: '2px',
                 bottom: '-5px',
                 left: 0,
@@ -170,7 +181,7 @@ function Navbar() {
               color="brand.red"
               _hover={{ bg: 'brand.red', color: 'white' }}
               onClick={() => navigate('/profile')}
-              isActive={isRouteActive('/profile')}
+              isActive={useActiveRoute('/profile')}
             >
               My Profile
             </Button>
