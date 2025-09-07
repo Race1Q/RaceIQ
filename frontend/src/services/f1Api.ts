@@ -1,6 +1,8 @@
 // F1 API Service - Placeholder for future implementation
 // This will be replaced with actual API calls to the F1 API
 
+import { buildApiUrl } from '../lib/api';
+
 export interface Race {
   id: number;
   name: string;
@@ -21,6 +23,18 @@ export interface Team {
   id: number;
   name: string;
   nationality: string;
+}
+
+export interface FeaturedDriver {
+  driverId: number;
+  fullName: string;
+  teamName: string;
+  driverNumber: number | null;
+  countryCode: string | null;
+  headshotUrl: string;
+  points: number;
+  wins: number;
+  podiums: number;
 }
 
 class F1ApiService {
@@ -142,6 +156,23 @@ class F1ApiService {
     } catch (error) {
       console.error('Error searching teams:', error);
       return [];
+    }
+  }
+
+  // Get featured driver (current #1 driver)
+  async getFeaturedDriver(season: number): Promise<FeaturedDriver> {
+    try {
+      const response = await fetch(buildApiUrl(`/api/drivers/featured/${season}`));
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch featured driver: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching featured driver:', error);
+      throw error;
     }
   }
 }

@@ -5,7 +5,8 @@ import {
   DriverResponseDto, 
   DriverStandingsResponseDto, 
   DriverDetailsResponseDto, 
-  DriverPerformanceResponseDto 
+  DriverPerformanceResponseDto,
+  FeaturedDriverResponseDto 
 } from './dto';
 
 @Injectable()
@@ -111,5 +112,86 @@ export class DriversService {
       throw new NotFoundException('No performance data found for driver and season');
     }
     return data as unknown as DriverPerformanceResponseDto;
+  }
+
+  async getFeaturedDriver(season: number): Promise<FeaturedDriverResponseDto> {
+    const standings = await this.findDriversByStandings(season);
+    if (!standings || standings.length === 0) {
+      throw new NotFoundException(`No standings found for season ${season}`);
+    }
+
+    const topDriver = standings[0];
+    this.logger.debug('Top driver data:', JSON.stringify(topDriver, null, 2));
+    
+    // The actual API returns 'id' field, not 'driver_id'
+    const driverId = topDriver.id || topDriver.driver_id;
+    if (!driverId) {
+      this.logger.error('No driver ID found in standings data:', topDriver);
+      throw new InternalServerErrorException('Driver ID not found in standings data');
+    }
+
+    // The actual API returns 'full_name' field, not separate first_name/last_name
+    const fullName = topDriver.full_name || `${topDriver.first_name || ''} ${topDriver.last_name || ''}`.trim();
+    const headshotUrl = this.getDriverHeadshotUrl(fullName);
+
+    // Try to get performance data, but fallback to basic data if it fails
+    let wins = 0;
+    let podiums = 0;
+    
+    try {
+      const performance = await this.findOnePerformance(driverId, String(season));
+      wins = performance.wins || 0;
+      podiums = performance.podiums || 0;
+    } catch (error) {
+      this.logger.warn(`Could not fetch performance data for driver ${driverId}, using basic data: ${error.message}`);
+      // Use wins from standings data if available
+      wins = topDriver.wins || 0;
+      // For podiums, we'll need to estimate or use a default
+      podiums = 0; // We could calculate this from standings if needed
+    }
+
+    return {
+      driverId: driverId,
+      fullName: fullName,
+      teamName: topDriver.team_name || topDriver.constructor_name || 'Unknown Team',
+      driverNumber: topDriver.driver_number,
+      countryCode: topDriver.country_code,
+      headshotUrl: headshotUrl,
+      points: topDriver.points,
+      wins: wins,
+      podiums: podiums,
+    };
+  }
+
+  private getDriverHeadshotUrl(fullName: string): string {
+    // Simple headshot URL mapping (similar to frontend)
+    const headshotMap: { [key: string]: string } = {
+      "Max Verstappen": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png",
+      "Sergio Pérez": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/S/SERPER01_Sergio_Perez/serper01.png.transform/2col-retina/image.png",
+      "Lewis Hamilton": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png",
+      "George Russell": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GEORUS01_George_Russell/georus01.png.transform/2col-retina/image.png",
+      "Charles Leclerc": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/2col-retina/image.png",
+      "Carlos Sainz": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/2col-retina/image.png",
+      "Lando Norris": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/2col-retina/image.png",
+      "Oscar Piastri": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/2col-retina/image.png",
+      "Fernando Alonso": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FERALO01_Fernando_Alonso/feralo01.png.transform/2col-retina/image.png",
+      "Lance Stroll": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/2col-retina/image.png",
+      "Esteban Ocon": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/2col-retina/image.png",
+      "Pierre Gasly": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/P/PIEGAS01_Pierre_Gasly/piegas01.png.transform/2col-retina/image.png",
+      "Yuki Tsunoda": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/2col-retina/image.png",
+      "Daniel Ricciardo": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/D/DANRIC01_Daniel_Ricciardo/danric01.png.transform/2col-retina/image.png",
+      "Nico Hülkenberg": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/2col-retina/image.png",
+      "Valtteri Bottas": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/2col-retina/image.png",
+      "Guanyu Zhou": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Z/ZHOGUA01_Zhou_Guanyu/zhogua01.png.transform/2col-retina/image.png",
+      "Kevin Magnussen": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/K/KEVMAG01_Kevin_Magnussen/kevmag01.png.transform/2col-retina/image.png",
+      "Alexander Albon": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ALEALB01_Alex_Albon/alealb01.png.transform/2col-retina/image.png",
+      "Logan Sargeant": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LOGSAR01_Logan_Sargeant/logsar01.png.transform/2col-retina/image.png",
+      "Oliver Bearman": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/2col-retina/image.png",
+      "Jack Doohan": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/J/JACDOO01_Jack_Doohan/jacdoo01.png.transform/2col-retina/image.png",
+      "Jolyon Palmer": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/J/JOLPAL01_Jolyon_Palmer/jolpal01.png.transform/2col-retina/image.png",
+      "Franco Colapinto": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/2col-retina/image.png",
+    };
+
+    return headshotMap[fullName] || "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/default-driver.png";
   }
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useToast, Button, Box, Flex, Text, Container, SimpleGrid, VStack, HStack } from '@chakra-ui/react';
+import { useToast, Box, Text, Container, SimpleGrid, VStack, HStack, Button } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
@@ -16,38 +15,27 @@ interface Driver extends ApiDriver { headshot_url: string; team_color: string; }
 type GroupedDrivers = { [teamName: string]: Driver[] };
 
 const Drivers = () => {
-  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
   const toast = useToast();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>("All");
 
-  const authedFetch = useCallback(async (url: string) => {
-      const token = await getAccessTokenSilently({
-          authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE, scope: "read:drivers" },
-      });
-      const headers = new Headers();
-      headers.set('Authorization', `Bearer ${token}`);
-      const response = await fetch(url, { headers });
+  const publicFetch = useCallback(async (url: string) => {
+      const response = await fetch(url);
       if (!response.ok) {
           const errorBody = await response.text();
           throw new Error(`Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`);
       }
       return response.json();
-  }, [getAccessTokenSilently]);
+  }, []);
 
   useEffect(() => {
     const fetchAndProcessDrivers = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        setError(null);
-        return;
-      }
       try {
         setLoading(true);
         setError(null);
-        const apiDrivers: ApiDriver[] = await authedFetch(buildApiUrl('/api/drivers/by-standings/2025'));
+        const apiDrivers: ApiDriver[] = await publicFetch(buildApiUrl('/api/drivers/by-standings/2025'));
         const hydratedDrivers = apiDrivers.map(driver => ({
           ...driver,
           headshot_url: driverHeadshots[driver.full_name] || "",
@@ -66,7 +54,7 @@ const Drivers = () => {
       }
     };
     fetchAndProcessDrivers();
-  }, [authedFetch, toast, isAuthenticated]);
+  }, [publicFetch, toast]);
 
   const { orderedTeamNames, groupedDrivers } = useMemo(() => {
     const groups = drivers.reduce<GroupedDrivers>((acc, driver) => {
@@ -81,17 +69,6 @@ const Drivers = () => {
 
   const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
   const filterTabs = ["All", ...orderedTeamNames];
-
-  if (!isAuthenticated) {
-    return (
-      <Box p={{ base: 'md', md: 'xl' }}>
-        <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
-          <Text fontSize="xl" color="text-primary">Please signup / login to view drivers.</Text>
-          <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
-        </Flex>
-      </Box>
-    );
-  }
 
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" py="lg">

@@ -12,24 +12,11 @@ import {
   VStack, 
   SimpleGrid, 
   Flex, 
-  Spinner
+  Spinner,
+  Alert,
+  AlertIcon
 } from '@chakra-ui/react';
-
-// Interface for the featured driver data
-interface FeaturedDriver {
-  id: number;
-  full_name: string;
-  driver_number: number;
-  country_code: string;
-  team_name: string;
-  headshot_url: string;
-  team_color: string;
-  stats: {
-    wins: number;
-    podiums: number;
-    points: number;
-  };
-}
+import { f1ApiService, type FeaturedDriver } from '../../services/f1Api';
 
 const FeaturedDriverSection: React.FC = () => {
   const { loginWithRedirect } = useAuth0();
@@ -45,37 +32,8 @@ const FeaturedDriverSection: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        // For now, use mock data since the API endpoint might not exist yet
-        const mockDriver: FeaturedDriver = {
-          id: 81,
-          full_name: "Oscar Piastri",
-          driver_number: 81,
-          country_code: "AU",
-          team_name: "McLaren",
-          headshot_url: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/2col-retina/image.png",
-          team_color: "#FF8700",
-          stats: {
-            wins: 1,
-            podiums: 4,
-            points: 206
-          }
-        };
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setDriver(mockDriver);
-        
-        // Uncomment this when the API endpoint is ready:
-        /*
-        const response = await fetch(buildApiUrl('/api/drivers/standings/top/2025'));
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch featured driver: ${response.status} ${response.statusText}`);
-        }
-        
-        const driverData = await response.json();
-        setDriver(driverData);
-        */
+        const featuredDriver = await f1ApiService.getFeaturedDriver(2024);
+        setDriver(featuredDriver);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
         setError(errorMessage);
@@ -117,7 +75,6 @@ const FeaturedDriverSection: React.FC = () => {
   }
 
   if (error || !driver) {
-    // Show a fallback message for debugging
     return (
       <Box 
         bg="bg-secondary" 
@@ -137,9 +94,10 @@ const FeaturedDriverSection: React.FC = () => {
         }}
       >
         <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1}>
-          <Text color="text-primary" textAlign="center">
-            Featured Driver Section - No data available
-          </Text>
+          <Alert status="error">
+            <AlertIcon />
+            {error || 'Driver data could not be found.'}
+          </Alert>
         </Container>
       </Box>
     );
@@ -201,8 +159,8 @@ const FeaturedDriverSection: React.FC = () => {
                       }}
                     >
                       <Image
-                        src={driver.headshot_url}
-                        alt={driver.full_name}
+                        src={driver.headshotUrl}
+                        alt={driver.fullName}
                         objectFit="cover"
                         w="100%"
                         h="100%"
@@ -238,14 +196,14 @@ const FeaturedDriverSection: React.FC = () => {
                 color="text-primary"
                 fontFamily="heading"
               >
-                {driver.full_name}
+                {driver.fullName}
               </Heading>
               <Text 
                 color="text-secondary" 
                 fontSize="lg"
                 fontWeight="medium"
               >
-                {driver.team_name} • #{driver.driver_number}
+                {driver.teamName} • #{driver.driverNumber}
               </Text>
             </VStack>
 
@@ -262,7 +220,7 @@ const FeaturedDriverSection: React.FC = () => {
                 _hover={{ 
                   transform: 'translateY(-2px)', 
                   boxShadow: 'md',
-                  borderColor: driver.team_color
+                  borderColor: 'brand.red'
                 }}
               >
                 <Text 
@@ -271,7 +229,7 @@ const FeaturedDriverSection: React.FC = () => {
                   color="brand.red"
                   lineHeight="1"
                 >
-                  {driver.stats.points}
+                  {driver.points}
                 </Text>
                 <Text 
                   color="text-muted" 
@@ -295,7 +253,7 @@ const FeaturedDriverSection: React.FC = () => {
                 _hover={{ 
                   transform: 'translateY(-2px)', 
                   boxShadow: 'md',
-                  borderColor: driver.team_color
+                  borderColor: 'brand.red'
                 }}
               >
                 <Text 
@@ -304,7 +262,7 @@ const FeaturedDriverSection: React.FC = () => {
                   color="brand.red"
                   lineHeight="1"
                 >
-                  {driver.stats.wins}
+                  {driver.wins}
                 </Text>
                 <Text 
                   color="text-muted" 
@@ -328,7 +286,7 @@ const FeaturedDriverSection: React.FC = () => {
                 _hover={{ 
                   transform: 'translateY(-2px)', 
                   boxShadow: 'md',
-                  borderColor: driver.team_color
+                  borderColor: 'brand.red'
                 }}
               >
                 <Text 
@@ -337,7 +295,7 @@ const FeaturedDriverSection: React.FC = () => {
                   color="brand.red"
                   lineHeight="1"
                 >
-                  {driver.stats.podiums}
+                  {driver.podiums}
                 </Text>
                 <Text 
                   color="text-muted" 

@@ -1,7 +1,6 @@
 // src/pages/Standings/ConstructorStandings.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useToast, Box, Flex, Text, Button } from '@chakra-ui/react';
+import { useToast, Box, Flex, Text } from '@chakra-ui/react';
 import { Select } from 'chakra-react-select';
 import { useNavigate } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -31,13 +30,11 @@ type SeasonOption = { value: number; label: string };
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const ConstructorStandings: React.FC = () => {
-  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
   const toast = useToast();
   const navigate = useNavigate();
 
   const [standings, setStandings] = useState<ConstructorStanding[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTeam, setSelectedTeam] = useState<string>('All');
   const [selectedSeason, setSelectedSeason] = useState<number>(new Date().getFullYear());
 
   // Generate season options from 2025 → 1950
@@ -49,18 +46,9 @@ const ConstructorStandings: React.FC = () => {
     return options;
   }, []);
 
-  const authedFetch = useCallback(
+  const publicFetch = useCallback(
     async (url: string) => {
-      const token = await getAccessTokenSilently({
-        authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-          scope: 'read:standings',
-        },
-      });
-
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(url);
 
       if (!response.ok) {
         const errorBody = await response.text();
@@ -71,18 +59,14 @@ const ConstructorStandings: React.FC = () => {
 
       return response.json();
     },
-    [getAccessTokenSilently]
+    []
   );
 
   useEffect(() => {
     const fetchStandings = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
       setLoading(true);
       try {
-        const data: ConstructorStanding[] = await authedFetch(
+        const data: ConstructorStanding[] = await publicFetch(
           `${BACKEND_URL}/api/constructor-standings/${selectedSeason}`
         );
         setStandings(data);
@@ -101,7 +85,7 @@ const ConstructorStandings: React.FC = () => {
     };
 
     fetchStandings();
-  }, [authedFetch, selectedSeason, toast, isAuthenticated]);
+  }, [publicFetch, selectedSeason, toast]);
 
   const { orderedTeamNames, groupedConstructors } = useMemo(() => {
     const groups: GroupedConstructors = {};
@@ -114,18 +98,7 @@ const ConstructorStandings: React.FC = () => {
     return { orderedTeamNames: orderedTeams, groupedConstructors: groups };
   }, [standings]);
 
-  const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
-
-  if (!isAuthenticated) {
-    return (
-      <Box p={["4", "6", "8"]}>
-        <Flex direction="column" align="center" justify="center" minH="40vh" gap={4}>
-          <Text fontSize="xl">Please signup / login to view constructor standings.</Text>
-          <Button bg="brand.red" _hover={{ bg: 'brand.redDark' }} color="white" onClick={() => loginWithRedirect()}>Login</Button>
-        </Flex>
-      </Box>
-    );
-  }
+  const teamsToRender = orderedTeamNames;
 
   if (loading) return <F1LoadingSpinner text="Loading Constructor Standings..." />;
 
