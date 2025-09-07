@@ -1,5 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useToast, Box, Text, Container, SimpleGrid, VStack, HStack, Button } from '@chakra-ui/react';
+// frontend/src/pages/Drivers/Drivers.tsx
+
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useToast, Box, Text, Container, SimpleGrid, VStack, HStack, Button, Icon } from '@chakra-ui/react';
+import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
@@ -20,6 +23,8 @@ const Drivers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>("All");
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const publicFetch = useCallback(async (url: string) => {
       const response = await fetch(url);
@@ -70,6 +75,44 @@ const Drivers = () => {
   const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
   const filterTabs = ["All", ...orderedTeamNames];
 
+  // Check if there's more content to scroll
+  const checkScrollability = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const { scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollRight(scrollWidth > clientWidth);
+    }
+  }, []);
+
+  // Scroll to the right
+  const scrollRight = useCallback(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: 200,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Check scrollability when teams change
+  useEffect(() => {
+    // Add a small delay to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      checkScrollability();
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [filterTabs, checkScrollability]);
+
+  // Check scrollability on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      checkScrollability();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkScrollability]);
+
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" py="lg">
       <Container maxW="1600px">
@@ -78,15 +121,24 @@ const Drivers = () => {
         
         {!loading && !error && (
           <>
-            <HStack
-              spacing="lg"
+            <Box
+              position="relative"
               borderBottom="1px solid"
               borderColor="border-primary"
               mb="xl"
-              overflowX="auto"
               pb={2}
-              sx={{ '&::-webkit-scrollbar': { display: 'none' }, 'scrollbarWidth': 'none' }}
             >
+              <Box
+                ref={scrollContainerRef}
+                overflowX="auto"
+                sx={{ '&::-webkit-scrollbar': { display: 'none' }, 'scrollbarWidth': 'none' }}
+                onScroll={checkScrollability}
+              >
+              <HStack
+                spacing="4"
+                minW="max-content"
+                w="max-content"
+              >
               {filterTabs.map(team => (
                 <Button
                   key={team}
@@ -96,18 +148,64 @@ const Drivers = () => {
                   fontFamily="heading"
                   fontWeight="bold"
                   color="text-muted"
-                  pb="sm"
+                  px="4"
+                  py="sm"
                   borderRadius={0}
                   borderBottom="3px solid"
                   borderColor={selectedTeam === team ? 'brand.red' : 'transparent'}
                   _active={{ color: 'text-primary' }}
                   _hover={{ color: 'text-primary', bg: 'transparent' }}
-                  sx={{ whiteSpace: 'nowrap' }}
+                  sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
                 >
                   {team}
                 </Button>
               ))}
-            </HStack>
+              </HStack>
+              </Box>
+              
+              {/* Scroll indicator */}
+              {canScrollRight && (
+                <Box
+                  position="absolute"
+                  right="0"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  w="50px"
+                  bgGradient="linear(to-r, transparent, bg-primary)"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  zIndex="1"
+                >
+                  <Button
+                    bg="bg-primary"
+                    borderRadius="full"
+                    p="2"
+                    boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
+                    border="1px solid"
+                    borderColor="border-primary"
+                    onClick={scrollRight}
+                    _hover={{
+                      bg: "whiteAlpha.100",
+                      transform: "scale(1.05)"
+                    }}
+                    _active={{
+                      transform: "scale(0.95)"
+                    }}
+                    transition="all 0.2s ease"
+                    minW="auto"
+                    h="auto"
+                  >
+                    <Icon
+                      as={ChevronRight}
+                      boxSize={4}
+                      color="text-muted"
+                      opacity="0.8"
+                    />
+                  </Button>
+                </Box>
+              )}
+            </Box>
 
             <VStack spacing="xl" align="stretch">
               {teamsToRender.length > 0 ? (

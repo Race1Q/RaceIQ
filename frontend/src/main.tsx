@@ -2,6 +2,8 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 import './index.css';
 import App from './App/App.tsx';
 import theme from './theme';

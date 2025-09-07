@@ -1,7 +1,7 @@
 // src/App/App.tsx
 
 import { useState, useEffect } from 'react';
-import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Gauge } from 'lucide-react';
 import { Box, Flex, HStack, Button, Text, Container, VStack, Heading, SimpleGrid } from '@chakra-ui/react';
@@ -25,12 +25,15 @@ import ComparePreviewSection from '../components/ComparePreviewSection/ComparePr
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper/ScrollAnimationWrapper';
 import SectionConnector from '../components/SectionConnector/SectionConnector';
 import { RoleProvider, useRole } from '../context/RoleContext';
+import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
+import AppLayout from '../components/layout/AppLayout';
+import DashboardPage from '../pages/Dashboard/DashboardPage';
 
 
 function HomePage() {
@@ -210,9 +213,69 @@ function Navbar() {
 function AppContent() {
   useScrollToTop();
   const location = useLocation();
+  const { isAuthenticated } = useAuth0();
   
   // Don't show navbar on driver detail pages (they have their own custom header)
   const showNavbar = !location.pathname.startsWith('/drivers/') || location.pathname === '/drivers';
+
+  if (isAuthenticated) {
+    return (
+      <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
+        <AppLayout>
+          <Routes>
+            {/* Redirect root to dashboard for authenticated users */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* PROTECTED ROUTES */}
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/drivers" element={<Drivers />} />
+            <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
+            <Route path="/constructors" element={<ConstructorsStandings />} />
+            <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
+            <Route path="/compare" element={<CompareDriversPage />} />
+            <Route path="/races" element={<RacesPage />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* ADMIN only */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </AppLayout>
+
+        <BackToTopButton />
+
+        {/* Footer */}
+        <Box as="footer" bg="bg-surface-raised" borderTop="2px solid" borderColor="brand.red" py="xl" mt="auto">
+          <Container maxW="1200px">
+            <Flex justify="space-between" align="center" wrap="wrap" gap="md">
+              <HStack spacing="lg">
+                <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+                <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
+                <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
+              </HStack>
+              <Text color="text-muted" fontSize="sm">
+                ©{new Date().getFullYear()} RaceIQ. All rights reserved.
+              </Text>
+            </Flex>
+          </Container>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
@@ -229,26 +292,6 @@ function AppContent() {
         <Route path="/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />
-
-        {/* PROTECTED ROUTES */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        
-        {/* ADMIN only */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requireAdmin>
-              <Admin />
-            </ProtectedRoute>
-          }
-        />
       </Routes>
 
       <BackToTopButton />
@@ -275,9 +318,11 @@ function AppContent() {
 function App() {
   return (
     <RoleProvider>
-      <UserRegistrationHandler>
-        <AppContent />
-      </UserRegistrationHandler>
+      <ProfileUpdateProvider>
+        <UserRegistrationHandler>
+          <AppContent />
+        </UserRegistrationHandler>
+      </ProfileUpdateProvider>
     </RoleProvider>
   );
 }
