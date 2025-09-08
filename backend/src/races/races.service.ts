@@ -1,5 +1,5 @@
 // backend/src/races/races.service.ts
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { Race } from './races.entity';
 import { RaceResponseDto } from './dto';
@@ -8,21 +8,21 @@ import { RaceResponseDto } from './dto';
 export class RacesService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async findAllRacesFor2025(): Promise<RaceResponseDto[]> {
-    // First, find the season ID for the year 2025
+  async findAllRacesForSeason(year: number): Promise<RaceResponseDto[]> {
+    // Find the season ID for the given year
     const { data: seasonData, error: seasonError } = await this.supabaseService.client
       .from('seasons')
       .select('id')
-      .eq('year', 2025)
+      .eq('year', year)
       .single();
 
     if (seasonError || !seasonData) {
-      throw new InternalServerErrorException('Could not find season data for 2025');
+      throw new InternalServerErrorException(`Could not find season data for ${year}`);
     }
 
     const seasonId = seasonData.id;
 
-    // Now, fetch all races for that season ID
+    // Fetch all races for that season ID
     const { data, error } = await this.supabaseService.client
       .from('races')
       .select('*')
@@ -30,10 +30,9 @@ export class RacesService {
       .order('date', { ascending: true });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch races for 2025');
+      throw new InternalServerErrorException(`Failed to fetch races for ${year}`);
     }
     
-    // Convert Race[] to RaceResponseDto[] and ensure id is defined
     return (data ?? []).map(race => ({
       id: race.id!,
       season_id: race.season_id,
@@ -85,5 +84,29 @@ export class RacesService {
       return []; // Return empty array on error
     }
     return data ?? [];
+  }
+
+  async findRaceById(id: number): Promise<RaceResponseDto | null> {
+    const { data, error } = await this.supabaseService.client
+      .from('races')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      throw new NotFoundException('Race not found');
+    }
+
+    if (!data) return null;
+
+    return {
+      id: data.id!,
+      season_id: data.season_id,
+      circuit_id: data.circuit_id,
+      round: data.round,
+      name: data.name,
+      date: data.date,
+      time: data.time,
+    };
   }
 }
