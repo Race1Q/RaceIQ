@@ -1,0 +1,195 @@
+/* frontend/src/components/RaceProfileCard/RaceProfileCard.module.css */
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  height: 100%;
+}
+
+.card {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--color-border-gray);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.cardTop {
+  position: relative;
+  display: flex;
+  flex-grow: 1;
+  padding: var(--space-xl);
+  background: linear-gradient(135deg, var(--race-color-start) 0%, var(--race-color-end) 100%);
+  min-height: 300px;
+  overflow: hidden;
+}
+
+.raceInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  z-index: 2;
+  text-align: left;
+  width: 100%;
+  gap: var(--space-md);
+}
+
+.raceName {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1;
+  text-transform: uppercase;
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-md);
+  position: relative;
+  width: 100%;
+}
+
+.raceName::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.7) 50%, transparent 100%);
+}
+
+.shortName {
+  font-family: var(--font-signature);
+  font-size: clamp(2.2rem, 6vw, 3rem);
+  font-weight: 400;
+  text-transform: none;
+  display: block;
+  margin-bottom: -0.5rem;
+}
+
+.fullName {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 4vw, 1.5rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  display: block;
+  opacity: 0.9;
+}
+
+.raceRound {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  margin: 0;
+}
+
+.flagWrapper {
+  position: absolute;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 3;
+}
+
+.flagImage {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  object-fit: cover;
+  filter: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  line-height: 1;
+}
+
+/* Specific styling for SVG flags */
+.flagImage svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  object-fit: cover;
+}
+
+/* Specific styling for img flags */
+.flagImage img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  object-fit: cover;
+}
+
+.cardBottom {
+  padding: var(--space-lg);
+  background-color: var(--color-surface-gray);
+  border-top: 1px solid var(--color-border-gray);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.raceDate {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.viewText {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cardTop {
+    min-height: 250px;
+    padding: var(--space-lg);
+  }
+  
+  .shortName {
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+  }
+  
+  .fullName {
+    font-size: clamp(1rem, 3vw, 1.2rem);
+  }
+  
+  .raceRound {
+    font-size: 1.2rem;
+  }
+  
+  .flagWrapper {
+    width: 50px;
+    height: 35px;
+    top: var(--space-md);
+    right: var(--space-md);
+  }
+  
+  .cardBottom {
+    padding: var(--space-md);
+  }
+}
