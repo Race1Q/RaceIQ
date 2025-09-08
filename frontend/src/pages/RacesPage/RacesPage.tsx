@@ -1,24 +1,12 @@
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { Container, Box, VStack, Grid, useTheme, Flex, Text, Button, SimpleGrid, Skeleton, Spinner } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { apiClient, type RaceDto } from '../../services/f1Api';
+import { Link } from 'react-router-dom';
+import { apiClient } from '../../services/f1Api';
+import type { RaceDto } from '../../services/f1Api';
 import { motion, AnimatePresence } from 'framer-motion';
-const RaceDetailsModal = React.lazy(() => import('./components/RaceDetailsModal'));
-
-// Import all the refactored child components
-import RaceHeader from '../../components/RaceHeader/RaceHeader';
-import TrackMap from '../../components/TrackMap/TrackMap';
-import WeatherCard from '../../components/WeatherCard/WeatherCard';
-import PodiumCard from '../../components/PodiumCard/PodiumCard';
-import LapPositionChart from '../../components/LapPositionChart/LapPositionChart';
-import HistoricalStatsTable from '../../components/HistoricalStatsTable/HistoricalStatsTable';
-import FastestLapCard from '../../components/FastestLapCard/FastestLapCard';
-import RaceControlLog from '../../components/RaceControlLog/RaceControlLog';
-import FlagsTimeline from '../../components/FlagsTimeline/FlagsTimeline';
-import PaceDistributionChart from '../../components/PaceDistributionChart/PaceDistributionChart';
-import TireStrategyChart from '../../components/TireStrategyChart/TireStrategyChart';
-import RaceStandingsTable from '../../components/RaceStandingsTable/RaceStandingsTable';
 import HeroSection from '../../components/HeroSection/HeroSection';
+import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
 
 // Data and Types
 import { teamColors } from '../../lib/assets';
@@ -28,7 +16,6 @@ const RacesPage: React.FC = () => {
   const [races, setRaces] = useState<RaceDto[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [season] = useState<number>(2025);
-  const [openRaceId, setOpenRaceId] = useState<number | null>(null);
   const theme = useTheme();
 
   useEffect(() => {
@@ -88,37 +75,13 @@ const RacesPage: React.FC = () => {
         ) : (
           <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
             {(races ?? []).map((race) => (
-              <Box
-                key={race.id}
-                p={4}
-                borderRadius="md"
-                bg="bg-elevated"
-                border="1px solid"
-                borderColor="border-subtle"
-                cursor="pointer"
-                onClick={() => setOpenRaceId(race.id)}
-                _hover={{ transform: 'translateY(-2px)', transition: 'transform 0.15s ease' }}
-              >
-                <Text fontWeight="bold" color="text-primary" mb={1}>{race.name}</Text>
-                <Text color="text-secondary" fontSize="sm" mb={1}>Round {race.round}</Text>
-                <Text color="text-secondary" fontSize="sm">{new Date(race.date).toLocaleDateString()}</Text>
-              </Box>
+              <Link key={race.id} to={`/races/${race.id}`}>
+                <RaceProfileCard race={race} />
+              </Link>
             ))}
           </SimpleGrid>
         )}
       </Container>
-
-      <AnimatePresence>
-        {openRaceId !== null && (
-          <Suspense fallback={<Flex position="fixed" inset={0} align="center" justify="center"><Spinner /></Flex>}>
-            <RaceDetailsModal
-              key={openRaceId}
-              raceId={openRaceId}
-              onClose={() => setOpenRaceId(null)}
-            />
-          </Suspense>
-        )}
-      </AnimatePresence>
     </Box>
   );
 };

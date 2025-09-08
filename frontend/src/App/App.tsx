@@ -12,6 +12,7 @@ import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
 import RacesPage from '../pages/RacesPage/RacesPage';
+import RaceDetailPage from '../pages/RaceDetailPage/RaceDetailPage';
 import Admin from '../pages/Admin/Admin';
 import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
@@ -191,6 +192,7 @@ function AppContent() {
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
+        <Route path="/races/:raceId" element={<RaceDetailPage />} />
         <Route path="/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />
