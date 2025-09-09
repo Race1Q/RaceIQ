@@ -1,10 +1,9 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container } from '@chakra-ui/react';
+import { Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { apiClient } from '../../services/f1Api';
-import type { RaceDto } from '../../services/f1Api';
+import type { Race } from '../../types/races';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import CircuitTrack3D from '../RacesPage/components/CircuitTrack3D';
@@ -31,7 +30,8 @@ const PlaceholderCircuit: React.FC = () => {
 const RaceDetailPage: React.FC = () => {
   const { raceId } = useParams<{ raceId: string }>();
   const navigate = useNavigate();
-  const [race, setRace] = useState<RaceDto | null>(null);
+  const [race, setRace] = useState<Race | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [circuitName, setCircuitName] = useState<string>('');
   const [circuitLoading, setCircuitLoading] = useState<boolean>(false);
@@ -44,13 +44,17 @@ const RaceDetailPage: React.FC = () => {
 
     let isMounted = true;
     setLoading(true);
-    apiClient
-      .getRaceById(parseInt(raceId))
-      .then((data) => {
+    fetch(`/api/races/${raceId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 404) throw new Error('Race not found');
+          throw new Error('Failed to fetch race details');
+        }
+        const data: Race = await res.json();
         if (isMounted) setRace(data);
       })
-      .catch(() => {
-        if (isMounted) navigate('/races');
+      .catch((e: any) => {
+        if (isMounted) setError(e.message);
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -64,8 +68,8 @@ const RaceDetailPage: React.FC = () => {
     let isMounted = true;
     if (!race) return;
     setCircuitLoading(true);
-    apiClient
-      .getCircuitById(race.circuit_id)
+    fetch(`/api/circuits/${race.circuit_id}`)
+      .then((res) => res.ok ? res.json() : null)
       .then((c) => {
         if (isMounted && c) setCircuitName(c.name);
       })
@@ -84,6 +88,16 @@ const RaceDetailPage: React.FC = () => {
           <Flex align="center" justify="center" minH="50vh">
             <Spinner size="xl" />
           </Flex>
+        </Container>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box bg="bg-primary" minH="100vh">
+        <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
+          <Alert status="error"><AlertIcon />{error}</Alert>
         </Container>
       </Box>
     );

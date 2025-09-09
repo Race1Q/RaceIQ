@@ -1,30 +1,31 @@
-import React, { useEffect, useMemo, useState, Suspense } from 'react';
-import { Container, Box, VStack, Grid, useTheme, Flex, Text, Button, SimpleGrid, Skeleton, Spinner } from '@chakra-ui/react';
+import React, { useEffect, useState } from 'react';
+import { Container, Box, Flex, Text, Button, SimpleGrid, Skeleton } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
-import { apiClient } from '../../services/f1Api';
-import type { RaceDto } from '../../services/f1Api';
-import { motion, AnimatePresence } from 'framer-motion';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
+import type { Race } from '../../types/races';
 
 // Data and Types
-import { teamColors } from '../../lib/assets';
 
 const RacesPage: React.FC = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
-  const [races, setRaces] = useState<RaceDto[] | null>(null);
+  const [races, setRaces] = useState<Race[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [season] = useState<number>(2025);
-  const theme = useTheme();
+  
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    apiClient
-      .getRaces(season)
-      .then((data) => {
+    fetch(`/api/races?season=${season}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to fetch races');
+        const data: Race[] = await res.json();
         if (isMounted) setRaces(data);
+      })
+      .catch(() => {
+        if (isMounted) setRaces([]);
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -49,12 +50,7 @@ const RacesPage: React.FC = () => {
 
   return (
     <Box bg="bg-primary">
-      <HeroSection
-        title="Races"
-        subtitle={`Season ${season}`}
-        backgroundColor={theme.colors.brand.red}
-        disableOverlay
-      />
+      <HeroSection title="Races" subtitle={`Season ${season}`} />
       <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
         {loading ? (
           <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
