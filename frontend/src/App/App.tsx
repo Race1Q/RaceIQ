@@ -9,8 +9,6 @@ import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import F1LoadingSpinner from '../components/F1LoadingSpinner/F1LoadingSpinner';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
-import { f1ApiService } from '../services/f1Api';
-import type { Race } from '../services/f1Api';
 import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
@@ -38,14 +36,11 @@ import DashboardPage from '../pages/Dashboard/DashboardPage';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
-  const [recentRaces, setRecentRaces] = useState<Race[]>([]);
+  const [recentRaces, setRecentRaces] = useState<any[]>([]);
 
+  // TODO: Rewire recent races to new API service
   useEffect(() => {
-    const fetchRecentRaces = async () => {
-      const races = await f1ApiService.getRecentRaces(3);
-      setRecentRaces(races);
-    };
-    fetchRecentRaces();
+    setRecentRaces([]);
   }, []);
 
   if (isLoading) {
@@ -81,7 +76,7 @@ function HomePage() {
             <VStack spacing={12}>
               <Heading color="text-primary">Recent Races</Heading>
               <SimpleGrid columns={{ base: 1, md: 3 }} gap="lg">
-                {recentRaces.map((race: Race) => (
+                {recentRaces.map((race) => (
                   <Box
                     key={race.id}
                     bg="bg-surface-raised"

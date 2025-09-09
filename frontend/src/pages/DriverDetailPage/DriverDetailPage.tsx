@@ -1,12 +1,12 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Flex, Box, Text, VStack, Button } from '@chakra-ui/react';
+import React, { useState, useEffect } from 'react';
+import { Container, Flex, Box, Text, VStack, Button, useToast } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
-import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowLeft } from 'lucide-react';
 
-// Import Components and Helpers
+// Import our standard API hook and components
+import { useApi } from '@/hooks/useApi';
 import DashboardGrid from '../../components/DashboardGrid/DashboardGrid';
 import KeyInfoBar from '../../components/KeyInfoBar/KeyInfoBar';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -14,43 +14,37 @@ import { getCountryFlagUrl } from '../../lib/assets';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamCarImages } from '../../lib/teamCars';
 import styles from './DriverDetailPage.module.css';
-import { buildApiUrl } from '../../lib/api';
 
-// Using shared buildApiUrl to construct API URLs
+// Interfaces to type the data coming from our API
+interface DriverDetailsResponse {
+  driverId: number;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  countryCode: string;
+  dateOfBirth: string;
+  team: { name: string; color: string | null };
+  careerStats: { wins: number; podiums: number; fastestLaps: number; totalPoints: number };
+  profile: { imageUrl: string | null; funFact: string };
+}
+
+interface DriverPerformanceResponse {
+  season: string;
+  championshipStanding: number | null;
+  winsPerSeason: Array<{ season: string; wins: number }>;
+  recentRace: { raceName: string; position: number } | null;
+}
 
 const DriverDetailPage: React.FC = () => {
-  // 1. STATE AND HOOKS SETUP
-  const { getAccessTokenSilently } = useAuth0();
-  const { driverId } = useParams<{ driverId: string }>(); // Use URL parameter
+  const { authedFetch } = useApi(); // Use our standard, shared hook
+  const { driverId } = useParams<{ driverId: string }>();
+  const toast = useToast();
 
   const [driverData, setDriverData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 2. AUTHENTICATED FETCH HELPER
-  const authedFetch = useCallback(async (path: string) => {
-    const url = buildApiUrl(path);
-    
-    const token = await getAccessTokenSilently({
-      authorizationParams: { 
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE, 
-        scope: "read:drivers" 
-      },
-    });
-    const headers = new Headers();
-    headers.set('Authorization', `Bearer ${token}`);
-    
-    const response = await fetch(url, { headers });
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-    return response.json();
-  }, [getAccessTokenSilently]);
-
-
-  // 3. DATA FETCHING LOGIC
   useEffect(() => {
-    // We now use driverId from the URL
     if (!driverId) {
       setError("Driver ID not found in URL.");
       setLoading(false);
@@ -61,61 +55,52 @@ const DriverDetailPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+        
+        // Fetch both primary and secondary data in parallel
+        const [details, performance] = await Promise.all([
+          authedFetch<DriverDetailsResponse>(`/api/drivers/${driverId}/details`),
+          authedFetch<DriverPerformanceResponse>(`/api/drivers/${driverId}/performance/2025`), // Hardcoded to 2025 for now
+        ]);
 
-        // NOTE: This assumes your /drivers/:driverId route uses a numeric ID.
-        // If it uses a slug like 'oscar_piastri', you'll need a backend endpoint
-        // to convert the slug to an ID first. For now, we assume it's numeric.
-        const numericDriverId = parseInt(driverId, 10);
-        if (isNaN(numericDriverId)) {
-          throw new Error("Invalid Driver ID in URL.");
-        }
-
-        // Fetch details first
-        const driverDetails = await authedFetch(`/api/drivers/${numericDriverId}/details`);
-
-        // Then attempt performance for current season; handle 404/400 gracefully
-        let driverPerformance: any | null = null;
-        try {
-          const seasonToFetch = 2024; // Use a season with available data
-          driverPerformance = await authedFetch(`/api/drivers/${numericDriverId}/performance/${seasonToFetch}`);
-        } catch (perfErr) {
-          console.warn('Could not fetch performance data for this season.', perfErr);
-          driverPerformance = null;
-        }
-
-        const fullName = `${driverDetails.first_name} ${driverDetails.last_name}`;
-
-        const flattenedData = {
-          id: driverDetails.driver_id,
-          fullName: fullName,
-          firstName: driverDetails.first_name,
-          lastName: driverDetails.last_name,
-          countryCode: driverDetails.country_name, // Fixed: use country_name from DTO
-          dateOfBirth: driverDetails.date_of_birth,
-          teamName: driverDetails.current_constructor, // FIX for "Unknown Team"
-          funFact: "A fun fact about this driver.", // Fixed: use fallback since fun_fact doesn't exist in DTO
-          imageUrl: driverHeadshots[fullName] || 'default_image_url.png', // Use the constructed fullName for a reliable lookup
-          wins: driverDetails.total_wins,
-          podiums: driverDetails.total_podiums,
-          fastestLaps: 0, // Fixed: use default since total_fastest_laps doesn't exist in DTO
-          points: driverDetails.total_points,
-          firstRace: "Unknown", // Fixed: use default since first_race_year doesn't exist in DTO
-          championshipStanding: driverPerformance ? `P${driverPerformance.position}` : 'N/A', // FIX for "N/A" Standing
-          winsPerSeason: driverPerformance?.wins ?? [],
+        // Combine the data from both API calls into a single object for the UI
+        const combinedData = {
+          id: details.driverId,
+          fullName: details.fullName,
+          firstName: details.firstName,
+          lastName: details.lastName,
+          countryCode: details.countryCode,
+          dateOfBirth: details.dateOfBirth,
+          teamName: details.team?.name || 'N/A',
+          teamColor: details.team?.color,
+          funFact: details.profile?.funFact,
+          imageUrl: driverHeadshots[details.fullName] || details.profile?.imageUrl,
+          wins: details.careerStats?.wins,
+          podiums: details.careerStats?.podiums,
+          fastestLaps: details.careerStats?.fastestLaps,
+          points: details.careerStats?.totalPoints,
+          championshipStanding: performance?.championshipStanding != null ? `P${performance.championshipStanding}` : 'N/A',
+          winsPerSeason: performance?.winsPerSeason || [],
         };
 
-        setDriverData(flattenedData);
+        setDriverData(combinedData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load driver data.');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load driver data.';
+        setError(errorMessage);
+        toast({
+          title: 'Error Loading Driver',
+          description: errorMessage,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchDriverData();
-  }, [driverId, authedFetch]);
+  }, [driverId, authedFetch, toast]);
 
-  // 4. RENDER LOADING AND ERROR STATES
   if (loading) {
     return <F1LoadingSpinner text="Loading Driver Details..." />;
   }
@@ -135,37 +120,20 @@ const DriverDetailPage: React.FC = () => {
     );
   }
 
-  // 5. RENDER THE PAGE WITH LIVE DATA
-  // Debug: Log team name and available images
-  console.log('Driver team name:', driverData.teamName);
-  console.log('Available team car images:', Object.keys(teamCarImages));
-  console.log('Selected image URL:', teamCarImages[driverData.teamName] || teamCarImages["Mercedes"]);
-
+  // Render the page with the combined, live data
   return (
     <>
-      {/* Custom Hero Section for Driver Details - Smaller Header */}
       <Box
         position="relative"
         minH="30vh"
-        bgImage={`url(${teamCarImages[driverData.teamName] || teamCarImages["Mercedes"] || "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=1920&h=1080&fit=crop&crop=center"})`}
+        bgImage={`url(${teamCarImages[driverData.teamName] || "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13"})`}
         bgSize="cover"
         bgPosition="center"
-        bgRepeat="no-repeat"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
         _before={{
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bg: 'blackAlpha.600',
-          zIndex: 1,
+          content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bg: 'blackAlpha.600', zIndex: 1,
         }}
       >
-        <Container maxW="1400px" position="relative" zIndex={2}>
+        <Container maxW="1400px" position="relative" zIndex={2} h="30vh" display="flex" alignItems="center">
           <div className={styles.heroContentLayout}>
             <div className={styles.heroTitleBlock}>
               <h1 className={styles.heroTitle}>
@@ -187,18 +155,9 @@ const DriverDetailPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* Back to Drivers Button */}
       <Container maxWidth="1400px" py={6} mb={4}>
         <Link to="/drivers">
-          <Button 
-            leftIcon={<ArrowLeft />} 
-            colorScheme="red" 
-            variant="outline"
-            bg="white"
-            color="brand.red"
-            borderColor="brand.red"
-            _hover={{ bg: "brand.red", color: "white" }}
-          >
+          <Button leftIcon={<ArrowLeft />} variant="outline" className={styles.backButton}>
             Back to Drivers
           </Button>
         </Link>
@@ -207,10 +166,7 @@ const DriverDetailPage: React.FC = () => {
       <Container maxWidth="1400px">
         <KeyInfoBar driver={{
           ...driverData,
-          // Ensure the expected `team` field is present for logo resolution
-          team: driverData.teamName,
-          fullName: driverData.fullName,
-          imageUrl: driverData.imageUrl
+          team: driverData.teamName, // Pass team name for logo resolution
         }} />
       </Container>
 
