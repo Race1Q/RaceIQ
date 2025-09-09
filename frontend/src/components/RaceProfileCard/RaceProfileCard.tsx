@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactCountryFlag from 'react-country-flag';
 import styles from './RaceProfileCard.module.css';
-import type { RaceDto } from '../../services/f1Api';
+import type { Race } from '../../types/races';
 
 interface RaceProfileCardProps {
-  race: RaceDto;
+  race: Race;
 }
 
 const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
