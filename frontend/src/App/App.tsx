@@ -13,6 +13,7 @@ import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
 import RacesPage from '../pages/RacesPage/RacesPage';
+import RaceDetailPage from '../pages/RaceDetailPage/RaceDetailPage';
 import Admin from '../pages/Admin/Admin';
 import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
@@ -88,12 +89,8 @@ function HomePage() {
                     _hover={{ transform: 'translateY(-5px)', boxShadow: 'lg', borderColor: 'brand.red' }}
                   >
                     <Heading as="h3" color="brand.red" size="md" mb="sm">{race.name}</Heading>
-                    <Text color="text-muted" fontSize="sm" mb="md">{new Date(race.date).toLocaleDateString()}</Text>
-                    <VStack align="start">
-                      <Text><Text as="strong">Winner:</Text> {race.winner}</Text>
-                      <Text><Text as="strong">Team:</Text> {race.team}</Text>
-                      <Text><Text as="strong">Circuit:</Text> {race.circuit}</Text>
-                    </VStack>
+                    <Text color="text-muted" fontSize="sm" mb="xs">Round {race.round}</Text>
+                    <Text color="text-muted" fontSize="sm">{new Date(race.date).toLocaleDateString()}</Text>
                   </Box>
                 ))}
               </SimpleGrid>
@@ -284,6 +281,7 @@ function AppContent() {
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
+        <Route path="/races/:raceId" element={<RaceDetailPage />} />
         <Route path="/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />
