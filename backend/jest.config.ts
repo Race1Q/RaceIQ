@@ -15,7 +15,7 @@ const config: Config = {
   setupFiles: ['dotenv/config'],
 
   // Hooks/utilities for tests (optional)
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  // setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 
   // Coverage settings
   collectCoverage: true,
