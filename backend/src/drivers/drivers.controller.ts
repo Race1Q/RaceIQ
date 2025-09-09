@@ -12,6 +12,7 @@ import {
   DriverDetailsResponseDto, 
   DriverPerformanceResponseDto 
 } from './dto';
+import { Scopes } from '../auth/scopes.decorator';
 
 @ApiTags('drivers')
 // The @ApiBearerAuth() decorator is removed from here
@@ -63,6 +64,7 @@ export class DriversController {
     return this.driversService.findOneDetails(id);
   }
 
+  @Scopes("read:drivers")
   @Get(':id/performance/:season')
   @ApiOperation({ summary: 'Get driver performance', description: 'Retrieve performance statistics for a specific driver in a specific season' })
   @ApiParam({ name: 'id', description: 'Driver ID', example: 1 })
@@ -77,4 +79,5 @@ export class DriversController {
   ): Promise<DriverPerformanceResponseDto> {
     return this.driversService.findOnePerformance(id, season);
   }
+  
 }

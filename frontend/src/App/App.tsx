@@ -25,6 +25,8 @@ import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
+import DriverStandings from '../pages/Standings/DriverStandings';
+import Standings from '../pages/Standings/Standings';
 
 
 function HomePage() {
@@ -114,7 +116,7 @@ function Navbar() {
   const isAboutActive = useActiveRoute('/about');
   const isAdminActive = useActiveRoute('/admin');
   const isProfileActive = useActiveRoute('/profile');
-  const isConstructorsActive = useActiveRoute('/constructors');
+  const isStandingsActive = useActiveRoute('/standings');
 
   return (
     <nav className={styles.navbar}>
@@ -141,11 +143,12 @@ function Navbar() {
             >
               Drivers
             </Link>
+
             <Link 
-              to="/constructors" 
-              className={`${styles.navLink} ${isConstructorsActive ? styles.navLinkActive : ''}`} 
+              to="/standings" 
+              className={`${styles.navLink} ${isStandingsActive ? styles.navLinkActive : ''}`} 
             >
-              Constructors
+              Standings
             </Link>
 
             <Link 
@@ -210,8 +213,10 @@ function AppContent() {
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
-        <Route path="/constructors" element={<ConstructorsStandings />} />
+        <Route path="/standings/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors/:id" element={<ConstructorDetails />} />
+        <Route path="/standings/drivers" element={<DriverStandings />} />
+        <Route path="/standings" element={<Standings />} />
         
 
         {/* PROTECTED ROUTES */}

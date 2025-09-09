@@ -1,8 +1,11 @@
 // src/driver-standings/driver-standings.controller.ts
-import { Controller, Get, Post, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Query, Param, UseGuards } from '@nestjs/common';
 import { DriverStandingsService } from './driverStandings.service';
 import { DriverStandingIngestService } from './driverStandings-ingest.service';
 import { DriverStanding } from './driverStandings.entity';
+import { Scopes } from '../auth/scopes.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ScopesGuard } from '../auth/scopes.guard';
 
 @Controller('driver-standings')
 export class DriverStandingsController {
@@ -37,7 +40,9 @@ export class DriverStandingsController {
     return this.driverStandingsService.getDriverStandingsByDriver(driverId);
   }
 
-  @Get('season/:season')
+@UseGuards(JwtAuthGuard, ScopesGuard)
+@Scopes('read:driverStandings') 
+  @Get(':season')
   async getDriverStandingsBySeason(@Param('season') season: number): Promise<DriverStanding[]> {
     return this.driverStandingsService.getDriverStandingsBySeason(season);
   }

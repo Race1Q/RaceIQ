@@ -79,4 +79,30 @@ export class DriversService {
     }
     return data;
   }
+
+  async findDriversByStandings2(season: number): Promise<DriverResponseDto[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('driver_standings')
+      .select(`
+        driver:drivers (
+          id,
+          driver_number,
+          first_name,
+          last_name,
+          name_acronym,
+          country_code,
+          date_of_birth,
+          team_name
+        )
+      `)
+      .eq('season', season);
+  
+    if (error) {
+      this.logger.error('Failed to fetch drivers by standings', error);
+      throw new InternalServerErrorException('Failed to fetch drivers by standings');
+    }
+  
+    // Flatten driver info out of the join
+    return (data ?? []).map((row: any) => row.driver);
+  }
 }

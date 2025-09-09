@@ -1,13 +1,12 @@
 // src/pages/Standings/ConstructorStandings.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useToast, Box, Flex, Text } from '@chakra-ui/react';
+import { useToast, Box, Flex, Text, Button } from '@chakra-ui/react';
 import { Select } from 'chakra-react-select';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
 
-// Interfaces
 interface ApiConstructor {
   id: number;
   name: string;
@@ -103,6 +102,11 @@ const ConstructorStandings: React.FC = () => {
 
   return (
     <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
+      {/* Back Button */}
+      <Button as={Link} to="/standings" mb={4} colorScheme="gray">
+        ← Back to Standings
+      </Button>
+
       {/* Season Selector */}
       <Box mb={4} maxW="200px">
         <Select
@@ -191,6 +195,7 @@ const ConstructorStandings: React.FC = () => {
 };
 
 export default ConstructorStandings;
+
 
 
 

@@ -12,7 +12,7 @@ export class DriverStandingsService {
   async testConnection(): Promise<boolean> {
     try {
       const { data, error } = await this.supabaseService.client
-        .from('drivers_standings')
+        .from('driver_standings')
         .select('count')
         .limit(1);
 
@@ -31,7 +31,7 @@ export class DriverStandingsService {
 
   async getAllDriverStandings(): Promise<DriverStanding[]> {
     const { data, error } = await this.supabaseService.client
-      .from('drivers_standings')
+      .from('driver_standings')
       .select('*')
       .order('race_id', { ascending: true })
       .order('position', { ascending: true });
@@ -46,7 +46,7 @@ export class DriverStandingsService {
 
   async getDriverStandingsByRace(raceId: number): Promise<DriverStanding[]> {
     const { data, error } = await this.supabaseService.client
-      .from('drivers_standings')
+      .from('driver_standings')
       .select('*')
       .eq('race_id', raceId)
       .order('position', { ascending: true });
@@ -61,7 +61,7 @@ export class DriverStandingsService {
 
   async getDriverStandingsByDriver(driverId: number): Promise<DriverStanding[]> {
     const { data, error } = await this.supabaseService.client
-      .from('drivers_standings')
+      .from('driver_standings')
       .select('*')
       .eq('driver_id', driverId)
       .order('season', { ascending: false })
@@ -77,7 +77,7 @@ export class DriverStandingsService {
 
   async getDriverStandingsBySeason(season: number): Promise<DriverStanding[]> {
     const { data, error } = await this.supabaseService.client
-      .from('drivers_standings')
+      .from('driver_standings')
       .select('*')
       .eq('season', season)
       .order('position', { ascending: true });
@@ -93,7 +93,7 @@ export class DriverStandingsService {
   async searchDriverStandings(query: string): Promise<DriverStanding[]> {
     // This would need to join with drivers table for meaningful search
     const { data, error } = await this.supabaseService.client
-      .from('drivers_standings')
+      .from('driver_standings')
       .select('*')
       .or(`season::text.ilike.%${query}%`)
       .order('season', { ascending: false })

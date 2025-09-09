@@ -24,6 +24,7 @@ const DriverDetailPage: React.FC = () => {
 
   // This is the numeric ID passed via <Link state={{...}}> from the main /drivers page
   const numericDriverId = location.state?.driverId;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
   const [driverData, setDriverData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -64,8 +65,8 @@ const DriverDetailPage: React.FC = () => {
         setError(null);
 
         const [driverDetails, driverPerformance] = await Promise.all([
-          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/details`)),
-          authedFetch(buildApiUrl(`/api/drivers/${numericDriverId}/performance/2025`))
+          authedFetch(`${BACKEND_URL}/api/drivers/${numericDriverId}/details`),
+          authedFetch(`${BACKEND_URL}/api/drivers/${numericDriverId}/performance/2025`)
         ]);
 
         const flattenedData = {

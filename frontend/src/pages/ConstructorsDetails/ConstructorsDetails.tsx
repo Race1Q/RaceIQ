@@ -15,6 +15,7 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 import HeroSection from '../../components/HeroSection/HeroSection';
 import { teamColors } from '../../lib/teamColors';
 import { ArrowLeft } from 'lucide-react';
+import styles from './ConstructorDetails.module.css';
 
 interface RaceResultRow {
   id?: number;
@@ -228,7 +229,7 @@ const ConstructorDetails: React.FC = () => {
   
         {/* Back Button */}
         <Container maxW="1400px" mb={8}>
-          <Link to="/constructors">
+          <Link to="/standings/constructors">
             <Button
               leftIcon={<ArrowLeft />}
               colorScheme="blue"
