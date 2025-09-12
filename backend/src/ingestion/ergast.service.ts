@@ -114,7 +114,7 @@ export class ErgastService {
   private readonly apiBaseUrl = 'https://api.jolpi.ca/ergast/f1';
 
   // --- CONFIGURATION ---
-  private readonly startYear = 2023;
+  private readonly startYear = 2024;
   private readonly endYear = 2025; 
   private readonly pageLimit = 100; // A higher page limit for faster bulk ingestion
   
@@ -487,8 +487,20 @@ export class ErgastService {
 
             // Fetch & Transform Race Results
             if (raceSessionId) {
+              
+              // ================== NEW DEBUGGING CODE START ==================
+              this.logger.log(`--- DEBUG: Fetching /results for ${year} R${round}`);
               const apiRaceResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/results`);
+              
+              this.logger.log(`--- DEBUG: RAW RESPONSE for /results ---`);
+              console.log(JSON.stringify(apiRaceResultsData, null, 2));
+              // =================== NEW DEBUGGING CODE END ===================
+            
               const apiRaceResults = apiRaceResultsData[0]?.Results || [];
+              if (apiRaceResults.length === 0) {
+                this.logger.warn(`--- DEBUG: Received 0 race results. Raw API response for /results:`);
+                console.log(JSON.stringify(apiRaceResultsData, null, 2));
+              }      
               for (const res of apiRaceResults) {
                   if (!res || !res.Driver || !res.Constructor) continue;
                   raceResultsToInsert.push({
@@ -510,6 +522,10 @@ export class ErgastService {
             if (qualiSessionId) {
                 const apiQualiResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/qualifying`);
                 const apiQualiResults = apiQualiResultsData[0]?.QualifyingResults || [];
+                if (apiQualiResults.length === 0) {
+                  this.logger.warn(`--- DEBUG: Received 0 qualifying results. Raw API response for /qualifying:`);
+                  console.log(JSON.stringify(apiQualiResultsData, null, 2));
+              }
                 for (const res of apiQualiResults) {
                     if (!res || !res.Driver || !res.Constructor) continue;
                         qualiResultsToInsert.push({
@@ -815,15 +831,11 @@ export class ErgastService {
 
         const tableKey = Object.keys(mrData).find(key => key.endsWith('Table'));
         if (!tableKey) break;
-
-        // FIX: Instead of taking the first key, find the key whose value is an array.
-        // This is much more reliable.
-        const dataKey = Object.keys(mrData[tableKey]).find(key => Array.isArray(mrData[tableKey][key]));
         
-        if (!dataKey) break; // If no array is found, we can't proceed.
+        const dataKey = Object.keys(mrData[tableKey]).find(key => Array.isArray(mrData[tableKey][key]));
+        if (!dataKey) break;
 
         const pageData = mrData[tableKey][dataKey] as T[];
-
         if (!pageData || pageData.length === 0) break;
 
         allData.push(...pageData);
@@ -840,8 +852,11 @@ export class ErgastService {
           return this.fetchAllErgastPages(endpoint, attempt + 1);
         }
 
-        this.logger.error(`Failed to fetch data from ${url}`, error.stack);
-        return allData;
+        // NEW: More specific logging for other network errors like ECONNRESET
+        this.logger.error(
+          `A non-429 network error occurred while fetching from ${url}. Returning partial/empty data. Error: ${error.message}`
+        );
+        return allData; // Return whatever was collected before the error
       }
     }
     return allData;
