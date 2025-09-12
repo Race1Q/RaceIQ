@@ -1,3 +1,5 @@
+// frontend/src/components/HistoricalStatsTable/HistoricalStatsTable.tsx
+
 import React from 'react';
 import { Box, Text, Table, Thead, Tbody, Tr, Th, Td, VStack, Heading, HStack } from '@chakra-ui/react';
 import { Clock, Trophy } from 'lucide-react';

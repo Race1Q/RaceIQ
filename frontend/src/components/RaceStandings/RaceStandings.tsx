@@ -1,3 +1,5 @@
+// frontend/src/components/RaceStandings/RaceStandings.tsx
+
 import React from 'react';
 import { Box, Text, VStack, HStack, Image } from '@chakra-ui/react';
 import { Trophy, Medal, Award } from 'lucide-react';

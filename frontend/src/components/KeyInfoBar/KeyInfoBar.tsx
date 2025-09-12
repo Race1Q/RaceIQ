@@ -1,3 +1,5 @@
+// frontend/src/components/KeyInfoBar/KeyInfoBar.tsx
+
 import React from 'react';
 import InfoBlock from '../InfoBlock/InfoBlock';
 import styles from './KeyInfoBar.module.css';

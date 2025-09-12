@@ -1,3 +1,5 @@
+// frontend/src/components/RaceControlLog/RaceControlLog.tsx
+
 import React from 'react';
 import { Box, Text, VStack, HStack, Heading, Badge } from '@chakra-ui/react';
 import { MessageSquare } from 'lucide-react';

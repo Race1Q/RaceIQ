@@ -1,3 +1,5 @@
+// frontend/src/components/RaceHeader/RaceHeader.tsx
+
 import React from 'react';
 import { Box, Heading, Text, HStack, VStack, Divider, Image } from '@chakra-ui/react';
 import { Calendar } from 'lucide-react';

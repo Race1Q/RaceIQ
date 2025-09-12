@@ -1,3 +1,5 @@
+// frontend/src/components/PaceDistributionChart/PaceDistributionChart.tsx
+
 import React from 'react';
 import { Box, Text, VStack, Heading } from '@chakra-ui/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';

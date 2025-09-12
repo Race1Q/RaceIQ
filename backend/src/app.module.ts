@@ -14,15 +14,15 @@ import { CircuitsModule } from './circuits/circuits.module';
 import { CountriesModule } from './countries/countries.module';
 import { RacesModule } from './races/races.module';
 import { SeasonsModule } from './seasons/seasons.module';
-import { ResultsModule } from './results/results.module';
-import { DriverStandingsModule } from './driverStandings/driverStandings.module';
-import { RaceResultsModule } from './raceResults/raceResults.module';
+import { DriverStandingsModule } from './driver-standings/driver-standings.module';
+import { RaceResultsModule } from './race-results/race-results.module';
 import { ConstructorStandingsModule } from './constructor-standings/constructor-standings.module';
-import { QualifyingResultsModule } from './qualifyingResults/qualifyingResults.module';
-import { PitStopsModule } from './pitStops/pitStops.module';
+import { QualifyingResultsModule } from './qualifying-results/qualifying-results.module';
+import { PitStopsModule } from './pit-stops/pit-stops.module';
 import { LapsModule } from './laps/laps.module';
 import { UsersModule } from './users/users.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { IngestionModule } from './ingestion/ingestion.module';
 
 @Module({
   imports: [
@@ -33,6 +33,7 @@ import { NotificationsModule } from './notifications/notifications.module';
       ttl: 60000,
       limit: 10,
     }]),
+    IngestionModule,
     AuthModule,
     DriversModule,
     AdminModule,
@@ -41,7 +42,6 @@ import { NotificationsModule } from './notifications/notifications.module';
     CountriesModule,
     RacesModule,
     SeasonsModule,
-    ResultsModule,
     RaceResultsModule,
     DriverStandingsModule,
     ConstructorStandingsModule,

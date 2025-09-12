@@ -1,3 +1,5 @@
+// frontend/src/components/TrackMap/TrackMap.tsx
+
 import React from 'react';
 import { Box, Text, HStack, VStack, Heading, useTheme } from '@chakra-ui/react';
 import type { Race } from '../../data/types';

@@ -1,6 +1,9 @@
+// frontend/src/components/RaceProfileCard/RaceProfileCard.tsx
+
 import React from 'react';
+import { Box, VStack, HStack, Heading, Text, Flex } from '@chakra-ui/react';
 import ReactCountryFlag from 'react-country-flag';
-import styles from './RaceProfileCard.module.css';
+import { getCountryCode } from '../../lib/countryCodeUtils';
 import type { Race } from '../../types/races';
 
 interface RaceProfileCardProps {
@@ -8,152 +11,121 @@ interface RaceProfileCardProps {
 }
 
 const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
-  // Create a gradient based on the race round/season
+  // --- Logic is preserved and cleaned up ---
   const gradientStart = `hsl(${(race.round * 20) % 360}, 70%, 50%)`;
-  const gradientEnd = `hsl(${(race.round * 20 + 30) % 360}, 70%, 30%)`;
-  
-  const cardStyle = {
-    '--race-color-start': gradientStart,
-    '--race-color-end': gradientEnd,
-  } as React.CSSProperties;
-
-  // Get country code for flag display based on circuit ID
-  const getCountryCode = (circuitId: number | string): string => {
-    // A comprehensive mapping of circuit IDs to their corresponding country codes
-    const circuitCountryMap: { [key: number]: string } = {
-      // 2024/2025 F1 Season Circuits
-      1: 'AU', // Australia - Albert Park
-      2: 'BH', // Bahrain - Bahrain International Circuit
-      3: 'SA', // Saudi Arabia - Jeddah Corniche Circuit
-      4: 'JP', // Japan - Suzuka International Racing Course
-      5: 'CN', // China - Shanghai International Circuit
-      6: 'US', // USA - Miami International Autodrome
-      7: 'IT', // Italy - Autodromo Enzo e Dino Ferrari (Imola)
-      8: 'MC', // Monaco - Circuit de Monaco
-      9: 'CA', // Canada - Circuit Gilles Villeneuve
-      10: 'ES', // Spain - Circuit de Barcelona-Catalunya
-      11: 'AT', // Austria - Red Bull Ring
-      12: 'GB', // Great Britain - Silverstone Circuit
-      13: 'HU', // Hungary - Hungaroring
-      14: 'BE', // Belgium - Circuit de Spa-Francorchamps
-      15: 'NL', // Netherlands - Circuit Zandvoort
-      16: 'IT', // Italy - Autodromo Nazionale Monza
-      17: 'AZ', // Azerbaijan - Baku City Circuit
-      18: 'SG', // Singapore - Marina Bay Street Circuit // USA - Circuit of the Americas
-      20: 'MX', // Mexico - Autódromo Hermanos Rodríguez
-      21: 'BR', // Brazil - Autódromo José Carlos Pace (Interlagos)
-      22: 'US', // USA - Las Vegas Street Circuit
-      23: 'QA', // Qatar - Lusail International Circuit
-      24: 'AE', // UAE - Yas Marina Circuit
-      
-      // Additional circuits that might be in the database from provided CSV
-      25: 'FR', // France - Circuit Paul Ricard
-      26: 'DE', // Germany - Hockenheimring
-      27: 'RU', // Russia - Sochi Autodrom
-      28: 'TR', // Turkey - Istanbul Park
-      29: 'IN', // India - Buddh International Circuit
-      30: 'KR', // South Korea - Korean International Circuit
-      31: 'MY', // Malaysia - Sepang International Circuit
-      32: 'TH', // Thailand - Chang International Circuit
-      33: 'VN', // Vietnam - Hanoi Street Circuit
-      34: 'PT', // Portugal - Autódromo Internacional do Algarve
-      35: 'CH', // Switzerland - Dijon-Prenois (historic)
-      36: 'AR', // Argentina - Autódromo Oscar Alfredo Gálvez
-      37: 'ZA', // South Africa - Kyalami Grand Prix Circuit
-      38: 'MA', // Morocco - Circuit International Automobile Moulay El Hassan
-      272: 'AU', // Adelaide Street Circuit
-      273: 'MA', // Ain Diab
-      274: 'GB', // Aintree
-      275: 'AU', // Albert Park Grand Prix Circuit
-      276: 'US', // Circuit of the Americas
-      277: 'SE', // Scandinavian Raceway
-      278: 'DE', // AVUS
-      279: 'BH', // Bahrain International Circuit
-      280: 'AZ', // Baku City Circuit
-      281: 'PT', // Circuito da Boavista
-      282: 'GB', // Brands Hatch
-      283: 'CH', // Circuit Bremgarten
-      334: 'CN', // Shanghai International Circuit
-      335: 'GB', // Silverstone Circuit
-      336: 'RU', // Sochi Autodrom
-      337: 'BE', // Circuit de Spa-Francorchamps
-      338: 'JP', // Suzuka Circuit
-      339: 'CA', // Circuit Mont-Tremblant
-      340: 'ES', // Valencia Street Circuit
-      341: 'US', // Las Vegas Strip Street Circuit
-      342: 'CA', // Circuit Gilles Villeneuve
-      343: 'US', // Watkins Glen
-      344: 'AE', // Yas Marina Circuit
-    };
-    
-    // The circuit IDs in the data might be strings, so we convert them to numbers for lookup.
-    const numericId = typeof circuitId === 'string' ? parseInt(circuitId, 10) : circuitId;
-    return circuitCountryMap[numericId] || 'XX';
-  };
+  const gradientEnd = `hsl(${(race.round * 20 + 40) % 360}, 70%, 30%)`;
 
   const countryCode = getCountryCode(race.circuit_id);
-  
-  // Debug logging
-  console.log('Race:', race.name, 'Circuit ID:', race.circuit_id, 'Country Code:', countryCode);
-  
-  // Format race name for display
-  const formatRaceName = (name: string): { shortName: string; fullName: string } => {
-    const shortName = name.replace(/Grand Prix|GP/g, '').trim();
-    const fullName = name;
-    return { shortName, fullName };
-  };
 
-  const { shortName, fullName } = formatRaceName(race.name);
+  const shortName = race.name.replace(/Grand Prix|GP/g, '').trim();
+
+  const formattedDate = new Date(race.date).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric'
+  });
 
   return (
-    <div className={styles.cardLink}>
-      <div className={styles.card} style={cardStyle}>
-        <div className={styles.cardTop}>
-          <div className={styles.raceInfo}>
-            <h2 className={styles.raceName}>
-              <span className={styles.shortName}>{shortName}</span>
-              <span className={styles.fullName}>{fullName}</span>
-            </h2>
-            <p className={styles.raceRound}>Round {race.round}</p>
-          </div>
-
-          <div className={styles.flagWrapper}>
-            {countryCode !== 'XX' ? (
-              <ReactCountryFlag
-                countryCode={countryCode}
-                svg={true}
-                className={styles.flagImage}
-                title={countryCode}
-                style={{ fontSize: '2em' }}
-              />
-            ) : (
-              <div className={styles.flagImage} style={{ 
-                backgroundColor: '#666', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '12px',
-                fontWeight: 'bold'
-              }}>
-                ?
-              </div>
-            )}
-          </div>
-        </div>
+    <Flex
+      direction="column"
+      h="100%"
+      bg="bg-surface"
+      borderRadius="lg"
+      borderWidth="1px"
+      borderColor="border-primary"
+      boxShadow="0 4px 15px rgba(0, 0, 0, 0.2)"
+      transition="transform 0.3s ease, box-shadow 0.3s ease"
+      overflow="hidden"
+      _hover={{
+        transform: 'translateY(-5px)',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+      }}
+    >
+      {/* Top section with dynamic gradient */}
+      <VStack
+        flexGrow={1}
+        align="flex-start"
+        p={{ base: 'lg', md: 'xl' }}
+        minH={{ base: '250px', md: '300px' }}
+        bgGradient={`linear(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`}
+        color="white"
+        textShadow="0 1px 4px rgba(0, 0, 0, 0.5)"
+        position="relative"
+        spacing={4}
+      >
+        <Heading
+          as="h2"
+          w="100%"
+          lineHeight={1}
+          position="relative"
+          pb="sm"
+          mb="md"
+          _after={{ // Recreating the gradient underline
+            content: '""', position: 'absolute', bottom: 0, left: 0,
+            h: '2px', w: '100%',
+            bgGradient: 'linear(to-right, rgba(255, 255, 255, 0.7) 50%, transparent 100%)',
+          }}
+        >
+          <Text as="span" display="block" mb="-0.5rem"
+            fontFamily="signature" fontWeight="400" textTransform="none"
+            fontSize={{ base: 'clamp(1.8rem, 5vw, 2.5rem)', md: 'clamp(2.2rem, 6vw, 3rem)' }}
+          >
+            {shortName}
+          </Text>
+          <Text as="span" display="block" opacity={0.9}
+            fontFamily="heading" fontWeight="bold" textTransform="uppercase"
+            fontSize={{ base: 'clamp(1rem, 3vw, 1.2rem)', md: 'clamp(1.2rem, 4vw, 1.5rem)' }}
+          >
+            {race.name}
+          </Text>
+        </Heading>
+        <Text
+          fontFamily="heading" fontWeight="bold"
+          fontSize={{ base: '1.2rem', md: '1.5rem' }}
+        >
+          Round {race.round}
+        </Text>
         
-        <div className={styles.cardBottom}>
-          <div className={styles.raceDate}>
-            {new Date(race.date).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })}
-          </div>
-          <span className={styles.viewText}>View Details</span>
-        </div>
-      </div>
-    </div>
+        {/* Flag Wrapper */}
+        <Box
+          position="absolute"
+          top={{ base: 'md', md: 'lg' }}
+          right={{ base: 'md', md: 'lg' }}
+          w={{ base: '50px', md: '30px' }}
+          h={{ base: '35px', md: '30px' }}
+          borderRadius="sm"
+          overflow="hidden"
+          boxShadow="0 2px 8px rgba(0, 0, 0, 0.3)"
+          border="1px solid rgba(255, 255, 255, 0.15)"
+        >
+          {countryCode !== 'XX' ? (
+            <ReactCountryFlag
+              countryCode={countryCode}
+              svg
+              style={{ width: '100%', height: '100%', display: 'block' }}
+              title={countryCode}
+            />
+          ) : (
+            <Flex w="100%" h="100%" bg="#666" align="center" justify="center" fontSize="xl" fontWeight="bold">
+              ?
+            </Flex>
+          )}
+        </Box>
+      </VStack>
+
+      {/* Bottom section */}
+      <HStack
+        p={{ base: 'md', md: 'lg' }}
+        bg="bg-surface"
+        borderTopWidth="1px"
+        borderColor="border-primary"
+      >
+        <Text fontSize="sm" color="text-muted" fontWeight="500">
+          {formattedDate}
+        </Text>
+        <Text ml="auto" fontSize="sm" color="text-secondary" fontWeight="600" textTransform="uppercase" letterSpacing="0.5px">
+          View Details
+        </Text>
+      </HStack>
+    </Flex>
   );
 };
 

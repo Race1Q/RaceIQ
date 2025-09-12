@@ -1,3 +1,5 @@
+/* frontend/src/components/TrackStatsBars/TrackStatsBars.module.css */
+
 .container {
   background-color: rgba(26, 26, 26, 0.9);
   border-radius: var(--border-radius-md);

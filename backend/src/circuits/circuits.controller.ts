@@ -1,20 +1,14 @@
 // src/circuits/circuits.controller.ts
 import { Controller, Get, Post, Query, Param } from '@nestjs/common';
 import { CircuitsService } from './circuits.service';
-import { CircuitIngestService } from './circuits-ingest.service';
 import { Circuit } from './circuits.entity';
 
 @Controller('circuits')
 export class CircuitsController {
   constructor(
     private readonly circuitsService: CircuitsService,
-    private readonly circuitIngestService: CircuitIngestService,
   ) {}
 
-  @Post('ingest')
-  async ingestCircuits() {
-    return this.circuitIngestService.ingestCircuits();
-  }
 
   @Get()
   async getAllCircuits(): Promise<Circuit[]> {

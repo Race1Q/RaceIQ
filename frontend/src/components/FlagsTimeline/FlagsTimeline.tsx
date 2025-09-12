@@ -1,3 +1,5 @@
+// frontend/src/components/FlagsTimeline/FlagsTimeline.tsx
+
 import React from 'react';
 import { Box, Text, HStack, VStack, Heading } from '@chakra-ui/react';
 import { Flag } from 'lucide-react';

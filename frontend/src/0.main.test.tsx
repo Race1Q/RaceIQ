@@ -131,7 +131,7 @@ describe('main.tsx bootstrap', () => {
     vi.stubEnv('VITE_AUTH0_CLIENT_ID', 'env-client-id');
     vi.stubEnv('VITE_AUTH0_AUDIENCE', 'env-audience');
 
-    await import('./main');
+    await import('./styles/main');
 
     expect(renderedTree).toBeTruthy();
     const auth0El = findAuth0Provider(renderedTree);
@@ -164,7 +164,7 @@ describe('main.tsx bootstrap', () => {
     (window as any).VITE_AUTH0_CLIENT_ID = 'win-client-id';
     (window as any).VITE_AUTH0_AUDIENCE = 'win-audience';
   
-    await import('./main');
+    await import('./styles/main');
   
     expect(renderedTree).toBeTruthy();
     const auth0El = findAuth0Provider(renderedTree);
@@ -194,7 +194,7 @@ describe('main.tsx bootstrap', () => {
     delete (window as any).VITE_AUTH0_CLIENT_ID;
     delete (window as any).VITE_AUTH0_AUDIENCE;
   
-    await expect(import('./main')).rejects.toThrow(/Auth0 configuration is required/i);
+    await expect(import('./styles/main')).rejects.toThrow(/Auth0 configuration is required/i);
     expect(renderedTree).toBeNull();
   } ,20000);
 });

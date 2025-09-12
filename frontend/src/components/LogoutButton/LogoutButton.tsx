@@ -1,3 +1,5 @@
+// frontend/src/components/LogoutButton/LogoutButton.tsx
+
 import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from '@chakra-ui/react';
 
@@ -19,6 +21,7 @@ const LogoutButton = () => {
       borderColor="brand.red"
       color="brand.red"
       _hover={{ bg: 'brand.red', color: 'white' }}
+      fontFamily="heading" // Polish: Added for font consistency
     >
       Log Out
     </Button>

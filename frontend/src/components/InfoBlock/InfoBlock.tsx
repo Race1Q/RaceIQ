@@ -1,3 +1,5 @@
+// frontend/src/components/InfoBlock/InfoBlock.tsx
+
 import React from 'react';
 import styles from './InfoBlock.module.css';
 

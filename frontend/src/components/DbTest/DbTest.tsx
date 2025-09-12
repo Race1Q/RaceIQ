@@ -1,3 +1,5 @@
+// frontend/src/components/DbTest/DbTest.tsx
+
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 

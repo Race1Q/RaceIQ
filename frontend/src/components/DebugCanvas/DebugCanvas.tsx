@@ -1,4 +1,4 @@
-// src/components/DebugCanvas/DebugCanvas.tsx
+// frontend/src/components/DebugCanvas/DebugCanvas.tsx
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Mesh } from 'three';

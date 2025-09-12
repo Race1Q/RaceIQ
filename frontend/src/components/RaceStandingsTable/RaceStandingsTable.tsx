@@ -1,3 +1,5 @@
+// frontend/src/components/RaceStandingsTable/RaceStandingsTable.tsx
+
 import React, { useMemo, useState } from 'react';
 import { Box, HStack, VStack, Heading, Select, Button, Table, Thead, Tbody, Tr, Th, Td, Text, Badge } from '@chakra-ui/react';
 import type { Race, RaceStanding } from '../../data/types';

@@ -1,3 +1,5 @@
+// frontend/src/components/ComparePreviewSection/ComparePreviewSection.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Crown } from 'lucide-react';

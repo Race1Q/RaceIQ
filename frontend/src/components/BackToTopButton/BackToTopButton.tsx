@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowUp } from 'lucide-react';
-import styles from './BackToTopButton.module.css';
+// frontend/src/components/BackToTopButton/BackToTopButton.tsx
 
-const BackToTopButton: React.FC = () => {
+import { useState, useEffect } from 'react';
+import { IconButton, Fade } from '@chakra-ui/react';
+import { ArrowUp } from 'lucide-react';
+
+const BackToTopButton = () => {
   const [isVisible, setIsVisible] = useState(false);
 
+  // --- Logic remains the same ---
   const toggleVisibility = () => {
     if (window.scrollY > 300) {
       setIsVisible(true);
@@ -26,18 +29,32 @@ const BackToTopButton: React.FC = () => {
       window.removeEventListener('scroll', toggleVisibility);
     };
   }, []);
+  // --- End of logic ---
 
   return (
-    <div className={styles.buttonContainer}>
-      {isVisible && (
-        <button onClick={scrollToTop} className={styles.backToTopButton} aria-label="Go to top">
-          <ArrowUp size={24} />
-        </button>
-      )}
-    </div>
+    <Fade in={isVisible}>
+      <IconButton
+        aria-label="Scroll to top"
+        icon={<ArrowUp size="24px" />}
+        onClick={scrollToTop}
+        // --- Style props based on your theme.ts ---
+        position="fixed"
+        bottom="lg" // <-- Uses 'lg' from your theme's space tokens
+        right="lg" // <-- Uses 'lg' from your theme's space tokens
+        zIndex="overlay"
+        size="lg" // Controls width/height for the button
+        bg="brand.red"
+        color="staticWhite"
+        borderRadius="full" // Chakra's token for 50%
+        boxShadow="lg"
+        transition="transform 0.2s ease-in-out, background-color 0.2s ease-in-out"
+        _hover={{
+          bg: 'brand.redDark',
+          transform: 'translateY(-3px)',
+        }}
+      />
+    </Fade>
   );
 };
 
 export default BackToTopButton;
-
-

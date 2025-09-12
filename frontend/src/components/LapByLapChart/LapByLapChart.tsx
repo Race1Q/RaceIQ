@@ -1,3 +1,5 @@
+// frontend/src/components/LapByLapChart/LapByLapChart.tsx
+
 import React from 'react';
 import { Card, CardHeader, CardBody, Heading } from '@chakra-ui/react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';

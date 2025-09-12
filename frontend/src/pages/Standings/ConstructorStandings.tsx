@@ -1,7 +1,8 @@
 // src/pages/Standings/ConstructorStandings.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast, Box, Flex, Text } from '@chakra-ui/react';
-import { Select } from 'chakra-react-select';
+import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
+import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { useNavigate } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
@@ -25,7 +26,7 @@ interface ConstructorStanding {
 }
 
 type GroupedConstructors = { [teamName: string]: ConstructorStanding[] };
-type SeasonOption = { value: number; label: string };
+type SeasonOption = SelectOption & { value: number };
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -106,23 +107,13 @@ const ConstructorStandings: React.FC = () => {
     <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
       
       {/* Season Selector */}
-      <Box mb={4} maxW="200px">
-        <Select
+      <Box mb={4} maxW="220px">
+        <SearchableSelect
+          label="Select Season"
           options={seasonOptions}
           value={seasonOptions.find(o => o.value === selectedSeason) || null}
           onChange={(option) => setSelectedSeason((option as SeasonOption).value)}
-          placeholder="Select season"
           isClearable={false}
-          chakraStyles={{
-            control: (provided) => ({ ...provided, bg: 'gray.700', color: 'white', borderColor: 'gray.600' }),
-            menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
-            option: (provided, state) => ({
-              ...provided,
-              bg: state.isFocused ? 'gray.600' : 'gray.700',
-              color: 'white',
-            }),
-            singleValue: (provided) => ({ ...provided, color: 'white' }),
-          }}
         />
       </Box>
 

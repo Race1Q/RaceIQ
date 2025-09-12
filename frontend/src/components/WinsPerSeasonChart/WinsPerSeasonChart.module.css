@@ -1,3 +1,5 @@
+/* frontend/src/components/WinsPerSeasonChart/WinsPerSeasonChart.module.css */
+
 .card {
   background-color: var(--color-surface-dark);
   border-radius: var(--border-radius-lg);

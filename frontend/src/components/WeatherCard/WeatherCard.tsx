@@ -1,3 +1,5 @@
+// frontend/src/components/WeatherCard/WeatherCard.tsx
+
 import React from 'react';
 import { Box, Text, VStack, HStack, Heading, Progress } from '@chakra-ui/react';
 import { Sun, Cloud, CloudRain, Wind, Thermometer, Flag, MapPin, Route } from 'lucide-react';

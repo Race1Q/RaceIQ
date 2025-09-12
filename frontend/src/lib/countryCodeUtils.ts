@@ -140,3 +140,15 @@ export const countryCodeMap: { [key: string]: string } = {
   'DEU': 'DE',  // Germany (alternative)
   'MCO': 'MC',  // Monaco (alternative)
 };
+
+// Function to get country code for a circuit
+export const getCountryCode = (circuitId: number): string => {
+  // This is a simplified mapping - you'll need to expand this based on your actual circuit data
+  // For now, returning a default or you can create a more comprehensive mapping
+  const circuitCountryMap: { [key: number]: string } = {
+    // Add your circuit IDs and their corresponding country codes here
+    // Example: 1: 'GB', 2: 'IT', etc.
+  };
+  
+  return circuitCountryMap[circuitId] || 'GB'; // Default to GB if not found
+};

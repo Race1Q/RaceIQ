@@ -15,7 +15,8 @@ import {
   Divider,
   useToast,
 } from '@chakra-ui/react';
-import { Select } from 'chakra-react-select';
+import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
+import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
@@ -23,8 +24,7 @@ import { buildApiUrl } from '../../lib/api';
 import { sendRaceUpdate } from '../../services/notifications';
 import { useProfileUpdate } from '../../context/ProfileUpdateContext';
 
-// Define the shape for our select options
-type SelectOption = { value: number; label: string };
+// SelectOption type imported from SearchableSelect component
 
 const ProfilePage: React.FC = () => {
   // 1. Get the isLoading flag from the hook
@@ -246,50 +246,13 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const customSelectStyles = {
-    control: (provided: any) => ({
-      ...provided,
-      backgroundColor: 'var(--color-surface-gray)',
-      borderColor: 'var(--color-border-gray)',
-      color: 'var(--color-text-light)',
-      '&:hover': {
-        borderColor: 'var(--dynamic-accent-color, var(--color-primary-red))',
-      },
-      boxShadow: 'none',
-    }),
-    menu: (provided: any) => ({
-      ...provided,
-      backgroundColor: 'var(--color-surface-gray)',
-      border: '1px solid var(--color-border-gray)',
-    }),
-    option: (provided: any, state: { isSelected: boolean, isFocused: boolean }) => ({
-      ...provided,
-      backgroundColor: state.isFocused ? 'var(--color-surface-gray-light)' : 'var(--color-surface-gray)',
-      color: 'var(--color-text-light)',
-      '&:active': {
-        backgroundColor: 'var(--color-border-gray)',
-      },
-    }),
-    singleValue: (provided: any) => ({
-      ...provided,
-      color: 'var(--color-text-light)',
-    }),
-    input: (provided: any) => ({
-      ...provided,
-      color: 'var(--color-text-light)',
-    }),
-    placeholder: (provided: any) => ({
-      ...provided,
-      color: 'var(--color-text-muted)',
-    }),
-  };
+  // Using standardized SearchableSelect component; styles are handled internally.
 
   return (
     <div className={styles.profilePage}>
       <HeroSection
         title="My Profile"
         subtitle="Customize your RaceIQ experience and manage your account settings."
-        backgroundImageUrl="https://images.pexels.com/photos/29252131/pexels-photo-29252131.jpeg"
       />
       
       <Container maxW="container.md" py={8}>
@@ -332,35 +295,23 @@ const ProfilePage: React.FC = () => {
               />
             </FormControl>
 
-            <FormControl>
-              <FormLabel color="var(--color-text-light)">Favorite Team</FormLabel>
-              <Select
-                options={transformedConstructorOptions}
-                value={transformedConstructorOptions.find(o => o.value === formData.favoriteTeam) || null}
-                onChange={(option) => handleSelectChange('favoriteTeam', option as SelectOption | null)}
-                placeholder="Search and select your favorite team"
-                isClearable
-                isLoading={loading}
-                isDisabled={loading}
-                chakraStyles={customSelectStyles}
-                focusBorderColor="var(--dynamic-accent-color, var(--color-primary-red))"
-              />
-            </FormControl>
+            <SearchableSelect
+              label="Favorite Team"
+              options={transformedConstructorOptions as unknown as SelectOption[]}
+              value={(transformedConstructorOptions as any).find((o: SelectOption) => o.value === formData.favoriteTeam) || null}
+              onChange={(option) => handleSelectChange('favoriteTeam', option as SelectOption | null)}
+              placeholder="Search and select your favorite team"
+              isLoading={loading}
+            />
 
-            <FormControl>
-              <FormLabel color="var(--color-text-light)">Favorite Driver</FormLabel>
-              <Select
-                options={transformedDriverOptions}
-                value={transformedDriverOptions.find(o => o.value === formData.favoriteDriver) || null}
-                onChange={(option) => handleSelectChange('favoriteDriver', option as SelectOption | null)}
-                placeholder="Search and select your favorite driver"
-                isClearable
-                isLoading={loading}
-                isDisabled={loading}
-                chakraStyles={customSelectStyles}
-                focusBorderColor="var(--dynamic-accent-color, var(--color-primary-red))"
-              />
-            </FormControl>
+            <SearchableSelect
+              label="Favorite Driver"
+              options={transformedDriverOptions as unknown as SelectOption[]}
+              value={(transformedDriverOptions as any).find((o: SelectOption) => o.value === formData.favoriteDriver) || null}
+              onChange={(option) => handleSelectChange('favoriteDriver', option as SelectOption | null)}
+              placeholder="Search and select your favorite driver"
+              isLoading={loading}
+            />
             
             <FormControl display="flex" alignItems="center">
               <FormLabel htmlFor="email-notifications" mb="0" color="var(--color-text-light)">

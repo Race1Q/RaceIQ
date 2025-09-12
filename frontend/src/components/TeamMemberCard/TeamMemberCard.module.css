@@ -1,3 +1,5 @@
+/* frontend/src/components/TeamMemberCard/TeamMemberCard.module.css */
+
 .card {
   background-color: var(--color-surface-gray);
   border: 1px solid var(--color-border-light);

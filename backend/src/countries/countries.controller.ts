@@ -1,20 +1,14 @@
 // src/countries/countries.controller.ts
 import { Controller, Get, Post, Query, Param, Delete, Body, Put } from '@nestjs/common';
 import { CountriesService } from './countries.service';
-import { CountryIngestService } from './countries-ingest.service';
 import type { Country } from './countries.entity';
 
 @Controller('countries')
 export class CountriesController {
   constructor(
     private readonly countriesService: CountriesService,
-    private readonly countryIngestService: CountryIngestService,
   ) {}
 
-  @Post('ingest')
-  async ingestCountries() {
-    return this.countryIngestService.ingestCountries();
-  }
 
   @Get()
   async getAllCountries(): Promise<Country[]> {

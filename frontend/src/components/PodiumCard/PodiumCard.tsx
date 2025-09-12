@@ -1,3 +1,5 @@
+// frontend/src/components/PodiumCard/PodiumCard.tsx
+
 import React from 'react';
 import { Box, VStack, Heading, Text, Image, HStack } from '@chakra-ui/react';
 

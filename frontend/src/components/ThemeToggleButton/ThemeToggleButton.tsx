@@ -1,5 +1,7 @@
+// frontend/src/components/ThemeToggleButton/ThemeToggleButton.tsx
+
 import { useColorMode, IconButton } from '@chakra-ui/react';
-import { SunIcon, MoonIcon } from '@chakra-ui/icons';
+import { Sun, Moon } from 'lucide-react'; // <-- Use lucide-react for consistency
 
 const ThemeToggleButton = () => {
   const { colorMode, toggleColorMode } = useColorMode();
@@ -7,7 +9,8 @@ const ThemeToggleButton = () => {
   return (
     <IconButton
       aria-label="Toggle theme"
-      icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+      // Conditionally render the lucide-react icons
+      icon={colorMode === 'light' ? <Moon /> : <Sun />}
       onClick={toggleColorMode}
       variant="ghost"
       color="text-secondary"

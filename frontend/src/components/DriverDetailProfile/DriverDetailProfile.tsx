@@ -1,4 +1,4 @@
-// src/components/DriverDetailProfile/DriverDetailProfile.tsx
+// frontend/src/components/DriverDetailProfile/DriverDetailProfile.tsx
 
 import React from 'react';
 import styles from './DriverDetailProfile.module.css';
