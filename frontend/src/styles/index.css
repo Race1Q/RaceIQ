@@ -1,0 +1,48 @@
+/* frontend/src/index.css */
+
+/* Global styles are now handled by theme.ts.
+  This file is reserved for global styles for third-party libraries 
+  that cannot be styled via Chakra UI props.
+*/
+
+/* React Grid Layout Customizations */
+.react-grid-layout {
+  position: relative;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  /* Using a more theme-aware color for the handle */
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6"><circle fill="%23888888" cx="3" cy="3" r="3"/></svg>');
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  cursor: se-resize;
+}
+
+.react-grid-item.react-grid-placeholder {
+  /* Using the brand red color for the placeholder */
+  background: rgba(225, 6, 0, 0.2);
+  opacity: 0.2;
+  transition-duration: 100ms;
+  z-index: 2;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

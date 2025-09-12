@@ -1,3 +1,5 @@
+// frontend/src/components/KeyInfoBlocks/KeyInfoBlocks.tsx
+
 import React from 'react';
 import { Box, Text, HStack } from '@chakra-ui/react';
 import { Sun, CloudRain, Clock, TrendingUp } from 'lucide-react';

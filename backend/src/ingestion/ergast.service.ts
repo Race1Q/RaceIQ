@@ -56,7 +56,7 @@ interface ApiRace {
     date: string;
     time?: string;
   }
-  // Add these new interfaces
+
 interface ApiResult {
     number: string;
     position: string;
@@ -91,6 +91,21 @@ interface ApiPitStop {
     duration: string;
 }
 
+interface ApiDriverStanding {
+  position: string;
+  points: string;
+  wins: string;
+  Driver: { driverId: string; };
+}
+
+interface ApiConstructorStanding {
+  position: string;
+  points: string;
+  wins: string;
+  Constructor: { constructorId: string; name: string; };
+}
+
+
 type RaceWithSeason = { id: number; round: number; year: { year: number; }; };
 
 @Injectable()
@@ -99,9 +114,8 @@ export class ErgastService {
   private readonly apiBaseUrl = 'https://api.jolpi.ca/ergast/f1';
 
   // --- CONFIGURATION ---
-  private readonly startYear = 2000;
-  // We'll use Ergast for data up to the point where OpenF1 takes over.
-  private readonly endYear = 2022; 
+  private readonly startYear = 2023;
+  private readonly endYear = 2025; 
   private readonly pageLimit = 100; // A higher page limit for faster bulk ingestion
   
   private readonly countryCodeMap: Record<string, string> = {
@@ -135,6 +149,7 @@ export class ErgastService {
     await this.ingestDrivers();
     await this.ingestRacesAndSessions();
     await this.ingestAllResults();
+    await this.ingestAllStandings();
     
     this.logger.log('--- Completed Ergast Historical Data Ingestion ---');
   }
@@ -450,7 +465,7 @@ export class ErgastService {
 
     // 2. Loop through each race and fetch its detailed results
     for (const race of (races ?? [])) {
-      const year = race.season.year;
+      const year = Array.isArray(race.season) ? race.season[0]?.year : race.season?.year;
       const round = race.round;
       this.logger.log(`--- Processing results for ${year} Round ${round}... ---`);
 
@@ -472,22 +487,24 @@ export class ErgastService {
 
             // Fetch & Transform Race Results
             if (raceSessionId) {
-                const apiRaceResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/results`);
-                const apiRaceResults = apiRaceResultsData[0]?.Results || [];
-                for (const res of apiRaceResults) {
-                    if (!res || !res.Driver || !res.Constructor) continue; 
-                    raceResultsToInsert.push({
-                        session_id: raceSessionId,
-                        driver_id: driverMap.get(res.Driver.driverId),
-                        constructor_id: constructorMap.get(res.Constructor.name),
-                        position: parseInt(res.position, 10),
-                        points: parseFloat(res.points),
-                        grid: parseInt(res.grid, 10),
-                        laps: parseInt(res.laps, 10),
-                        status: res.status,
-                    });
-                }
-            }
+              const apiRaceResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/results`);
+              const apiRaceResults = apiRaceResultsData[0]?.Results || [];
+              for (const res of apiRaceResults) {
+                  if (!res || !res.Driver || !res.Constructor) continue;
+                  raceResultsToInsert.push({
+                      session_id: raceSessionId,
+                      driver_id: driverMap.get(res.Driver.driverId),
+                      constructor_id: constructorMap.get(res.Constructor.name),
+                      position: parseInt(res.position, 10),
+                      points: parseFloat(res.points),
+                      grid: parseInt(res.grid, 10),
+                      laps: parseInt(res.laps, 10),
+                      status: res.status,
+                      // FIX: Add the missing time_ms calculation
+                      time_ms: this.laptimeToMilliseconds(res.Time?.time),
+                  });
+              }
+          }
     
             // Fetch & Transform Qualifying Results
             if (qualiSessionId) {
@@ -533,7 +550,7 @@ export class ErgastService {
                     driver_id: driverMap.get(stop.driverId),
                     stop_number: parseInt(stop.stop, 10),
                     lap_number: parseInt(stop.lap, 10),
-                    duration_ms: parseFloat(stop.duration) * 1000,
+                    duration_ms: Math.round(parseFloat(stop.duration) * 1000),
                 });
             }
 
@@ -573,16 +590,217 @@ export class ErgastService {
     this.logger.log('--- Successfully ingested all historical results. ---');
   }
 
-  // *** HELPER FUNCTIONS *** // 
+
+  ///////// ----- ***** INGEST ALL STANDINGS ***** ----- /////////
+  ///////// ----- ***** INGEST ALL STANDINGS ***** ----- /////////
+  ///////// ----- ***** INGEST ALL STANDINGS ***** ----- /////////
+
+  public async ingestAllStandings() {
+    this.logger.log('Ingesting All Historical Standings (2000-2022)...');
+
+    // 1. Pre-fetch all necessary IDs from our DB for efficient lookups.
+    const { data: drivers } = await this.supabaseService.client.from('drivers').select('id, ergast_driver_ref');
+    const { data: constructors } = await this.supabaseService.client.from('constructors').select('id, name');
+    const { data: seasons } = await this.supabaseService.client.from('seasons').select('id, year');
+    const { data: races } = await this.supabaseService.client.from('races').select('id, round, season_id');
+
+    // === DIAGNOSTIC LOGS START HERE ===
+    this.logger.log('--- INSPECTING FETCHED DATA ---');
+    if (seasons && seasons.length > 0) {
+      this.logger.log(`Found ${seasons.length} seasons. Sample season object:`, JSON.stringify(seasons[0]));
+    } else {
+      this.logger.error('Could not fetch any seasons from the database!');
+    }
+    if (races && races.length > 0) {
+      this.logger.log(`Found ${races.length} races. Sample race object:`, JSON.stringify(races[0]));
+    } else {
+      this.logger.error('Could not fetch any races from the database!');
+    }
+    // === DIAGNOSTIC LOGS END HERE ===
+
+    const driverMap = new Map((drivers ?? []).map(d => [d.ergast_driver_ref, d.id]));
+    const constructorMap = new Map((constructors ?? []).map(c => [c.name, c.id]));
+    const seasonIdToYearMap = new Map((seasons ?? []).map(s => [s.id, s.year]));
+    
+    const finalRaceIdMap = new Map<number, number>();
+    const latestRoundForYear = new Map<number, number>();
+
+    for (const race of (races ?? [])) {
+      const year = seasonIdToYearMap.get(race.season_id);
+      if (!year || year < this.startYear || year > this.endYear) continue;
+
+      const currentHighestRound = latestRoundForYear.get(year) || 0;
+      if (race.round > currentHighestRound) {
+        latestRoundForYear.set(year, race.round);
+        finalRaceIdMap.set(year, race.id);
+      }
+    }
+    
+    const allDriverStandings: any[] = [];
+    const allConstructorStandings: any[] = [];
+    
+    await this.supabaseService.client.from('driver_standings').delete().gte('id', 0);
+    await this.supabaseService.client.from('constructor_standings').delete().gte('id', 0);
+
+    // 3. Loop through each season and fetch its standings
+    for (let year = this.startYear; year <= this.endYear; year++) {
+      this.logger.log(`Fetching standings for ${year}...`);
+      const finalRaceId = finalRaceIdMap.get(year);
+      if (!finalRaceId) {
+        this.logger.warn(`No final race found for ${year}, skipping standings.`);
+        continue;
+      }
+
+      // Fetch Driver Standings
+      const driverStandingsData = await this.fetchAllErgastPages<any>(`/${year}/driverStandings`);
+      if (driverStandingsData && driverStandingsData.length > 0) {
+        // FIX: Simplified the data extraction to match the JSON structure
+        const apiDriverStandings = driverStandingsData[0]?.DriverStandings || [];
+        for (const standing of apiDriverStandings) {
+          allDriverStandings.push({
+            race_id: finalRaceId,
+            driver_id: driverMap.get(standing.Driver.driverId),
+            points: parseFloat(standing.points),
+            position: parseInt(standing.position, 10),
+            wins: parseInt(standing.wins, 10),
+          });
+        }
+      }
+
+      // Fetch Constructor Standings
+      const constructorStandingsData = await this.fetchAllErgastPages<any>(`/${year}/constructorStandings`);
+      if (constructorStandingsData && constructorStandingsData.length > 0) {
+        // FIX: Simplified the data extraction to match the JSON structure
+        const apiConstructorStandings = constructorStandingsData[0]?.ConstructorStandings || [];
+        for (const standing of apiConstructorStandings) {
+          allConstructorStandings.push({
+            race_id: finalRaceId,
+            constructor_id: constructorMap.get(standing.Constructor.name),
+            points: parseFloat(standing.points),
+            position: parseInt(standing.position, 10),
+            wins: parseInt(standing.wins, 10),
+          });
+        }
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // 4. Perform bulk inserts
+    this.logger.log(`Inserting ${allDriverStandings.length} driver standing records...`);
+    if (allDriverStandings.length > 0) {
+      const { error } = await this.supabaseService.client.from('driver_standings').insert(allDriverStandings);
+      if (error) throw new Error(`Driver standings insert failed: ${JSON.stringify(error)}`);
+    }
+
+    this.logger.log(`Inserting ${allConstructorStandings.length} constructor standing records...`);
+    if (allConstructorStandings.length > 0) {
+      const { error } = await this.supabaseService.client.from('constructor_standings').insert(allConstructorStandings);
+      if (error) throw new Error(`Constructor standings insert failed: ${JSON.stringify(error)}`);
+    }
+    
+    this.logger.log('Successfully ingested all historical standings.');
+  }
+
+  ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
+  ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
+  ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
+
+  public async fixMissingRaceTimes() {
+    this.logger.log('--- Starting: Fix Missing Race Result Times ---');
+
+    // 1. Pre-fetch all necessary IDs
+    const { data: races } = await this.supabaseService.client.from('races').select('id, round, season:seasons(year)').returns<any[]>();
+    const { data: sessions } = await this.supabaseService.client.from('sessions').select('id, race_id, type');
+    const { data: drivers } = await this.supabaseService.client.from('drivers').select('id, ergast_driver_ref');
+    const { data: constructors } = await this.supabaseService.client.from('constructors').select('id, name');
+
+    const sessionMap = new Map<string, number>();
+    (sessions ?? []).forEach(s => sessionMap.set(`${s.race_id}-${s.type}`, s.id));
+    const driverMap = new Map((drivers ?? []).map(d => [d.ergast_driver_ref, d.id]));
+    const constructorMap = new Map((constructors ?? []).map(c => [c.name, c.id]));
+
+    // 2. Loop through each race, deleting and re-inserting its results
+    for (const race of (races ?? [])) {
+      const year = race.season?.year;
+      const round = race.round;
+      if (!year || year < this.startYear || year > this.endYear) continue;
+
+      this.logger.log(`Fixing race results for ${year} Round ${round}...`);
+      const raceSessionId = sessionMap.get(`${race.id}-RACE`);
+
+      if (!raceSessionId) {
+        this.logger.warn(`No RACE session found for ${year} Round ${round}. Skipping.`);
+        continue;
+      }
+
+      try {
+        // Fetch the results for this specific race
+        const apiRaceResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/results`);
+        const apiRaceResults = apiRaceResultsData[0]?.Results || [];
+        
+        if (apiRaceResults.length === 0) {
+            this.logger.log('No results found from API. Nothing to fix.');
+            continue;
+        }
+
+        const raceResultsToInsert = apiRaceResults
+          .filter(res => res && res.Driver && res.Constructor)
+          .map(res => ({
+            session_id: raceSessionId,
+            driver_id: driverMap.get(res.Driver.driverId),
+            constructor_id: constructorMap.get(res.Constructor.name),
+            position: parseInt(res.position, 10),
+            points: parseFloat(res.points),
+            grid: parseInt(res.grid, 10),
+            laps: parseInt(res.laps, 10),
+            status: res.status,
+            time_ms: this.laptimeToMilliseconds(res.Time?.time),
+          }));
+
+        // Perform the safe delete-then-insert operation for this race
+        await this.supabaseService.client.from('race_results').delete().eq('session_id', raceSessionId);
+        
+        const { error } = await this.supabaseService.client.from('race_results').insert(raceResultsToInsert);
+        if (error) throw new Error(`Insert failed: ${JSON.stringify(error)}`);
+
+        this.logger.log(`Successfully fixed ${raceResultsToInsert.length} results for ${year} Round ${round}.`);
+
+      } catch (error) {
+        this.logger.error(`Failed to fix results for ${year} Round ${round}. Skipping.`, error.stack);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    this.logger.log('--- Finished: Race result times have been fixed. ---');
+  }
+
+
+  // *** HELPER FUNCTIONS *** // // *** HELPER FUNCTIONS *** // // *** HELPER FUNCTIONS *** // // *** HELPER FUNCTIONS *** // 
 
   private laptimeToMilliseconds(time: string | undefined): number | null {
     if (!time) return null;
     const parts = time.split(/[:.]/);
     if (parts.length < 2) return null;
-    const minutes = parseInt(parts[0], 10);
-    const seconds = parseInt(parts[1], 10);
-    const milliseconds = parts.length > 2 ? parseInt(parts[2], 10) : 0;
-    return (minutes * 60 + seconds) * 1000 + milliseconds;
+
+    let hours = 0, minutes = 0, seconds = 0, milliseconds = 0;
+
+    if (parts.length === 4) { // H:MM:SS.mmm
+      hours = parseInt(parts[0], 10);
+      minutes = parseInt(parts[1], 10);
+      seconds = parseInt(parts[2], 10);
+      milliseconds = parseInt(parts[3], 10);
+    } else if (parts.length === 3) { // MM:SS.mmm
+      minutes = parseInt(parts[0], 10);
+      seconds = parseInt(parts[1], 10);
+      milliseconds = parseInt(parts[2], 10);
+    } else { // SS.mmm
+      seconds = parseInt(parts[0], 10);
+      milliseconds = parseInt(parts[1], 10);
+    }
+
+    return (hours * 3600 + minutes * 60 + seconds) * 1000 + milliseconds;
   }
 
   private async fetchAllErgastPages<T>(endpoint: string, attempt = 0): Promise<T[]> {

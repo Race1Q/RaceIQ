@@ -1,12 +1,16 @@
+// frontend/src/main.tsx
+
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import './index.css';
+
 import App from './App/App.tsx';
-import theme from './theme';
+import theme from './styles/theme';
+import Fonts from './styles/fonts';
+import './styles/index.css';
 
 // Get Auth0 configuration from runtime environment variables
 const getAuth0Config = () => {
@@ -32,12 +36,7 @@ const getAuth0Config = () => {
 };
 
 const auth0Config = getAuth0Config();
-
 const root = createRoot(document.getElementById('root')!);
-
-// frontend/src/main.tsx
-
-// ... other code ...
 
 root.render(
   <>
@@ -48,14 +47,13 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
-        // 1. Added 'read:drivers' back to the scope
-        scope: "openid profile email read:drivers read:standings read:constructors" 
+        scope: 'openid profile email read:drivers read:standings read:constructors',
       }}
-      // 2. Added the two props for Refresh Token Rotation
       useRefreshTokens={true}
       cacheLocation="localstorage"
     >
       <ChakraProvider theme={theme}>
+        <Fonts />
         <BrowserRouter>
           <App />
         </BrowserRouter>

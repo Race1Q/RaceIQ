@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Gauge } from 'lucide-react';
 import { Box, Flex, HStack, Button, Text, Container, VStack, Heading, SimpleGrid } from '@chakra-ui/react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
@@ -23,7 +22,7 @@ import FeaturedDriverSection from '../components/FeaturedDriverSection/FeaturedD
 import ComparePreviewSection from '../components/ComparePreviewSection/ComparePreviewSection';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper/ScrollAnimationWrapper';
 import SectionConnector from '../components/SectionConnector/SectionConnector';
-import { RoleProvider, useRole } from '../context/RoleContext';
+import { RoleProvider } from '../context/RoleContext';
 import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
@@ -116,7 +115,6 @@ function HomePage() {
 
 function Navbar() {
   const { isAuthenticated } = useAuth0();
-  const { role } = useRole();
   const navigate = useNavigate();
 
   const navLinks = [
@@ -126,13 +124,10 @@ function Navbar() {
     ...(isAuthenticated ? [
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
+      { path: '/admin', label: 'Admin' },
     ] : []),
     { path: '/about', label: 'About' },
   ];
-
-  if (role === 'admin') {
-    navLinks.push({ path: '/admin', label: 'Admin' });
-  }
 
   return (
     <Box 
@@ -147,10 +142,15 @@ function Navbar() {
     >
       <Flex maxW="1200px" mx="auto" px="md" h="70px" justify="space-between" align="center">
         <HStack as={Link} to="/" spacing="sm" textDecor="none">
-          <Gauge size={24} color="var(--chakra-colors-brand-red)" />
-          <Text as="h2" color="brand.red" fontFamily="heading" fontSize="1.8rem" fontWeight="bold" letterSpacing="1px">
-            RaceIQ
-          </Text>
+          <img 
+            src="/race_IQ_logo.svg" 
+            alt="RaceIQ Logo" 
+            style={{ 
+              height: '50px', 
+              width: 'auto',
+              filter: 'brightness(0) saturate(100%) invert(100%)' // Makes SVG white/transparent
+            }}
+          />
         </HStack>
         
         <HStack spacing="lg" display={{ base: 'none', md: 'flex' }}>
@@ -226,6 +226,7 @@ function AppContent() {
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
+            <Route path="/races/:raceId" element={<RaceDetailPage />} />
             <Route path="/about" element={<AboutUs />} />
             <Route
               path="/profile"
@@ -236,15 +237,8 @@ function AppContent() {
               }
             />
             
-            {/* ADMIN only */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <Admin />
-                </ProtectedRoute>
-              }
-            />
+            {/* ADMIN */}
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </AppLayout>
 

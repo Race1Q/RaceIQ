@@ -1,3 +1,4 @@
+// src/pages/RacesPage/components/RaceDetailsModal.tsx
 import React, { useEffect, useState, Suspense } from 'react';
 import { Box, Flex, IconButton, Text, VStack, HStack, Spinner } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
@@ -57,7 +58,7 @@ const RaceDetailsModal: React.FC<Props> = ({ raceId, onClose }) => {
     let isMounted = true;
     if (!race) return;
     setCircuitLoading(true);
-    fetch(`/api/circuits/${race.circuit_id}`)
+    fetch(`/api/circuits/id/${race.circuit_id}`)
       .then((res) => res.ok ? res.json() : null)
       .then((c) => {
         if (isMounted && c) setCircuitName(c.name);

@@ -1,11 +1,17 @@
-import { Controller, Post, Logger, Get } from '@nestjs/common';
+import { Controller, Post, Logger, Get, Param } from '@nestjs/common';
 import { ErgastService } from './ergast.service';
+import { OpenF1Service } from './openf1.service';
 
 @Controller('ingestion')
 export class IngestionController {
   private readonly logger = new Logger(IngestionController.name);
 
-  constructor(private readonly ergastService: ErgastService) {}
+  constructor(
+    private readonly ergastService: ErgastService,
+    private readonly openf1Service: OpenF1Service,
+  ) {}
+
+  // ERGAST INGESTION
 
   @Get('test')
   getTest() {
@@ -53,6 +59,36 @@ export class IngestionController {
     this.logger.log('--- MANUAL TRIGGER: Ingesting All Results ---');
     await this.ergastService.ingestAllResults();
     return { message: 'All results ingestion job started. This will take a long time. Check server logs.' };
+  }
+
+  @Post('standings')
+  async ingestAllStandings() {
+    this.logger.log('--- MANUAL TRIGGER: Ingesting All Standings ---');
+    await this.ergastService.ingestAllStandings();
+    return { message: 'All standings ingestion job started. Check server logs.' };
+  }
+
+  @Post('fix-race-times')
+  async fixRaceTimes() {
+    this.logger.log('--- MANUAL TRIGGER: Fixing missing race times ---');
+    await this.ergastService.fixMissingRaceTimes();
+    return { message: 'Job to fix missing race times has started. Check logs.' };
+  }
+
+  // OPEN F1 INGESTION
+
+  @Post('openf1-sessions/:year')
+  async ingestOpenF1Sessions(@Param('year') year: string) {
+    this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Sessions for ${year} ---`);
+    await this.openf1Service.ingestSessionsAndWeather(parseInt(year, 10));
+    return { message: `OpenF1 session ingestion for ${year} started. Check server logs.` };
+  }
+
+  @Post('openf1-granular/:year')
+  async ingestOpenF1Granular(@Param('year') year: string) {
+    this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Granular Data for ${year} ---`);
+    await this.openf1Service.ingestGranularData(parseInt(year, 10));
+    return { message: `OpenF1 granular data ingestion for ${year} started. Check server logs.` };
   }
 
 }

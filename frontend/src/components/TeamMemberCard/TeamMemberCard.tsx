@@ -1,3 +1,5 @@
+// frontend/src/components/TeamMemberCard/TeamMemberCard.tsx
+
 import React from 'react';
 import { Box, VStack, Text } from '@chakra-ui/react';
 import { User } from 'lucide-react';

@@ -6,7 +6,7 @@ import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
-import NextRaceWidget from './widgets/NextRaceWidget';git
+import NextRaceWidget from './widgets/NextRaceWidget';
 import StandingsWidget from './widgets/StandingsWidget';
 import LastPodiumWidget from './widgets/LastPodiumWidget';
 import FastestLapWidget from './widgets/FastestLapWidget';

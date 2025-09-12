@@ -1,3 +1,5 @@
+// frontend/src/components/TrackStatsBars/TrackStatsBars.tsx
+
 import React from 'react';
 import { Box, Text, VStack, HStack } from '@chakra-ui/react';
 import { Flag, MapPin, Route } from 'lucide-react';

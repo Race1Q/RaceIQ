@@ -1,4 +1,4 @@
-// src/components/SectionConnector/SectionConnector.tsx
+// frontend/src/components/SectionConnector/SectionConnector.tsx
 import { Box, useTheme } from '@chakra-ui/react';
 
 const SectionConnector = () => {

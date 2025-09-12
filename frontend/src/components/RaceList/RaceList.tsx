@@ -1,3 +1,5 @@
+// frontend/src/components/RaceList/RaceList.tsx
+
 import React, { useState } from 'react';
 import { VStack, Box, Text, Input, InputGroup, InputLeftElement } from '@chakra-ui/react';
 import { Search, ChevronLeft } from 'lucide-react';

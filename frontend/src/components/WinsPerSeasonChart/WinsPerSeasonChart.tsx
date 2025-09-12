@@ -1,3 +1,5 @@
+// frontend/src/components/WinsPerSeasonChart/WinsPerSeasonChart.tsx
+
 import React from 'react';
 import { Card, CardHeader, CardBody, Heading } from '@chakra-ui/react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';

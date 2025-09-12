@@ -1,3 +1,5 @@
+// frontend/src/components/FeaturedDriverCard/FeaturedDriverCard.tsx
+
 import React from 'react';
 import { Box, VStack, Heading, Text } from '@chakra-ui/react';
 import { ArrowUpRight } from 'lucide-react';

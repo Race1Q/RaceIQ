@@ -1,4 +1,4 @@
-// src/components/ScrollAnimationWrapper/ScrollAnimationWrapper.tsx
+// frontend/src/components/ScrollAnimationWrapper/ScrollAnimationWrapper.tsx
 import React from 'react';
 import { Box, SlideFade } from '@chakra-ui/react';
 import { useInView } from 'react-intersection-observer';

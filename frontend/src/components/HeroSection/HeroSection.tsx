@@ -1,4 +1,4 @@
-// src/components/HeroSection/HeroSection.tsx
+// frontend/src/components/HeroSection/HeroSection.tsx
 import React from 'react';
 import { Box, Button, Container, Heading, Text, VStack } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -22,10 +22,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   const offsetY = useParallax(0.5);
 
   const handleScrollDown = () => {
-    const navbarHeight = 70; // The height of your sticky navbar in pixels
+    const navbarHeight = 70;
     gsap.to(window, { 
-      duration: 1.5, // Slower scroll duration (1.5 seconds)
-      scrollTo: window.innerHeight - navbarHeight, // Adjusted scroll target
+      duration: 1.5,
+      scrollTo: window.innerHeight - navbarHeight,
       ease: 'power2.inOut' 
     });
   };
@@ -35,24 +35,21 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       w="100%"
       h="90vh"
       position="relative"
-      overflow="hidden" // Important: hide the parts of the image that move out of view
+      overflow="hidden"
     >
-      {/* New dedicated background layer */}
       <Box
         position="absolute"
         top={0}
         left={0}
         w="100%"
-        h="140%" // Make image taller to prevent empty space when scrolling
+        h="140%"
         zIndex={1}
         bgImage="linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.pexels.com/photos/13641535/pexels-photo-13641535.jpeg')"
         bgSize="cover"
-        bgPosition="top"
-        // Apply the parallax effect
+        bgPosition="center" // Changed to 'center' for better responsiveness
         style={{ transform: `translateY(${offsetY}px)` }}
       />
       
-      {/* Text content now sits on top with a higher zIndex */}
       <Container maxW="1400px" h="100%" position="relative" zIndex={2}>
         <VStack
           h="100%"
@@ -65,14 +62,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             as="h1"
             fontSize={{ base: '4xl', md: '6xl', lg: '7xl' }}
             fontWeight="bold"
-            bgGradient="linear(to-r, gray.100, gray.400)"
+            fontFamily="heading"
+            // IMPROVEMENT: Use semantic text tokens for the gradient.
+            // In dark mode, this resolves to white/cccccc. In light mode, it will be dark.
+            bgGradient="linear(to-r, text-primary, text-secondary)"
             bgClip="text"
           >
             {title}
           </Heading>
           <Text
             fontSize={{ base: 'lg', md: 'xl' }}
-            color="gray.300"
+            // IMPROVEMENT: Use a semantic token for the subtitle.
+            color="text-secondary" 
             maxW="600px"
           >
             {subtitle}
@@ -83,6 +84,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             color="white"
             _hover={{ bg: 'brand.redDark' }}
             px={8}
+            fontFamily="heading" // Added for consistency
             onClick={() => loginWithRedirect()}
           >
             Get Started
@@ -90,13 +92,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         </VStack>
       </Container>
       
-      {/* Scroll arrow also needs a higher zIndex */}
       <Box
         position="absolute"
         bottom="30px"
         left="50%"
         transform="translateX(-50%)"
-        color="white"
+        color="white" // 'white' is acceptable here over the dark image background
         fontSize="6xl"
         animation="bounceUpDown 2s infinite"
         cursor="pointer"

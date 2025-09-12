@@ -1,3 +1,5 @@
+// frontend/src/components/FastestLapCard/FastestLapCard.tsx
+
 import React from 'react';
 import { Box, Text, HStack, VStack, Heading } from '@chakra-ui/react';
 import { Clock, Zap } from 'lucide-react';

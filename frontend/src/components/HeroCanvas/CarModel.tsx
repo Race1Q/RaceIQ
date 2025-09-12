@@ -1,4 +1,4 @@
-// src/components/HeroCanvas/CarModel.tsx
+// frontend/src/components/HeroCanvas/CarModel.tsx
 
 import { useRef } from 'react';
 import { useGLTF } from '@react-three/drei';

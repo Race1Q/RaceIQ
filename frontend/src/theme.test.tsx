@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect } from "vitest";
 import { ChakraProvider, Button } from "@chakra-ui/react";
 import { render, screen } from "@testing-library/react";
-import theme from "./theme";
+import theme from "./styles/theme";
 
 describe("Chakra theme", () => {
   it("has the expected color mode configuration", () => {

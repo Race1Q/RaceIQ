@@ -1,4 +1,4 @@
-// src/components/CheckeredDivider/CheckeredDivider.tsx
+// frontend/src/components/CheckeredDivider/CheckeredDivider.tsx
 import React from 'react';
 import { Box, Flex, Text, useTheme } from '@chakra-ui/react';
 import styles from './CheckeredDivider.module.css'; // Import the CSS Module

@@ -1,3 +1,5 @@
+// frontend/src/components/DashboardGrid/DashboardGrid.tsx
+
 import React from 'react';
 import { Grid } from '@chakra-ui/react';
 import DriverDetailProfile from '../DriverDetailProfile/DriverDetailProfile';
@@ -5,18 +7,15 @@ import StatCard from '../StatCard/StatCard';
 import WinsPerSeasonChart from '../WinsPerSeasonChart/WinsPerSeasonChart';
 import { Trophy, Medal, Zap } from 'lucide-react';
 import { teamColors } from '../../lib/teamColors';
-import styles from './DashboardGrid.module.css';
+// No longer need to import the CSS module
+// import styles from './DashboardGrid.module.css'; 
 
-// This interface can be simplified as the parent now handles flattening
 interface DashboardGridProps {
-  driver: any; // Using 'any' for flexibility during the fix
+  driver: any;
 }
 
 const DashboardGrid: React.FC<DashboardGridProps> = ({ driver }) => {
-  console.log('DashboardGrid received driver data:', driver);
-
-  // CRITICAL FIX: Add robust fallbacks to find the correct property for the name.
-  // This handles multiple possible data shapes without crashing.
+  // --- Data handling logic remains unchanged ---
   const driverName = driver.fullName || driver.name || '';
   const teamName = driver.teamName || driver.team || 'Unknown Team';
   const imageUrl = driver.imageUrl || null;
@@ -30,10 +29,18 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({ driver }) => {
   const teamColor = teamColors[teamName] || '#e10600';
 
   return (
-    <Grid templateColumns="repeat(auto-fit, minmax(350px, 1fr))" gap={6} className={styles.grid}>
+    <Grid
+      // --- All styles are now theme-aware Chakra props ---
+      w="100%"
+      minH="100vh"
+      p="lg" // Use theme token for padding
+      gap="lg" // Use theme token for gap
+      templateColumns="repeat(auto-fit, minmax(350px, 1fr))"
+      // No className needed
+    >
       
       <DriverDetailProfile 
-        name={driverName} // Pass the guaranteed-to-be-a-string driverName
+        name={driverName}
         team={teamName} 
         imageUrl={imageUrl}
         funFact={funFact} 

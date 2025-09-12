@@ -1,3 +1,5 @@
+// frontend/src/components/LapPositionChart/LapPositionChart.tsx
+
 import React from 'react';
 import { Box, Text, VStack, Heading } from '@chakra-ui/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
