@@ -1,4 +1,4 @@
-import { Controller, Post, Logger, Get, Param } from '@nestjs/common';
+import { Controller, Post, Logger, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
 
@@ -68,12 +68,12 @@ export class IngestionController {
     return { message: 'All standings ingestion job started. Check server logs.' };
   }
 
-  @Post('fix-race-times')
-  async fixRaceTimes() {
-    this.logger.log('--- MANUAL TRIGGER: Fixing missing race times ---');
-    await this.ergastService.fixMissingRaceTimes();
-    return { message: 'Job to fix missing race times has started. Check logs.' };
-  }
+  // @Post('fix-race-times')
+  // async fixRaceTimes() {
+  //   this.logger.log('--- MANUAL TRIGGER: Fixing missing race times ---');
+  //   await this.ergastService.fixMissingRaceTimes();
+  //   return { message: 'Job to fix missing race times has started. Check logs.' };
+  // }
 
   // OPEN F1 INGESTION
 
@@ -91,4 +91,18 @@ export class IngestionController {
     return { message: `OpenF1 granular data ingestion for ${year} started. Check server logs.` };
   }
 
+  @Post('openf1/modern-results/:year')
+  async ingestOpenF1ModernResults(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Modern Results, Laps, and Pit Stops for ${year} ---`);
+    // CORRECT: Call the new function for results, laps, and pits
+    this.openf1Service.ingestModernResultsAndLaps(year);
+    return { message: `OpenF1 modern results, laps, and pit stops ingestion for ${year} started. Check server logs.` };
+  }
+
+  @Post('track-layouts')
+  async ingestTrackLayouts() {
+    this.logger.log('--- MANUAL TRIGGER: Ingesting Track Layouts ---');
+    this.openf1Service.ingestTrackLayouts(); // Run without await
+    return { message: 'Track layout ingestion started. This is a one-time script and will take a while. Check logs.' };
+  }
 }

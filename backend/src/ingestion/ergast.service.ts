@@ -114,8 +114,8 @@ export class ErgastService {
   private readonly apiBaseUrl = 'https://api.jolpi.ca/ergast/f1';
 
   // --- CONFIGURATION ---
-  private readonly startYear = 2024;
-  private readonly endYear = 2025; 
+  private readonly startYear = 2000;
+  private readonly endYear = 2025; // Allow foundational scripts to run for all years 
   private readonly pageLimit = 100; // A higher page limit for faster bulk ingestion
   
   private readonly countryCodeMap: Record<string, string> = {
@@ -436,7 +436,7 @@ export class ErgastService {
       .from('seasons')
       .select('id')
       .gte('year', this.startYear)
-      .lte('year', this.endYear);
+      .lte('year', 2022); // HARD-CODED to stop at 2022
 
     if (!relevantSeasons || relevantSeasons.length === 0) {
         this.logger.error('No seasons found in the database. Cannot ingest results.');
@@ -488,13 +488,13 @@ export class ErgastService {
             // Fetch & Transform Race Results
             if (raceSessionId) {
               
-              // ================== NEW DEBUGGING CODE START ==================
-              this.logger.log(`--- DEBUG: Fetching /results for ${year} R${round}`);
+              // // ================== NEW DEBUGGING CODE START ==================
+              // this.logger.log(`--- DEBUG: Fetching /results for ${year} R${round}`);
               const apiRaceResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/results`);
               
-              this.logger.log(`--- DEBUG: RAW RESPONSE for /results ---`);
-              console.log(JSON.stringify(apiRaceResultsData, null, 2));
-              // =================== NEW DEBUGGING CODE END ===================
+              // this.logger.log(`--- DEBUG: RAW RESPONSE for /results ---`);
+              // console.log(JSON.stringify(apiRaceResultsData, null, 2));
+              // // =================== NEW DEBUGGING CODE END ===================
             
               const apiRaceResults = apiRaceResultsData[0]?.Results || [];
               if (apiRaceResults.length === 0) {
@@ -566,7 +566,7 @@ export class ErgastService {
                     driver_id: driverMap.get(stop.driverId),
                     stop_number: parseInt(stop.stop, 10),
                     lap_number: parseInt(stop.lap, 10),
-                    duration_ms: Math.round(parseFloat(stop.duration) * 1000),
+                    stationary_duration_ms: Math.round(parseFloat(stop.duration) * 1000),
                 });
             }
 
@@ -718,79 +718,79 @@ export class ErgastService {
     this.logger.log('Successfully ingested all historical standings.');
   }
 
-  ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
-  ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
-  ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
+  // ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
+  // ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
+  // ///////// ----- ***** FIX MISSING RACE TIMES ***** ----- /////////
 
-  public async fixMissingRaceTimes() {
-    this.logger.log('--- Starting: Fix Missing Race Result Times ---');
+  // public async fixMissingRaceTimes() {
+  //   this.logger.log('--- Starting: Fix Missing Race Result Times ---');
 
-    // 1. Pre-fetch all necessary IDs
-    const { data: races } = await this.supabaseService.client.from('races').select('id, round, season:seasons(year)').returns<any[]>();
-    const { data: sessions } = await this.supabaseService.client.from('sessions').select('id, race_id, type');
-    const { data: drivers } = await this.supabaseService.client.from('drivers').select('id, ergast_driver_ref');
-    const { data: constructors } = await this.supabaseService.client.from('constructors').select('id, name');
+  //   // 1. Pre-fetch all necessary IDs
+  //   const { data: races } = await this.supabaseService.client.from('races').select('id, round, season:seasons(year)').returns<any[]>();
+  //   const { data: sessions } = await this.supabaseService.client.from('sessions').select('id, race_id, type');
+  //   const { data: drivers } = await this.supabaseService.client.from('drivers').select('id, ergast_driver_ref');
+  //   const { data: constructors } = await this.supabaseService.client.from('constructors').select('id, name');
 
-    const sessionMap = new Map<string, number>();
-    (sessions ?? []).forEach(s => sessionMap.set(`${s.race_id}-${s.type}`, s.id));
-    const driverMap = new Map((drivers ?? []).map(d => [d.ergast_driver_ref, d.id]));
-    const constructorMap = new Map((constructors ?? []).map(c => [c.name, c.id]));
+  //   const sessionMap = new Map<string, number>();
+  //   (sessions ?? []).forEach(s => sessionMap.set(`${s.race_id}-${s.type}`, s.id));
+  //   const driverMap = new Map((drivers ?? []).map(d => [d.ergast_driver_ref, d.id]));
+  //   const constructorMap = new Map((constructors ?? []).map(c => [c.name, c.id]));
 
-    // 2. Loop through each race, deleting and re-inserting its results
-    for (const race of (races ?? [])) {
-      const year = race.season?.year;
-      const round = race.round;
-      if (!year || year < this.startYear || year > this.endYear) continue;
+  //   // 2. Loop through each race, deleting and re-inserting its results
+  //   for (const race of (races ?? [])) {
+  //     const year = race.season?.year;
+  //     const round = race.round;
+  //     if (!year || year < this.startYear || year > this.endYear) continue;
 
-      this.logger.log(`Fixing race results for ${year} Round ${round}...`);
-      const raceSessionId = sessionMap.get(`${race.id}-RACE`);
+  //     this.logger.log(`Fixing race results for ${year} Round ${round}...`);
+  //     const raceSessionId = sessionMap.get(`${race.id}-RACE`);
 
-      if (!raceSessionId) {
-        this.logger.warn(`No RACE session found for ${year} Round ${round}. Skipping.`);
-        continue;
-      }
+  //     if (!raceSessionId) {
+  //       this.logger.warn(`No RACE session found for ${year} Round ${round}. Skipping.`);
+  //       continue;
+  //     }
 
-      try {
-        // Fetch the results for this specific race
-        const apiRaceResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/results`);
-        const apiRaceResults = apiRaceResultsData[0]?.Results || [];
+  //     try {
+  //       // Fetch the results for this specific race
+  //       const apiRaceResultsData = await this.fetchAllErgastPages<any>(`/${year}/${round}/results`);
+  //       const apiRaceResults = apiRaceResultsData[0]?.Results || [];
         
-        if (apiRaceResults.length === 0) {
-            this.logger.log('No results found from API. Nothing to fix.');
-            continue;
-        }
+  //       if (apiRaceResults.length === 0) {
+  //           this.logger.log('No results found from API. Nothing to fix.');
+  //           continue;
+  //       }
 
-        const raceResultsToInsert = apiRaceResults
-          .filter(res => res && res.Driver && res.Constructor)
-          .map(res => ({
-            session_id: raceSessionId,
-            driver_id: driverMap.get(res.Driver.driverId),
-            constructor_id: constructorMap.get(res.Constructor.name),
-            position: parseInt(res.position, 10),
-            points: parseFloat(res.points),
-            grid: parseInt(res.grid, 10),
-            laps: parseInt(res.laps, 10),
-            status: res.status,
-            time_ms: this.laptimeToMilliseconds(res.Time?.time),
-          }));
+  //       const raceResultsToInsert = apiRaceResults
+  //         .filter(res => res && res.Driver && res.Constructor)
+  //         .map(res => ({
+  //           session_id: raceSessionId,
+  //           driver_id: driverMap.get(res.Driver.driverId),
+  //           constructor_id: constructorMap.get(res.Constructor.name),
+  //           position: parseInt(res.position, 10),
+  //           points: parseFloat(res.points),
+  //           grid: parseInt(res.grid, 10),
+  //           laps: parseInt(res.laps, 10),
+  //           status: res.status,
+  //           time_ms: this.laptimeToMilliseconds(res.Time?.time),
+  //         }));
 
-        // Perform the safe delete-then-insert operation for this race
-        await this.supabaseService.client.from('race_results').delete().eq('session_id', raceSessionId);
+  //       // Perform the safe delete-then-insert operation for this race
+  //       await this.supabaseService.client.from('race_results').delete().eq('session_id', raceSessionId);
         
-        const { error } = await this.supabaseService.client.from('race_results').insert(raceResultsToInsert);
-        if (error) throw new Error(`Insert failed: ${JSON.stringify(error)}`);
+  //       const { error } = await this.supabaseService.client.from('race_results').insert(raceResultsToInsert);
+  //       if (error) throw new Error(`Insert failed: ${JSON.stringify(error)}`);
 
-        this.logger.log(`Successfully fixed ${raceResultsToInsert.length} results for ${year} Round ${round}.`);
+  //       this.logger.log(`Successfully fixed ${raceResultsToInsert.length} results for ${year} Round ${round}.`);
 
-      } catch (error) {
-        this.logger.error(`Failed to fix results for ${year} Round ${round}. Skipping.`, error.stack);
-      }
+  //     } catch (error) {
+  //       this.logger.error(`Failed to fix results for ${year} Round ${round}. Skipping.`, error.stack);
+  //     }
       
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
+  //     await new Promise(resolve => setTimeout(resolve, 500));
+  //   }
 
-    this.logger.log('--- Finished: Race result times have been fixed. ---');
-  }
+  //   this.logger.log('--- Finished: Race result times have been fixed. ---');
+  // }
 
 
   // *** HELPER FUNCTIONS *** // // *** HELPER FUNCTIONS *** // // *** HELPER FUNCTIONS *** // // *** HELPER FUNCTIONS *** // 
@@ -831,7 +831,7 @@ export class ErgastService {
 
         const tableKey = Object.keys(mrData).find(key => key.endsWith('Table'));
         if (!tableKey) break;
-        
+
         const dataKey = Object.keys(mrData[tableKey]).find(key => Array.isArray(mrData[tableKey][key]));
         if (!dataKey) break;
 
@@ -840,7 +840,16 @@ export class ErgastService {
 
         allData.push(...pageData);
 
-        if (allData.length >= parseInt(mrData.total)) break;
+        // --- THIS IS THE FIX ---
+        // If the endpoint is NOT for laps, we trust the 'total' field and can break early.
+        if (!endpoint.includes('/laps')) {
+          if (allData.length >= parseInt(mrData.total)) {
+            break;
+          }
+        }
+        // If it IS a /laps endpoint, we explicitly ignore the 'total' field
+        // (because we know it's broken) and force the loop to continue
+        // until the API returns an empty pageData array (the check at the top of the loop).
 
         offset += this.pageLimit;
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -849,14 +858,16 @@ export class ErgastService {
           const waitTime = Math.pow(2, attempt) * 1000 + Math.random() * 500;
           this.logger.warn(`Rate limited. Waiting ${waitTime.toFixed(0)}ms before retrying...`);
           await new Promise((r) => setTimeout(r, waitTime));
-          return this.fetchAllErgastPages(endpoint, attempt + 1);
+          // Note: We are not incrementing the offset, so this will retry the SAME page
+          continue; 
         }
 
-        // NEW: More specific logging for other network errors like ECONNRESET
+        // --- THIS IS THE FIX ---
+        // Instead of returning partial data, throw an error to cancel the operation for this race.
         this.logger.error(
-          `A non-429 network error occurred while fetching from ${url}. Returning partial/empty data. Error: ${error.message}`
+          `A non-429 network error occurred while fetching from ${url}. Aborting fetch for this endpoint. Error: ${error.message}`
         );
-        return allData; // Return whatever was collected before the error
+        throw new Error(`Failed to fetch complete dataset from ${endpoint} due to network error.`);
       }
     }
     return allData;
