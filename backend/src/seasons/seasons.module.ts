@@ -1,17 +1,16 @@
-// src/seasons/seasons.module.ts
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { SeasonsService } from './seasons.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Season } from './seasons.entity';
 import { SeasonsController } from './seasons.controller';
-import { SupabaseModule } from '../supabase/supabase.module';
+import { SeasonsService } from './seasons.service';
+import { Race } from '../races/races.entity'; // 1. IMPORT RACE
 
 @Module({
-  imports: [
-    HttpModule,
-    SupabaseModule, // Required to inject SupabaseService
-  ],
+  imports: [TypeOrmModule.forFeature([Season, Race])], // 2. ADD RACE HERE
   controllers: [SeasonsController],
   providers: [SeasonsService],
-  exports: [SeasonsService],
+  exports: [SeasonsService, TypeOrmModule],
 })
 export class SeasonsModule {}
+
+

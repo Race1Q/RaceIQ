@@ -1,14 +1,10 @@
-// src/countries/countries.module.ts
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { CountriesService } from './countries.service';
-import { CountriesController } from './countries.controller';
-import { SupabaseService } from '../supabase/supabase.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Country } from './countries.entity';
 
 @Module({
-  imports: [HttpModule],
-  controllers: [CountriesController],
-  providers: [CountriesService, SupabaseService],
-  exports: [CountriesService],
+  imports: [TypeOrmModule.forFeature([Country])],
+  // We don't need a controller or service, we just need to export the entity
+  exports: [TypeOrmModule],
 })
 export class CountriesModule {}

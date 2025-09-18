@@ -11,23 +11,9 @@ export class UsersController {
   @Get('test')
   async testBackend() {
     try {
-      // Test Supabase connection
-      const { data, error } = await this.usersService.supabaseService.client
-        .from('users')
-        .select('count')
-        .limit(1);
-      
-      if (error) {
-        return {
-          status: 'error',
-          message: 'Supabase connection failed',
-          error: error.message,
-        };
-      }
-      
       return {
         status: 'success',
-        message: 'Backend and Supabase are working',
+        message: 'Backend is working',
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -43,22 +29,18 @@ export class UsersController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req: any) {
-    // Ensure we return the actual database user record based on the JWT subject
-    const auth0Sub = req.user?.sub;
-    const email = req.user?.email;
-    const user = await this.usersService.findOrCreateUser(auth0Sub, email);
+    // This will show us what's in req.user after JWT validation
     return {
       message: 'Current user data',
       jwtPayload: req.user,
-      databaseUser: user,
     };
   }
 
   // Manual test endpoint to create a user (for debugging)
   @Post('test-create')
-  async testCreateUser(@Body() body: { auth0Sub: string }) {
+  async testCreateUser(@Body() body: { auth0Sub: string; email?: string }) {
     try {
-      const user = await this.usersService.findOrCreateUser(body.auth0Sub);
+      const user = await this.usersService.findOrCreateByAuth0Sub(body.auth0Sub, body.email);
       return {
         message: 'User created/found successfully',
         user,
@@ -79,17 +61,12 @@ export class UsersController {
       const auth0Sub = req.user.sub;
       const email = req.user.email; // Get email from JWT payload
       
-      // Check if user already exists first
-      const existingUser = await this.usersService.findByAuth0Sub(auth0Sub);
-      const wasCreated = !existingUser;
-      
       // Find or create user
-      const user = await this.usersService.findOrCreateUser(auth0Sub, email);
+      const user = await this.usersService.findOrCreateByAuth0Sub(auth0Sub, email);
       
       return {
         message: 'User ensured successfully',
         user,
-        wasCreated,
       };
     } catch (error) {
       return {
@@ -98,12 +75,5 @@ export class UsersController {
       };
     }
   }
-
-@Patch('profile') // Handles PATCH /api/users/profile
-@UseGuards(JwtAuthGuard)
-async updateProfile(@Req() req: any, @Body() updateProfileDto: UpdateProfileDto) {
-  const auth0Sub = req.user.sub; // Get the user's ID from the validated JWT
-  return this.usersService.updateUserProfile(auth0Sub, updateProfileDto);
-}
 
 }

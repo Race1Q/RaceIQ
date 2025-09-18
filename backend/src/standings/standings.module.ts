@@ -1,0 +1,28 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { StandingsController } from './standings.controller';
+import { StandingsService } from './standings.service';
+import { Season } from '../seasons/seasons.entity';
+import { Race } from '../races/races.entity';
+import { Session } from '../sessions/sessions.entity';
+import { RaceResult } from '../race-results/race-results.entity';
+import { Driver } from '../drivers/drivers.entity';
+import { ConstructorEntity } from '../constructors/constructors.entity';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      Season,
+      Race,
+      Session,
+      RaceResult,
+      Driver,
+      ConstructorEntity,
+    ]),
+  ],
+  controllers: [StandingsController],
+  providers: [StandingsService],
+})
+export class StandingsModule {}
+
+

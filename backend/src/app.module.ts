@@ -1,64 +1,100 @@
-// backend/src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // Import Throttler
-import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DriversModule } from './drivers/drivers.module';
-import { AuthModule } from './auth/auth.module';
-import { AdminModule } from './admin/admin.module';
-import { ConstructorsModule } from './constructors/constructors.module';
-import { CircuitsModule } from './circuits/circuits.module';
-import { CountriesModule } from './countries/countries.module';
-import { RacesModule } from './races/races.module';
-import { SeasonsModule } from './seasons/seasons.module';
-import { DriverStandingsModule } from './driver-standings/driver-standings.module';
-import { RaceResultsModule } from './race-results/race-results.module';
-import { ConstructorStandingsModule } from './constructor-standings/constructor-standings.module';
-import { QualifyingResultsModule } from './qualifying-results/qualifying-results.module';
-import { PitStopsModule } from './pit-stops/pit-stops.module';
-import { LapsModule } from './laps/laps.module';
-import { UsersModule } from './users/users.module';
-import { NotificationsModule } from './notifications/notifications.module';
 import { IngestionModule } from './ingestion/ingestion.module';
+
+// Our new "from scratch" modules
+import { DriversModule } from './drivers/drivers.module';
+import { CountriesModule } from './countries/countries.module';
+import { ConstructorsModule } from './constructors/constructors.module';
+import { SeasonsModule } from './seasons/seasons.module';
+import { RacesModule } from './races/races.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { RaceResultsModule } from './race-results/race-results.module';
+import { LapsModule } from './laps/laps.module';
+import { PitStopsModule } from './pit-stops/pit-stops.module';
+import { CircuitsModule } from './circuits/circuits.module';
+import { QualifyingResultsModule } from './qualifying-results/qualifying-results.module';
+import { TireStintsModule } from './tire-stints/tire-stints.module';
+import { RaceEventsModule } from './race-events/race-events.module';
+import { StandingsModule } from './standings/standings.module';
+import { UsersModule } from './users/users.module';
+
+// The entities we need to load at the root
+import { Driver } from './drivers/drivers.entity';
+import { Country } from './countries/countries.entity';
+import { ConstructorEntity } from './constructors/constructors.entity';
+import { Season } from './seasons/seasons.entity';
+import { Race } from './races/races.entity';
+import { Session } from './sessions/sessions.entity';
+import { RaceResult } from './race-results/race-results.entity';
+import { Lap } from './laps/laps.entity';
+import { PitStop } from './pit-stops/pit-stops.entity';
+import { Circuit } from './circuits/circuits.entity';
+import { QualifyingResult } from './qualifying-results/qualifying-results.entity';
+import { TireStint } from './tire-stints/tire-stints.entity';
+import { RaceEvent } from './race-events/race-events.entity';
+import { User } from './users/entities/user.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
-    ScheduleModule.forRoot(),
-    // Configure Throttler: 10 requests per second per IP
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    // 1. Load the .env file
+    ConfigModule.forRoot({ isGlobal: true }),
+
+    // 2. Setup the TypeORM database connection (NOW USING DATABASE_URL)
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        // This is the key change to match your .env file
+        url: configService.get<string>('DATABASE_URL'),
+        entities: [
+          Driver,
+          Country,
+          ConstructorEntity,
+          Season,
+          Circuit,
+          Race,
+          Session,
+          RaceResult,
+          Lap,
+          PitStop,
+          QualifyingResult,
+          TireStint,
+          RaceEvent,
+          User,
+        ],
+        synchronize: false, // trust the db schema
+        ssl: {
+          rejectUnauthorized: false, // Required for Supabase
+        },
+      }),
+    }),
+
+    // 3. Load ONLY our new modules
     IngestionModule,
-    AuthModule,
     DriversModule,
-    AdminModule,
-    ConstructorsModule,
-    CircuitsModule,
     CountriesModule,
-    RacesModule,
+    ConstructorsModule,
     SeasonsModule,
+    RacesModule,
+    SessionsModule,
     RaceResultsModule,
-    DriverStandingsModule,
-    ConstructorStandingsModule,
-    QualifyingResultsModule,
-    PitStopsModule,
     LapsModule,
+    PitStopsModule,
+    CircuitsModule,
+    QualifyingResultsModule,
+    TireStintsModule,
+    RaceEventsModule,
+    StandingsModule,
     UsersModule,
-    NotificationsModule,
+    // We have removed all the old, deleted modules 
+    // (LapsModule, RacesModule, etc.)
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    // Set the ThrottlerGuard as a global guard
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}

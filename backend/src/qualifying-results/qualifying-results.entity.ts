@@ -1,49 +1,51 @@
-// src/qualifying-results/qualifying-results.entity.ts
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Session } from '../sessions/sessions.entity';
+import { Driver } from '../drivers/drivers.entity';
+import { ConstructorEntity } from '../constructors/constructors.entity';
 
-// Matches Supabase table `qualifying_results`
-export interface QualifyingResultRow {
-  id?: number;
+@Entity({ name: 'qualifying_results' })
+export class QualifyingResult {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'int', nullable: true })
   session_id: number;
+
+  @Column({ type: 'int', nullable: true })
   driver_id: number;
+
+  @Column({ type: 'int', nullable: true })
   constructor_id: number;
+
+  @Column({ type: 'int', nullable: true })
   position: number;
-  q1_time_ms: number | null;
-  q2_time_ms: number | null;
-  q3_time_ms: number | null;
-}
 
-// Ergast API typings we need
-export interface ApiDriverRef {
-  driverId: string;
-  code?: string;
-  permanentNumber?: string;
-}
+  @Column({ type: 'int', nullable: true })
+  q1_time_ms: number;
 
-export interface ApiConstructorRef {
-  constructorId: string;
-}
+  @Column({ type: 'int', nullable: true })
+  q2_time_ms: number;
 
-export interface ApiQualifyingItem {
-  position: string;
-  Driver: ApiDriverRef;
-  Constructor: ApiConstructorRef;
-  Q1?: string; // e.g. "1:15.096"
-  Q2?: string;
-  Q3?: string;
-}
+  @Column({ type: 'int', nullable: true })
+  q3_time_ms: number;
 
-export interface ApiRaceQuali {
-  season: string;
-  round: string;
-  QualifyingResults: ApiQualifyingItem[];
-}
+  @ManyToOne(() => Session, 'qualifyingResults')
+  @JoinColumn({ name: 'session_id' })
+  session: Session;
 
-export interface ApiResponse {
-  MRData: {
-    RaceTable: {
-      Races: ApiRaceQuali[];
-    };
-  };
+  @ManyToOne(() => Driver, 'qualifyingResults')
+  @JoinColumn({ name: 'driver_id' })
+  driver: Driver;
+
+  @ManyToOne(() => ConstructorEntity, 'qualifyingResults')
+  @JoinColumn({ name: 'constructor_id' })
+  team: ConstructorEntity;
 }
 
 

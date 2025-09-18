@@ -5,37 +5,40 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Race } from '../races/races.entity';
+import { Session } from '../sessions/sessions.entity';
 import { Driver } from '../drivers/drivers.entity';
 
-@Entity({ name: 'pit_stops' })
-export class PitStop {
+@Entity({ name: 'tire_stints' })
+export class TireStint {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'int', nullable: true })
-  race_id: number;
+  session_id: number;
 
   @Column({ type: 'int', nullable: true })
   driver_id: number;
 
-  @Column({ type: 'int', nullable: true })
-  stop_number: number;
+  @Column({ type: 'text', nullable: true })
+  compound: string;
 
   @Column({ type: 'int', nullable: true })
-  lap_number: number;
+  start_lap: number;
 
   @Column({ type: 'int', nullable: true })
-  total_duration_in_pitlane_ms: number;
+  end_lap: number;
 
   @Column({ type: 'int', nullable: true })
-  stationary_duration_ms: number;
+  stint_number: number;
 
-  @ManyToOne(() => Race, 'pitStops')
-  @JoinColumn({ name: 'race_id' })
-  race: Race;
+  @Column({ type: 'int', nullable: true })
+  tyre_age_at_start: number;
 
-  @ManyToOne(() => Driver, 'pitStops')
+  @ManyToOne(() => Session, 'tireStints')
+  @JoinColumn({ name: 'session_id' })
+  session: Session;
+
+  @ManyToOne(() => Driver, 'tireStints')
   @JoinColumn({ name: 'driver_id' })
   driver: Driver;
 }

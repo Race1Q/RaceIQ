@@ -1,112 +1,123 @@
-// backend/src/races/races.service.ts
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { RaceDetailsDto } from './dto/race-details.dto';
+
 import { Race } from './races.entity';
-import { RaceResponseDto } from './dto';
+import { Session } from '../sessions/sessions.entity';
+import { RaceResult } from '../race-results/race-results.entity';
+import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
+import { Lap } from '../laps/laps.entity';
+import { PitStop } from '../pit-stops/pit-stops.entity';
+import { TireStint } from '../tire-stints/tire-stints.entity';
+import { RaceEvent } from '../race-events/race-events.entity';
 
 @Injectable()
 export class RacesService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    @InjectRepository(Race)
+    private readonly raceRepository: Repository<Race>,
+    @InjectRepository(Session)
+    private readonly sessionRepository: Repository<Session>,
+    @InjectRepository(RaceResult)
+    private readonly raceResultRepository: Repository<RaceResult>,
+    @InjectRepository(QualifyingResult)
+    private readonly qualifyingResultRepository: Repository<QualifyingResult>,
+    @InjectRepository(Lap)
+    private readonly lapRepository: Repository<Lap>,
+    @InjectRepository(PitStop)
+    private readonly pitStopRepository: Repository<PitStop>,
+    @InjectRepository(TireStint)
+    private readonly tireStintRepository: Repository<TireStint>,
+    @InjectRepository(RaceEvent)
+    private readonly raceEventRepository: Repository<RaceEvent>,
+  ) {}
 
-  async findAllRacesForSeason(year: number): Promise<RaceResponseDto[]> {
-    // Find the season ID for the given year
-    const { data: seasonData, error: seasonError } = await this.supabaseService.client
-      .from('seasons')
-      .select('id')
-      .eq('year', year)
-      .single();
+  async getRaceDetails(raceId: number): Promise<RaceDetailsDto> {
+    const raceInfo = await this.raceRepository.findOne({
+      where: { id: raceId },
+      relations: ['circuit', 'season'],
+    });
 
-    if (seasonError || !seasonData) {
-      throw new InternalServerErrorException(`Could not find season data for ${year}`);
+    if (!raceInfo) {
+      throw new NotFoundException(`Race with ID ${raceId} not found`);
     }
 
-    const seasonId = seasonData.id;
+    const sessions = await this.sessionRepository.find({
+      where: { race: { id: raceId } },
+    });
 
-    // Fetch all races for that season ID
-    const { data, error } = await this.supabaseService.client
-      .from('races')
-      .select('*')
-      .eq('season_id', seasonId)
-      .order('date', { ascending: true });
+    const raceSession = sessions.find((s) => s.type === 'RACE');
+    const qualifyingSession = sessions.find((s) => s.type === 'QUALIFYING');
+    const allSessionIds = sessions.map((s) => s.id);
 
-    if (error) {
-      throw new InternalServerErrorException(`Failed to fetch races for ${year}`);
-    }
-    
-    return (data ?? []).map(race => ({
-      id: race.id!,
-      season_id: race.season_id,
-      circuit_id: race.circuit_id,
-      round: race.round,
-      name: race.name,
-      date: race.date,
-      time: race.time
-    }));
-  }
+    const [
+      raceResults,
+      qualifyingResults,
+      laps,
+      pitStops,
+      tireStints,
+      raceEvents,
+    ] = await Promise.all([
+      raceSession
+        ? this.raceResultRepository.find({
+            where: { session: { id: raceSession.id } },
+            relations: ['driver', 'team'],
+            order: { position: 'ASC' },
+          })
+        : Promise.resolve([]),
 
-  // Method for other services that need races by season
-  async getRacesBySeason(seasonYear: string): Promise<Race[]> {
-    // Find the season record
-    const { data: seasonData, error: seasonError } = await this.supabaseService.client
-      .from('seasons')
-      .select('id')
-      .eq('year', parseInt(seasonYear))
-      .single();
+      qualifyingSession
+        ? this.qualifyingResultRepository.find({
+            where: { session: { id: qualifyingSession.id } },
+            relations: ['driver', 'team'],
+            order: { position: 'ASC' },
+          })
+        : Promise.resolve([]),
 
-    if (seasonError || !seasonData) {
-      return []; // Return empty array if season not found
-    }
+      this.lapRepository.find({
+        where: { race: { id: raceId } },
+        relations: ['driver'],
+        order: { lap_number: 'ASC', driver: { id: 'ASC' } as any },
+      }),
 
-    const seasonId = seasonData.id;
+      this.pitStopRepository.find({
+        where: { race: { id: raceId } },
+        relations: ['driver'],
+        order: { lap_number: 'ASC', stop_number: 'ASC' } as any,
+      }),
 
-    // Fetch races for that season
-    const { data, error } = await this.supabaseService.client
-      .from('races')
-      .select('*')
-      .eq('season_id', seasonId)
-      .order('round', { ascending: true });
+      allSessionIds.length
+        ? this.tireStintRepository.find({
+            where: { session: { id: In(allSessionIds) } },
+            relations: ['driver'],
+            order: { driver: { id: 'ASC' } as any, stint_number: 'ASC' },
+          })
+        : Promise.resolve([]),
 
-    if (error) {
-      return []; // Return empty array on error
-    }
-    
-    return data ?? [];
-  }
+      allSessionIds.length
+        ? this.raceEventRepository.find({
+            where: { session: { id: In(allSessionIds) } },
+            order: { lap_number: 'ASC' },
+          })
+        : Promise.resolve([]),
+    ]);
 
-  // Method for other services that need all races
-  async getAllRaces(): Promise<Race[]> {
-    const { data, error } = await this.supabaseService.client
-      .from('races')
-      .select('*')
-      .order('round', { ascending: true });
-
-    if (error) {
-      return []; // Return empty array on error
-    }
-    return data ?? [];
-  }
-
-  async findRaceById(id: number): Promise<RaceResponseDto | null> {
-    const { data, error } = await this.supabaseService.client
-      .from('races')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      throw new NotFoundException('Race not found');
-    }
-
-    if (!data) return null;
-
-    return {
-      id: data.id!,
-      season_id: data.season_id,
-      circuit_id: data.circuit_id,
-      round: data.round,
-      name: data.name,
-      date: data.date,
-      time: data.time,
+    const raceDetails: RaceDetailsDto = {
+      raceInfo: {
+        ...raceInfo,
+        weather: (raceSession as any)?.weather || null,
+      } as any,
+      raceResults,
+      qualifyingResults,
+      laps,
+      pitStops,
+      tireStints,
+      raceEvents,
     };
+
+    return raceDetails;
   }
 }
+
+

@@ -1,19 +1,26 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { RaceResult } from '../race-results/race-results.entity';
+import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
 
-export class Constructor {
+@Entity({ name: 'constructors' })
+export class ConstructorEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'name', type: 'varchar' })
+  @Column({ type: 'text', unique: true })
   name: string;
 
-  @Column({ name: 'nationality', type: 'varchar' })
+  @Column({ type: 'text', nullable: true })
   nationality: string;
 
-
-  @Column({ name: 'id', type: 'varchar', unique: true })
-  constructorId: string; // e.g. ferrari
-
-  @Column({ name: 'url', type: 'varchar', nullable: true })
+  @Column({ type: 'text', nullable: true })
   url: string;
+
+  @OneToMany(() => RaceResult, 'team')
+  raceResults: RaceResult[];
+
+  @OneToMany(() => QualifyingResult, 'team')
+  qualifyingResults: QualifyingResult[];
 }
+
+

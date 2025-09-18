@@ -1,58 +1,63 @@
-// src/race-results/race-results.entity.ts
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Session } from '../sessions/sessions.entity';
+import { Driver } from '../drivers/drivers.entity';
+import { ConstructorEntity } from '../constructors/constructors.entity';
 
-// This interface matches the structure of the Supabase `race_results` table
-export interface RaceResultRow {
-  id?: number;
+@Entity({ name: 'race_results' })
+export class RaceResult {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'int', nullable: true })
   session_id: number;
+
+  @Column({ type: 'int', nullable: true })
   driver_id: number;
+
+  @Column({ type: 'int', nullable: true })
   constructor_id: number;
+
+  @Column({ type: 'int', nullable: true })
   position: number;
+
+  @Column({ type: 'numeric', nullable: true })
   points: number;
+
+  @Column({ type: 'int', nullable: true })
   grid: number;
+
+  @Column({ type: 'int', nullable: true })
   laps: number;
-  time_ms: number | null;
+
+  @Column({ type: 'bigint', nullable: true })
+  time_ms: number;
+
+  @Column({ type: 'text', nullable: true })
   status: string;
-}
 
-// Ergast API typings (subset we need)
-export interface ApiDriverRef {
-  driverId: string;
-  code?: string;
-  permanentNumber?: string;
-}
+  @Column({ type: 'int', nullable: true })
+  fastest_lap_rank: number;
 
-export interface ApiConstructorRef {
-  constructorId: string;
-}
+  @Column({ type: 'numeric', default: 0, nullable: true })
+  points_for_fastest_lap: number;
 
-export interface ApiResultItem {
-  position: string;
-  points: string;
-  grid: string;
-  laps: string;
-  status: string;
-  Time?: {
-    millis?: string;
-  };
-  Driver: ApiDriverRef;
-  Constructor: ApiConstructorRef;
-}
+  @ManyToOne(() => Session, 'raceResults')
+  @JoinColumn({ name: 'session_id' })
+  session: Session;
 
-export interface ApiRace {
-  season: string;
-  round: string;
-  raceName: string;
-  date: string;
-  time: string;
-  Results: ApiResultItem[];
-}
+  @ManyToOne(() => Driver, 'raceResults')
+  @JoinColumn({ name: 'driver_id' })
+  driver: Driver;
 
-export interface ApiResponse {
-  MRData: {
-    RaceTable: {
-      Races: ApiRace[];
-    };
-  };
+  @ManyToOne(() => ConstructorEntity, 'raceResults')
+  @JoinColumn({ name: 'constructor_id' })
+  team: ConstructorEntity;
 }
 
 
