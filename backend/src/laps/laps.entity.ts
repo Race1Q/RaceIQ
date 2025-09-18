@@ -1,39 +1,52 @@
-// src/laps/laps.entity.ts
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Race } from '../races/races.entity';
+import { Driver } from '../drivers/drivers.entity';
 
-export interface Lap {
-    race_id: number;      // Supabase race id (UUID)
-    driver_id: number;    // Supabase driver id (UUID)
-    lap_number: number;
-    position: number;
-    time_ms: number;      // Lap time in milliseconds
-  }
-  
-  // Optional: API response type
-  export interface ApiLapTiming {
-    driverId: string;
-    position: string;
-    time: string;
-    code?: string;
-    permanentNumber?: string;
-  }
-  
-  export interface ApiLap {
-    number: string;
-    Timings: ApiLapTiming[];
-  }
-  
-  export interface ApiRace {
-    season: string;
-    round: string;
-    Laps: ApiLap[];
-  }
-  
-  export interface ApiResponse {
-    MRData: {
-      RaceTable: {
-        Races: ApiRace[];
-      };
-    };
-  }
-   
-  
+@Entity({ name: 'laps' })
+export class Lap {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'int', nullable: true })
+  race_id: number;
+
+  @Column({ type: 'int', nullable: true })
+  driver_id: number;
+
+  @Column({ type: 'int', nullable: true })
+  lap_number: number;
+
+  @Column({ type: 'int', nullable: true })
+  position: number;
+
+  @Column({ type: 'int', nullable: true })
+  time_ms: number;
+
+  @Column({ type: 'int', nullable: true })
+  sector_1_ms: number;
+
+  @Column({ type: 'int', nullable: true })
+  sector_2_ms: number;
+
+  @Column({ type: 'int', nullable: true })
+  sector_3_ms: number;
+
+  @Column({ type: 'boolean', nullable: true })
+  is_pit_out_lap: boolean;
+
+  @ManyToOne(() => Race, 'laps')
+  @JoinColumn({ name: 'race_id' })
+  race: Race;
+
+  @ManyToOne(() => Driver, 'laps')
+  @JoinColumn({ name: 'driver_id' })
+  driver: Driver;
+}
+
+

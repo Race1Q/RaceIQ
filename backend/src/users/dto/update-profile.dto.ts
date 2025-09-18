@@ -1,26 +1,19 @@
-// backend/src/users/dto/update-profile.dto.ts
-
-import {
-  IsInt,
-  IsOptional,
-  IsString,
-  Length,
-  Min,
-} from 'class-validator';
+import { IsString, IsOptional, IsIn, IsNumber } from 'class-validator';
 
 export class UpdateProfileDto {
-  @IsString()
-  @Length(3, 30)
   @IsOptional()
+  @IsString()
   username?: string;
 
-  @IsInt()
-  @Min(1)
   @IsOptional()
-  favorite_constructor_id?: number | null;
+  @IsNumber()
+  favorite_driver_id?: number;
 
-  @IsInt()
   @IsOptional()
-  @Min(1)
-  favorite_driver_id?: number | null;
+  @IsNumber()
+  favorite_constructor_id?: number;
+
+  @IsOptional()
+  @IsIn(['dark', 'light'])
+  theme_preference?: 'dark' | 'light';
 }

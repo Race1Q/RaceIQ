@@ -1,50 +1,58 @@
-// src/races/races.entity.ts
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
+import { Season } from '../seasons/seasons.entity';
+import { Circuit } from '../circuits/circuits.entity';
+import { Session } from '../sessions/sessions.entity';
+import { Lap } from '../laps/laps.entity';
+import { PitStop } from '../pit-stops/pit-stops.entity';
+// import { Lap } from '../laps/laps.entity';
+// import { PitStop } from '../pit-stops/pit-stops.entity';
 
-/**
- * Interface for the 'races' table in Supabase.
- * This reflects the structure of your database table.
- */
-export interface Race {
-  id?: number;
+@Entity({ name: 'races' })
+export class Race {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'int', nullable: true })
   season_id: number;
-  circuit_id: number; // Foreign key to the circuits table
+
+  @Column({ type: 'int', nullable: true })
+  circuit_id: number;
+
+  @Column({ type: 'int' })
   round: number;
+
+  @Column({ type: 'text' })
   name: string;
-  date: string; // ISO 8601 date string
-  time: string; // ISO 8601 time string
-}
 
-/**
- * Interface for the data returned from the Ergast API.
- * This is the raw data model we will ingest.
- */
-export interface ApiRace {
-  season: string;
-  round: string;
-  url: string;
-  raceName: string;
-  Circuit: {
-    circuitId: string;
-    url: string;
-    circuitName: string;
-    Location: {
-      lat: string;
-      long: string;
-      locality: string;
-      country: string;
-    };
-  };
-  date: string;
+  @Column({ type: 'date', nullable: true })
+  date: Date;
+
+  @Column({ type: 'time', nullable: true })
   time: string;
+
+  @ManyToOne(() => Season, (season) => (season as any).races)
+  @JoinColumn({ name: 'season_id' })
+  season: Season;
+
+  @ManyToOne(() => Circuit, (circuit) => (circuit as any).races)
+  @JoinColumn({ name: 'circuit_id' })
+  circuit: Circuit;
+
+  @OneToMany(() => Session, (session) => session.race)
+  sessions: Session[];
+
+  @OneToMany(() => Lap, 'race')
+  laps: Lap[];
+
+  @OneToMany(() => PitStop, 'race')
+  pitStops: PitStop[];
 }
 
-/**
- * The structure of the full API response from the Ergast API.
- */
-export interface ApiResponse {
-  MRData: {
-    RaceTable: {
-      Races: ApiRace[];
-    };
-  };
-}
+

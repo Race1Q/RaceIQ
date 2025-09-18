@@ -1,19 +1,17 @@
-// src/laps/laps.module.ts
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { LapsService } from './laps.service';
-import { LapsController } from './laps.controller';
-import { SupabaseService } from '../supabase/supabase.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Lap } from './laps.entity';
 import { RacesModule } from '../races/races.module';
 import { DriversModule } from '../drivers/drivers.module';
 
 @Module({
-  imports: [HttpModule,RacesModule,DriversModule],
-  providers: [LapsService, SupabaseService],
-  controllers: [LapsController],
+  imports: [
+    TypeOrmModule.forFeature([Lap]),
+    RacesModule,
+    DriversModule,
+  ],
+  exports: [TypeOrmModule],
 })
 export class LapsModule {}
-
-
 
 

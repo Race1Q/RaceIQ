@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConstructorEntity } from './constructors.entity';
 import { ConstructorsController } from './constructors.controller';
 import { ConstructorsService } from './constructors.service';
-import { SupabaseModule } from '../supabase/supabase.module';
-import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [SupabaseModule, HttpModule],
+  imports: [TypeOrmModule.forFeature([ConstructorEntity])],
   controllers: [ConstructorsController],
   providers: [ConstructorsService],
-  exports: [ConstructorsService],
+  exports: [ConstructorsService, TypeOrmModule],
 })
 export class ConstructorsModule {}
+
+

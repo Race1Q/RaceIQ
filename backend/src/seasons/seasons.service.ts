@@ -1,55 +1,43 @@
-// src/seasons/seasons.service.ts
-import { Injectable, Logger } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Season } from './seasons.entity';
+import { Race } from '../races/races.entity'; // 1. IMPORT RACE
 
 @Injectable()
 export class SeasonsService {
-  private readonly logger = new Logger(SeasonsService.name);
+  constructor(
+    @InjectRepository(Season)
+    private readonly seasonRepository: Repository<Season>,
+    @InjectRepository(Race) // 2. INJECT RACE REPOSITORY
+    private readonly raceRepository: Repository<Race>,
+  ) {}
 
-  constructor(private readonly supabaseService: SupabaseService) {}
-
-  async testConnection(): Promise<boolean> {
-    const { data } = await this.supabaseService.client.from('seasons').select('*').limit(1);
-    return !!data;
+  async findAll(): Promise<Season[]> {
+    return this.seasonRepository.find({
+      order: {
+        year: 'DESC',
+      },
+    });
   }
 
-  async getAllSeasons(): Promise<Season[]> {
-    const { data, error } = await this.supabaseService.client
-      .from('seasons')
-      .select('*')
-      .order('year', { ascending: true });
-
-    if (error) {
-      this.logger.error('Failed to fetch all seasons', error);
-      throw new Error('Failed to fetch all seasons');
+  // 3. IMPLEMENT THIS METHOD
+  async getRacesForYear(year: number): Promise<Race[]> {
+    // First, find the season to get its ID
+    const season = await this.seasonRepository.findOne({ where: { year } });
+    if (!season) {
+      throw new NotFoundException(`Season with year ${year} not found`);
     }
 
-    return data;
-  }
-
-  /**
-   * Retrieves a single season by its year.
-   * @param year The year of the season as a string or number.
-   * @returns A promise of a single Season object or null if not found.
-   */
-  async getSeasonByYear(year: string): Promise<Season | null> {
-    const parsedYear = parseInt(year, 10);
-    const { data, error } = await this.supabaseService.client
-      .from('seasons')
-      .select('*')
-      .eq('year', parsedYear)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No row found, which is a normal case for single()
-        return null;
-      }
-      this.logger.error(`Failed to fetch season by year ${year}`, error);
-      throw new Error(`Failed to fetch season by year: ${error.message}`);
-    }
-
-    return data;
+    // Now, find all races for that season_id and join their circuit data
+    return this.raceRepository.find({
+      where: { season: { id: season.id } },
+      relations: ['circuit'], // Join the circuit information
+      order: {
+        round: 'ASC', // Order by round number
+      },
+    });
   }
 }
+
+

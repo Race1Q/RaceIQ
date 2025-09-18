@@ -11,5 +11,6 @@ import { OpenF1Service } from './openf1.service';
   imports: [HttpModule, SupabaseModule],
   controllers: [IngestionController],
   providers: [ErgastService, OpenF1Service],
+  
 })
 export class IngestionModule {}
