@@ -1,6 +1,6 @@
 // frontend/src/components/FeaturedDriverSection/FeaturedDriverSection.tsx
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Box,
   Container,
@@ -9,73 +9,37 @@ import {
   Heading,
   Text,
   VStack,
-  Spinner,
-  Alert,
-  AlertIcon,
-  Flex,
   Button,
 } from '@chakra-ui/react';
-import { useApi } from '@/hooks/useApi';
 
-interface ApiDriver {
-  id: number;
-  full_name: string;
-  driver_number: number | null;
-  country_code: string | null;
-  team_name: string;
+interface DriverStats {
+  wins: number;
+  podiums: number;
+  poles: number;
+  totalPoints: number;
+  fastestLaps: number;
+  racesCompleted: number;
 }
 
-const FeaturedDriverSection: React.FC = () => {
-  const { authedFetch } = useApi();
-  const [driver, setDriver] = useState<ApiDriver | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+interface FeaturedDriver {
+  id: number;
+  fullName: string;
+  driverNumber: number | null;
+  countryCode: string | null;
+  teamName: string;
+  seasonPoints: number;
+  seasonWins: number;
+  position: number;
+  careerStats: DriverStats;
+}
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchFeatured = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await authedFetch<ApiDriver[]>(`/api/drivers/by-standings/2025`);
-        if (!Array.isArray(data) || data.length === 0) throw new Error('No driver data returned.');
-        if (isMounted) setDriver(data[0]);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load featured driver.';
-        if (isMounted) setError(message);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchFeatured();
-    return () => {
-      isMounted = false;
-    };
-  }, [authedFetch]);
+interface FeaturedDriverSectionProps {
+  featuredDriver: FeaturedDriver | null;
+}
 
-  if (loading) {
-    return (
-      <Box bg="bg-secondary">
-        <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }}>
-          <Flex justify="center" p="xl">
-            <Spinner size="lg" color="brand.red" />
-          </Flex>
-        </Container>
-      </Box>
-    );
-  }
-
-  if (error || !driver) {
-    return (
-      <Box bg="bg-secondary">
-        <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }}>
-          <Alert status="error">
-            <AlertIcon />
-            {error || 'Driver data could not be found.'}
-          </Alert>
-        </Container>
-      </Box>
-    );
+const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredDriver }) => {
+  if (!featuredDriver) {
+    return null;
   }
 
   return (
@@ -85,15 +49,20 @@ const FeaturedDriverSection: React.FC = () => {
           <GridItem>
             <VStack align="center" spacing={2} bg="bg-surface-raised" border="1px solid" borderColor="border-primary" borderRadius="lg" p="lg">
               <Text color="text-muted" fontSize="sm">Featured Driver</Text>
-              <Heading as="h3" size="lg" color="text-primary">{driver.full_name}</Heading>
-              <Text color="text-secondary" fontSize="md">{driver.team_name} {driver.driver_number ? `• #${driver.driver_number}` : ''}</Text>
-              <Text color="text-muted" fontSize="sm">Country: {driver.country_code || 'N/A'}</Text>
+              <Heading as="h3" size="lg" color="text-primary">{featuredDriver.fullName}</Heading>
+              <Text color="text-secondary" fontSize="md">{featuredDriver.teamName} {featuredDriver.driverNumber ? `• #${featuredDriver.driverNumber}` : ''}</Text>
+              <Text color="text-muted" fontSize="sm">Country: {featuredDriver.countryCode || 'N/A'}</Text>
+              <Text color="text-muted" fontSize="sm">Position: #{featuredDriver.position}</Text>
             </VStack>
           </GridItem>
           <GridItem>
             <VStack align="flex-start" spacing={4}>
               <Heading as="h2" size="xl" color="text-primary" fontFamily="heading">Championship Leader</Heading>
-              <Text color="text-secondary" fontSize="lg">{driver.full_name} currently leads the 2025 standings.</Text>
+              <Text color="text-secondary" fontSize="lg">{featuredDriver.fullName} currently leads the {new Date().getFullYear()} standings with {featuredDriver.seasonPoints} points and {featuredDriver.seasonWins} wins.</Text>
+              <VStack align="flex-start" spacing={2}>
+                <Text color="text-muted" fontSize="sm">Career Stats: {featuredDriver.careerStats.wins} wins • {featuredDriver.careerStats.podiums} podiums • {featuredDriver.careerStats.poles} poles</Text>
+                <Text color="text-muted" fontSize="sm">Total Races: {featuredDriver.careerStats.racesCompleted} • Total Points: {featuredDriver.careerStats.totalPoints}</Text>
+              </VStack>
               <Button bg="brand.red" color="white" _hover={{ bg: 'brand.redDark' }} _active={{ bg: 'brand.redDark' }}>
                 View Drivers
               </Button>

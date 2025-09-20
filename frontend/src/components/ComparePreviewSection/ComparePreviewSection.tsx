@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Crown } from 'lucide-react';
+import { Crown, Shuffle } from 'lucide-react';
 import { 
   Box, 
   Container, 
@@ -14,8 +14,22 @@ import {
   Button, 
   VStack, 
   Flex, 
-  Spinner
+  Spinner,
+  IconButton,
+  HStack
 } from '@chakra-ui/react';
+import { buildApiUrl } from '../../lib/api';
+
+// Interface for API driver data
+interface ApiDriver {
+  id: number;
+  first_name: string;
+  last_name: string;
+  driver_number: number | null;
+  country_code: string | null;
+  team_name: string;
+}
+
 
 // Interface for comparison driver data
 interface ComparisonDriver {
@@ -40,7 +54,9 @@ const ComparePreviewSection: React.FC = () => {
   const { loginWithRedirect } = useAuth0();
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [randomizeLoading, setRandomizeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [allDrivers, setAllDrivers] = useState<ApiDriver[]>([]);
 
   // Helper function to convert lap time to seconds for comparison
   const timeToSeconds = (timeString: string): number => {
@@ -85,13 +101,118 @@ const ComparePreviewSection: React.FC = () => {
 
   const winners = getWinners();
 
+  // Helper function to get team color
+  const getTeamColor = (teamName: string): string => {
+    const teamColors: { [key: string]: string } = {
+      'Mercedes': '#00D2BE',
+      'Red Bull Racing': '#3671C6',
+      'Ferrari': '#DC143C',
+      'McLaren': '#FF8700',
+      'Aston Martin': '#006F62',
+      'Alpine': '#FF87C1',
+      'Williams': '#005AFF',
+      'AlphaTauri': '#2B4562',
+      'Alfa Romeo': '#B12039',
+      'Haas': '#FFFFFF'
+    };
+    return teamColors[teamName] || '#666666';
+  };
+
+  // Helper function to get driver image URL
+  const getDriverImageUrl = (): string => {
+    // For now, use a fallback image. In a real app, you'd have a mapping or API endpoint
+    return "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png";
+  };
+
+  // Randomize function
+  const handleRandomize = async () => {
+    try {
+      setRandomizeLoading(true);
+      setError(null);
+
+      // If we don't have all drivers yet, fetch them
+      if (allDrivers.length === 0) {
+        const driversResponse = await fetch(buildApiUrl('/api/drivers'));
+        if (!driversResponse.ok) {
+          throw new Error(`Failed to fetch drivers: ${driversResponse.statusText}`);
+        }
+        const drivers: ApiDriver[] = await driversResponse.json();
+        setAllDrivers(drivers);
+      }
+
+      // Get two random different drivers
+      const availableDrivers = allDrivers.length > 0 ? allDrivers : [
+        { id: 1, first_name: "Lewis", last_name: "Hamilton", team_name: "Mercedes" },
+        { id: 2, first_name: "Max", last_name: "Verstappen", team_name: "Red Bull Racing" }
+      ];
+
+      let driver1, driver2;
+      do {
+        driver1 = availableDrivers[Math.floor(Math.random() * availableDrivers.length)];
+        driver2 = availableDrivers[Math.floor(Math.random() * availableDrivers.length)];
+      } while (driver1.id === driver2.id);
+
+      // Fetch stats for both drivers
+      const [stats1Response, stats2Response] = await Promise.all([
+        fetch(buildApiUrl(`/api/drivers/${driver1.id}/stats`)),
+        fetch(buildApiUrl(`/api/drivers/${driver2.id}/stats`))
+      ]);
+
+      if (!stats1Response.ok || !stats2Response.ok) {
+        throw new Error('Failed to fetch driver stats');
+      }
+
+      const [stats1, stats2] = await Promise.all([
+        stats1Response.json(),
+        stats2Response.json()
+      ]);
+
+      // Create comparison data
+      const newComparisonData: ComparisonData = {
+        driver1: {
+          fullName: `${driver1.first_name} ${driver1.last_name}`,
+          teamName: driver1.team_name,
+          imageUrl: getDriverImageUrl(),
+          teamColorToken: getTeamColor(driver1.team_name),
+          stats: {
+            fastestLap: "1:18.123", // Mock data since API doesn't provide this
+            fastestLapRank: 1,
+            championships: 0, // Mock data since API doesn't provide this
+            championshipsRank: 1
+          }
+        },
+        driver2: {
+          fullName: `${driver2.first_name} ${driver2.last_name}`,
+          teamName: driver2.team_name,
+          imageUrl: getDriverImageUrl(),
+          teamColorToken: getTeamColor(driver2.team_name),
+          stats: {
+            fastestLap: "1:17.456", // Mock data since API doesn't provide this
+            fastestLapRank: 2,
+            championships: 0, // Mock data since API doesn't provide this
+            championshipsRank: 2
+          }
+        }
+      };
+
+      setComparisonData(newComparisonData);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to randomize drivers';
+      setError(errorMessage);
+      console.error('Error randomizing drivers:', err);
+    } finally {
+      setRandomizeLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchComparisonData = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Mock data for Lewis Hamilton vs Max Verstappen comparison
+        // Load initial dummy data for Hamilton vs Verstappen
         const mockComparisonData: ComparisonData = {
           driver1: {
             fullName: "Lewis Hamilton",
@@ -132,7 +253,7 @@ const ComparePreviewSection: React.FC = () => {
       }
     };
 
-    fetchComparisonData();
+    fetchInitialData();
   }, []);
 
   if (loading) {
@@ -191,15 +312,28 @@ const ComparePreviewSection: React.FC = () => {
           <GridItem>
             <VStack align="flex-start" justify="center" spacing="lg" h="full">
               <VStack align="flex-start" spacing="sm">
-                <Text 
-                  color="brand.red" 
-                  fontWeight="bold" 
-                  fontSize="sm" 
-                  textTransform="uppercase" 
-                  letterSpacing="wide"
-                >
-                  Head-to-Head
-                </Text>
+                <HStack justify="space-between" w="100%">
+                  <Text 
+                    color="brand.red" 
+                    fontWeight="bold" 
+                    fontSize="sm" 
+                    textTransform="uppercase" 
+                    letterSpacing="wide"
+                  >
+                    Head-to-Head
+                  </Text>
+                  
+                  <IconButton
+                    aria-label="Randomize drivers"
+                    icon={<Shuffle size={20} />}
+                    size="sm"
+                    variant="ghost"
+                    color="brand.red"
+                    _hover={{ bg: 'brand.red', color: 'white' }}
+                    onClick={handleRandomize}
+                    isLoading={randomizeLoading}
+                  />
+                </HStack>
                 
                 <Heading 
                   as="h2" 
