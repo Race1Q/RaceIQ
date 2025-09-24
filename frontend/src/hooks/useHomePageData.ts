@@ -41,6 +41,7 @@ interface FeaturedDriver {
 	seasonWins: number;
 	position: number;
 	careerStats: DriverStats;
+	recentForm: { position: number; raceName: string; countryCode: string }[];
 }
 
 interface HomePageData {
@@ -68,6 +69,7 @@ const defaultFeaturedDriver: FeaturedDriver = {
 		fastestLaps: 50,
 		racesCompleted: 250,
 	},
+	recentForm: [],
 };
 
 export function useHomePageData(): HomePageData {
@@ -163,6 +165,19 @@ export function useHomePageData(): HomePageData {
 				const statsData = await statsResponse.json();
 				const careerStats: DriverStats = statsData.careerStats;
 
+				// Fetch recent form (last 5 results)
+				let recentForm: { position: number; raceName: string; countryCode: string }[] = [];
+				try {
+					const recentFormResponse = await fetch(buildApiUrl(`/api/drivers/${topDriverStanding.driverId}/recent-form`));
+					if (recentFormResponse.ok) {
+						recentForm = await recentFormResponse.json();
+					} else {
+						console.error('Failed to fetch recent form');
+					}
+				} catch (e) {
+					console.error('Recent form fetch error', e);
+				}
+
 				// Combine standings data and career stats using the new field names
 				const featuredDriverData: FeaturedDriver = {
 					id: topDriverStanding.driverId,
@@ -174,7 +189,8 @@ export function useHomePageData(): HomePageData {
 					seasonPoints: topDriverStanding.seasonPoints,
 					seasonWins: topDriverStanding.seasonWins,
 					position: 1, // The query is ordered by points, so the first result is always P1
-					careerStats
+					careerStats,
+					recentForm,
 				};
 
 				setFeaturedDriver(featuredDriverData);
