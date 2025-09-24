@@ -11,7 +11,7 @@ import { useHomePageData } from '../../hooks/useHomePageData';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
-  const { featuredDriver, recentRaces, loading: dataLoading } = useHomePageData();
+  const { featuredDriver, recentRaces, loading: dataLoading, error } = useHomePageData();
 
   if (isLoading || dataLoading) {
     return <F1LoadingSpinner text="Loading RaceIQ" />;
@@ -24,7 +24,7 @@ function HomePage() {
       {!isAuthenticated && (
         <>
           <ScrollAnimationWrapper position="relative">
-            <FeaturedDriverSection featuredDriver={featuredDriver} />
+            <FeaturedDriverSection featuredDriver={featuredDriver} isError={!!error} />
             <SectionConnector />
           </ScrollAnimationWrapper>
           

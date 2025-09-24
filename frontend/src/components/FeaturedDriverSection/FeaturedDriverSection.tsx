@@ -10,7 +10,10 @@ import {
   Text,
   VStack,
   Button,
+  Badge,
+  Image,
 } from '@chakra-ui/react';
+import { driverHeadshots } from '../../lib/driverHeadshots';
 
 interface DriverStats {
   wins: number;
@@ -33,14 +36,17 @@ interface FeaturedDriver {
   careerStats: DriverStats;
 }
 
-interface FeaturedDriverSectionProps {
+export interface FeaturedDriverSectionProps {
   featuredDriver: FeaturedDriver | null;
+  isError: boolean;
 }
 
-const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredDriver }) => {
+const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredDriver, isError }) => {
   if (!featuredDriver) {
     return null;
   }
+
+  const imageUrl = driverHeadshots[featuredDriver.fullName] || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png';
 
   return (
     <Box bg="whiteAlpha.50">
@@ -49,6 +55,18 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
           <GridItem>
             <VStack align="center" spacing={2} bg="bg-surface-raised" border="1px solid" borderColor="border-primary" borderRadius="lg" p="lg">
               <Text color="text-muted" fontSize="sm">Featured Driver</Text>
+              {isError && (
+                <Badge colorScheme="orange" variant="subtle" fontSize="0.7rem">Live Data Unavailable</Badge>
+              )}
+              <Image
+                src={imageUrl}
+                alt={featuredDriver.fullName}
+                boxSize={{ base: '96px', md: '120px' }}
+                objectFit="cover"
+                borderRadius="full"
+                border="3px solid"
+                borderColor="white"
+              />
               <Heading as="h3" size="lg" color="text-primary">{featuredDriver.fullName}</Heading>
               <Text color="text-secondary" fontSize="md">{featuredDriver.teamName} {featuredDriver.driverNumber ? `• #${featuredDriver.driverNumber}` : ''}</Text>
               <Text color="text-muted" fontSize="sm">Country: {featuredDriver.countryCode || 'N/A'}</Text>

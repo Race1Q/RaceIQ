@@ -19,6 +19,7 @@ import {
   HStack
 } from '@chakra-ui/react';
 import { buildApiUrl } from '../../lib/api';
+import { driverHeadshots } from '../../lib/driverHeadshots';
 
 // Interface for API driver data
 interface ApiDriver {
@@ -118,10 +119,9 @@ const ComparePreviewSection: React.FC = () => {
     return teamColors[teamName] || '#666666';
   };
 
-  // Helper function to get driver image URL
-  const getDriverImageUrl = (): string => {
-    // For now, use a fallback image. In a real app, you'd have a mapping or API endpoint
-    return "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png";
+  // Helper function to get driver image URL via centralized map
+  const getDriverImageUrl = (fullName: string): string => {
+    return driverHeadshots[fullName] || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png';
   };
 
   // Randomize function
@@ -152,7 +152,7 @@ const ComparePreviewSection: React.FC = () => {
         driver2 = availableDrivers[Math.floor(Math.random() * availableDrivers.length)];
       } while (driver1.id === driver2.id);
 
-      // Fetch stats for both drivers
+      // Fetch stats for both drivers (response values not used in preview, just validate request success)
       const [stats1Response, stats2Response] = await Promise.all([
         fetch(buildApiUrl(`/api/drivers/${driver1.id}/stats`)),
         fetch(buildApiUrl(`/api/drivers/${driver2.id}/stats`))
@@ -162,17 +162,15 @@ const ComparePreviewSection: React.FC = () => {
         throw new Error('Failed to fetch driver stats');
       }
 
-      const [stats1, stats2] = await Promise.all([
-        stats1Response.json(),
-        stats2Response.json()
-      ]);
+      const driver1FullName = `${driver1.first_name} ${driver1.last_name}`;
+      const driver2FullName = `${driver2.first_name} ${driver2.last_name}`;
 
       // Create comparison data
       const newComparisonData: ComparisonData = {
         driver1: {
-          fullName: `${driver1.first_name} ${driver1.last_name}`,
+          fullName: driver1FullName,
           teamName: driver1.team_name,
-          imageUrl: getDriverImageUrl(),
+          imageUrl: getDriverImageUrl(driver1FullName),
           teamColorToken: getTeamColor(driver1.team_name),
           stats: {
             fastestLap: "1:18.123", // Mock data since API doesn't provide this
@@ -182,9 +180,9 @@ const ComparePreviewSection: React.FC = () => {
           }
         },
         driver2: {
-          fullName: `${driver2.first_name} ${driver2.last_name}`,
+          fullName: driver2FullName,
           teamName: driver2.team_name,
-          imageUrl: getDriverImageUrl(),
+          imageUrl: getDriverImageUrl(driver2FullName),
           teamColorToken: getTeamColor(driver2.team_name),
           stats: {
             fastestLap: "1:17.456", // Mock data since API doesn't provide this
@@ -217,7 +215,7 @@ const ComparePreviewSection: React.FC = () => {
           driver1: {
             fullName: "Lewis Hamilton",
             teamName: "Mercedes",
-            imageUrl: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png",
+            imageUrl: getDriverImageUrl("Lewis Hamilton"),
             teamColorToken: "#00D2BE", // Mercedes teal
             stats: {
               fastestLap: "1:18.123",
@@ -229,7 +227,7 @@ const ComparePreviewSection: React.FC = () => {
           driver2: {
             fullName: "Max Verstappen",
             teamName: "Red Bull Racing",
-            imageUrl: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png",
+            imageUrl: getDriverImageUrl("Max Verstappen"),
             teamColorToken: "#3671C6", // Red Bull blue
             stats: {
               fastestLap: "1:17.456",
