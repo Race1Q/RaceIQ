@@ -78,6 +78,30 @@ export class DriversService {
       careerStats,
     };
   }
+
+  async getDriverRecentForm(driverId: number): Promise<{ position: number; raceName: string; countryCode: string }[]> {
+    // Find the driver first to ensure they exist
+    await this.findOne(driverId);
+
+    const rawResults = await this.raceResultRepository.createQueryBuilder('rr')
+      .select([
+        'rr.position AS position',
+        'r.name AS "raceName"',
+        'c.country_code AS "countryCode"', // NEW: Select the circuit's country code
+      ])
+      .innerJoin('rr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('r.circuit', 'c') // NEW: Join to the circuits table
+      .where('rr.driver_id = :driverId', { driverId })
+      .andWhere('r.date < NOW()')
+      .andWhere("s.type = 'RACE'")
+      .orderBy('r.date', 'DESC')
+      .limit(5)
+      .getRawMany();
+
+    // The method now returns the full array of objects
+    return rawResults;
+  }
 }
 
 

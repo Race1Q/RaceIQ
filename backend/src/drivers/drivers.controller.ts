@@ -24,6 +24,13 @@ export class DriversController {
   ): Promise<DriverStatsResponseDto> {
     return this.driversService.getDriverCareerStats(id);
   }
+
+  @Get(':id/recent-form')
+  async getDriverRecentForm(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ position: number; raceName: string; countryCode: string }[]> {
+    return this.driversService.getDriverRecentForm(id);
+  }
 }
 
 
