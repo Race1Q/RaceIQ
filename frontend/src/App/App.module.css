@@ -1,0 +1,654 @@
+
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* Loading styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: var(--color-background-dark);
+}
+
+.loading-text {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary-red);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: var(--space-lg);
+  padding: 15px var(--space-lg);
+  border: 2px solid var(--color-primary-red);
+  border-radius: 25px;
+  background: rgba(225, 6, 0, 0.1);
+  box-shadow: 
+    0 0 20px rgba(225, 6, 0, 0.4),
+    inset 0 0 20px rgba(225, 6, 0, 0.1);
+  text-shadow: 0 0 10px rgba(225, 6, 0, 0.5);
+  animation: loading-pulse 2s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(225, 6, 0, 0.4),
+      inset 0 0 20px rgba(225, 6, 0, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(225, 6, 0, 0.6),
+      inset 0 0 30px rgba(225, 6, 0, 0.2);
+  }
+}
+
+/* F1 Speedometer Loading Animation */
+.speedometer {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  margin-bottom: var(--space-md);
+}
+
+.speedometer-dial {
+  width: 100%;
+  height: 100%;
+  border: 4px solid var(--color-border-gray);
+  border-radius: 50%;
+  position: relative;
+  background: linear-gradient(135deg, var(--color-surface-gray) 0%, var(--color-background-dark) 100%);
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(225, 6, 0, 0.3);
+}
+
+.speedometer-needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 45px;
+  background: linear-gradient(to top, var(--color-primary-red) 0%, var(--color-primary-red-light) 50%, var(--color-primary-red) 100%);
+  transform-origin: 50% 0;
+  transform: translateX(-50%) rotate(-135deg);
+  animation: speedometer-sweep 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(225, 6, 0, 0.6);
+}
+
+.speedometer-needle::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary-red);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.8);
+}
+
+.speedometer-markings {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.speedometer-marking {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 8px;
+  background: var(--color-icon-muted);
+  transform-origin: 50% 60px;
+}
+
+.speedometer-marking.major {
+  height: 12px;
+  background: var(--color-primary-red);
+  width: 3px;
+}
+
+.speedometer-numbers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.speedometer-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 10px;
+  color: var(--color-primary-red);
+  font-weight: bold;
+  transform-origin: 50% 50px;
+}
+
+@keyframes speedometer-sweep {
+  0% { 
+    transform: translateX(-50%) rotate(-135deg);
+  }
+  25% {
+    transform: translateX(-50%) rotate(-45deg);
+  }
+  50% { 
+    transform: translateX(-50%) rotate(45deg);
+  }
+  75% {
+    transform: translateX(-50%) rotate(135deg);
+  }
+  100% { 
+    transform: translateX(-50%) rotate(-135deg);
+  }
+}
+
+/* Create speedometer markings */
+.speedometer-marking:nth-child(1) { transform: translateX(-50%) translateY(-50%) rotate(-135deg) translateY(-50px); }
+.speedometer-marking:nth-child(2) { transform: translateX(-50%) translateY(-50%) rotate(-90deg) translateY(-50px); }
+.speedometer-marking:nth-child(3) { transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-50px); }
+.speedometer-marking:nth-child(4) { transform: translateX(-50%) translateY(-50%) rotate(0deg) translateY(-50px); }
+.speedometer-marking:nth-child(5) { transform: translateX(-50%) translateY(-50%) rotate(45deg) translateY(-50px); }
+.speedometer-marking:nth-child(6) { transform: translateX(-50%) translateY(-50%) rotate(90deg) translateY(-50px); }
+.speedometer-marking:nth-child(7) { transform: translateX(-50%) translateY(-50%) rotate(135deg) translateY(-50px); }
+
+/* Create speedometer numbers */
+.speedometer-number:nth-child(1) { transform: translateX(-50%) translateY(-50%) rotate(-135deg) translateY(-65px) rotate(135deg); }
+.speedometer-number:nth-child(2) { transform: translateX(-50%) translateY(-50%) rotate(-90deg) translateY(-65px) rotate(90deg); }
+.speedometer-number:nth-child(3) { transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-65px) rotate(45deg); }
+.speedometer-number:nth-child(4) { transform: translateX(-50%) translateY(-50%) rotate(0deg) translateY(-65px) rotate(0deg); }
+.speedometer-number:nth-child(5) { transform: translateX(-50%) translateY(-50%) rotate(45deg) translateY(-65px) rotate(-45deg); }
+.speedometer-number:nth-child(6) { transform: translateX(-50%) translateY(-50%) rotate(90deg) translateY(-65px) rotate(-90deg); }
+.speedometer-number:nth-child(7) { transform: translateX(-50%) translateY(-50%) rotate(135deg) translateY(-65px) rotate(-135deg); }
+
+/* Navigation */
+.navbar {
+  background-color: var(--color-surface-gray);
+  border-bottom: 2px solid var(--dynamic-accent-color, var(--color-primary-red));
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(var(--dynamic-accent-rgb, 255, 24, 1), 0.1);
+}
+
+.navContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 70px;
+}
+
+.navLogo h2 {
+  color: var(--dynamic-accent-color, var(--color-primary-red));
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.logoText {
+  color: var(--dynamic-accent-color, var(--color-primary-red));
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-lg);
+}
+
+.navCenter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  justify-content: center;
+  flex: 1;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.navLink {
+  color: var(--color-text-light);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+}
+
+.navLink:hover {
+  color: var(--dynamic-accent-color, var(--color-primary-red));
+  transform: translateY(-2px);
+  text-shadow: 0 2px 4px rgba(var(--dynamic-accent-rgb, 255, 24, 1), 0.3);
+}
+
+.navLinkActive {
+  color: var(--dynamic-accent-color, var(--color-primary-red)) !important;
+  transform: translateY(-2px);
+  text-shadow: 0 0 15px rgba(var(--dynamic-accent-rgb, 255, 24, 1), 0.7);
+  box-shadow: 0 4px 8px rgba(var(--dynamic-accent-rgb, 255, 24, 1), 0.2);
+}
+
+.navLink::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -5px;
+  left: 0;
+  background-color: var(--dynamic-accent-color, var(--color-primary-red));
+  transition: width 0.3s ease;
+  box-shadow: 0 2px 4px rgba(var(--dynamic-accent-rgb, 255, 24, 1), 0.3);
+}
+
+.navLink:hover::after {
+  width: 100%;
+}
+
+.navLinkActive::after {
+  width: 100%;
+}
+
+/* Button styles */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btnPrimary {
+  background-color: var(--color-primary-red);
+  color: var(--color-text-light);
+}
+
+.btnPrimary:hover {
+  background-color: var(--color-primary-red-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(225, 6, 0, 0.3);
+}
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(135deg, var(--color-background-dark) 0%, var(--color-surface-gray) 100%);
+  padding: 100px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 85vh;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23333" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+  opacity: 0.1;
+}
+
+.heroContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://example.com/your-banner-image.jpg') no-repeat center center;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: white;
+  padding: 0 20px;
+}
+
+.heroTitle {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  background: linear-gradient(45deg, var(--color-text-light), var(--color-primary-red));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.heroSubtitle {
+  font-size: 1.3rem;
+  color: var(--color-text-medium);
+  margin-bottom: var(--space-xl);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroButtons {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  flex-wrap: wrap;
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* Data Section */
+.dataSection {
+  padding: 80px 0;
+  background-color: var(--color-surface-dark);
+}
+
+.dataSection h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 50px;
+  color: var(--color-text-light);
+}
+
+.racesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-xl);
+}
+
+.raceCard {
+  background-color: var(--color-surface-gray);
+  border: 1px solid var(--color-border-gray);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.raceCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary-red), var(--color-primary-red-light));
+}
+
+.raceCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(225, 6, 0, 0.2);
+  border-color: var(--color-primary-red);
+}
+
+.raceCard h3 {
+  color: var(--color-primary-red);
+  font-size: 1.4rem;
+  margin-bottom: var(--space-sm);
+  font-weight: 700;
+}
+
+.raceDate {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-md);
+}
+
+.raceResult p {
+  margin-bottom: 8px;
+  color: var(--color-text-medium);
+}
+
+.raceResult strong {
+  color: var(--color-text-light);
+}
+
+.personalizedFeed {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.personalizedFeed h2 {
+  color: var(--color-primary-red);
+  margin-bottom: var(--space-md);
+}
+
+.personalizedFeed p {
+  color: var(--color-text-medium);
+  font-size: 1.1rem;
+}
+
+/* Call to Action Section */
+.ctaSection {
+  background: linear-gradient(135deg, var(--color-primary-red) 0%, var(--color-primary-red-dark) 100%);
+  padding: 80px 0;
+  text-align: center;
+}
+
+.ctaContent h2 {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-md);
+  color: var(--color-text-light);
+}
+
+.ctaContent p {
+  font-size: 1.2rem;
+  margin-bottom: var(--space-xl);
+  color: var(--color-text-light-gray);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Footer */
+.footer {
+  background-color: var(--color-surface-gray);
+  border-top: 2px solid var(--dynamic-accent-color, var(--color-primary-red));
+  padding: var(--space-xl) 0;
+  margin-top: auto;
+}
+
+.footerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.footerLinks {
+  display: flex;
+  gap: var(--space-lg);
+}
+
+.footerLink {
+  color: var(--color-text-medium);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footerLink:hover {
+  color: var(--dynamic-accent-color, var(--color-primary-red));
+}
+
+.footerCopyright {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navContainer {
+    flex-direction: column;
+    height: auto;
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+
+  .navLinks {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .navCenter {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-md);
+  }
+
+  .navRight {
+    gap: var(--space-md);
+  }
+
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1.1rem;
+  }
+
+  .heroButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .racesGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  .raceCard {
+    padding: var(--space-md);
+  }
+
+  .ctaContent h2 {
+    font-size: 2rem;
+  }
+
+  .footerContent {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footerLinks {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroTitle {
+    font-size: 2rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1rem;
+  }
+
+  .dataSection h2 {
+    font-size: 2rem;
+  }
+
+  .ctaContent h2 {
+    font-size: 1.8rem;
+  }
+
+  .container {
+    padding: 0 15px;
+  }
+}
+
+/* Custom button styles for Login/Logout buttons */
+.navLinks button {
+  background-color: transparent;
+  border: 2px solid var(--dynamic-accent-color, var(--color-primary-red));
+  color: var(--dynamic-accent-color, var(--color-primary-red));
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.navLinks button:hover {
+  background-color: var(--dynamic-accent-color, var(--color-primary-red));
+  color: var(--color-text-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(var(--dynamic-accent-rgb, 255, 24, 1), 0.3);
+}
+
+.heroButtons button {
+  background-color: transparent;
+  border: 2px solid var(--color-primary-red);
+  color: var(--color-primary-red);
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.heroButtons button:hover {
+  background-color: var(--color-primary-red);
+  color: var(--color-text-light);
+  transform: translateY(-2px);
+}
+
+.ctaContent button {
+  background-color: var(--color-text-light);
+  color: var(--color-primary-red);
+  border: 2px solid var(--color-text-light);
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.ctaContent button:hover {
+  background-color: transparent;
+  color: var(--color-text-light);
+  transform: translateY(-2px);
+}

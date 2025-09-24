@@ -1,0 +1,104 @@
+.container {
+  background-color: var(--color-surface-gray);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-gray);
+  padding: var(--space-lg);
+  height: 100%;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-lg);
+  text-align: center;
+}
+
+.timelineContainer {
+  margin-bottom: var(--space-lg);
+}
+
+.timeline {
+  height: 40px;
+  background-color: var(--color-surface-dark);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-gray);
+  overflow: hidden;
+}
+
+.segment {
+  height: 100%;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.segment:hover {
+  filter: brightness(1.2);
+  transform: scaleY(1.1);
+}
+
+.labels {
+  margin-top: var(--space-sm);
+}
+
+.lapLabel {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.legend {
+  align-items: flex-start;
+}
+
+.legendTitle {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+  margin-bottom: var(--space-sm);
+}
+
+.legendItems {
+  justify-content: center;
+}
+
+.legendItem {
+  gap: var(--space-sm);
+}
+
+.legendColor {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-border-gray);
+}
+
+.legendText {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-medium);
+}
+
+/* Flag colors */
+.green {
+  background-color: #00ff00;
+}
+
+.yellow {
+  background-color: #ffff00;
+}
+
+.red {
+  background-color: #ff0000;
+}
+
+.safetyCar {
+  background-color: #ffa500;
+}
+
+.virtualSafetyCar {
+  background-color: #ff69b4;
+}
