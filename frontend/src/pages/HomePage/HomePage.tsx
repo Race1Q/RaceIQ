@@ -1,5 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Container, VStack, Heading, Text, SimpleGrid } from '@chakra-ui/react';
+import { useEffect } from 'react';
+import { Box, Container, VStack, Heading, Text } from '@chakra-ui/react';
+import { RaceSlider } from '../../components/RaceSlider/RaceSlider';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import FeaturedDriverSection from '../../components/FeaturedDriverSection/FeaturedDriverSection';
@@ -11,7 +13,12 @@ import { useHomePageData } from '../../hooks/useHomePageData';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
-  const { featuredDriver, recentRaces, loading: dataLoading, error } = useHomePageData();
+  const { featuredDriver, seasonSchedule, loading: dataLoading, error } = useHomePageData();
+
+  // Ensure page loads at top
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, []);
 
   if (isLoading || dataLoading) {
     return <F1LoadingSpinner text="Loading RaceIQ" />;
@@ -43,26 +50,20 @@ function HomePage() {
                 <Text color="text-secondary">Your personalized F1 feed will appear here.</Text>
               </VStack>
             )}
-            <VStack spacing={12}>
-              <Heading color="text-primary">Recent Races</Heading>
-              <SimpleGrid columns={{ base: 1, md: 3 }} gap="lg">
-                {recentRaces.map((race) => (
-                  <Box
-                    key={race.id}
-                    bg="bg-surface-raised"
-                    border="1px solid"
-                    borderColor="border-primary"
-                    borderRadius="lg"
-                    p="lg"
-                    transition="all 0.3s ease"
-                    _hover={{ transform: 'translateY(-5px)', boxShadow: 'lg', borderColor: 'brand.red' }}
-                  >
-                    <Heading as="h3" color="brand.red" size="md" mb="sm">{race.name}</Heading>
-                    <Text color="text-muted" fontSize="sm" mb="xs">Round {race.round}</Text>
-                    <Text color="text-muted" fontSize="sm">{new Date(race.date).toLocaleDateString()}</Text>
-                  </Box>
-                ))}
-              </SimpleGrid>
+            <VStack spacing={12} width="100%" overflow="hidden">
+              <Heading
+                as="h4"
+                size="sm"
+                color="brand.red"
+                textTransform="uppercase"
+                letterSpacing="wider"
+                fontWeight="bold"
+                mb={8}
+                textAlign="center"
+              >
+                Recent Races
+              </Heading>
+              <RaceSlider seasonSchedule={seasonSchedule} />
             </VStack>
           </VStack>
         </Container>

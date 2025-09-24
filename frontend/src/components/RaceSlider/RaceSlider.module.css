@@ -1,0 +1,22 @@
+.raceSlider {
+  width: 100%;
+  height: 220px;
+  padding: 10px 0;
+  position: relative;
+}
+
+.raceSlider :global(.swiper-button-prev),
+.raceSlider :global(.swiper-button-next) {
+  color: #e10600;
+  transform: scale(0.7);
+}
+
+.raceSlide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  overflow: hidden;
+}
+
+

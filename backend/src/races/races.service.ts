@@ -28,7 +28,7 @@ export class RacesService {
     const season = seasonRaw !== undefined && seasonRaw !== null ? Number(seasonRaw) : undefined;
     const year = yearRaw !== undefined && yearRaw !== null ? Number(yearRaw) : undefined;
 
-    console.log('[RacesService.findAll] seasonRaw:', seasonRaw, 'season:', season, 'yearRaw:', yearRaw, 'year:', year);
+    // Debug logging removed
 
     const qb = this.racesRepo.createQueryBuilder('r')
       .leftJoinAndSelect('r.season', 'season')
@@ -46,7 +46,6 @@ export class RacesService {
       .addOrderBy('r.round', 'DESC');
 
     const races = await qb.getMany();
-    console.log('[RacesService.findAll] races returned:', races);
     return races;
   }
 

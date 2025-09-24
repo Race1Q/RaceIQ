@@ -4,15 +4,23 @@ import { useState, useEffect } from 'react';
 import { buildApiUrl } from '../lib/api';
 import { supabase } from '../lib/supabase';
 
-interface Race {
-	id: number;
-	name: string;
-	round: number;
-	date: string;
-	circuit: {
-		name: string;
-	};
+interface PodiumResult {
+    position: number;
+    driverName: string;
 }
+
+export interface Race {
+    id: number;
+    name: string;
+    round: number;
+    date: string;
+    circuit: {
+        name: string;
+    };
+    podium: PodiumResult[] | null;
+}
+
+export type RaceWithPodium = Race;
 
 interface DriverStanding {
 	driverId: number;
@@ -45,10 +53,10 @@ interface FeaturedDriver {
 }
 
 interface HomePageData {
-	featuredDriver: FeaturedDriver | null;
-	recentRaces: Race[];
-	loading: boolean;
-	error: string | null;
+    featuredDriver: FeaturedDriver | null;
+    seasonSchedule: Race[];
+    loading: boolean;
+    error: string | null;
 }
 
 // Default fallback driver used when live data fails
@@ -58,25 +66,31 @@ const defaultFeaturedDriver: FeaturedDriver = {
 	driverNumber: 1,
 	countryCode: 'NED',
 	teamName: 'Red Bull Racing',
-	seasonPoints: 0,
-	seasonWins: 0,
-	position: 1,
+  seasonPoints: 310,
+  seasonWins: 10,
+  position: 1,
 	careerStats: {
-		wins: 90,
-		podiums: 150,
-		poles: 80,
-		totalPoints: 3000,
-		fastestLaps: 50,
-		racesCompleted: 250,
+    wins: 61,
+    podiums: 110,
+    poles: 42,
+    totalPoints: 2700,
+    fastestLaps: 32,
+    racesCompleted: 190,
 	},
-	recentForm: [],
+  recentForm: [
+    { position: 1, raceName: 'Italian Grand Prix', countryCode: 'ITA' },
+    { position: 2, raceName: 'Dutch Grand Prix', countryCode: 'NLD' },
+    { position: 1, raceName: 'Belgian Grand Prix', countryCode: 'BEL' },
+    { position: 3, raceName: 'British Grand Prix', countryCode: 'GBR' },
+    { position: 1, raceName: 'Austrian Grand Prix', countryCode: 'AUT' },
+  ],
 };
 
 export function useHomePageData(): HomePageData {
-	const [featuredDriver, setFeaturedDriver] = useState<FeaturedDriver | null>(null);
-	const [recentRaces, setRecentRaces] = useState<Race[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+    const [featuredDriver, setFeaturedDriver] = useState<FeaturedDriver | null>(null);
+    const [seasonSchedule, setSeasonSchedule] = useState<Race[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		const fetchHomePageData = async () => {
@@ -91,25 +105,23 @@ export function useHomePageData(): HomePageData {
 				if (!racesResponse.ok) {
 					throw new Error(`Failed to fetch races: ${racesResponse.statusText}`);
 				}
-				const races: Race[] = await racesResponse.json();
+                const races: Race[] = await racesResponse.json();
 
-				// Get the three most recent races (past races, sorted descending)
-				const pastRaces = races
-					.filter(race => new Date(race.date) < new Date())
-					.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-					.slice(0, 3);
+                // Provide full season schedule directly
+                setSeasonSchedule(races);
 
-				setRecentRaces(pastRaces);
-
-				// Get the latest completed race round
-				const latestRound = pastRaces.length > 0 ? pastRaces[0].round : 1;
+                // Get the latest completed race round
+                const latestCompleted = races
+                    .filter(r => new Date(r.date) < new Date())
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                const latestRound = latestCompleted.length > 0 ? latestCompleted[0].round : 1;
 
 				// Fetch standings using conditional logic based on year
 				let driverStandingsResponse;
 
 				// For modern years, use the fast Supabase RPC
 				if (currentYear >= 2023) {
-					console.log(`Fetching standings for ${currentYear} from Materialized View...`);
+					// fetching standings from materialized view
 				
 					const { data: standings, error } = await supabase
 						.from('driver_standings_materialized') // Query the view like a table
@@ -125,7 +137,7 @@ export function useHomePageData(): HomePageData {
 
 				} else {
 					// For historical data, use the existing NestJS API
-					console.log(`Fetching standings for ${currentYear} using NestJS API...`);
+					// fetching standings using NestJS API for historical years
 					const response = await fetch(buildApiUrl(`/api/standings/${currentYear}/${latestRound}`));
 					if (!response.ok) {
 						throw new Error('Failed to fetch historical standings');
@@ -209,10 +221,10 @@ export function useHomePageData(): HomePageData {
 		fetchHomePageData();
 	}, []);
 
-	return {
-		featuredDriver,
-		recentRaces,
-		loading,
-		error
-	};
+    return {
+        featuredDriver,
+        seasonSchedule,
+        loading,
+        error
+    };
 }
