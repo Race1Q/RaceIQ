@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RaceResult } from './race-results.entity';
+import { RaceResultsController } from './race-results.controller';
 import { SessionsModule } from '../sessions/sessions.module';
 import { DriversModule } from '../drivers/drivers.module';
 import { ConstructorsModule } from '../constructors/constructors.module';
@@ -12,7 +13,7 @@ import { ConstructorsModule } from '../constructors/constructors.module';
     DriversModule,
     ConstructorsModule,
   ],
-  controllers: [],
+  controllers: [RaceResultsController],
   providers: [],
   exports: [TypeOrmModule],
 })
