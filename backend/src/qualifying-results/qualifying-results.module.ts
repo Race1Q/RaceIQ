@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { QualifyingResult } from './qualifying-results.entity';
+import { QualifyingResultsController } from './qualifying-results.controller';
 import { SessionsModule } from '../sessions/sessions.module';
 import { DriversModule } from '../drivers/drivers.module';
 import { ConstructorsModule } from '../constructors/constructors.module';
@@ -13,6 +14,7 @@ import { ConstructorsModule } from '../constructors/constructors.module';
     ConstructorsModule,
   ],
   exports: [TypeOrmModule],
+  controllers: [QualifyingResultsController],
 })
 export class QualifyingResultsModule {}
 
