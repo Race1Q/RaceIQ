@@ -9,9 +9,11 @@ import { PitStop } from '../pit-stops/pit-stops.entity';
 import { TireStint } from '../tire-stints/tire-stints.entity';
 import { RaceEvent } from '../race-events/race-events.entity';
 import { RacesController } from './races.controller';
+import { RaceSummaryController } from './race-summary.controller';
 import { RacesService } from './races.service';
 import { SeasonsModule } from '../seasons/seasons.module';
 import { CircuitsModule } from '../circuits/circuits.module';
+import { DriversModule } from '../drivers/drivers.module';
 
 @Module({
   imports: [
@@ -26,9 +28,10 @@ import { CircuitsModule } from '../circuits/circuits.module';
       RaceEvent,
     ]),
     SeasonsModule,
-    CircuitsModule,
+  CircuitsModule,
+  DriversModule,
   ],
-  controllers: [RacesController],
+  controllers: [RacesController, RaceSummaryController],
   providers: [RacesService],
   exports: [TypeOrmModule],
 })
