@@ -1,16 +1,16 @@
 // Map team names to existing files under /public/assets
 // Prefer SVG when available; otherwise use provided PNG assets.
 export const teamLogoMap: { [key: string]: string } = {
-  "Red Bull Racing": "/assets/Red_Bull_Racing_logo.svg.png",
-  "Mercedes": "/assets/Mercedes_F1_Logo.svg.png",
-  "Ferrari": "/assets/Ferrari-Logo.png",
-  "McLaren": "/assets/McLaren_Racing_logo.svg.png",
-  "Aston Martin": "/assets/aston-martin-f1-seeklogo.png",
-  "Alpine": "/assets/Alpine_F1_Team_Logo.svg.png",
-  "Williams": "/assets/Williams_Racing_logo.svg.png",
-  "Haas F1 Team": "/assets/Haas_F1_Team_Logo.svg.png",
-  "AlphaTauri": "/assets/Logotipo_da_RB_F1_Team.png",
-  "Alfa Romeo": "/assets/Sauber_F1_Team_logo.svg.png",
+  "Red Bull Racing": "/assets/teamLogos/2025redbullracinglogowhite.png",
+  "Mercedes": "/assets/teamLogos/2025mercedeslogowhite.png",
+  "Ferrari": "/assets/teamLogos/2025ferrarilogolight.png",
+  "McLaren": "/assets/teamLogos/2025mclarenlogowhite.png",
+  "Aston Martin": "/assets/teamLogos/2025astonmartinlogowhite.png",
+  "Alpine": "/assets/teamLogos/2025alpinelogowhite.png",
+  "Williams": "/assets/teamLogos/2025williamslogowhite.png",
+  "Haas F1 Team": "/assets/teamLogos/2025haaslogowhite.png",
+  "RB F1 Team": "/assets/teamLogos/2025racingbullslogowhite.png",
+  "Sauber": "/assets/teamLogos/2025kicksauberlogowhite.png",
   "Default": "/assets/logos/f1-logo.svg"
 };
 
@@ -20,13 +20,13 @@ export function getTeamLogo(teamName: string | undefined | null): string {
   const name = teamName.toLowerCase();
 
   // RB / AlphaTauri variants
-  if (name.includes('visa cash app rb') || name.includes('vcarb') || name.includes('rb f1') || name.includes('alphatauri')) {
-    return teamLogoMap['AlphaTauri'] || teamLogoMap['Default'];
+  if (name.includes('visa cash app rb') || name.includes('vcarb') || name.includes('RB F1 Team') || name.includes('alphatauri')) {
+    return teamLogoMap['RB F1 Team'] || teamLogoMap['Default'];
   }
 
   // Sauber / Stake / Alfa Romeo variants
-  if (name.includes('stake') || name.includes('sauber') || name.includes('alfa romeo')) {
-    return teamLogoMap['Alfa Romeo'] || teamLogoMap['Default'];
+  if (name.includes('stake') || name.includes('Sauber') || name.includes('alfa romeo')) {
+    return teamLogoMap['Sauber'] || teamLogoMap['Default'];
   }
 
   // Mercedes variants
@@ -73,3 +73,4 @@ export function getTeamLogo(teamName: string | undefined | null): string {
   if (teamLogoMap[teamName]) return teamLogoMap[teamName];
   return teamLogoMap['Default'];
 }
+

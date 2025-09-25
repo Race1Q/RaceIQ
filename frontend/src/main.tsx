@@ -47,7 +47,7 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
-        scope: 'openid profile email read:drivers read:standings read:constructors',
+        scope: 'openid profile email read:drivers read:standings read:constructors read:race-results',
       }}
       useRefreshTokens={true}
       cacheLocation="localstorage"

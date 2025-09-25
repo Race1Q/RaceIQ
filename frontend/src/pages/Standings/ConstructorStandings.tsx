@@ -10,15 +10,12 @@ import { teamColors } from '../../lib/teamColors';
 // Interfaces
 interface ApiConstructor {
   id: number;
+  constructor_id: string; // for navigation
   name: string;
   nationality: string;
-  constructor_id: string; // Important: use this for navigation
 }
 
 interface ConstructorStanding {
-  id: number;
-  season_id: number;
-  constructor_id: number;
   position: number;
   points: number;
   wins: number;
@@ -67,10 +64,8 @@ const ConstructorStandings: React.FC = () => {
     const fetchStandings = async () => {
       setLoading(true);
       try {
-        const data: ConstructorStanding[] = await publicFetch(
-          `${BACKEND_URL}/api/constructor-standings/${selectedSeason}`
-        );
-        setStandings(data);
+        const data = await publicFetch(`${BACKEND_URL}api/standings/year/${selectedSeason}`);
+        setStandings(data.constructorStandings || []);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
         toast({
@@ -105,14 +100,13 @@ const ConstructorStandings: React.FC = () => {
 
   return (
     <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
-      
       {/* Season Selector */}
       <Box mb={4} maxW="220px">
         <SearchableSelect
           label="Select Season"
           options={seasonOptions}
           value={seasonOptions.find(o => o.value === selectedSeason) || null}
-          onChange={(option) => setSelectedSeason((option as SeasonOption).value)}
+          onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
           isClearable={false}
         />
       </Box>
@@ -151,7 +145,7 @@ const ConstructorStandings: React.FC = () => {
             .sort((a, b) => a.position - b.position)
             .map((standing) => (
               <Flex
-                key={standing.constructor_id}
+                key={standing.constructor.constructor_id}
                 minW="700px"
                 px={4}
                 py={4}
@@ -169,7 +163,9 @@ const ConstructorStandings: React.FC = () => {
                 display="grid"
                 gridTemplateColumns="60px 1fr 100px 80px 1fr"
                 columnGap={4}
-                onClick={() => navigate(`/constructors/${standing.constructor.constructor_id}`)} // ✅ Navigate using constructor_id
+                onClick={() =>
+                  navigate(`/constructors/${standing.constructor.constructor_id}`)
+                }
               >
                 <Text textAlign="center">{standing.position}</Text>
                 <Text>{standing.constructor.name}</Text>
@@ -185,6 +181,8 @@ const ConstructorStandings: React.FC = () => {
 };
 
 export default ConstructorStandings;
+
+
 
 
 

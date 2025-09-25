@@ -41,7 +41,7 @@ import { User } from './users/entities/user.entity';
 @Module({
   imports: [
     // 1. Load the .env file
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
 
     // 2. Setup the TypeORM database connection (NOW USING DATABASE_URL)
     TypeOrmModule.forRootAsync({

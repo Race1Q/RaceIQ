@@ -48,7 +48,7 @@ const ProfilePage: React.FC = () => {
     const token = await getAccessTokenSilently({
       authorizationParams: {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "read:drivers read:constructors", // Need both for dropdowns
+        scope: "read:drivers read:constructors read:standings", // Need both for dropdowns
       },
     });
 
