@@ -1,16 +1,16 @@
 // Map team names to existing files under /public/assets
 // Prefer SVG when available; otherwise use provided PNG assets.
 export const teamLogoMap: { [key: string]: string } = {
-  "Red Bull Racing": "/assets/Red_Bull_Racing_logo.svg.png",
+  "Red Bull": "/assets/Red_Bull_Racing_logo.svg.png",
   "Mercedes": "/assets/Mercedes_F1_Logo.svg.png",
   "Ferrari": "/assets/Ferrari-Logo.png",
   "McLaren": "/assets/McLaren_Racing_logo.svg.png",
   "Aston Martin": "/assets/aston-martin-f1-seeklogo.png",
-  "Alpine": "/assets/Alpine_F1_Team_Logo.svg.png",
+  "Alpine F1 Team": "/assets/Alpine_F1_Team_Logo.svg.png",
   "Williams": "/assets/Williams_Racing_logo.svg.png",
   "Haas F1 Team": "/assets/Haas_F1_Team_Logo.svg.png",
-  "AlphaTauri": "/assets/Logotipo_da_RB_F1_Team.png",
-  "Alfa Romeo": "/assets/Sauber_F1_Team_logo.svg.png",
+  "RB F1 Team": "/assets/Logotipo_da_RB_F1_Team.png",
+  "Sauber": "/assets/Sauber_F1_Team_logo.svg.png",
   "Default": "/assets/logos/f1-logo.svg"
 };
 

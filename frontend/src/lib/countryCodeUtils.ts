@@ -11,6 +11,8 @@ export const countryCodeMap: { [key: string]: string } = {
   'ESP': 'ES',  // Spain
   'ITA': 'IT',  // Italy
   'AUS': 'AU',  // Australia
+  'NZL': 'NZ',  // New Zealand
+  'ARG': 'AR',  // Argentina 
   'CAN': 'CA',  // Canada
   'USA': 'US',  // United States
   'BRA': 'BR',  // Brazil

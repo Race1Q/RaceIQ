@@ -1,11 +1,17 @@
-import { Driver } from '../../drivers/drivers.entity';
 import { ConstructorEntity } from '../../constructors/constructors.entity';
 
-export interface DriverStanding {
-  driver: Driver;
+// This new DTO defines the rich, flattened structure the frontend needs.
+export class DriverStandingDto {
+  position: number;
   points: number;
   wins: number;
-  position: number;
+  constructorName: string;
+  driverId: number;
+  driverFullName: string;
+  // Now provided by the materialized view
+  driverNumber: number | null;
+  driverCountryCode: string | null;
+  driverProfileImageUrl: string | null;
 }
 
 export interface ConstructorStanding {
@@ -16,7 +22,7 @@ export interface ConstructorStanding {
 }
 
 export class StandingsResponseDto {
-  driverStandings: DriverStanding[];
+  driverStandings: DriverStandingDto[];
   constructorStandings: ConstructorStanding[];
 }
 

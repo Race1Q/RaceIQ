@@ -25,6 +25,12 @@
   /* ADD THIS LINE: This property controls the SVG fill/stroke */
   color: var(--color-logo-primary);
 }
+
+/* Make McLaren logo white */
+.teamLogo[alt*="McLaren"],
+.teamLogo[src*="McLaren_Racing_logo"] {
+  filter: brightness(0) invert(1) drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+}
 .teamName {
   font-family: var(--font-display);
   /* UPDATE THIS LINE: Reduced the font size */

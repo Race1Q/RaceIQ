@@ -21,6 +21,7 @@ import { TireStintsModule } from './tire-stints/tire-stints.module';
 import { RaceEventsModule } from './race-events/race-events.module';
 import { StandingsModule } from './standings/standings.module';
 import { UsersModule } from './users/users.module';
+import { DriverStandingMaterialized } from './standings/driver-standings-materialized.entity';
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -47,11 +48,13 @@ import { User } from './users/entities/user.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        // This is the key change to match your .env file
-        url: configService.get<string>('DATABASE_URL'),
-        entities: [
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+        const isLocal = !!databaseUrl && (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1'));
+        return {
+          type: 'postgres',
+          url: databaseUrl,
+          entities: [
           Driver,
           Country,
           ConstructorEntity,
@@ -66,12 +69,12 @@ import { User } from './users/entities/user.entity';
           TireStint,
           RaceEvent,
           User,
-        ],
-        synchronize: false, // trust the db schema
-        ssl: {
-          rejectUnauthorized: false, // Required for Supabase
-        },
-      }),
+          DriverStandingMaterialized,
+          ],
+          synchronize: false, // trust the db schema
+          ssl: isLocal ? false : { rejectUnauthorized: false },
+        };
+      },
     }),
 
     // 3. Load ONLY our new modules
