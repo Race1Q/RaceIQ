@@ -12,6 +12,7 @@ import type { Race } from '../../types/races';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import CircuitTrack3D from '../RacesPage/components/CircuitTrack3D';
+import { teamColors } from '../../lib/teamColors';
 
 const MotionBox = motion.create(Box);
 
@@ -184,6 +185,10 @@ type RaceSummary = {
     time_ms?: number | null;
   } | null;
   event_count: number;
+  events?: {
+    redFlags?: number;
+    yellowFlags?: number;
+  };
 };
 
 const fetchRaceSummary = async (raceId: string | number): Promise<RaceSummary> => {
@@ -593,59 +598,248 @@ const RaceDetailPage: React.FC = () => {
               </VStack>
             </TabPanel>
 
-            {/* QUALI → RACE (simple SVG) */}
+{/* QUALI → RACE (improved SVG) */}
+<TabPanel>
+  <VStack align="stretch" spacing={4}>
+    <Text fontSize="xl" fontWeight="bold" color="text-primary">Grid to Finish</Text>
+
+    <Box
+      overflow="hidden"
+      border="1px solid"
+      borderColor="border-subtle"
+      borderRadius="lg"
+      bg="bg-elevated"
+      p={3}
+    >
+      {(() => {
+        const rowHeight = 32;
+        const W = 1600;
+        const LEFT_X = 300;
+        const RIGHT_X = 1300;
+        const NAME_LEFT_X = LEFT_X - 20;
+        const NAME_RIGHT_X = RIGHT_X + 40;
+        const TOP = 60;
+        const BASE_Y = 80;
+        const bottomPad = 60; // breathing room below the lowest element
+
+        // Sort once by grid to define left column order
+        const leftOrdered = filteredRaceResults
+          .slice()
+          .sort((a, b) => (a.grid ?? 99) - (b.grid ?? 99));
+
+        // Build a quick lookup by driver_id for finish order index
+        // (fallback to grid order index when position is missing/duplicated)
+        const finishOrder = filteredRaceResults
+          .slice()
+          .sort((a, b) => (a.position ?? 99) - (b.position ?? 99));
+
+        const finishIndexByDriver: Record<string | number, number> = {};
+        finishOrder.forEach((rr, idx) => {
+          const key = rr.driver_id ?? rr.driver_code ?? `${idx}`;
+          finishIndexByDriver[key] = idx;
+        });
+
+        // Precompute all positions and track the true max Y across both sides
+        const items = leftOrdered.map((r, i) => {
+          const key = r.driver_id ?? r.driver_code ?? `${i}`;
+          const y1 = BASE_Y + i * rowHeight;
+          const idx2 = finishIndexByDriver[key] ?? i;
+          const y2 = BASE_Y + idx2 * rowHeight;
+
+          const constructor = r.constructor_name ?? r.constructor_id;
+          const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
+          let color = teamColors[constructorKey] || teamColors["Default"];
+          if (!color && typeof constructorKey === "string") {
+            const k = Object.keys(teamColors).find(t => constructorKey.toLowerCase().includes(t.toLowerCase()));
+            color = k ? teamColors[k] : teamColors["Default"];
+          }
+          color = `#${color}`;
+
+          const driverLabel = r.driver_name ?? r.driver_code ?? r.driver_id;
+
+          return { y1, y2, color, driverLabel };
+        });
+
+        const maxY = items.length
+          ? Math.max(...items.map(it => Math.max(it.y1, it.y2)))
+          : BASE_Y; // safe default if list is empty
+
+        const lastY = maxY; // where vertical lines should end
+        const height = lastY + bottomPad;
+
+        return (
+          <svg
+            viewBox={`0 0 ${W + 100} ${height}`}
+            width="100%"
+            height={height}
+            preserveAspectRatio="xMidYMid meet"
+          >
+            {/* Vertical rails end exactly at lastY */}
+            <line x1={LEFT_X}  y1={TOP} x2={LEFT_X}  y2={lastY} stroke="currentColor" strokeWidth={3} />
+            <line x1={RIGHT_X} y1={TOP} x2={RIGHT_X} y2={lastY} stroke="currentColor" strokeWidth={3} />
+
+            <text x={NAME_LEFT_X - 100} y={45} fontSize="26" fontWeight="bold">Grid</text>
+            <text x={RIGHT_X + 20} y={45} fontSize="26" fontWeight="bold">Finish</text>
+
+            {items.map((it, i) => (
+              <g key={i}>
+                {/* Left name & node */}
+                <text
+                  x={NAME_LEFT_X}
+                  y={it.y1 + 8}
+                  fontSize={18}
+                  fontWeight="bold"
+                  fill={it.color}
+                  textAnchor="end"
+                >
+                  {it.driverLabel}
+                </text>
+                <circle cx={LEFT_X} cy={it.y1} r={10} fill={it.color} />
+
+                {/* Right node & name */}
+                <circle cx={RIGHT_X} cy={it.y2} r={10} fill={it.color} />
+                <text
+                  x={NAME_RIGHT_X}
+                  y={it.y2 + 8}
+                  fontSize={18}
+                  fontWeight="bold"
+                  fill={it.color}
+                  textAnchor="start"
+                >
+                  {it.driverLabel}
+                </text>
+
+                {/* Connecting line */}
+                <line x1={LEFT_X} y1={it.y1} x2={RIGHT_X} y2={it.y2} stroke={it.color} strokeWidth={6} />
+              </g>
+            ))}
+          </svg>
+        );
+      })()}
+    </Box>
+  </VStack>
+</TabPanel>
+
+
+
+
+            {/* ANALYSIS TAB: Race Position & Lap Time Graphs with Driver Filters */}
             <TabPanel>
               <VStack align="stretch" spacing={4}>
-                <Text fontSize="xl" fontWeight="bold" color="text-primary">Grid to Finish</Text>
-                <Box overflowX="auto" border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={3}>
-                  <svg width="900" height={Math.max(200, driversInRace.length * 18)}>
-                    <line x1="100" y1="20" x2="100" y2="180" stroke="currentColor" />
-                    <line x1="800" y1="20" x2="800" y2="180" stroke="currentColor" />
-                    <text x="60" y="15">Grid</text>
-                    <text x="820" y="15">Finish</text>
-                    {filteredRaceResults.map((r, i) => {
-                      const d = r.driver_code ?? r.driver_name ?? String(r.driver_id);
-                      const grid = r.grid ?? 99;
-                      const finish = r.position ?? 99;
-                      const y1 = 20 + Math.min(160, (grid - 1) * (160 / 19));
-                      const y2 = 20 + Math.min(160, (finish - 1) * (160 / 19));
-                      const color = 'currentColor';
+                <Text fontSize="xl" fontWeight="bold" color="text-primary">Analysis</Text>
+                {/* Driver filter for graphs */}
+                <Box mb={2}>
+                  <Text fontWeight="bold">Select Drivers:</Text>
+                  <CheckboxGroup
+                    value={driverFilter.length ? driverFilter : driversInRace}
+                    onChange={(v) => setDriverFilter(v as string[])}
+                  >
+                    <Stack direction="row" wrap="wrap">
+                      {driversInRace.map(d => {
+                        const label = laps.find(l => (l.driver_code ?? String(l.driver_id)) === d)?.driver_name || d;
+                        return <Checkbox key={d} value={d}>{label}</Checkbox>;
+                      })}
+                    </Stack>
+                  </CheckboxGroup>
+                </Box>
+                {/* Race Position Graph */}
+                <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4} mb={4}>
+                  <Text fontWeight="bold" mb={2}>Race Positions by Lap</Text>
+                  {/* Simple SVG line graph: lap vs position for selected drivers */}
+                  <svg width={1200} height={400}>
+                    {/* Axes */}
+                    <line x1={60} y1={40} x2={60} y2={360} stroke="#888" />
+                    <line x1={60} y1={360} x2={1150} y2={360} stroke="#888" />
+                    {/* Axis labels */}
+                    <text x={20} y={30} fontSize={16}>Pos</text>
+                    <text x={1150} y={390} fontSize={16}>Lap</text>
+                    {/* Driver lines */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      const color = teamColors[
+                        (driverLaps[0]?.constructor_name ?? driverLaps[0]?.constructor_id) as keyof typeof teamColors
+                      ] || teamColors["Default"];
+                      // Map laps to SVG points
+                      const points = driverLaps.map(l => {
+                        const x = 60 + ((l.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
+                        const y = 360 - ((l.position ?? 20) - 1) * ((320) / 19);
+                        return `${x},${y}`;
+                      }).join(' ');
                       return (
-                        <g key={i}>
-                          <circle cx="100" cy={y1} r="3" fill={color} />
-                          <circle cx="800" cy={y2} r="3" fill={color} />
-                          <line x1="100" y1={y1} x2="800" y2={y2} stroke={color} />
-                          <text x="105" y={y1 - 2} fontSize="10">{d}</text>
-                        </g>
+                        <polyline
+                          key={d}
+                          points={points}
+                          fill="none"
+                          stroke={`#${color}`}
+                          strokeWidth={3}
+                        />
+                      );
+                    })}
+                    {/* Driver labels at last lap */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      const lastLap = driverLaps[driverLaps.length - 1];
+                      const x = 60 + ((lastLap.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
+                      const y = 360 - ((lastLap.position ?? 20) - 1) * ((320) / 19);
+                      return (
+                        <text key={d} x={x + 5} y={y} fontSize={14} fill="#222">{d}</text>
                       );
                     })}
                   </svg>
                 </Box>
-              </VStack>
-            </TabPanel>
-
-            {/* ANALYSIS (basic preview table; swap to charts later if you like) */}
-            <TabPanel>
-              <VStack align="stretch" spacing={4}>
-                <Text fontSize="xl" fontWeight="bold" color="text-primary">Analysis</Text>
+                {/* Lap Time Analysis Graph */}
                 <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4}>
-                  <Text fontWeight="bold" mb={2}>Race Positions by Lap (sample)</Text>
-                  <Table size="sm">
-                    <Thead>
-                      <Tr>
-                        <Th>Driver</Th><Th isNumeric>Lap</Th><Th isNumeric>Pos</Th><Th isNumeric>Lap Time</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {Array.from(new Set(laps.map(l => l.driver_code ?? String(l.driver_id)))).slice(0, 6).flatMap(d =>
-                        laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d).slice(0, 6).map((l, i) => (
-                          <Tr key={`${d}-${i}`}>
-                            <Td>{d}</Td><Td isNumeric>{l.lap_number}</Td><Td isNumeric>{l.position ?? '-'}</Td><Td isNumeric>{fmtMs(l.time_ms)}</Td>
-                          </Tr>
-                        ))
-                      )}
-                    </Tbody>
-                  </Table>
+                  <Text fontWeight="bold" mb={2}>Lap Time Comparison</Text>
+                  {/* Simple SVG line graph: lap vs lap time for selected drivers */}
+                  <svg width={1200} height={400}>
+                    {/* Axes */}
+                    <line x1={60} y1={40} x2={60} y2={360} stroke="#888" />
+                    <line x1={60} y1={360} x2={1150} y2={360} stroke="#888" />
+                    {/* Axis labels */}
+                    <text x={20} y={30} fontSize={16}>Lap Time (s)</text>
+                    <text x={1150} y={390} fontSize={16}>Lap</text>
+                    {/* Driver lines */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      const color = teamColors[
+                        (driverLaps[0]?.constructor_name ?? driverLaps[0]?.constructor_id) as keyof typeof teamColors
+                      ] || teamColors["Default"];
+                      // Find min/max lap time for scaling
+                      const minLap = Math.min(...driverLaps.map(l => l.lap_number));
+                      const maxLap = Math.max(...driverLaps.map(l => l.lap_number));
+                      const minTime = Math.min(...driverLaps.map(l => l.time_ms ?? 0));
+                      const maxTime = Math.max(...driverLaps.map(l => l.time_ms ?? 0));
+                      // Map laps to SVG points
+                      const points = driverLaps.map(l => {
+                        const x = 60 + ((l.lap_number - minLap) * ((1150 - 60) / Math.max(1, maxLap - minLap)));
+                        const y = 360 - ((l.time_ms ?? minTime) - minTime) * (320 / Math.max(1, maxTime - minTime));
+                        return `${x},${y}`;
+                      }).join(' ');
+                      return (
+                        <polyline
+                          key={d}
+                          points={points}
+                          fill="none"
+                          stroke={`#${color}`}
+                          strokeWidth={3}
+                        />
+                      );
+                    })}
+                    {/* Driver labels at last lap */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      const lastLap = driverLaps[driverLaps.length - 1];
+                      const x = 60 + ((lastLap.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
+                      const y = 360 - ((lastLap.time_ms ?? 0) - Math.min(...driverLaps.map(l => l.time_ms ?? 0))) * (320 / Math.max(1, Math.max(...driverLaps.map(l => l.time_ms ?? 0)) - Math.min(...driverLaps.map(l => l.time_ms ?? 0))));
+                      return (
+                        <text key={d} x={x + 5} y={y} fontSize={14} fill="#222">{d}</text>
+                      );
+                    })}
+                  </svg>
                 </Box>
               </VStack>
             </TabPanel>
