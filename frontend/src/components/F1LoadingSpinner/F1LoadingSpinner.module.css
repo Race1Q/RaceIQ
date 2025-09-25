@@ -1,132 +1,146 @@
-/* frontend/src/components/F1LoadingSpinner/F1LoadingSpinner.module.css */
-
-/* This file uses Chakra's theme tokens via CSS variables for consistency */
+/* In frontend/src/components/F1LoadingSpinner/F1LoadingSpinner.module.css */
 
 .loadingText {
+  /* ... (loading text styles remain the same) ... */
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--chakra-colors-brand-red); /* Token */
+  color: var(--chakra-colors-brand-red);
   text-transform: uppercase;
   letter-spacing: 2px;
-  margin-bottom: var(--chakra-space-lg); /* Token */
-  padding: 15px var(--chakra-space-lg); /* Token */
-  border: 2px solid var(--chakra-colors-brand-red); /* Token */
+  padding: 15px var(--chakra-space-lg);
+  border: 2px solid var(--chakra-colors-brand-red);
   border-radius: 25px;
   background: rgba(225, 6, 0, 0.1);
-  box-shadow:
-    0 0 20px rgba(225, 6, 0, 0.4),
-    inset 0 0 20px rgba(225, 6, 0, 0.1);
+  box-shadow: 0 0 20px rgba(225, 6, 0, 0.4), inset 0 0 20px rgba(225, 6, 0, 0.1);
   text-shadow: 0 0 10px rgba(225, 6, 0, 0.5);
   animation: loading-pulse 2s ease-in-out infinite;
 }
 
 @keyframes loading-pulse {
-  0%, 100% {
-    box-shadow:
-      0 0 20px rgba(225, 6, 0, 0.4),
-      inset 0 0 20px rgba(225, 6, 0, 0.1);
-  }
-  50% {
-    box-shadow:
-      0 0 30px rgba(225, 6, 0, 0.6),
-      inset 0 0 30px rgba(225, 6, 0, 0.2);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(225, 6, 0, 0.4), inset 0 0 20px rgba(225, 6, 0, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(225, 6, 0, 0.6), inset 0 0 30px rgba(225, 6, 0, 0.2); }
 }
+
+/* --- New Speedometer Styles --- */
 
 .speedometer {
-  width: 120px;
-  height: 120px;
+  width: 200px;
+  height: 200px;
   position: relative;
-  margin-bottom: var(--chakra-space-md); /* Token */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.speedometerDial {
-  width: 100%;
-  height: 100%;
-  border: 4px solid var(--chakra-colors-border-primary); /* Token */
+.dial {
+  width: 180px;
+  height: 180px;
+  border: 6px solid var(--chakra-colors-border-primary);
   border-radius: 50%;
   position: relative;
-  background: linear-gradient(135deg, var(--chakra-colors-bg-surface) 0%, var(--chakra-colors-bg-primary) 100%); /* Token */
-  box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(225, 6, 0, 0.3);
+  background: linear-gradient(135deg, var(--chakra-colors-bg-surface) 0%, var(--chakra-colors-bg-primary) 100%);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+  z-index: 4; /* allow arc to render above */
 }
 
-.speedometerNeedle {
+.marking {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2px;
-  height: 45px;
-  background: linear-gradient(to top, var(--chakra-colors-brand-red) 0%, var(--chakra-colors-brand-redLight) 50%, var(--chakra-colors-brand-red) 100%); /* Token */
-  transform-origin: 50% 0;
-  transform: translateX(-50%) rotate(-135deg);
-  animation: speedometer-sweep 2s ease-in-out infinite;
-  box-shadow: 0 0 8px rgba(225, 6, 0, 0.6);
-}
-
-.speedometerNeedle::after {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 12px;
-  background: var(--chakra-colors-brand-red); /* Token */
-  border-radius: 50%;
-  box-shadow: 0 0 10px rgba(225, 6, 0, 0.8);
-}
-
-.speedometerMarking {
-  position: absolute;
-  top: 50%;
+  top: 0;
   left: 50%;
   width: 2px;
   height: 8px;
-  background: var(--chakra-colors-icon-muted); /* Token */
-  transform-origin: 50% 60px;
+  background: var(--chakra-colors-icon-muted);
+  transform-origin: 50% 90px; /* (height of dial / 2) */
+  transform: translateX(-50%);
 }
 
-.speedometerMarking.major {
-  height: 12px;
-  background: var(--chakra-colors-brand-red); /* Token */
+.marking.major {
+  height: 14px;
   width: 3px;
+  background: var(--chakra-colors-brand-red);
 }
 
-.speedometerNumber {
+.number {
   position: absolute;
   top: 50%;
   left: 50%;
-  font-size: 10px;
-  color: var(--chakra-colors-brand-red); /* Token */
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  color: var(--chakra-colors-brand-red);
   font-weight: bold;
-  transform-origin: 50% 50px;
+  z-index: 7; /* above arc and dial, below needle */
+  pointer-events: none;
 }
 
-
-/* All complex animations and transforms remain untouched */
-
-@keyframes speedometer-sweep {
-  0% { transform: translateX(-50%) rotate(-135deg); }
-  25% { transform: translateX(-50%) rotate(-45deg); }
-  50% { transform: translateX(-50%) rotate(45deg); }
-  75% { transform: translateX(-50%) rotate(135deg); }
-  100% { transform: translateX(-50%) rotate(-135deg); }
+.needle {
+  position: absolute;
+  width: 4px;
+  height: 70px;
+  background: linear-gradient(to top, var(--chakra-colors-brand-red) 0%, #ff5555 100%);
+  box-shadow: 0 0 8px rgba(225, 6, 0, 0.8);
+  transform-origin: bottom center;
+  /* Top of needle aligns with center of dial */
+  bottom: 50%; 
+  z-index: 10;
 }
 
-.speedometerMarking:nth-child(1) { transform: translateX(-50%) translateY(-50%) rotate(-135deg) translateY(-50px); }
-.speedometerMarking:nth-child(2) { transform: translateX(-50%) translateY(-50%) rotate(-90deg) translateY(-50px); }
-.speedometerMarking:nth-child(3) { transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-50px); }
-.speedometerMarking:nth-child(4) { transform: translateX(-50%) translateY(-50%) rotate(0deg) translateY(-50px); }
-.speedometerMarking:nth-child(5) { transform: translateX(-50%) translateY(-50%) rotate(45deg) translateY(-50px); }
-.speedometerMarking:nth-child(6) { transform: translateX(-50%) translateY(-50%) rotate(90deg) translateY(-50px); }
-.speedometerMarking:nth-child(7) { transform: translateX(-50%) translateY(-50%) rotate(135deg) translateY(-50px); }
+.needlePivot {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: var(--chakra-colors-brand-red);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.8);
+  z-index: 10;
+}
 
-.speedometerNumber:nth-child(1) { transform: translateX(-50%) translateY(-50%) rotate(-135deg) translateY(-65px) rotate(135deg); }
-.speedometerNumber:nth-child(2) { transform: translateX(-50%) translateY(-50%) rotate(-90deg) translateY(-65px) rotate(90deg); }
-.speedometerNumber:nth-child(3) { transform: translateX(-50%) translateY(-50%) rotate(-45deg) translateY(-65px) rotate(45deg); }
-.speedometerNumber:nth-child(4) { transform: translateX(-50%) translateY(-50%) rotate(0deg) translateY(-65px) rotate(0deg); }
-.speedometerNumber:nth-child(5) { transform: translateX(-50%) translateY(-50%) rotate(45deg) translateY(-65px) rotate(-45deg); }
-.speedometerNumber:nth-child(6) { transform: translateX(-50%) translateY(-50%) rotate(90deg) translateY(-65px) rotate(-90deg); }
-.speedometerNumber:nth-child(7) { transform: translateX(-50%) translateY(-50%) rotate(135deg) translateY(-65px) rotate(-135deg); }
+.arcSvg {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  transform: rotate(-135deg); /* Start at 0 label position */
+  transform-origin: 50% 50%;
+  z-index: 6; /* above dial, under numbers */
+}
+
+.arcPath {
+  fill: none;
+  stroke: var(--chakra-colors-brand-red);
+  stroke-width: 12;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 5px var(--chakra-colors-brand-red));
+}
+
+/* Outer ring encircling the numbers */
+.outerRing {
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  border: 4px solid var(--chakra-colors-border-primary);
+  border-radius: 50%;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
+  z-index: 5; /* between dial and arc/numbers */
+}
+
+/* New elements: center logo and digital display */
+.logo {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.digitalDisplay {
+  position: absolute;
+  bottom: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(10, 10, 10, 0.8);
+  border-radius: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--chakra-colors-border-primary);
+  z-index: 5;
+}

@@ -295,6 +295,20 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                             boxShadow: `0 0 14px ${getTeamColor(featuredDriver.teamName)}80`,
                           }}
                         >
+                          {/* Position on top */}
+                          <HStack spacing={2} align="center">
+                            <Heading size="xl" color={getPodiumColor()} fontWeight="bold">
+                              P{result.position}
+                            </Heading>
+                            {result.position === 1 && (
+                              <Icon as={Trophy} boxSize={5} color="#FFD700" aria-label="Winner" />
+                            )}
+                          </HStack>
+                          {/* Race name in the middle */}
+                          <Text fontSize="xs" color="white" noOfLines={2} textAlign="center" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>
+                            {result.raceName.replace('Grand Prix', 'GP')}
+                          </Text>
+                          {/* Flag at the bottom */}
                           {(() => {
                             const twoLetter = countryCodeMap[result.countryCode?.toUpperCase()] || result.countryCode;
                             return twoLetter ? (
@@ -306,17 +320,6 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                               />
                             ) : null;
                           })()}
-                          <HStack spacing={2} align="center">
-                            <Heading size="xl" color={getPodiumColor()} fontWeight="bold">
-                              P{result.position}
-                            </Heading>
-                            {result.position === 1 && (
-                              <Icon as={Trophy} boxSize={5} color="#FFD700" aria-label="Winner" />
-                            )}
-                          </HStack>
-                          <Text fontSize="xs" color="white" noOfLines={2} textAlign="center" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>
-                            {result.raceName.replace('Grand Prix', 'GP')}
-                          </Text>
                         </VStack>
                       );
                     })}
