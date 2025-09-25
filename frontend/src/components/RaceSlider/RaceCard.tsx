@@ -1,5 +1,7 @@
 import React from 'react';
 import { VStack, Heading, Text, Badge, HStack, Icon, Grid, GridItem, Box } from '@chakra-ui/react';
+import ReactCountryFlag from 'react-country-flag';
+import { countryCodeMap } from '../../lib/countryCodeUtils';
 import { Trophy } from 'lucide-react';
 import type { RaceWithPodium } from '../../hooks/useHomePageData';
 import type { RaceStatus } from './RaceSlider';
@@ -34,6 +36,10 @@ export const RaceCard: React.FC<RaceCardProps> = ({ race, isActive, status }) =>
     if (position === 3) return '#CD7F32';
     return 'text.primary';
   };
+
+  // For debugging flag mapping using circuit country code
+  const twoLetterCode = countryCodeMap[race.circuit?.country_code?.toUpperCase()] || '';
+  console.log(`Processing: ${race.name} | 3-Letter Code: ${race.circuit?.country_code} | 2-Letter Code: ${twoLetterCode}`);
 
   return (
     <VStack
@@ -101,21 +107,44 @@ export const RaceCard: React.FC<RaceCardProps> = ({ race, isActive, status }) =>
         <Box flex={1} w="100%" overflow="hidden" py={1} display="flex" alignItems="center" justifyContent="center">
           {race.podium && (
             <Grid templateColumns="max-content auto" columnGap={4} rowGap={1}>
-              {race.podium.map((p) => (
-                <React.Fragment key={p.position}>
+              {race.podium.map((p) => {
+                const twoLetterCode = p.countryCode ? countryCodeMap[p.countryCode.toUpperCase()] : '';
+                return (
+                  <React.Fragment key={p.position}>
+                    <GridItem>
+                      <HStack>
+                        <Icon as={Trophy} color={getPodiumColor(p.position)} boxSize={4} />
+                        <Text fontSize="sm" fontWeight="bold">{p.position}</Text>
+                      </HStack>
+                    </GridItem>
                   <GridItem>
-                    <HStack>
-                      <Icon as={Trophy} color={getPodiumColor(p.position)} boxSize={4} />
-                      <Text fontSize="sm" fontWeight="bold">{p.position}</Text>
+                    <HStack spacing={2} justify="flex-start">
+                      {/**
+                       * <Box h="24px">
+                       *   {twoLetterCode && (
+                       *     <ReactCountryFlag
+                       *       countryCode={twoLetterCode}
+                       *       svg
+                       *       style={{ width: '32px', height: '24px', borderRadius: '4px' }}
+                       *       title={p.countryCode}
+                       *     />
+                       *   )}
+                       * </Box>
+                       */}
+                      <ReactCountryFlag
+                        countryCode={twoLetterCode.toLowerCase()}
+                        svg
+                        style={{ width: '32px', height: '24px', borderRadius: '3px' }}
+                        title={p.countryCode}
+                      />
+                      <Text fontSize="sm" noOfLines={1} textAlign="left">
+                        {p.driverName}
+                      </Text>
                     </HStack>
                   </GridItem>
-                  <GridItem>
-                    <Text fontSize="sm" noOfLines={1} textAlign="left">
-                      {p.driverName}
-                    </Text>
-                  </GridItem>
-                </React.Fragment>
-              ))}
+                  </React.Fragment>
+                );
+              })}
             </Grid>
           )}
         </Box>

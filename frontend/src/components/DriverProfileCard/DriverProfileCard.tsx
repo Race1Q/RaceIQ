@@ -72,7 +72,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           
           <div className={styles.flagWrapper}>
             <ReactCountryFlag
-              countryCode={countryCode}
+              countryCode={countryCode.toLowerCase()}
               svg
               className={styles.flagImage}
               title={driver.nationality}

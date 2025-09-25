@@ -20,6 +20,7 @@ import { Trophy, Award, Timer, Star } from 'lucide-react';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamColors } from '../../lib/teamColors';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
+import ReactCountryFlag from 'react-country-flag';
 
 interface DriverStats {
   wins: number;
@@ -59,11 +60,6 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
     return `#${hex}`;
   };
 
-  const getCountryFlagUrl = (countryCode: string | null): string => {
-    if (!countryCode) return '';
-    const twoLetterCode = countryCodeMap[countryCode.toUpperCase()];
-    return twoLetterCode ? `https://flagcdn.com/w40/${twoLetterCode}.png` : '';
-  };
 
   // Deprecated: inline stat cards now include icons; keeping for reference
 
@@ -299,13 +295,17 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                             boxShadow: `0 0 14px ${getTeamColor(featuredDriver.teamName)}80`,
                           }}
                         >
-                          <Image
-                            src={getCountryFlagUrl(result.countryCode)}
-                            alt={`${result.raceName} flag`}
-                            boxSize="32px"
-                            objectFit="contain"
-                            borderRadius="sm"
-                          />
+                          {(() => {
+                            const twoLetter = countryCodeMap[result.countryCode?.toUpperCase()] || result.countryCode;
+                            return twoLetter ? (
+                              <ReactCountryFlag
+                                countryCode={twoLetter.toLowerCase()}
+                                svg
+                                style={{ width: '32px', height: '24px', borderRadius: '4px' }}
+                                title={result.raceName}
+                              />
+                            ) : null;
+                          })()}
                           <HStack spacing={2} align="center">
                             <Heading size="xl" color={getPodiumColor()} fontWeight="bold">
                               P{result.position}

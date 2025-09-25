@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 interface PodiumResult {
     position: number;
     driverName: string;
+    countryCode?: string; // optional 3-letter code when available
 }
 
 export interface Race {
@@ -15,7 +16,9 @@ export interface Race {
     round: number;
     date: string;
     circuit: {
+        id: number;
         name: string;
+        country_code: string;
     };
     podium: PodiumResult[] | null;
 }
@@ -183,6 +186,7 @@ export function useHomePageData(): HomePageData {
 					const recentFormResponse = await fetch(buildApiUrl(`/api/drivers/${topDriverStanding.driverId}/recent-form`));
 					if (recentFormResponse.ok) {
 						recentForm = await recentFormResponse.json();
+						console.log('Data received in hook:', recentForm);
 					} else {
 						console.error('Failed to fetch recent form');
 					}

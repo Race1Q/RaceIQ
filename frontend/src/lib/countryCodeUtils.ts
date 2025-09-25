@@ -22,6 +22,7 @@ export const countryCodeMap: { [key: string]: string } = {
   'KOR': 'KR',  // South Korea
   'IND': 'IN',  // India
   'SGP': 'SG',  // Singapore
+  'ARE': 'AE',  // United Arab Emirates
   'UAE': 'AE',  // United Arab Emirates
   'SAU': 'SA',  // Saudi Arabia
   'QAT': 'QA',  // Qatar
@@ -140,10 +141,10 @@ export const countryCodeMap: { [key: string]: string } = {
   'DEU': 'DE',  // Germany (alternative)
   'MCO': 'MC',  // Monaco (alternative)
 };
-
 // Centralized helper function to get a 40px-wide PNG flag URL
 export const getCountryFlagUrl = (threeLetterCode: string | null): string => {
   if (!threeLetterCode) return '';
   const two = countryCodeMap[threeLetterCode.toUpperCase()];
   return two ? `https://flagcdn.com/w40/${two.toLowerCase()}.png` : '';
 };
+

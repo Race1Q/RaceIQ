@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { Box, VStack, HStack, Heading, Text, Flex } from '@chakra-ui/react';
-import { Image } from '@chakra-ui/react';
-import { getCountryFlagUrl } from '../../lib/countryCodeUtils';
+import ReactCountryFlag from 'react-country-flag';
+import { countryCodeMap } from '../../lib/countryCodeUtils';
 import type { Race } from '../../types/races';
 
 interface RaceProfileCardProps {
@@ -15,7 +15,7 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
   const gradientStart = `hsl(${(race.round * 20) % 360}, 70%, 50%)`;
   const gradientEnd = `hsl(${(race.round * 20 + 40) % 360}, 70%, 30%)`;
 
-  const flagUrl = getCountryFlagUrl((race as any)?.circuit?.country_code ?? null);
+  const twoLetter = countryCodeMap[(race as any)?.circuit?.country_code?.toUpperCase?.() ?? ''] ?? '';
 
   const shortName = race.name.replace(/Grand Prix|GP/g, '').trim();
 
@@ -96,8 +96,13 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
           boxShadow="0 2px 8px rgba(0, 0, 0, 0.3)"
           border="1px solid rgba(255, 255, 255, 0.15)"
         >
-          {flagUrl ? (
-            <Image src={flagUrl} alt="flag" w="100%" h="100%" objectFit="cover" />
+          {twoLetter ? (
+            <ReactCountryFlag
+              countryCode={twoLetter.toLowerCase()}
+              svg
+              style={{ width: '100%', height: '100%' }}
+              title={(race as any)?.circuit?.country_code}
+            />
           ) : (
             <Flex w="100%" h="100%" bg="#666" align="center" justify="center" fontSize="xl" fontWeight="bold">?
             </Flex>

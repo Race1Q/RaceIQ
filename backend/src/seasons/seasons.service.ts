@@ -9,6 +9,7 @@ import { RaceResult } from '../race-results/race-results.entity';
 interface PodiumResult {
   position: number;
   driverName: string;
+  countryCode?: string; // 3-letter code from Driver.country_code
 }
 
 // Define the new shape of our Race object, which now includes a podium array
@@ -64,6 +65,7 @@ export class SeasonsService {
           const podium: PodiumResult[] = podiumResults.map((result) => ({
             position: result.position,
             driverName: `${result.driver.first_name} ${result.driver.last_name}`,
+            countryCode: result.driver?.country_code ?? undefined,
           }));
 
           return { ...race, podium: podium.length ? podium : null } as RaceWithPodium;

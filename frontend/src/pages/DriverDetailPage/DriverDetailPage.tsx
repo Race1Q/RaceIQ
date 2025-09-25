@@ -10,7 +10,8 @@ import { useApi } from '@/hooks/useApi';
 import DashboardGrid from '../../components/DashboardGrid/DashboardGrid';
 import KeyInfoBar from '../../components/KeyInfoBar/KeyInfoBar';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
-import { getCountryFlagUrl } from '../../lib/assets';
+import ReactCountryFlag from 'react-country-flag';
+import { countryCodeMap } from '../../lib/countryCodeUtils';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamCarImages } from '../../lib/teamCars';
 import styles from './DriverDetailPage.module.css';
@@ -175,11 +176,17 @@ const DriverDetailPage: React.FC = () => {
               </h1>
             </div>
             <div className={styles.heroBioBlock}>
-              <img
-                src={getCountryFlagUrl(driverData.countryCode)}
-                alt={`${driverData.countryCode} flag`}
-                className={styles.flagImage}
-              />
+              {(() => {
+                const twoLetter = countryCodeMap[driverData.countryCode?.toUpperCase()] || driverData.countryCode;
+                return twoLetter ? (
+                  <ReactCountryFlag
+                    countryCode={twoLetter.toLowerCase()}
+                    svg
+                    className={styles.flagImage}
+                    title={driverData.countryCode}
+                  />
+                ) : null;
+              })()}
               <div className={styles.bioText}>
                 <span>Born: {new Date(driverData.dateOfBirth).toLocaleDateString()}</span>
               </div>
