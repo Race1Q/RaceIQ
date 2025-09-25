@@ -2,7 +2,6 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect } from 'react';
 import { Box, Container, VStack, Heading, Text } from '@chakra-ui/react';
 import { RaceSlider } from '../../components/RaceSlider/RaceSlider';
-import { FlagTest } from '../../components/FlagTest';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import FeaturedDriverSection from '../../components/FeaturedDriverSection/FeaturedDriverSection';
@@ -27,7 +26,6 @@ function HomePage() {
 
   return (
     <Box>
-      <FlagTest />
       <HeroSection />
       
       {!isAuthenticated && (

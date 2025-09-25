@@ -1,7 +1,7 @@
 import React from 'react';
 import { VStack, Heading, Text, Badge, HStack, Icon, Grid, GridItem, Box } from '@chakra-ui/react';
 import ReactCountryFlag from 'react-country-flag';
-import { countryCodeMap } from '../../lib/countryCodeUtils';
+import { countryCodeMap, getCountryFlagUrl } from '../../lib/countryCodeUtils';
 import { Trophy } from 'lucide-react';
 import type { RaceWithPodium } from '../../hooks/useHomePageData';
 import type { RaceStatus } from './RaceSlider';
@@ -37,9 +37,6 @@ export const RaceCard: React.FC<RaceCardProps> = ({ race, isActive, status }) =>
     return 'text.primary';
   };
 
-  // For debugging flag mapping using circuit country code
-  const twoLetterCode = countryCodeMap[race.circuit?.country_code?.toUpperCase()] || '';
-  console.log(`Processing: ${race.name} | 3-Letter Code: ${race.circuit?.country_code} | 2-Letter Code: ${twoLetterCode}`);
 
   return (
     <VStack
@@ -108,7 +105,9 @@ export const RaceCard: React.FC<RaceCardProps> = ({ race, isActive, status }) =>
           {race.podium && (
             <Grid templateColumns="max-content auto" columnGap={4} rowGap={1}>
               {race.podium.map((p) => {
-                const twoLetterCode = p.countryCode ? countryCodeMap[p.countryCode.toUpperCase()] : '';
+                const threeLetter = p.countryCode?.toUpperCase() ?? '';
+                const twoLetterCode = threeLetter ? countryCodeMap[threeLetter] : '';
+                const flagUrl = getCountryFlagUrl(threeLetter);
                 return (
                   <React.Fragment key={p.position}>
                     <GridItem>
@@ -119,24 +118,23 @@ export const RaceCard: React.FC<RaceCardProps> = ({ race, isActive, status }) =>
                     </GridItem>
                   <GridItem>
                     <HStack spacing={2} justify="flex-start">
-                      {/**
-                       * <Box h="24px">
-                       *   {twoLetterCode && (
-                       *     <ReactCountryFlag
-                       *       countryCode={twoLetterCode}
-                       *       svg
-                       *       style={{ width: '32px', height: '24px', borderRadius: '4px' }}
-                       *       title={p.countryCode}
-                       *     />
-                       *   )}
-                       * </Box>
-                       */}
-                      <ReactCountryFlag
-                        countryCode={twoLetterCode.toLowerCase()}
-                        svg
-                        style={{ width: '32px', height: '24px', borderRadius: '3px' }}
-                        title={p.countryCode}
-                      />
+                      {flagUrl ? (
+                        <img
+                          src={flagUrl}
+                          alt={`${threeLetter} flag`}
+                          style={{ width: '32px', height: '24px', borderRadius: '3px' }}
+                          loading="lazy"
+                        />
+                      ) : (
+                        twoLetterCode ? (
+                          <ReactCountryFlag
+                            countryCode={twoLetterCode.toLowerCase()}
+                            svg
+                            style={{ width: '32px', height: '24px', borderRadius: '3px' }}
+                            title={p.countryCode}
+                          />
+                        ) : null
+                      )}
                       <Text fontSize="sm" noOfLines={1} textAlign="left">
                         {p.driverName}
                       </Text>
