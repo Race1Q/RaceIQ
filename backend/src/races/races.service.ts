@@ -150,6 +150,30 @@ export class RacesService {
   
     return poles; // [{ seasonId: 1, poleCount: 3 }, { seasonId: 2, poleCount: 1 }, ...]
   }
+
+  async getConstructorPointsByCircuit(constructorId: number) {
+    const results = await this.raceResultRepository
+      .createQueryBuilder('rr')
+      .innerJoin('rr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('r.circuit', 'c')
+      .select('c.id', 'circuitId')
+      .addSelect('c.name', 'circuitName')
+      .addSelect('SUM(rr.points)', 'totalPoints')
+      .where('rr.constructor_id = :constructorId', { constructorId })
+      .groupBy('c.id')
+      .addGroupBy('c.name')
+      .orderBy('totalPoints', 'DESC')
+      .getRawMany();
+  
+    // Map points to numbers
+    return results.map(r => ({
+      circuitId: Number(r.circuitId),
+      circuitName: r.circuitName,
+      totalPoints: Number(r.totalPoints),
+    }));
+  }
+  
   
 }
 

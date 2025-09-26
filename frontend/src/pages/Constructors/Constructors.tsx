@@ -8,9 +8,9 @@ import {
   SimpleGrid,
   Flex,
   Input,
-  Select,
   Image,
 } from '@chakra-ui/react';
+import { Select } from 'chakra-react-select';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { buildApiUrl } from '../../lib/api';
@@ -26,13 +26,18 @@ interface ApiConstructor {
   is_active: boolean;
 }
 
+interface Option {
+  value: string;
+  label: string;
+}
+
 const Constructors = () => {
   const toast = useToast();
   const [constructors, setConstructors] = useState<ApiConstructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedNationality, setSelectedNationality] = useState('');
+  const [selectedNationality, setSelectedNationality] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active');
 
   const publicFetch = useCallback(async (url: string) => {
@@ -74,10 +79,16 @@ const Constructors = () => {
   }, [publicFetch, toast]);
 
   // Unique nationalities for filter
-  const nationalityOptions = useMemo(() => {
+  const nationalityOptions: Option[] = useMemo(() => {
     const unique = Array.from(new Set(constructors.map((c) => c.nationality)));
-    return unique.sort();
+    return unique.sort().map((nat) => ({ value: nat, label: nat }));
   }, [constructors]);
+
+  const statusOptions: Option[] = [
+    { value: 'active', label: 'Active Teams' },
+    { value: 'inactive', label: 'Inactive Teams' },
+    { value: 'all', label: 'All Teams' },
+  ];
 
   // Apply filters
   const filteredConstructors = useMemo(() => {
@@ -132,36 +143,57 @@ const Constructors = () => {
               {/* Right: Filters */}
               <Flex gap={4}>
                 {/* Nationality Filter */}
-                <Box maxW="220px" w="100%">
+                <Box maxW="220px" w="220px">
                   <Select
-                    placeholder="Choose Nationality"
-                    value={selectedNationality}
-                    onChange={(e) => setSelectedNationality(e.target.value)}
-                    bg="gray.700"
-                    color="white"
-                  >
-                    {nationalityOptions.map((nat) => (
-                      <option key={nat} value={nat}>
-                        {nat}
-                      </option>
-                    ))}
-                  </Select>
+                    options={nationalityOptions}
+                    value={nationalityOptions.find((o) => o.value === selectedNationality) || null}
+                    onChange={(option) => setSelectedNationality((option as Option).value)}
+                    placeholder="Nationality"
+                    isClearable={false}
+                    chakraStyles={{
+                      control: (provided) => ({
+                        ...provided,
+                        bg: 'gray.700',
+                        color: 'white',
+                        borderColor: 'gray.600',
+                      }),
+                      menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
+                      option: (provided, state) => ({
+                        ...provided,
+                        bg: state.isFocused ? 'gray.600' : 'gray.700',
+                        color: 'white',
+                      }),
+                      singleValue: (provided) => ({ ...provided, color: 'white' }),
+                    }}
+                  />
                 </Box>
 
                 {/* Status Filter */}
-                <Box maxW="200px" w="100%">
+                <Box maxW="220px" w="220px">
                   <Select
-                    value={statusFilter}
-                    onChange={(e) =>
-                      setStatusFilter(e.target.value as 'active' | 'inactive' | 'all')
+                    options={statusOptions}
+                    value={statusOptions.find((o) => o.value === statusFilter) || null}
+                    onChange={(option) =>
+                      setStatusFilter((option as Option).value as 'active' | 'inactive' | 'all')
                     }
-                    bg="gray.700"
-                    color="white"
-                  >
-                    <option value="active">Active Teams</option>
-                    <option value="inactive">Inactive Teams</option>
-                    <option value="all">All Teams</option>
-                  </Select>
+                    placeholder="Filter by Status"
+                    isClearable={false}
+                    chakraStyles={{
+                      control: (provided) => ({
+                        ...provided,
+                        bg: 'gray.700',
+                        color: 'white',
+                        borderColor: 'gray.600',
+                      }),
+                      menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
+                      option: (provided, state) => ({
+                        ...provided,
+                        bg: state.isFocused ? 'gray.600' : 'gray.700',
+                        color: 'white',
+                      }),
+                      singleValue: (provided) => ({ ...provided, color: 'white' }),
+                    }}
+                  />
                 </Box>
               </Flex>
             </Flex>
@@ -203,16 +235,16 @@ const Constructors = () => {
                       </Box>
 
                       {/* Right: Car Image */}
-                        {carImage && (
+                      {carImage && (
                         <Image
-                            src={carImage}
-                            alt={`${constructor.name} car`}
-                            maxH="80px"          // smaller height
-                            objectFit="contain" // ensures full car is visible
-                            borderRadius="md"
-                            ml={4}
-                            />
-                        )}
+                          src={carImage}
+                          alt={`${constructor.name} car`}
+                          maxH="80px"
+                          objectFit="contain"
+                          borderRadius="md"
+                          ml={4}
+                        />
+                      )}
                     </Flex>
                   </Link>
                 );
@@ -226,6 +258,8 @@ const Constructors = () => {
 };
 
 export default Constructors;
+
+
 
 
 

@@ -6,6 +6,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Flex, Text, Button, useToast, Image } from '@chakra-ui/react';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
+import { teamCarImages } from '../../lib/teamCars';
 import { getTeamLogo } from '../../lib/teamAssets';
 import {
   LineChart,
@@ -15,6 +16,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
 } from 'recharts';
 
 interface Constructor {
@@ -215,23 +218,53 @@ const ConstructorDetails: React.FC = () => {
 
   return (
     <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
-      {/* Header */}
-      <Flex justify="space-between" align="center" mb={4} p={4} borderRadius="md" bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}>
+      {/* Header Bar */}
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={4}
+        p={4}
+        borderRadius="md"
+        bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
+      >
+        {/* Left: Team Logo + Info */}
         <Flex direction="row" align="center" gap={4}>
-          <Image src={getTeamLogo(constructor.name)} alt={`${constructor.name} logo`} boxSize="80px" objectFit="contain" />
+          <Image
+            src={getTeamLogo(constructor.name)}
+            alt={`${constructor.name} logo`}
+            boxSize="100px"
+            objectFit="contain"
+          />
           <Flex direction="column" justify="center">
-            <Text fontSize="3xl" fontWeight="bold" color="white">{constructor.name}</Text>
-            <Text fontSize="md" color="gray.300">Nationality: {constructor.nationality}</Text>
+            <Text fontSize="3xl" fontWeight="bold" color="white">
+              {constructor.name}
+            </Text>
+            <Text fontSize="md" color="gray.300">
+              Nationality: {constructor.nationality}
+            </Text>
           </Flex>
         </Flex>
-        <Button onClick={() => navigate('/constructors')} color="white">Back to Constructors</Button>
+
+        {/* Middle: Team Car Image */}
+        {teamCarImages[constructor.name] && (
+          <Image
+            src={teamCarImages[constructor.name]}
+            alt={`${constructor.name} car`}
+            maxH="150px"
+            objectFit="contain"
+          />
+        )}
+
+        {/* Right: Back Button */}
+        <Button onClick={() => navigate('/constructors')} color="white">
+          Back to Constructors
+        </Button>
       </Flex>
 
-      {/* Two-column split */}
-      <Flex direction={['column', 'column', 'row']} gap={6}>
-        {/* Left section: totals + charts */}
+      {/* Two Section Layout */}
+      <Flex gap={6} flexDirection={{ base: 'column', lg: 'row' }}>
+        {/* Left section: totals + 4 line charts */}
         <Box flex={1} display="flex" flexDirection="column" gap={6}>
-          {/* Totals in one horizontal row */}
           <Flex gap={4} wrap="wrap">
             <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
               <Text fontSize="lg" fontWeight="bold">Total Points</Text>
@@ -251,7 +284,7 @@ const ConstructorDetails: React.FC = () => {
             </Box>
           </Flex>
 
-          {/* Charts stacked below totals */}
+          {/* Line Charts */}
           <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
             <Text fontSize="lg" fontWeight="bold" mb={2}>Points by Season</Text>
             <ResponsiveContainer width="100%" height="90%">
@@ -294,13 +327,13 @@ const ConstructorDetails: React.FC = () => {
           <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
             <Text fontSize="lg" fontWeight="bold" mb={2}>Poles by Season</Text>
             <ResponsiveContainer width="100%" height="90%">
-              <LineChart data={mappedPolesPerSeason}>
+              <BarChart data={mappedPolesPerSeason}>
                 <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
                 <XAxis dataKey="seasonYear" stroke="white"/>
                 <YAxis stroke="white"/>
                 <Tooltip/>
-                <Line type="monotone" dataKey="poleCount" stroke="#63B3ED" strokeWidth={3}/>
-              </LineChart>
+                <Bar dataKey="poleCount" fill={teamColor} />
+              </BarChart>
             </ResponsiveContainer>
           </Box>
         </Box>
@@ -349,6 +382,7 @@ const ConstructorDetails: React.FC = () => {
 };
 
 export default ConstructorDetails;
+
 
 
 

@@ -28,6 +28,12 @@ async getConstructorPolesBySeason(
   return this.racesService.getConstructorPolePositionsBySeason(constructorId);
 }
 
+@Get('constructor/:constructorId/points-by-circuit')
+  async getConstructorPointsByCircuit(
+    @Param('constructorId', ParseIntPipe) constructorId: number,
+  ) {
+    return this.racesService.getConstructorPointsByCircuit(constructorId);
+  }
  
 }
 
