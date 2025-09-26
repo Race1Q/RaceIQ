@@ -1,6 +1,6 @@
 // src/pages/RaceDetailPage/RaceDetailPage.tsx
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, CheckboxGroup, Stack, SimpleGrid, Table,
@@ -496,26 +496,50 @@ const RaceDetailPage: React.FC = () => {
               <VStack align="stretch" spacing={4}>
                 <HStack justify="space-between" wrap="wrap" gap={3}>
                   <Text fontSize="xl" fontWeight="bold" color="text-primary">Race Results</Text>
-                  <HStack>
-                    <Checkbox
-                      isChecked={driverFilter.length === 0}
-                      onChange={(e) => setDriverFilter(e.target.checked ? [] : driversInRace)}
+                  <HStack wrap="wrap" gap={2}>
+                    <Box
+                      as="button"
+                      px={3} py={1}
+                      borderRadius="md"
+                      borderWidth={2}
+                      borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
+                      boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                      bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                      fontWeight="bold"
+                      color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                      onClick={() => setDriverFilter([])}
+                      transition="all 0.2s"
                     >
-                      Select all
-                    </Checkbox>
-                    <CheckboxGroup
-                      value={driverFilter.length ? driverFilter : driversInRace}
-                      onChange={(v) => setDriverFilter(v as string[])}
-                    >
-                      <Stack direction="row" wrap="wrap">
-                        {driversInRace.map(d => {
-                          // Find the first race result for this driver code/id
-                          const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === d);
-                          const label = driverResult?.driver_name || d;
-                          return <Checkbox key={d} value={d}>{label}</Checkbox>;
-                        })}
-                      </Stack>
-                    </CheckboxGroup>
+                      All Drivers
+                    </Box>
+                    {driversInRace.map(d => {
+                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === d);
+                      const label = driverResult?.driver_name || '';
+                      if (!label) return null;
+                      const selected = driverFilter.includes(d);
+                      return (
+                        <Box
+                          as="button"
+                          key={d}
+                          px={3} py={1}
+                          borderRadius="md"
+                          borderWidth={2}
+                          borderColor={selected ? 'brand.red' : 'border-subtle'}
+                          boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                          bg={selected ? 'bg-elevated' : 'bg-surface'}
+                          fontWeight="bold"
+                          color={selected ? 'brand.red' : 'text-primary'}
+                          cursor="pointer"
+                          m={1}
+                          transition="all 0.2s"
+                          onClick={() => {
+                            setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
+                          }}
+                        >
+                          {label}
+                        </Box>
+                      );
+                    })}
                   </HStack>
                 </HStack>
 
@@ -546,32 +570,86 @@ const RaceDetailPage: React.FC = () => {
               <VStack align="stretch" spacing={4}>
                 <HStack justify="space-between" wrap="wrap" gap={3}>
                   <Text fontSize="xl" fontWeight="bold" color="text-primary">Qualifying</Text>
-                  <HStack>
-                    <Select size="sm" value={qualiPhase} onChange={(e) => setQualiPhase(e.target.value as any)}>
-                      <option value="all">All</option>
-                      <option value="q1">Q1</option>
-                      <option value="q2">Q2</option>
-                      <option value="q3">Q3</option>
-                    </Select>
-                    <Checkbox
-                      isChecked={driverFilter.length === 0}
-                      onChange={(e) => setDriverFilter(e.target.checked ? [] : driversInRace)}
-                    >
-                      Select all
-                    </Checkbox>
-                    <CheckboxGroup
-                      value={driverFilter.length ? driverFilter : driversInRace}
-                      onChange={(v) => setDriverFilter(v as string[])}
-                    >
-                      <Stack direction="row" wrap="wrap">
-                        {driversInRace.map(d => {
-                          // Find the first quali result for this driver code/id
-                          const qualiResult = qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d);
-                          const label = qualiResult?.driver_name || d;
-                          return <Checkbox key={d} value={d}>{label}</Checkbox>;
+                  <HStack wrap="wrap" gap={2}>
+                    {/* Phase filter above driver filter, blue color for distinction */}
+                    <Box mb={2}>
+                      <Text fontWeight="bold" mb={1}>Phase:</Text>
+                      <HStack wrap="wrap" gap={2}>
+                        {['all', 'q1', 'q2', 'q3'].map(phase => {
+                          const label = phase === 'all' ? 'All' : phase.toUpperCase();
+                          const selected = qualiPhase === phase;
+                          return (
+                            <Box
+                              as="button"
+                              key={phase}
+                              px={3} py={1}
+                              borderRadius="md"
+                              borderWidth={2}
+                              borderColor={selected ? 'blue.400' : 'border-subtle'}
+                              boxShadow={selected ? '0 0 8px 2px #4299E1' : undefined}
+                              bg={selected ? 'bg-elevated' : 'bg-surface'}
+                              fontWeight="bold"
+                              color={selected ? 'blue.400' : 'text-primary'}
+                              cursor="pointer"
+                              m={1}
+                              transition="all 0.2s"
+                              onClick={() => setQualiPhase(phase as typeof qualiPhase)}
+                            >
+                              {label}
+                            </Box>
+                          );
                         })}
-                      </Stack>
-                    </CheckboxGroup>
+                      </HStack>
+                    </Box>
+                    {/* Driver filter below phase filter, separated by VStack */}
+                    <Box mb={2}>
+                      <Text fontWeight="bold" mb={1}>Drivers:</Text>
+                      <HStack wrap="wrap" gap={2}>
+                        <Box
+                          as="button"
+                          px={3} py={1}
+                          borderRadius="md"
+                          borderWidth={2}
+                          borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
+                          boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                          bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                          fontWeight="bold"
+                          color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                          onClick={() => setDriverFilter([])}
+                          transition="all 0.2s"
+                        >
+                          All Drivers
+                        </Box>
+                        {driversInRace.map(d => {
+                          const qualiResult = qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d);
+                          const label = qualiResult?.driver_name || '';
+                          if (!label) return null;
+                          const selected = driverFilter.includes(d);
+                          return (
+                            <Box
+                              as="button"
+                              key={d}
+                              px={3} py={1}
+                              borderRadius="md"
+                              borderWidth={2}
+                              borderColor={selected ? 'brand.red' : 'border-subtle'}
+                              boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                              bg={selected ? 'bg-elevated' : 'bg-surface'}
+                              fontWeight="bold"
+                              color={selected ? 'brand.red' : 'text-primary'}
+                              cursor="pointer"
+                              m={1}
+                              transition="all 0.2s"
+                              onClick={() => {
+                                setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
+                              }}
+                            >
+                              {label}
+                            </Box>
+                          );
+                        })}
+                      </HStack>
+                    </Box>
                   </HStack>
                 </HStack>
 
@@ -730,17 +808,52 @@ const RaceDetailPage: React.FC = () => {
                 {/* Driver filter for graphs */}
                 <Box mb={2}>
                   <Text fontWeight="bold">Select Drivers:</Text>
-                  <CheckboxGroup
-                    value={driverFilter.length ? driverFilter : driversInRace}
-                    onChange={(v) => setDriverFilter(v as string[])}
-                  >
-                    <Stack direction="row" wrap="wrap">
-                      {driversInRace.map(d => {
-                        const label = laps.find(l => (l.driver_code ?? String(l.driver_id)) === d)?.driver_name || d;
-                        return <Checkbox key={d} value={d}>{label}</Checkbox>;
-                      })}
-                    </Stack>
-                  </CheckboxGroup>
+                  <HStack wrap="wrap" gap={2}>
+                    <Box
+                      as="button"
+                      px={3} py={1}
+                      borderRadius="md"
+                      borderWidth={2}
+                      borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
+                      boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                      bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                      fontWeight="bold"
+                      color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                      onClick={() => setDriverFilter([])}
+                      transition="all 0.2s"
+                    >
+                      All Drivers
+                    </Box>
+                    {driversInRace.map(d => {
+                      const label =
+                        raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === d)?.driver_name ||
+                        qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d)?.driver_name ||
+                        d;
+                      const selected = driverFilter.includes(d);
+                      return (
+                        <Box
+                          as="button"
+                          key={d}
+                          px={3} py={1}
+                          borderRadius="md"
+                          borderWidth={2}
+                          borderColor={selected ? 'brand.red' : 'border-subtle'}
+                          boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                          bg={selected ? 'bg-elevated' : 'bg-surface'}
+                          fontWeight="bold"
+                          color={selected ? 'brand.red' : 'text-primary'}
+                          cursor="pointer"
+                          m={1}
+                          transition="all 0.2s"
+                          onClick={() => {
+                            setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
+                          }}
+                        >
+                          {label}
+                        </Box>
+                      );
+                    })}
+                  </HStack>
                 </Box>
                 {/* Race Position Graph */}
                 <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4} mb={4}>
@@ -757,9 +870,14 @@ const RaceDetailPage: React.FC = () => {
                     {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
                       const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
                       if (!driverLaps.length) return null;
-                      const color = teamColors[
-                        (driverLaps[0]?.constructor_name ?? driverLaps[0]?.constructor_id) as keyof typeof teamColors
-                      ] || teamColors["Default"];
+                      // Find constructor name or id for this driver from raceResults or qualiResults
+                      const driverKey = driverLaps[0]?.driver_code ?? String(driverLaps[0]?.driver_id);
+                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === driverKey)
+                        || qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === driverKey);
+                      const constructor =
+                        driverResult?.constructor_name ?? driverResult?.constructor_id ?? "Default";
+                      const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
+                      const color = teamColors[constructorKey] || teamColors["Default"];
                       // Map laps to SVG points
                       const points = driverLaps.map(l => {
                         const x = 60 + ((l.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
@@ -804,9 +922,14 @@ const RaceDetailPage: React.FC = () => {
                     {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
                       const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
                       if (!driverLaps.length) return null;
-                      const color = teamColors[
-                        (driverLaps[0]?.constructor_name ?? driverLaps[0]?.constructor_id) as keyof typeof teamColors
-                      ] || teamColors["Default"];
+                      // Find constructor name or id for this driver from raceResults or qualiResults
+                      const driverKey = driverLaps[0]?.driver_code ?? String(driverLaps[0]?.driver_id);
+                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === driverKey)
+                        || qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === driverKey);
+                      const constructor =
+                        driverResult?.constructor_name ?? driverResult?.constructor_id ?? "Default";
+                      const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
+                      const color = teamColors[constructorKey] || teamColors["Default"];
                       // Find min/max lap time for scaling
                       const minLap = Math.min(...driverLaps.map(l => l.lap_number));
                       const maxLap = Math.max(...driverLaps.map(l => l.lap_number));
@@ -917,4 +1040,42 @@ const RaceDetailPage: React.FC = () => {
   );
 };
 
-export default RaceDetailPage;
+// Footer for RaceDetailPage
+const Footer = () => (
+  <Box
+    as="footer"
+    bg="bg-surface-raised"
+    borderTop="2px solid"
+    borderColor="brand.red"
+    py="xl"
+    w="100%"
+    position="fixed"
+    left={0}
+    bottom={0}
+    zIndex={100}
+  >
+    <Container maxW="1200px">
+      <Flex justify="space-between" align="center" wrap="wrap" gap="md">
+        <HStack spacing="lg">
+          <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+          <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
+          <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
+        </HStack>
+        <Text color="text-muted" fontSize="sm">
+          ©{new Date().getFullYear()} RaceIQ. All rights reserved.
+        </Text>
+      </Flex>
+    </Container>
+  </Box>
+);
+
+const RaceDetailPageLayout: React.FC = () => (
+  <Box minH="100vh" display="flex" flexDirection="column" bg="bg-primary" color="text-primary">
+    <Box flex="1">
+      <RaceDetailPage />
+    </Box>
+    <Footer />
+  </Box>
+);
+
+export default RaceDetailPageLayout;
