@@ -413,7 +413,7 @@ const RaceDetailPage: React.FC = () => {
             <Tab>Summary</Tab>
             <Tab>Race</Tab>
             <Tab>Qualifying</Tab>
-            <Tab>Quali → Race</Tab>
+            <Tab>Qualifying → Race</Tab>
             <Tab>Analysis</Tab>
             <Tab>Lap Times / Pit Stops</Tab>
           </TabList>
