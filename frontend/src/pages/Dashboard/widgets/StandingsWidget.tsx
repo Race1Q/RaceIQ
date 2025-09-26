@@ -1,12 +1,28 @@
 import { Heading, Text, VStack, HStack, Box } from '@chakra-ui/react';
+import type { StandingsItem } from '../../../types';
+import { teamColors } from '../../../lib/teamColors';
 import WidgetCard from './WidgetCard';
 
-function StandingsWidget() {
-  const standings = [
-    { position: 1, driver: 'Max Verstappen', points: 350, team: 'Red Bull Racing', teamColor: '#3671C6' },
-    { position: 2, driver: 'Lando Norris', points: 332, team: 'McLaren', teamColor: '#F58020' },
-    { position: 3, driver: 'Charles Leclerc', points: 301, team: 'Ferrari', teamColor: '#DC143C' },
-  ];
+interface StandingsWidgetProps {
+  data?: StandingsItem[];
+}
+
+function StandingsWidget({ data }: StandingsWidgetProps) {
+  if (!data || data.length === 0) {
+    return (
+      <WidgetCard>
+        <VStack align="start" spacing="md">
+          <Heading color="brand.red" size="md" fontFamily="heading">
+            Championship Standings
+          </Heading>
+          <Text color="text-muted">Loading...</Text>
+        </VStack>
+      </WidgetCard>
+    );
+  }
+
+  // Take top 5 standings for the widget
+  const topStandings = data.slice(0, 5);
 
   return (
     <WidgetCard>
@@ -16,31 +32,34 @@ function StandingsWidget() {
         </Heading>
         
         <VStack align="stretch" spacing="sm" w="full">
-          {standings.map(({ position, driver, points, team, teamColor }) => (
-            <HStack key={position} spacing="md" align="center" p="sm" borderRadius="md" bg="whiteAlpha.50">
-              <Box
-                w="8px"
-                h="8px"
-                borderRadius="full"
-                bg={teamColor}
-                flexShrink={0}
-              />
-              <Text color="text-primary" fontWeight="bold" fontSize="sm" minW="20px">
-                {position}.
-              </Text>
-              <VStack align="start" spacing="xs" flex="1">
-                <Text color="text-primary" fontSize="sm" fontWeight="600">
-                  {driver}
+          {topStandings.map((item) => {
+            const teamColor = teamColors[item.constructorName] || teamColors['Default'];
+            return (
+              <HStack key={item.position} spacing="md" align="center" p="sm" borderRadius="md" bg="whiteAlpha.50">
+                <Box
+                  w="8px"
+                  h="8px"
+                  borderRadius="full"
+                  bg={`#${teamColor}`}
+                  flexShrink={0}
+                />
+                <Text color="text-primary" fontWeight="bold" fontSize="sm" minW="20px">
+                  {item.position}.
                 </Text>
-                <Text color="text-muted" fontSize="xs">
-                  {team}
+                <VStack align="start" spacing="xs" flex="1">
+                  <Text color="text-primary" fontSize="sm" fontWeight="600">
+                    {item.driverFullName}
+                  </Text>
+                  <Text color="text-muted" fontSize="xs">
+                    {item.constructorName}
+                  </Text>
+                </VStack>
+                <Text color="brand.red" fontSize="sm" fontWeight="bold" fontFamily="mono">
+                  {item.points} pts
                 </Text>
-              </VStack>
-              <Text color="brand.red" fontSize="sm" fontWeight="bold" fontFamily="mono">
-                {points} pts
-              </Text>
-            </HStack>
-          ))}
+              </HStack>
+            );
+          })}
         </VStack>
       </VStack>
     </WidgetCard>
