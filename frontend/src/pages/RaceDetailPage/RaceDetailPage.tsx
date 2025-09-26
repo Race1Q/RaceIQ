@@ -424,68 +424,285 @@ const RaceDetailPage: React.FC = () => {
               <VStack align="stretch" spacing={4}>
                 <Text fontSize="xl" fontWeight="bold" color="text-primary">Summary</Text>
 
-                {/* overlay controls placeholders */}
-                <HStack wrap="wrap" spacing={3}>
-                  <Badge>Flags</Badge>
-                  <Badge>Sectors</Badge>
-                  <Badge>Overtakes</Badge>
-                  <HStack>
-                    <Text>Lap:</Text>
-                    <Select
-                      size="sm"
-                      value={lapFilter === 'all' ? 'all' : String(lapFilter)}
-                      onChange={(e) => setLapFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                    >
-                      <option value="all">All</option>
-                      {uniq(laps.map(l => l.lap_number)).map(n => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </Select>
-                  </HStack>
-                </HStack>
-
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                  {/* Podium Visual (with actual podium steps) */}
                   <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
-                    <Text fontWeight="bold">Podium</Text>
-                    <Divider my={2}/>
-                    {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.podium?.length ? (
-                      summary.podium.map((r, i) => (
-                        <HStack key={i} justify="space-between">
-                          <Text>#{i + 1} {r.driver_code ?? r.driver_name ?? r.driver_id}</Text>
-                          <Text>{r.constructor_name ?? r.constructor_id}</Text>
-                        </HStack>
-                      ))
-                    ) : <Text>—</Text>}
+                    <Text fontWeight="bold" mb={2}>Podium</Text>
+                    <Divider my={2} />
+
+                    {summaryLoading ? (
+                      <Spinner size="sm" />
+                    ) : summaryError ? (
+                      <Text color="red.500">{summaryError}</Text>
+                    ) : summary?.podium?.length ? (
+                      <Box position="relative" minH="280px">
+                        {/* Podium base shadow */}
+                        <Box
+                          position="absolute"
+                          bottom="18px"
+                          left="50%"
+                          transform="translateX(-50%)"
+                          w="90%"
+                          h="10px"
+                          borderRadius="full"
+                          bg="blackAlpha.500"
+                          filter="blur(6px)"
+                          opacity={0.3}
+                        />
+
+                        {/* Podium steps */}
+                        <Flex align="flex-end" justify="center" gap={6} pt={6} pb={6}>
+                          {/* 2nd place (left, medium height) */}
+                          <Box textAlign="center" w="30%">
+                            {/* avatar sits on top via translateY */}
+                            <Box mb={-6} transform="translateY(-34px)">
+                              <Box
+                                mx="auto"
+                                w="70px"
+                                h="70px"
+                                borderRadius="full"
+                                bg="gray.200"
+                                overflow="hidden"
+                                border="2px solid"
+                                borderColor="brand.red"
+                              >
+                                <img
+                                  src={`https://raceiq.app/images/drivers/${summary.podium[1]?.driver_id ?? 'placeholder'}.jpg`}
+                                  alt={summary.podium[1]?.driver_name ?? 'Driver'}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
+                                />
+                              </Box>
+                            </Box>
+
+                            {/* step block */}
+                            <Box
+                              mx="auto"
+                              w="100%"
+                              h="120px"
+                              bg="gray.700"
+                              borderRadius="md"
+                              border="1px solid"
+                              borderColor="gray.600"
+                              position="relative"
+                            >
+                              {/* face label */}
+                              <Box
+                                position="absolute"
+                                top={2}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                px={3}
+                                py={1}
+                                bg="gray.300"
+                                borderRadius="md"
+                                fontWeight="bold"
+                                fontSize="sm"
+                                color="gray.800"
+                                minW="32px"
+                              >
+                                2
+                              </Box>
+                              {/* name on riser */}
+                              <Text
+                                position="absolute"
+                                bottom={3}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                fontWeight="bold"
+                                fontSize="md"
+                                color="text-primary"
+                                noOfLines={1}
+                                maxW="90%"
+                              >
+                                {summary.podium[1]?.driver_name ?? summary.podium[1]?.driver_code ?? summary.podium[1]?.driver_id}
+                              </Text>
+                            </Box>
+                          </Box>
+
+                          {/* 1st place (center, tallest) */}
+                          <Box textAlign="center" w="30%">
+                            <Box mb={-8} transform="translateY(-46px)">
+                              <Box
+                                mx="auto"
+                                w="84px"
+                                h="84px"
+                                borderRadius="full"
+                                bg="yellow.200"
+                                overflow="hidden"
+                                border="3px solid"
+                                borderColor="brand.red"
+                              >
+                                <img
+                                  src={`https://raceiq.app/images/drivers/${summary.podium[0]?.driver_id ?? 'placeholder'}.jpg`}
+                                  alt={summary.podium[0]?.driver_name ?? 'Driver'}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
+                                />
+                              </Box>
+                            </Box>
+
+                            <Box
+                              mx="auto"
+                              w="100%"
+                              h="160px"
+                              bg="yellow.400"
+                              borderRadius="md"
+                              border="1px solid"
+                              borderColor="yellow.500"
+                              position="relative"
+                            >
+                              <Box
+                                position="absolute"
+                                top={2}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                px={3}
+                                py={1}
+                                bg="yellow.300"
+                                borderRadius="md"
+                                fontWeight="bold"
+                                fontSize="sm"
+                                color="gray.900"
+                                minW="32px"
+                              >
+                                1
+                              </Box>
+                              <Text
+                                position="absolute"
+                                bottom={3}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                fontWeight="bold"
+                                fontSize="lg"
+                                color="brand.red"
+                                noOfLines={1}
+                                maxW="90%"
+                              >
+                                {summary.podium[0]?.driver_name ?? summary.podium[0]?.driver_code ?? summary.podium[0]?.driver_id}
+                              </Text>
+                            </Box>
+                          </Box>
+
+                          {/* 3rd place (right, shortest) */}
+                          <Box textAlign="center" w="30%">
+                            <Box mb={-4} transform="translateY(-24px)">
+                              <Box
+                                mx="auto"
+                                w="70px"
+                                h="70px"
+                                borderRadius="full"
+                                bg="orange.200"
+                                overflow="hidden"
+                                border="2px solid"
+                                borderColor="brand.red"
+                              >
+                                <img
+                                  src={`https://raceiq.app/images/drivers/${summary.podium[2]?.driver_id ?? 'placeholder'}.jpg`}
+                                  alt={summary.podium[2]?.driver_name ?? 'Driver'}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
+                                />
+                              </Box>
+                            </Box>
+
+                            <Box
+                              mx="auto"
+                              w="100%"
+                              h="100px"
+                              bg="orange.400"
+                              borderRadius="md"
+                              border="1px solid"
+                              borderColor="orange.500"
+                              position="relative"
+                            >
+                              <Box
+                                position="absolute"
+                                top={2}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                px={3}
+                                py={1}
+                                bg="orange.300"
+                                borderRadius="md"
+                                fontWeight="bold"
+                                fontSize="sm"
+                                color="gray.900"
+                                minW="32px"
+                              >
+                                3
+                              </Box>
+                              <Text
+                                position="absolute"
+                                bottom={3}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                fontWeight="bold"
+                                fontSize="md"
+                                color="text-primary"
+                                noOfLines={1}
+                                maxW="90%"
+                              >
+                                {summary.podium[2]?.driver_name ?? summary.podium[2]?.driver_code ?? summary.podium[2]?.driver_id}
+                              </Text>
+                            </Box>
+                          </Box>
+                        </Flex>
+                      </Box>
+                    ) : (
+                      <Text>—</Text>
+                    )}
                   </Box>
 
-                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
-                    <Text fontWeight="bold">Fastest Lap</Text>
+
+
+                  {/* Fastest Lap Chakra Card */}
+                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" boxShadow="md">
+                    <Text fontWeight="bold" mb={2} color="brand.red">Fastest Lap</Text>
                     <Divider my={2}/>
                     {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.fastestLap ? (
-                      <VStack align="start" spacing={1}>
-                        <Text>Driver: {summary.fastestLap.driver_name ?? summary.fastestLap.driver_id}</Text>
+                      <VStack align="start" spacing={2}>
+                        <HStack>
+                          <Text fontWeight="bold" color="text-primary">Driver:</Text>
+                          <Text color="text-secondary">{summary.fastestLap.driver_name ?? summary.fastestLap.driver_id}</Text>
+                        </HStack>
                         {'lap_number' in summary.fastestLap && summary.fastestLap.lap_number !== undefined && (
-                          <Text>Lap: {summary.fastestLap.lap_number}</Text>
+                          <HStack>
+                            <Text fontWeight="bold" color="text-primary">Lap:</Text>
+                            <Text color="text-secondary">{summary.fastestLap.lap_number}</Text>
+                          </HStack>
                         )}
                         {'time_ms' in summary.fastestLap && summary.fastestLap.time_ms != null ? (
-                          <Text>Time: {(summary.fastestLap.time_ms / 1000).toFixed(3)}s</Text>
+                          <HStack>
+                            <Text fontWeight="bold" color="text-primary">Time:</Text>
+                            <Text color="text-secondary">{(summary.fastestLap.time_ms / 1000).toFixed(3)}s</Text>
+                          </HStack>
                         ) : (
-                          <Text>Time: —</Text>
+                          <HStack>
+                            <Text fontWeight="bold" color="text-primary">Time:</Text>
+                            <Text color="text-secondary">—</Text>
+                          </HStack>
                         )}
                       </VStack>
                     ) : <Text>—</Text>}
                   </Box>
                 </SimpleGrid>
 
-                {/* Events summary: red and yellow flags */}
-                <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" mt={2}>
-                  <Text fontWeight="bold">Events</Text>
+                {/* Events summary: Chakra UI card style */}
+                <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" mt={2} boxShadow="md">
+                  <Text fontWeight="bold" mb={2} color="brand.red">Events</Text>
                   <Divider my={2}/>
                   {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.events ? (
-                    <VStack align="start" spacing={1}>
-                      <Text>Red Flags: {summary.events.redFlags}</Text>
-                      <Text>Yellow Flags: {summary.events.yellowFlags}</Text>
-                    </VStack>
+                    <HStack spacing={8}>
+                      <VStack align="center" spacing={1}>
+                        <Text fontWeight="bold" color="red.500">Red Flags</Text>
+                        <Box fontSize="2xl" fontWeight="bold" color="red.500">{summary.events.redFlags}</Box>
+                      </VStack>
+                      <VStack align="center" spacing={1}>
+                        <Text fontWeight="bold" color="yellow.500">Yellow Flags</Text>
+                        <Box fontSize="2xl" fontWeight="bold" color="yellow.500">{summary.events.yellowFlags}</Box>
+                      </VStack>
+                    </HStack>
                   ) : <Text>—</Text>}
                 </Box>
               </VStack>
