@@ -8,6 +8,7 @@ import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
+import { DriverStandingMaterialized } from './driver-standings-materialized.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ConstructorEntity } from '../constructors/constructors.entity';
       RaceResult,
       Driver,
       ConstructorEntity,
+      DriverStandingMaterialized,
     ]),
   ],
   controllers: [StandingsController],

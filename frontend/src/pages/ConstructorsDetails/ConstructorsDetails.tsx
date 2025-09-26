@@ -1,11 +1,13 @@
 // frontend/src/pages/Constructors/ConstructorDetails.tsx
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, VStack, HStack, useToast } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image } from '@chakra-ui/react';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
+import { teamCarImages } from '../../lib/teamCars';
+import { getTeamLogo } from '../../lib/teamAssets';
 import {
   LineChart,
   Line,
@@ -14,22 +16,38 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
 } from 'recharts';
 
-// Backend entity interface
 interface Constructor {
   id: number;
   name: string;
   nationality: string;
   url: string;
-  constructor_id: string; // API string ID
 }
 
-interface ConstructorStanding {
+interface SeasonPoints {
   season: number;
   points: number;
   wins: number;
-  position: number;
+  podiums: number;
+  totalRaces: number;
+}
+
+interface Season {
+  id: number;
+  year: number;
+}
+
+interface CumulativeProgression {
+  round: number;
+  cumulativePoints: number;
+}
+
+interface SeasonPoles {
+  seasonId: number;
+  poleCount: string;
 }
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
@@ -38,50 +56,83 @@ const ConstructorDetails: React.FC = () => {
   const { constructorId } = useParams<{ constructorId: string }>();
   const { getAccessTokenSilently } = useAuth0();
   const toast = useToast();
+  const navigate = useNavigate();
 
   const [constructor, setConstructor] = useState<Constructor | null>(null);
-  const [standings, setStandings] = useState<ConstructorStanding[]>([]);
+  const [pointsPerSeason, setPointsPerSeason] = useState<SeasonPoints[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [cumulativeProgression, setCumulativeProgression] = useState<CumulativeProgression[]>([]);
+  const [totalPoles, setTotalPoles] = useState<number>(0);
+  const [polesBySeason, setPolesBySeason] = useState<SeasonPoles[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const authedFetch = useCallback(async (url: string) => {
-    const token = await getAccessTokenSilently({
-      authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: 'read:standings',
-      },
-    });
+  const authedFetch = useCallback(
+    async (url: string) => {
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          scope: 'read:race-results read:races',
+        },
+      });
 
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(
-        `Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`
-      );
-    }
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(
+          `Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`
+        );
+      }
 
-    return response.json();
-  }, [getAccessTokenSilently]);
+      return response.json();
+    },
+    [getAccessTokenSilently]
+  );
 
   useEffect(() => {
     const fetchConstructorDetails = async () => {
+      if (!constructorId) return;
       setLoading(true);
       try {
-        // Fetch constructor info from backend
         const constructorData: Constructor = await authedFetch(
-          `${BACKEND_URL}/api/constructors/${constructorId}`
+          `${BACKEND_URL}api/constructors/${constructorId}`
         );
-
         setConstructor(constructorData);
 
-        // Fetch constructor standings (historical)
-        const standingsData: ConstructorStanding[] = await authedFetch(
-          `${BACKEND_URL}/api/constructor-standings/history/${constructorData.id}`
+        const seasonPointsData: SeasonPoints[] = await authedFetch(
+          `${BACKEND_URL}api/race-results/constructor/${constructorId}/season-points`
         );
+        setPointsPerSeason(seasonPointsData);
 
-        setStandings(standingsData);
+        const seasonsData: Season[] = await authedFetch(`${BACKEND_URL}api/seasons`);
+        setSeasons(seasonsData);
+
+        if (seasonsData.length > 0) {
+          const latestSeasonObj = seasonsData.reduce(
+            (prev, curr) => (curr.year > prev.year ? curr : prev),
+            seasonsData[0]
+          );
+          const latestSeasonId = latestSeasonObj.id;
+
+          const cumulativeData: CumulativeProgression[] = await authedFetch(
+            `${BACKEND_URL}api/race-results/constructor/${constructorId}/season/${latestSeasonId}/progression`
+          );
+          setCumulativeProgression(cumulativeData);
+        }
+
+        // Poles
+        const polesData = await authedFetch(
+          `${BACKEND_URL}api/races/constructor/${constructorId}/poles`
+        );
+        setTotalPoles(polesData.poles);
+
+        const polesBySeasonData: SeasonPoles[] = await authedFetch(
+          `${BACKEND_URL}api/races/constructor/${constructorId}/poles-by-season`
+        );
+        setPolesBySeason(polesBySeasonData);
+
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
         toast({
@@ -96,59 +147,269 @@ const ConstructorDetails: React.FC = () => {
       }
     };
 
-    if (constructorId) fetchConstructorDetails();
+    fetchConstructorDetails();
   }, [constructorId, authedFetch, toast]);
 
-  const totalPoints = useMemo(() => standings.reduce((acc, s) => acc + s.points, 0), [standings]);
-  const totalWins = useMemo(() => standings.reduce((acc, s) => acc + s.wins, 0), [standings]);
+  const mappedPointsPerSeason = useMemo(() => {
+    if (!pointsPerSeason || !Array.isArray(pointsPerSeason)) return [];
+    return pointsPerSeason.map((s) => {
+      const seasonObj = seasons.find((season) => season.id === s.season);
+      return {
+        ...s,
+        seasonLabel: seasonObj ? seasonObj.year.toString() : `Season ${s.season}`,
+      };
+    });
+  }, [pointsPerSeason, seasons]);
+
+  const mappedPolesPerSeason = useMemo(() => {
+    if (!polesBySeason || !Array.isArray(polesBySeason)) return [];
+    return polesBySeason
+      .map((s) => {
+        const seasonObj = seasons.find(season => season.id === Number(s.seasonId));
+        return {
+          ...s,
+          poleCount: Number(s.poleCount),
+          seasonId: Number(s.seasonId),
+          seasonYear: seasonObj ? seasonObj.year : 0,
+          seasonLabel: seasonObj ? seasonObj.year.toString() : `Season ${s.seasonId}`,
+        };
+      })
+      .sort((a, b) => a.seasonYear - b.seasonYear);
+  }, [polesBySeason, seasons]);
+
+  const latestSeason = useMemo(() => {
+    if (!pointsPerSeason || pointsPerSeason.length === 0) return null;
+    let latest = pointsPerSeason[0];
+    pointsPerSeason.forEach((s) => {
+      const seasonObj = seasons.find((season) => season.id === s.season);
+      const latestObj = seasons.find((season) => season.id === latest.season);
+      if (seasonObj && latestObj && seasonObj.year > latestObj.year) {
+        latest = s;
+      }
+    });
+    return latest;
+  }, [pointsPerSeason, seasons]);
+
+  const latestSeasonPoles = useMemo(() => {
+    if (!latestSeason) return 0;
+    const latestSeasonObj = seasons.find(s => s.id === latestSeason.season);
+    if (!latestSeasonObj) return 0;
+    const polesEntry = mappedPolesPerSeason.find(s => s.seasonYear === latestSeasonObj.year);
+    return polesEntry ? polesEntry.poleCount : 0;
+  }, [latestSeason, mappedPolesPerSeason, seasons]);
+
+  const totalPoints = useMemo(
+    () => pointsPerSeason.reduce((acc, s) => acc + (s.points || 0), 0),
+    [pointsPerSeason]
+  );
+  const totalWins = useMemo(
+    () => pointsPerSeason.reduce((acc, s) => acc + (s.wins || 0), 0),
+    [pointsPerSeason]
+  );
+  const totalPodiums = useMemo(
+    () => pointsPerSeason.reduce((acc, s) => acc + (s.podiums || 0), 0),
+    [pointsPerSeason]
+  );
 
   if (loading) return <F1LoadingSpinner text="Loading Constructor Details..." />;
-
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
 
   return (
     <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
-      <VStack spacing={6} align="stretch">
-        <Box>
-          <Text fontSize="3xl" fontWeight="bold" color={teamColor}>
-            {constructor.name}
-          </Text>
-          <Text fontSize="md" color="gray.300">
-            Nationality: {constructor.nationality}
-          </Text>
-        </Box>
-
-        <Flex gap={6} wrap="wrap">
-          <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-            <Text fontSize="lg" fontWeight="bold">Total Points</Text>
-            <Text fontSize="2xl" fontWeight="bold">{totalPoints}</Text>
-          </Box>
-          <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-            <Text fontSize="lg" fontWeight="bold">Total Wins</Text>
-            <Text fontSize="2xl" fontWeight="bold">{totalWins}</Text>
-          </Box>
+      {/* Header Bar */}
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={4}
+        p={4}
+        borderRadius="md"
+        bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
+      >
+        {/* Left: Team Logo + Info */}
+        <Flex direction="row" align="center" gap={4}>
+          <Image
+            src={getTeamLogo(constructor.name)}
+            alt={`${constructor.name} logo`}
+            boxSize="100px"
+            objectFit="contain"
+          />
+          <Flex direction="column" justify="center">
+            <Text fontSize="3xl" fontWeight="bold" color="white">
+              {constructor.name}
+            </Text>
+            <Text fontSize="md" color="gray.300">
+              Nationality: {constructor.nationality}
+            </Text>
+          </Flex>
         </Flex>
 
-        <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold" mb={2}>
-            Historical Points by Season
-          </Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={standings.sort((a, b) => a.season - b.season)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-              <XAxis dataKey="season" stroke="white" />
-              <YAxis stroke="white" />
-              <Tooltip />
-              <Line type="monotone" dataKey="points" stroke={teamColor} strokeWidth={3} />
-            </LineChart>
-          </ResponsiveContainer>
+        {/* Middle: Team Car Image */}
+        {teamCarImages[constructor.name] && (
+          <Image
+            src={teamCarImages[constructor.name]}
+            alt={`${constructor.name} car`}
+            maxH="150px"
+            objectFit="contain"
+          />
+        )}
+
+        {/* Right: Back Button */}
+        <Button onClick={() => navigate('/constructors')} color="white">
+          Back to Constructors
+        </Button>
+      </Flex>
+
+      {/* Two Section Layout */}
+      <Flex gap={6} flexDirection={{ base: 'column', lg: 'row' }}>
+        {/* Left section: totals + 4 line charts */}
+        <Box flex={1} display="flex" flexDirection="column" gap={6}>
+          <Flex gap={4} wrap="wrap">
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Points</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalPoints}</Text>
+            </Box>
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Wins</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalWins}</Text>
+            </Box>
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Podiums</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalPodiums}</Text>
+            </Box>
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Poles</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalPoles}</Text>
+            </Box>
+          </Flex>
+
+          {/* Line Charts */}
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Points by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonLabel" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Line type="monotone" dataKey="points" stroke={teamColor} strokeWidth={3}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Wins by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonLabel" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Line type="monotone" dataKey="wins" stroke="#F56565" strokeWidth={3}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Podiums by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonLabel" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Line type="monotone" dataKey="podiums" stroke="#ECC94B" strokeWidth={3}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Poles by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <BarChart data={mappedPolesPerSeason}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonYear" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Bar dataKey="poleCount" fill={teamColor} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
         </Box>
-      </VStack>
+
+        {/* Right section: latest season totals + cumulative progression */}
+        <Box flex={1} display="flex" flexDirection="column" gap={6}>
+          {latestSeason && (
+            <Flex gap={4} wrap="wrap">
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Points</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeason.points}</Text>
+              </Box>
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Wins</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeason.wins}</Text>
+              </Box>
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Podiums</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeason.podiums}</Text>
+              </Box>
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Poles</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeasonPoles}</Text>
+              </Box>
+            </Flex>
+          )}
+
+          {cumulativeProgression.length > 0 && (
+            <Box w="100%" h="625px" bg="gray.800" p={4} borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold" mb={2}>Cumulative Points Progression ({seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'})</Text>
+              <ResponsiveContainer width="100%" height="90%">
+                <LineChart data={cumulativeProgression}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                  <XAxis dataKey="round" stroke="white" />
+                  <YAxis stroke="white" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="cumulativePoints" stroke={teamColor} strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          )}
+        </Box>
+      </Flex>
     </Box>
   );
 };
 
 export default ConstructorDetails;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

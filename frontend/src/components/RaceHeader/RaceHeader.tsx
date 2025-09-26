@@ -1,10 +1,11 @@
 // frontend/src/components/RaceHeader/RaceHeader.tsx
 
 import React from 'react';
-import { Box, Heading, Text, HStack, VStack, Divider, Image } from '@chakra-ui/react';
+import { Box, Heading, Text, HStack, VStack, Divider } from '@chakra-ui/react';
 import { Calendar } from 'lucide-react';
+import ReactCountryFlag from 'react-country-flag';
+import { countryCodeMap } from '../../lib/countryCodeUtils';
 import type { Race } from '../../data/types';
-import { getCountryFlagUrl } from '../../lib/assets';
 
 interface RaceHeaderProps {
   race: Race;
@@ -19,12 +20,17 @@ const RaceHeader: React.FC<RaceHeaderProps> = ({ race }) => {
         </Heading>
         <HStack spacing="md">
           <HStack spacing="sm" align="center">
-            <Image 
-              src={getCountryFlagUrl(race.countryCode)} 
-              alt={`${race.country} flag`}
-              boxSize="32px"
-              borderRadius="sm"
-            />
+            {(() => {
+              const twoLetter = countryCodeMap[race.countryCode?.toUpperCase()] || race.countryCode;
+              return twoLetter ? (
+                <ReactCountryFlag
+                  countryCode={twoLetter.toLowerCase()}
+                  svg
+                  style={{ width: '32px', height: '24px', borderRadius: '4px' }}
+                  title={race.country}
+                />
+              ) : null;
+            })()}
             <Text fontSize="xl" color="text-secondary">{race.country}</Text>
           </HStack>
           <HStack spacing="sm" align="center">

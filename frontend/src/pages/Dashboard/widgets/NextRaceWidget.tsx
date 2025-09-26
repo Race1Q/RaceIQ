@@ -1,19 +1,67 @@
+import { useState, useEffect } from 'react';
 import { Heading, Text, VStack, HStack, Icon } from '@chakra-ui/react';
 import { MapPin, Clock } from 'lucide-react';
+import type { NextRace } from '../../../types';
 import WidgetCard from './WidgetCard';
 
-function NextRaceWidget() {
+interface NextRaceWidgetProps {
+  data?: NextRace;
+}
+
+interface Countdown {
+  days: number;
+  hours: number;
+  minutes: number;
+}
+
+function NextRaceWidget({ data }: NextRaceWidgetProps) {
+  const [countdown, setCountdown] = useState<Countdown | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const interval = setInterval(() => {
+      const raceDate = new Date(data.raceDate);
+      const now = new Date();
+      const difference = raceDate.getTime() - now.getTime();
+
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        setCountdown({ days, hours, minutes });
+      } else {
+        setCountdown(null);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [data]);
+
+  if (!data) {
+    return (
+      <WidgetCard>
+        <VStack align="start" spacing="md">
+          <Heading color="brand.red" size="md" fontFamily="heading">
+            Next Race
+          </Heading>
+          <Text color="text-muted">Loading...</Text>
+        </VStack>
+      </WidgetCard>
+    );
+  }
+
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
         <Heading color="brand.red" size="md" fontFamily="heading">
-          Next Race: Italian Grand Prix
+          Next Race: {data.raceName}
         </Heading>
         
         <HStack spacing="sm" align="center">
           <Icon as={MapPin} boxSize={4} color="brand.red" />
           <Text color="text-secondary" fontSize="sm" fontFamily="body">
-            Monza Circuit
+            {data.circuitName}
           </Text>
         </HStack>
         
@@ -24,15 +72,21 @@ function NextRaceWidget() {
               Time Until Race
             </Text>
           </HStack>
-          <Text 
-            color="brand.red" 
-            fontSize="2xl" 
-            fontWeight="bold" 
-            fontFamily="mono"
-            letterSpacing="wide"
-          >
-            2 Days : 10 Hours : 45 Mins
-          </Text>
+          {countdown ? (
+            <Text 
+              color="brand.red" 
+              fontSize="2xl" 
+              fontWeight="bold" 
+              fontFamily="mono"
+              letterSpacing="wide"
+            >
+              {countdown.days} Days : {countdown.hours} Hours : {countdown.minutes} Mins
+            </Text>
+          ) : (
+            <Text color="brand.red" fontSize="lg" fontWeight="bold">
+              Race has started!
+            </Text>
+          )}
         </VStack>
       </VStack>
     </WidgetCard>

@@ -8,7 +8,14 @@ import { RaceResult } from '../race-results/race-results.entity'; // 1. IMPORT
 import {
   CareerStatsDto,
   DriverStatsResponseDto,
-} from './dto/driver-stats.dto'; // 2. IMPORT
+} from './dto/driver-stats.dto';
+
+// Define the shape of the data we will return
+interface RecentFormResult {
+  position: number;
+  raceName: string;
+  countryCode: string;
+} // 2. IMPORT
 
 @Injectable()
 export class DriversService {
@@ -34,7 +41,7 @@ export class DriversService {
     return driver;
   }
 
-  // 4. IMPLEMENT THIS METHOD
+  // Career stats
   async getDriverCareerStats(driverId: number): Promise<DriverStatsResponseDto> {
     const driver = await this.findOne(driverId);
 
@@ -56,7 +63,6 @@ export class DriversService {
 
     const rawStats = await statsQuery.getRawOne();
     
-    // Initialize with default values if no results found
     const careerStats: CareerStatsDto = {
       wins: 0,
       podiums: 0,
@@ -66,7 +72,6 @@ export class DriversService {
       racesCompleted: 0,
     };
 
-    // Convert raw query results (strings) to numbers if data exists
     if (rawStats) {
       for (const key in careerStats) {
         careerStats[key] = parseFloat(rawStats[key]) || 0;
@@ -79,19 +84,86 @@ export class DriversService {
     };
   }
 
-  async getDriverRecentForm(driverId: number): Promise<{ position: number; raceName: string; countryCode: string }[]> {
-    // Find the driver first to ensure they exist
+  // 🆕 Standings for a specific season + round
+  async getDriversByStandings(season: number): Promise<any[]> {
+    const rawResults = await this.raceResultRepository
+      .createQueryBuilder('rr')
+      .select([
+        'driver.id AS id',
+        `driver.first_name || ' ' || driver.last_name AS full_name`,
+        'driver.country_code AS country',
+        'SUM(rr.points) AS points',
+      ])
+      .leftJoin(Driver, 'driver', 'driver.id = rr.driver_id')
+      .leftJoin('rr.session', 'session')
+      .leftJoin('session.race', 'race')
+      .where('race.season = :season', { season }) // filter by race.season
+      .groupBy('driver.id, driver.first_name, driver.last_name, driver.country_code')
+      .orderBy('SUM(rr.points)', 'DESC')
+      .getRawMany();
+  
+    return rawResults.map((r) => ({
+      id: parseInt(r.id, 10),
+      full_name: r.full_name,
+      country: r.country,
+      points: parseFloat(r.points) || 0,
+    }));
+  }
+
+  async getDriversByStandings2(season: number): Promise<any[]> {
+    const rawResults = await this.driverRepository
+      .createQueryBuilder('driver')
+      .select([
+        'ds.driver_id AS id',
+        'ds.full_name AS full_name',
+        'ds.country_code AS country',
+        'ds.points AS points',
+      ])
+      .innerJoin('driver_standings_materialized', 'ds', 'ds.driver_id = driver.id')
+      .where('ds.season = :season', { season })
+      .orderBy('ds.points', 'DESC')
+      .getRawMany();
+  
+    return rawResults.map((r) => ({
+      id: parseInt(r.id, 10),
+      full_name: r.full_name,
+      country: r.country,
+      points: parseFloat(r.points) || 0,
+    }));
+  }
+
+  async getDriversByStandings3(season: number): Promise<any[]> {
+    const rawResults = await this.driverRepository
+      .createQueryBuilder()
+      .select([
+        'ds."driverId" AS id',
+      ])
+      .from('driver_standings_materialized', 'ds')
+      .where('ds."season_id" = :season', { season })
+      .orderBy('ds."seasonPoints"', 'DESC')
+      .getRawMany();
+  
+    return rawResults.map(r => ({
+      id: parseInt(r.id, 10),
+      full_name: r.full_name,
+      country: r.country,
+      points: parseFloat(r.points) || 0,
+    }));
+  }
+
+  async getDriverRecentForm(driverId: number): Promise<RecentFormResult[]> {
+    // First, ensure the driver exists. This will throw a 404 if not found.
     await this.findOne(driverId);
 
     const rawResults = await this.raceResultRepository.createQueryBuilder('rr')
       .select([
         'rr.position AS position',
         'r.name AS "raceName"',
-        'c.country_code AS "countryCode"', // NEW: Select the circuit's country code
+        'c.country_code AS "countryCode"',
       ])
       .innerJoin('rr.session', 's')
       .innerJoin('s.race', 'r')
-      .innerJoin('r.circuit', 'c') // NEW: Join to the circuits table
+      .innerJoin('r.circuit', 'c')
       .where('rr.driver_id = :driverId', { driverId })
       .andWhere('r.date < NOW()')
       .andWhere("s.type = 'RACE'")
@@ -99,9 +171,9 @@ export class DriversService {
       .limit(5)
       .getRawMany();
 
-    // The method now returns the full array of objects
     return rawResults;
   }
-}
+}  
+
 
 

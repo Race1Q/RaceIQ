@@ -22,10 +22,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   const offsetY = useParallax(0.5);
 
   const handleScrollDown = () => {
-    const navbarHeight = 70;
+    // Account for fixed header + extra spacing to stop slightly higher
+    const headerOffsetPx = 100; // menu (~70px) + 30px buffer
     gsap.to(window, { 
-      duration: 1.5,
-      scrollTo: window.innerHeight - navbarHeight,
+      duration: 1.2,
+      scrollTo: window.innerHeight - headerOffsetPx,
       ease: 'power2.inOut' 
     });
   };
@@ -78,17 +79,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           >
             {subtitle}
           </Text>
-          <Button
-            size="lg"
-            bg="brand.red"
-            color="white"
-            _hover={{ bg: 'brand.redDark' }}
-            px={8}
-            fontFamily="heading" // Added for consistency
-            onClick={() => loginWithRedirect()}
-          >
-            Get Started
-          </Button>
+          {/* Primary CTA removed per request */}
         </VStack>
       </Container>
       

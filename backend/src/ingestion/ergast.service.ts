@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { SupabaseService } from '../supabase/supabase.service';
 import { firstValueFrom } from 'rxjs';
+import { countryCodeMap, nationalityToCountryCodeMap } from '../mapping/countries';
 
 // Generic interfaces to handle the nested structure of the Ergast API response
 interface ErgastTable {
@@ -117,20 +118,6 @@ export class ErgastService {
   private readonly startYear = 2000;
   private readonly endYear = 2025; // Allow foundational scripts to run for all years 
   private readonly pageLimit = 100; // A higher page limit for faster bulk ingestion
-  
-  private readonly countryCodeMap: Record<string, string> = {
-    'Australia': 'AUS', 'Austria': 'AUT', 'Azerbaijan': 'AZE', 'Bahrain': 'BHR',
-    'Belgium': 'BEL', 'Brazil': 'BRA', 'Canada': 'CAN', 'China': 'CHN',
-    'France': 'FRA', 'Germany': 'DEU', 'Hungary': 'HUN', 'India': 'IND',
-    'Italy': 'ITA', 'Japan': 'JPN', 'Malaysia': 'MYS', 'Mexico': 'MEX',
-    'Monaco': 'MCO', 'Netherlands': 'NLD', 'Portugal': 'PRT', 'Russia': 'RUS',
-    'Saudi Arabia': 'SAU', 'Singapore': 'SGP', 'Spain': 'ESP', 'Turkey': 'TUR',
-    'UAE': 'ARE', 'UK': 'GBR', 'USA': 'USA', 'United States': 'USA',
-    'United Kingdom': 'GBR', 'United Arab Emirates': 'ARE', 'South Africa': 'ZAF',
-    'Argentina': 'ARG', 'Morocco': 'MAR', 'Sweden': 'SWE', 'Korea': 'KOR',
-    'San Marino': 'SMR', 'Vietnam': 'VNM', 'Qatar': 'QAT', 'Europe': 'EUR',
-    'Switzerland': 'CHE',
-  };
 
   constructor(
     private readonly httpService: HttpService,
@@ -198,7 +185,7 @@ export class ErgastService {
 
     const circuitsToUpsert = circuits.map(circuit => {
       const countryName = circuit.Location.country;
-      const countryCode = this.countryCodeMap[countryName] || countryName.substring(0, 3).toUpperCase();
+      const countryCode = countryCodeMap[countryName] || countryName.substring(0, 3).toUpperCase();
       
       if (!countryCodeSet.has(countryCode)) {
         countryCodeSet.add(countryCode); 
@@ -279,7 +266,7 @@ export class ErgastService {
   public async ingestDrivers() {
     this.logger.log('Ingesting All Unique Drivers...');
 
-    // 1. Make a single, efficient call to get all drivers from the API
+    // 1. Fetch all drivers from the API
     const uniqueDrivers = await this.fetchAllErgastPages<ApiDriver>('/drivers');
 
     if (!uniqueDrivers || uniqueDrivers.length === 0) {
@@ -287,24 +274,17 @@ export class ErgastService {
       throw new Error('Failed to fetch drivers from API.');
     }
     
-    // 2. Handle the country dependency
-    const { data: existingCountries, error: countryError } =
-      await this.supabaseService.client.from('countries').select('country_code');
-    if (countryError) throw new Error('Failed to fetch existing countries');
-    
-    const countryCodeSet = new Set(existingCountries.map(c => c.country_code));
-    const newCountriesToInsert: { country_code: string; country_name: string }[] = [];
-
-    // 3. Transform the API data to match our DB schema
+    // 2. Transform the API data to match our DB schema
     const driversToUpsert = uniqueDrivers
       .filter(d => d && d.driverId)
       .map((d) => {
-        const countryName = d.nationality;
-        const countryCode = this.countryCodeMap[countryName] || null;
+        // --- FIX: Use the correct map to look up nationality ---
+        const countryCode = nationalityToCountryCodeMap[d.nationality] || null;
 
-        if (countryCode && !countryCodeSet.has(countryCode)) {
-          countryCodeSet.add(countryCode);
-          newCountriesToInsert.push({ country_code: countryCode, country_name: countryName });
+        // Log a warning if a nationality from the API can't be mapped
+        // This helps identify if we need to add new entries to our map
+        if (!countryCode) {
+          this.logger.warn(`Could not map nationality "${d.nationality}" to a country code for driver ${d.driverId}.`);
         }
 
         return {
@@ -313,21 +293,14 @@ export class ErgastService {
           first_name: d.givenName,
           last_name: d.familyName,
           name_acronym: d.code,
-          country_code: countryCode,
+          country_code: countryCode, // Use the mapped code
           date_of_birth: d.dateOfBirth,
         };
       });
 
-    // 4. Insert any new countries if necessary
-    if (newCountriesToInsert.length > 0) {
-      this.logger.log(`Found ${newCountriesToInsert.length} new countries to insert.`);
-      const { error } = await this.supabaseService.client
-        .from('countries')
-        .insert(newCountriesToInsert);
-      if (error) throw new Error(`Failed to insert new countries: ${error.message}`);
-    }
-
-    // 5. Perform a single bulk upsert for all drivers
+    // 3. Perform a single bulk upsert for all drivers
+    // Note: The logic to dynamically insert new countries has been removed
+    // as it's more robust to maintain a complete list in our mapping file.
     const { error } = await this.supabaseService.client
       .from('drivers')
       .upsert(driversToUpsert, { onConflict: 'ergast_driver_ref' });

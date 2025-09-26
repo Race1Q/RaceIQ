@@ -6,6 +6,8 @@ import { Auth0Provider } from '@auth0/auth0-react';
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 import App from './App/App.tsx';
 import theme from './styles/theme';
@@ -47,7 +49,7 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
-        scope: 'openid profile email read:drivers read:standings read:constructors',
+        scope: 'openid profile email read:drivers read:standings read:constructors read:race-results read:races',
       }}
       useRefreshTokens={true}
       cacheLocation="localstorage"

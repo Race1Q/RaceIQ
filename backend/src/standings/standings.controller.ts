@@ -13,6 +13,13 @@ export class StandingsController {
   ): Promise<StandingsResponseDto> {
     return this.standingsService.getStandingsByYearAndRound(year, round);
   }
+
+  @Get('year/:year')
+  async getStandingsByYear(
+    @Param('year', ParseIntPipe) year: number,
+  ): Promise<StandingsResponseDto> {
+    return this.standingsService.getStandingsByYear(year);
+  }
 }
 
 

@@ -21,11 +21,13 @@ import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
+import Constructors from '../pages/Constructors/Constructors';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
+import Standings from '../pages/Standings/Standings';
 
 
 
@@ -38,6 +40,8 @@ function Navbar() {
     { path: '/drivers', label: 'Drivers' },
     { path: '/constructors', label: 'Constructors' },
     ...(isAuthenticated ? [
+      { path: '/standings', label: 'Standings' },
+      { path: '/standings/constructors', label: 'ConstructorStandings' },
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
       { path: '/admin', label: 'Admin' },
@@ -62,9 +66,9 @@ function Navbar() {
             src="/race_IQ_logo.svg" 
             alt="RaceIQ Logo" 
             style={{ 
-              height: '50px', 
-              width: 'auto',
-              filter: 'brightness(0) saturate(100%) invert(100%)' // Makes SVG white/transparent
+              height: '90px', 
+              width: 'auto'
+              // Removed filter to show original colors
             }}
           />
         </HStack>
@@ -138,7 +142,9 @@ function AppContent() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/drivers" element={<Drivers />} />
             <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
-            <Route path="/constructors" element={<ConstructorsStandings />} />
+            <Route path="/constructors" element={<Constructors />} />
+            <Route path="/standings" element={<Standings />} />
+            <Route path="/standings/constructors" element={<ConstructorsStandings />} />
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
@@ -192,7 +198,7 @@ function AppContent() {
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/races/:raceId" element={<RaceDetailPage />} />
-        <Route path="/constructors" element={<ConstructorsStandings />} />
+        <Route path="/constructors" element={<Constructors />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />
       </Routes>

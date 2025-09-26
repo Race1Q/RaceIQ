@@ -21,6 +21,9 @@ import { TireStintsModule } from './tire-stints/tire-stints.module';
 import { RaceEventsModule } from './race-events/race-events.module';
 import { StandingsModule } from './standings/standings.module';
 import { UsersModule } from './users/users.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { DriverStandingMaterialized } from './standings/driver-standings-materialized.entity';
+import { RaceFastestLapMaterialized } from './dashboard/race-fastest-laps-materialized.entity';
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -41,17 +44,19 @@ import { User } from './users/entities/user.entity';
 @Module({
   imports: [
     // 1. Load the .env file
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env.back' }),
 
     // 2. Setup the TypeORM database connection (NOW USING DATABASE_URL)
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        // This is the key change to match your .env file
-        url: configService.get<string>('DATABASE_URL'),
-        entities: [
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+        const isLocal = !!databaseUrl && (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1'));
+        return {
+          type: 'postgres',
+          url: databaseUrl,
+          entities: [
           Driver,
           Country,
           ConstructorEntity,
@@ -66,12 +71,13 @@ import { User } from './users/entities/user.entity';
           TireStint,
           RaceEvent,
           User,
-        ],
-        synchronize: false, // trust the db schema
-        ssl: {
-          rejectUnauthorized: false, // Required for Supabase
-        },
-      }),
+          DriverStandingMaterialized,
+          RaceFastestLapMaterialized,
+          ],
+          synchronize: false, // trust the db schema
+          ssl: isLocal ? false : { rejectUnauthorized: false },
+        };
+      },
     }),
 
     // 3. Load ONLY our new modules
@@ -91,6 +97,7 @@ import { User } from './users/entities/user.entity';
     RaceEventsModule,
     StandingsModule,
     UsersModule,
+    DashboardModule,
     // We have removed all the old, deleted modules 
     // (LapsModule, RacesModule, etc.)
   ],

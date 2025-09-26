@@ -1,3 +1,5 @@
+/* backend/src/drivers/drivers.controller.ts */
+
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
@@ -23,6 +25,14 @@ export class DriversController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<DriverStatsResponseDto> {
     return this.driversService.getDriverCareerStats(id);
+  }
+
+  // 🆕 Get drivers by standings (season)
+  @Get('by-standings/:season')
+  async getDriversByStandings(
+    @Param('season', ParseIntPipe) season: number,
+  ) {
+    return this.driversService.getDriversByStandings3(season);
   }
 
   @Get(':id/recent-form')

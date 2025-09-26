@@ -1,9 +1,11 @@
 // frontend/src/pages/Dashboard/DashboardPage.tsx
 
 import { useState } from 'react';
-import { Box, useDisclosure } from '@chakra-ui/react';
+import { Box, useDisclosure, Text, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
 import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
+import { useDashboardData } from '../../hooks/useDashboardData';
+import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
 import NextRaceWidget from './widgets/NextRaceWidget';
@@ -14,9 +16,18 @@ import FavoriteDriverSnapshotWidget from './widgets/FavoriteDriverSnapshotWidget
 import FavoriteTeamSnapshotWidget from './widgets/FavoriteTeamSnapshotWidget';
 import HeadToHeadQuickCompareWidget from './widgets/HeadToHeadQuickCompareWidget';
 import LatestF1NewsWidget from './widgets/LatestF1NewsWidget';
+import { AlertTriangle } from 'lucide-react';
 
 // Apply WidthProvider to ResponsiveGridLayout
 const ResponsiveGridLayout = WidthProvider(RGL);
+
+// Fallback banner component
+const FallbackBanner = () => (
+  <Alert status="warning" variant="solid" bg="brand.red" color="white" borderRadius="md" mb="lg">
+    <AlertIcon as={AlertTriangle} color="white" />
+    <AlertTitle fontFamily="heading" fontSize="md">Live Data Unavailable. Showing cached data.</AlertTitle>
+  </Alert>
+);
 
 // Define initial layout configuration with standardized sizes (moved outside component)
 const initialLayouts = {
@@ -50,6 +61,7 @@ interface WidgetVisibility {
 
 function DashboardPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { data: dashboardData, loading, error, isFallback } = useDashboardData();
 
   // TODO: Sync this state with user preferences in Supabase
   const [widgetVisibility, setWidgetVisibility] = useState<WidgetVisibility>({
@@ -66,15 +78,28 @@ function DashboardPage() {
   // Layout state management
   const [layouts, setLayouts] = useState<Layouts>(initialLayouts);
 
+  if (loading) {
+    return <F1LoadingSpinner text="Loading Dashboard..." />;
+  }
+
+  // Only show a full-page error if the API fails AND we have no fallback data
+  if (error && !dashboardData) {
+    return (
+      <Box p="lg">
+        <Text color="brand.red">Error loading dashboard: {error}</Text>
+      </Box>
+    );
+  }
+
   // Widget components map
   const widgetComponents: { [key: string]: React.ReactNode } = {
-    nextRace: <NextRaceWidget />,
-    standings: <StandingsWidget />,
-    lastPodium: <LastPodiumWidget />,
-    fastestLap: <FastestLapWidget />,
+    nextRace: <NextRaceWidget data={dashboardData?.nextRace} />,
+    standings: <StandingsWidget data={dashboardData?.championshipStandings} />,
+    lastPodium: <LastPodiumWidget data={dashboardData?.lastRacePodium} />,
+    fastestLap: <FastestLapWidget data={dashboardData?.lastRaceFastestLap} />,
     favoriteDriver: <FavoriteDriverSnapshotWidget />,
     favoriteTeam: <FavoriteTeamSnapshotWidget />,
-    headToHead: <HeadToHeadQuickCompareWidget />,
+    headToHead: <HeadToHeadQuickCompareWidget data={dashboardData?.headToHead} />,
     f1News: <LatestF1NewsWidget />,
   };
 
@@ -88,6 +113,7 @@ function DashboardPage() {
     <Box>
       <DashboardHeader onCustomizeClick={onOpen} />
       <Box p="lg">
+        {isFallback && <FallbackBanner />} {/* Render banner when using fallback data */}
         <ResponsiveGridLayout
           layouts={layouts}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
