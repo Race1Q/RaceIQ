@@ -1,11 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-// Adjust the imported name to match your actual export in races.entity.ts.
-// Common names are "Race" or "RaceEntity".
-import { Race } from './races.entity'; // <-- if your entity is exported as RaceEntity, change this line accordingly.
-
-<<<<<<< HEAD
+import { In, Repository } from 'typeorm';
+import { RaceDetailsDto } from './dto/race-details.dto';
 import { Race } from './races.entity';
 import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
@@ -14,20 +10,11 @@ import { Lap } from '../laps/laps.entity';
 import { PitStop } from '../pit-stops/pit-stops.entity';
 import { TireStint } from '../tire-stints/tire-stints.entity';
 import { RaceEvent } from '../race-events/race-events.entity';
-import { Season } from '../seasons/seasons.entity';
-=======
-type SeasonQuery = {
-  season?: number | string;
-  season_id?: number | string;
-  year?: number | string;
-};
->>>>>>> main
 
 @Injectable()
 export class RacesService {
   constructor(
     @InjectRepository(Race)
-<<<<<<< HEAD
     private readonly raceRepository: Repository<Race>,
     @InjectRepository(Session)
     private readonly sessionRepository: Repository<Session>,
@@ -43,124 +30,179 @@ export class RacesService {
     private readonly tireStintRepository: Repository<TireStint>,
     @InjectRepository(RaceEvent)
     private readonly raceEventRepository: Repository<RaceEvent>,
-    @InjectRepository(Season)
-    private readonly seasonRepository: Repository<Season>,
-=======
-    private readonly racesRepo: Repository<Race>,
->>>>>>> main
   ) {}
 
-  /**
-   * Return races, optionally filtered by season (season | season_id | year).
-   * Ordered newest-first by date/time, then round desc.
-   */
-  async findAll(query: SeasonQuery = {}): Promise<Race[]> {
-    const seasonRaw = query.season ?? query.season_id;
-    const yearRaw = query.year;
-    const season = seasonRaw !== undefined && seasonRaw !== null ? Number(seasonRaw) : undefined;
-    const year = yearRaw !== undefined && yearRaw !== null ? Number(yearRaw) : undefined;
+  async getRaceDetails(raceId: number): Promise<RaceDetailsDto> {
+    const raceInfo = await this.raceRepository.findOne({
+      where: { id: raceId },
+      relations: ['circuit', 'season'],
+    });
 
-    // Debug logging removed
-
-    const qb = this.racesRepo.createQueryBuilder('r')
-      .leftJoinAndSelect('r.season', 'season')
-      .leftJoinAndSelect('r.circuit', 'circuit')
-      .leftJoinAndSelect('r.sessions', 'sessions');
-
-    if (typeof year === 'number' && !Number.isNaN(year)) {
-      qb.innerJoin('r.season', 's').where('s.year = :year', { year });
-    } else if (typeof season === 'number' && !Number.isNaN(season)) {
-      qb.where('r.season_id = :season', { season });
+    if (!raceInfo) {
+      throw new NotFoundException(`Race with ID ${raceId} not found`);
     }
 
-    qb.orderBy('r.date', 'DESC')
-      .addOrderBy('r.time', 'DESC')
-      .addOrderBy('r.round', 'DESC');
+    const sessions = await this.sessionRepository.find({
+      where: { race: { id: raceId } },
+    });
 
-    const races = await qb.getMany();
-    return races;
+    const raceSession = sessions.find((s) => s.type === 'RACE');
+    const qualifyingSession = sessions.find((s) => s.type === 'QUALIFYING');
+    const allSessionIds = sessions.map((s) => s.id);
+
+    const [
+      raceResults,
+      qualifyingResults,
+      laps,
+      pitStops,
+      tireStints,
+      raceEvents,
+    ] = await Promise.all([
+      raceSession
+        ? this.raceResultRepository.find({
+            where: { session: { id: raceSession.id } },
+            relations: ['driver', 'team'],
+            order: { position: 'ASC' },
+          })
+        : Promise.resolve([]),
+      qualifyingSession
+        ? this.qualifyingResultRepository.find({
+            where: { session: { id: qualifyingSession.id } },
+            relations: ['driver', 'team'],
+            order: { position: 'ASC' },
+          })
+        : Promise.resolve([]),
+      this.lapRepository.find({
+        where: { race: { id: raceId } },
+        relations: ['driver'],
+        order: { lap_number: 'ASC', driver: { id: 'ASC' } },
+      }),
+      this.pitStopRepository.find({
+        where: { race: { id: raceId } },
+        relations: ['driver'],
+        order: { lap_number: 'ASC', stop_number: 'ASC' },
+      }),
+      allSessionIds.length
+        ? this.tireStintRepository.find({
+            where: { session: { id: In(allSessionIds) } },
+            relations: ['driver'],
+            order: { driver: { id: 'ASC' }, stint_number: 'ASC' },
+          })
+        : Promise.resolve([]),
+      allSessionIds.length
+        ? this.raceEventRepository.find({
+            where: { session: { id: In(allSessionIds) } },
+            order: { lap_number: 'ASC' },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const raceDetails: RaceDetailsDto = {
+      raceInfo: {
+        ...raceInfo,
+        weather: raceSession?.weather || null,
+      },
+      raceResults,
+      qualifyingResults,
+      laps,
+      pitStops,
+      tireStints,
+      raceEvents,
+    };
+
+    return raceDetails;
   }
 
-  /**
-   * Return a single race by ID or throw 404.
-   */
-  async findOne(id: number | string): Promise<Race> {
-    const raceId = Number(id);
-    const race = await this.racesRepo.findOne({ where: { id: raceId } as any });
-    if (!race) throw new NotFoundException('Race not found');
+  async findAll(query: any): Promise<Race[]> {
+    // Implementation for finding races with optional filters
+    const whereCondition: any = {};
+    
+    if (query.season || query.season_id || query.year) {
+      whereCondition.season = { id: query.season_id || query.season || query.year };
+    }
+
+    return this.raceRepository.find({
+      where: whereCondition,
+      relations: ['circuit', 'season'],
+      order: { round: 'ASC' },
+    });
+  }
+
+  async listYears(): Promise<number[]> {
+    // Get distinct years from races
+    const result = await this.raceRepository
+      .createQueryBuilder('race')
+      .leftJoin('race.season', 'season')
+      .select('DISTINCT season.year', 'year')
+      .orderBy('season.year', 'DESC')
+      .getRawMany();
+
+    return result.map(r => r.year);
+  }
+
+  async findOne(id: string): Promise<Race> {
+    const race = await this.raceRepository.findOne({
+      where: { id: parseInt(id, 10) },
+      relations: ['circuit', 'season'],
+    });
+
+    if (!race) {
+      throw new NotFoundException(`Race with ID ${id} not found`);
+    }
+
     return race;
   }
 
-  /**
-   * Return distinct season years (season_id), newest-first.
-   */
-  async listYears(): Promise<number[]> {
-    const raw = await this.racesRepo
-      .createQueryBuilder('r')
-      .select('DISTINCT r.season_id', 'year')
-      .orderBy('year', 'DESC')
-      .getRawMany<{ year: string | number }>();
-
-    return raw.map((r) => Number(r.year)).filter((n) => Number.isFinite(n));
-  }
-
   async getConstructorPolePositions(constructorId: number): Promise<number> {
-    const poles = await this.qualifyingResultRepository.count({
+    // Count pole positions for a constructor
+    const result = await this.qualifyingResultRepository.count({
       where: {
         constructor_id: constructorId,
-        position: 1, // Pole position
+        position: 1,
       },
     });
-  
-    return poles;
+
+    return result;
   }
 
-  // FIXED: now joins sessions → races → seasons
-  async getConstructorPolePositionsBySeason(constructorId: number) {
-    const poles = await this.qualifyingResultRepository
+  async getConstructorPolePositionsBySeason(constructorId: number): Promise<any[]> {
+    // Get pole positions grouped by season
+    const result = await this.qualifyingResultRepository
       .createQueryBuilder('qr')
-      .innerJoin('qr.session', 's')
-      .innerJoin('s.race', 'r')
-      .innerJoin('r.season', 'se')
-      .select('se.id', 'seasonId')           // Return season ID instead of year
-      .addSelect('COUNT(*)', 'poleCount')
+      .leftJoin('qr.session', 'session')
+      .leftJoin('session.race', 'race')
+      .leftJoin('race.season', 'season')
+      .select('season.year', 'year')
+      .addSelect('COUNT(*)', 'poles')
       .where('qr.constructor_id = :constructorId', { constructorId })
       .andWhere('qr.position = 1')
-      .groupBy('se.id')
-      .orderBy('se.id', 'ASC')
+      .groupBy('season.year')
+      .orderBy('season.year', 'ASC')
       .getRawMany();
-  
-    return poles; // [{ seasonId: 1, poleCount: 3 }, { seasonId: 2, poleCount: 1 }, ...]
-  }
 
-  async getConstructorPointsByCircuit(constructorId: number) {
-    const results = await this.raceResultRepository
-      .createQueryBuilder('rr')
-      .innerJoin('rr.session', 's')
-      .innerJoin('s.race', 'r')
-      .innerJoin('r.circuit', 'c')
-      .select('c.id', 'circuitId')
-      .addSelect('c.name', 'circuitName')
-      .addSelect('SUM(rr.points)', 'totalPoints')
-      .where('rr.constructor_id = :constructorId', { constructorId })
-      .groupBy('c.id')
-      .addGroupBy('c.name')
-      .orderBy('totalPoints', 'DESC')
-      .getRawMany();
-  
-    // Map points to numbers
-    return results.map(r => ({
-      circuitId: Number(r.circuitId),
-      circuitName: r.circuitName,
-      totalPoints: Number(r.totalPoints),
+    return result.map(r => ({
+      year: parseInt(r.year, 10),
+      poles: parseInt(r.poles, 10),
     }));
   }
-  
-  
+
+  async getConstructorPointsByCircuit(constructorId: number): Promise<any[]> {
+    // Get points grouped by circuit
+    const result = await this.raceResultRepository
+      .createQueryBuilder('rr')
+      .leftJoin('rr.session', 'session')
+      .leftJoin('session.race', 'race')
+      .leftJoin('race.circuit', 'circuit')
+      .select('circuit.name', 'circuit_name')
+      .addSelect('SUM(rr.points)', 'total_points')
+      .where('rr.constructor_id = :constructorId', { constructorId })
+      .groupBy('circuit.name')
+      .orderBy('SUM(rr.points)', 'DESC')
+      .getRawMany();
+
+    return result.map(r => ({
+      circuit_name: r.circuit_name,
+      total_points: parseFloat(r.total_points) || 0,
+    }));
+  }
 }
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> main

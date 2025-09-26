@@ -39,9 +39,9 @@ function Navbar() {
     { path: '/', label: isAuthenticated ? 'Dashboard' : 'Home' },
     { path: '/drivers', label: 'Drivers' },
     { path: '/constructors', label: 'Constructors' },
-    { path: '/standings', label: 'Standings' },
-    { path: '/standings/constructors', label: 'ConstructorStandings' },
     ...(isAuthenticated ? [
+      { path: '/standings', label: 'Standings' },
+      { path: '/standings/constructors', label: 'ConstructorStandings' },
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
       { path: '/admin', label: 'Admin' },
@@ -198,8 +198,6 @@ function AppContent() {
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/races/:raceId" element={<RaceDetailPage />} />
-        <Route path="/standings" element={<Standings />} />
-        <Route path="/standings/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors" element={<Constructors />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />
