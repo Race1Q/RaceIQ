@@ -1,0 +1,36 @@
+/* frontend/src/components/TeamLogo/TeamLogo.module.css */
+
+.logoContainer {
+  height: 100%;
+  width: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoContainer svg {
+  height: 80%;
+  width: auto;
+  object-fit: contain;
+  /* The drop-shadow is now applied here for all logos */
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+}
+
+/* --- THE NEW FILTER-BASED STYLING --- */
+
+/* For logos that should be themed (all except Ferrari & Red Bull) */
+[data-theme='light'] .themedLogo {
+  /* Makes the logo solid black */
+  filter: brightness(0) saturate(100%) drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+}
+
+[data-theme='dark'] .themedLogo {
+  /* Makes the logo solid white */
+  filter: brightness(0) saturate(100%) invert(1) drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+}
+
+/* For logos that should be left as-is (Ferrari & Red Bull) */
+.untouchedLogo {
+  /* No filter is applied, so it retains its original colors */
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+}

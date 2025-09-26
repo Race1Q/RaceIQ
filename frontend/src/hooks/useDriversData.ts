@@ -50,7 +50,7 @@ export const useDriversData = (year: number) => {
               countryCode: standing.driverCountryCode ?? null,
               teamName,
               headshotUrl: driverHeadshots[fullName] || standing.driverProfileImageUrl || driverHeadshots.default || '',
-              teamColor: teamColors[teamName] || teamColors['Default'],
+              teamColor: teamColors[teamName] ? `#${teamColors[teamName]}` : `#${teamColors['Default']}`,
             } as Driver;
           })
           .filter(Boolean) as Driver[];

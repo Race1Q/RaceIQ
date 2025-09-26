@@ -62,9 +62,9 @@ function Navbar() {
             src="/race_IQ_logo.svg" 
             alt="RaceIQ Logo" 
             style={{ 
-              height: '50px', 
-              width: 'auto',
-              filter: 'brightness(0) saturate(100%) invert(100%)' // Makes SVG white/transparent
+              height: '90px', 
+              width: 'auto'
+              // Removed filter to show original colors
             }}
           />
         </HStack>

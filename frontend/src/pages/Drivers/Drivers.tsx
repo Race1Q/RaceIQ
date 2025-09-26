@@ -8,7 +8,6 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
 import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
-import { teamLogoMap } from '../../lib/teamAssets';
 import { useDriversData } from '../../hooks/useDriversData';
 
 // New component for the fallback banner
@@ -145,7 +144,6 @@ const Drivers = () => {
                     <VStack key={teamName} align="stretch">
                       <TeamBanner 
                         teamName={teamName}
-                        logoUrl={teamLogoMap[teamName] || ''}
                         teamColor={teamColors[teamName] || teamColors['Default']}
                       />
                       <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">

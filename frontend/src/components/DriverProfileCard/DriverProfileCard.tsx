@@ -3,6 +3,8 @@ import { Box, VStack, Heading, Text, Image, Flex } from '@chakra-ui/react';
 import ReactCountryFlag from 'react-country-flag';
 import userIcon from '../../assets/UserIcon.png';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
+// Import our new color helpers
+import { lightenColor, darkenColor } from '../../lib/colorUtils';
 
 interface Driver {
   id: string;
@@ -18,27 +20,13 @@ interface DriverProfileCardProps {
   driver: Driver;
 }
 
-// This helper function can be moved to a utils file later
-const darkenColor = (hex: string, percent: number): string => {
-  hex = hex.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const factor = (100 - percent) / 100;
-  const darkenedR = Math.round(Math.max(0, r * factor));
-  const darkenedG = Math.round(Math.max(0, g * factor));
-  const darkenedB = Math.round(Math.max(0, b * factor));
-  return `#${darkenedR.toString(16).padStart(2, '0')}${darkenedG.toString(16).padStart(2, '0')}${darkenedB.toString(16).padStart(2, '0')}`;
-};
-
-
 const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
-  const teamColor = driver.team_color || '#666666';
-  const gradientEndColor = darkenColor(teamColor, 20);
+  const teamColor = driver.team_color || '#333333';
 
   const [firstName, ...lastNameParts] = driver.name.split(' ');
   const lastName = lastNameParts.join(' ');
 
+  const countryCode = countryCodeMap[driver.nationality] || driver.nationality;
   const isNumberAvailable = driver.number && driver.number !== 'N/A';
 
   return (
@@ -54,13 +42,15 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
         transform: 'translateY(-5px)',
         boxShadow: 'xl',
       }}
+      role="group" // Add role group for child _groupHover effects
     >
       <VStack spacing={0} height="100%" align="stretch">
         <Box
           position="relative"
           flexGrow={1}
           p={{ base: 'md', md: 'lg' }}
-          bgGradient={`linear(135deg, ${teamColor} 0%, ${gradientEndColor} 100%)`}
+          // UPDATED: Changed 25% to 45% for a softer gradient
+          bgGradient={`radial(at 70% 30%, ${lightenColor(teamColor, 20)} 0%, ${teamColor} 45%, ${darkenColor(teamColor, 80)} 90%)`}
           minH="300px"
           overflow="hidden"
         >
@@ -81,7 +71,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
               fontWeight="normal"
               lineHeight="1"
               textTransform="none"
-              mb="-0.2em" // Overlap fonts slightly
+              mb="-0.2em"
             >
               {firstName}
             </Heading>
@@ -96,7 +86,6 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
               {lastName}
             </Heading>
 
-            {/* Driver Number - only shows if available */}
             {isNumberAvailable && (
               <Text
                 fontFamily="heading"
@@ -117,17 +106,21 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             zIndex={2}
             align="center"
           >
-            {(() => {
-              const twoLetter = countryCodeMap[driver.nationality?.toUpperCase()] || driver.nationality;
-              return twoLetter ? (
-                <ReactCountryFlag
-                  countryCode={twoLetter.toLowerCase()}
-                  svg
-                  style={{ width: '40px', height: '30px', borderRadius: '4px' }}
-                  title={driver.nationality}
-                />
-              ) : null;
-            })()}
+            <Box
+              boxShadow="lg"
+              border="1px solid rgba(255, 255, 255, 0.15)"
+              lineHeight="0"
+            >
+              <ReactCountryFlag
+                countryCode={countryCode.toLowerCase()}
+                svg
+                style={{
+                  width: '40px',
+                  height: '30px',
+                }}
+                title={driver.nationality}
+              />
+            </Box>
           </Flex>
 
           {/* Driver Image */}
@@ -143,8 +136,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             zIndex={1}
             filter="drop-shadow(5px 5px 10px rgba(0,0,0,0.4))"
             transition="transform 0.3s ease"
-            _groupHover={{ transform: 'scale(1.03)' }} // This requires parent to have role="group"
-            onError={(e) => { e.currentTarget.src = userIcon; }}
+            _groupHover={{ transform: 'scale(1.03)' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
           />
         </Box>
 
@@ -158,7 +151,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           transition="all 0.2s ease"
           borderTop="1px solid"
           borderColor="border-primary"
-          _groupHover={{ // This requires parent to have role="group"
+          _groupHover={{
             bg: teamColor,
             color: 'white',
           }}

@@ -31,6 +31,9 @@ export class DriverStandingMaterialized {
 
   @Column({ type: 'text', name: 'profile_image_url', nullable: true })
   profileImageUrl: string | null;
+
+  @Column({ type: 'int', name: 'seasonPodiums' })
+  seasonPodiums: number;
 }
 
 

@@ -21,7 +21,9 @@ import { TireStintsModule } from './tire-stints/tire-stints.module';
 import { RaceEventsModule } from './race-events/race-events.module';
 import { StandingsModule } from './standings/standings.module';
 import { UsersModule } from './users/users.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DriverStandingMaterialized } from './standings/driver-standings-materialized.entity';
+import { RaceFastestLapMaterialized } from './dashboard/race-fastest-laps-materialized.entity';
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -70,6 +72,7 @@ import { User } from './users/entities/user.entity';
           RaceEvent,
           User,
           DriverStandingMaterialized,
+          RaceFastestLapMaterialized,
           ],
           synchronize: false, // trust the db schema
           ssl: isLocal ? false : { rejectUnauthorized: false },
@@ -94,6 +97,7 @@ import { User } from './users/entities/user.entity';
     RaceEventsModule,
     StandingsModule,
     UsersModule,
+    DashboardModule,
     // We have removed all the old, deleted modules 
     // (LapsModule, RacesModule, etc.)
   ],
