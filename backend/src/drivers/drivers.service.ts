@@ -34,7 +34,7 @@ export class DriversService {
     return driver;
   }
 
-  // 4. IMPLEMENT THIS METHOD
+  // Career stats
   async getDriverCareerStats(driverId: number): Promise<DriverStatsResponseDto> {
     const driver = await this.findOne(driverId);
 
@@ -56,7 +56,6 @@ export class DriversService {
 
     const rawStats = await statsQuery.getRawOne();
     
-    // Initialize with default values if no results found
     const careerStats: CareerStatsDto = {
       wins: 0,
       podiums: 0,
@@ -66,7 +65,6 @@ export class DriversService {
       racesCompleted: 0,
     };
 
-    // Convert raw query results (strings) to numbers if data exists
     if (rawStats) {
       for (const key in careerStats) {
         careerStats[key] = parseFloat(rawStats[key]) || 0;
@@ -78,6 +76,74 @@ export class DriversService {
       careerStats,
     };
   }
-}
+
+  // 🆕 Standings for a specific season + round
+  async getDriversByStandings(season: number): Promise<any[]> {
+    const rawResults = await this.raceResultRepository
+      .createQueryBuilder('rr')
+      .select([
+        'driver.id AS id',
+        `driver.first_name || ' ' || driver.last_name AS full_name`,
+        'driver.country_code AS country',
+        'SUM(rr.points) AS points',
+      ])
+      .leftJoin(Driver, 'driver', 'driver.id = rr.driver_id')
+      .leftJoin('rr.session', 'session')
+      .leftJoin('session.race', 'race')
+      .where('race.season = :season', { season }) // filter by race.season
+      .groupBy('driver.id, driver.first_name, driver.last_name, driver.country_code')
+      .orderBy('SUM(rr.points)', 'DESC')
+      .getRawMany();
+  
+    return rawResults.map((r) => ({
+      id: parseInt(r.id, 10),
+      full_name: r.full_name,
+      country: r.country,
+      points: parseFloat(r.points) || 0,
+    }));
+  }
+
+  async getDriversByStandings2(season: number): Promise<any[]> {
+    const rawResults = await this.driverRepository
+      .createQueryBuilder('driver')
+      .select([
+        'ds.driver_id AS id',
+        'ds.full_name AS full_name',
+        'ds.country_code AS country',
+        'ds.points AS points',
+      ])
+      .innerJoin('driver_standings_materialized', 'ds', 'ds.driver_id = driver.id')
+      .where('ds.season = :season', { season })
+      .orderBy('ds.points', 'DESC')
+      .getRawMany();
+  
+    return rawResults.map((r) => ({
+      id: parseInt(r.id, 10),
+      full_name: r.full_name,
+      country: r.country,
+      points: parseFloat(r.points) || 0,
+    }));
+  }
+
+  async getDriversByStandings3(season: number): Promise<any[]> {
+    const rawResults = await this.driverRepository
+      .createQueryBuilder()
+      .select([
+        'ds."driverId" AS id',
+      ])
+      .from('driver_standings_materialized', 'ds')
+      .where('ds."season_id" = :season', { season })
+      .orderBy('ds."seasonPoints"', 'DESC')
+      .getRawMany();
+  
+    return rawResults.map(r => ({
+      id: parseInt(r.id, 10),
+      full_name: r.full_name,
+      country: r.country,
+      points: parseFloat(r.points) || 0,
+    }));
+  }
+}  
+
 
 

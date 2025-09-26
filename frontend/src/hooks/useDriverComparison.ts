@@ -63,6 +63,7 @@ export const useDriverComparison = () => {
       }
     };
     fetchDriverList();
+    console.log('Drivers list', allDrivers);
   }, [authedFetch, toast, isAuthenticated]);
 
   const handleSelectDriver = async (driverNumber: 1 | 2, driverId: string) => {

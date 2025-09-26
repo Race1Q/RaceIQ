@@ -11,6 +11,8 @@ import {
   Image,
 } from '@chakra-ui/react';
 import { Select } from 'chakra-react-select';
+import { InputGroup, InputRightElement, IconButton } from '@chakra-ui/react';
+import { CloseIcon } from '@chakra-ui/icons';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { buildApiUrl } from '../../lib/api';
@@ -124,32 +126,57 @@ const Constructors = () => {
           <>
             {/* Header with Search, Title, Filters */}
             <Flex justify="space-between" align="center" mb="xl" wrap="wrap" gap={4}>
-              {/* Left: Search */}
-              <Box maxW="260px" w="100%">
-                <Input
-                  placeholder="Search by name or nationality"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  bg="gray.700"
-                  color="white"
-                />
-              </Box>
 
               {/* Center: Title */}
               <Text fontSize="2xl" fontWeight="bold" fontFamily="heading">
                 Constructors
               </Text>
+              
+
 
               {/* Right: Filters */}
               <Flex gap={4}>
+
+                {/* Left: Search */}
+              <Box maxW="260px" w="100%">
+              <InputGroup>
+                <Input
+                    placeholder="Search by name or nationality"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    bg="gray.700"
+                    color="white"
+                  />
+                  {searchTerm && (
+                  <InputRightElement>
+                    <IconButton
+                        aria-label="Clear search"
+                        icon={<CloseIcon />}
+                        size="sm"
+                        onClick={() => setSearchTerm('')}
+                        bg="gray.600"
+                        _hover={{ bg: 'gray.500' }}
+                      />
+                    </InputRightElement>
+                    )}
+                </InputGroup>
+              </Box>
+              
                 {/* Nationality Filter */}
                 <Box maxW="220px" w="220px">
                   <Select
                     options={nationalityOptions}
                     value={nationalityOptions.find((o) => o.value === selectedNationality) || null}
-                    onChange={(option) => setSelectedNationality((option as Option).value)}
+                    onChange={(option) => {
+                      if (option) {
+                        setSelectedNationality((option as Option).value);
+                      } else {
+                        // Reset to default (no nationality filter)
+                        setSelectedNationality('');
+                      }
+                    }}
                     placeholder="Nationality"
-                    isClearable={false}
+                    isClearable={true}
                     chakraStyles={{
                       control: (provided) => ({
                         ...provided,

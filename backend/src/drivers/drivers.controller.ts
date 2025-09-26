@@ -24,6 +24,14 @@ export class DriversController {
   ): Promise<DriverStatsResponseDto> {
     return this.driversService.getDriverCareerStats(id);
   }
+
+  // 🆕 Get drivers by standings (season)
+  @Get('by-standings/:season')
+  async getDriversByStandings(
+    @Param('season', ParseIntPipe) season: number,
+  ) {
+    return this.driversService.getDriversByStandings3(season);
+  }
 }
 
 

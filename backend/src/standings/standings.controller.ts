@@ -1,10 +1,12 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { StandingsService } from './standings.service';
 import { StandingsResponseDto } from './dto/standings-response.dto';
+import { DriverStanding } from './dto/standings-response.dto';
 
 @Controller('standings')
 export class StandingsController {
-  constructor(private readonly standingsService: StandingsService) {}
+  constructor(private readonly standingsService: StandingsService,
+) {}
 
   @Get(':year/:round')
   async getStandings(
