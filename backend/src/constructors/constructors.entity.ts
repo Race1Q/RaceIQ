@@ -16,6 +16,9 @@ export class ConstructorEntity {
   @Column({ type: 'text', nullable: true })
   url: string;
 
+  @Column({ type: 'boolean', nullable: false })
+  is_active: boolean;
+
   @OneToMany(() => RaceResult, 'team')
   raceResults: RaceResult[];
 

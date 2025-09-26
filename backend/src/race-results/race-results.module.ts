@@ -5,6 +5,9 @@ import { RaceResultsController } from './race-results.controller';
 import { SessionsModule } from '../sessions/sessions.module';
 import { DriversModule } from '../drivers/drivers.module';
 import { ConstructorsModule } from '../constructors/constructors.module';
+import { SupabaseModule } from '../supabase/supabase.module'; // ✅ import SupabaseModule
+import { RaceResultsController } from './race-results.controller';
+import { RaceResultsService } from './race-results.service';
 
 @Module({
   imports: [
@@ -12,11 +15,17 @@ import { ConstructorsModule } from '../constructors/constructors.module';
     SessionsModule,
     DriversModule,
     ConstructorsModule,
+    SupabaseModule, // ✅ add this so SupabaseService can be injected
   ],
   controllers: [RaceResultsController],
+<<<<<<< HEAD
+  providers: [RaceResultsService],
+=======
   providers: [],
+>>>>>>> main
   exports: [TypeOrmModule],
 })
 export class RaceResultsModule {}
+
 
 

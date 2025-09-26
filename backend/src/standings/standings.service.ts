@@ -121,6 +121,23 @@ export class StandingsService {
     }));
   }
 
+  // ✅ New method: get standings by year (latest round)
+  async getStandingsByYear(year: number): Promise<StandingsResponseDto> {
+    const season = await this.seasonRepository.findOne({ where: { year } });
+    if (!season) throw new NotFoundException(`Season ${year} not found`);
+
+    // Get the latest round
+    const latestRace = await this.raceRepository.findOne({
+      where: { season: { id: season.id } },
+      order: { round: 'DESC' },
+    });
+
+    if (!latestRace) return { driverStandings: [], constructorStandings: [] };
+
+    // Reuse existing method
+    return this.getStandingsByYearAndRound(year, latestRace.round);
+  }
+
   // This function is now simpler: it just takes a list of session IDs
   private async calculateConstructorStandings(
     sessionIds: number[],

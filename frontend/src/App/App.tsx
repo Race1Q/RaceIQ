@@ -21,11 +21,13 @@ import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
+import Constructors from '../pages/Constructors/Constructors';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
+import Standings from '../pages/Standings/Standings';
 
 
 
@@ -37,6 +39,8 @@ function Navbar() {
     { path: '/', label: isAuthenticated ? 'Dashboard' : 'Home' },
     { path: '/drivers', label: 'Drivers' },
     { path: '/constructors', label: 'Constructors' },
+    { path: '/standings', label: 'Standings' },
+    { path: '/standings/constructors', label: 'ConstructorStandings' },
     ...(isAuthenticated ? [
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
@@ -138,7 +142,9 @@ function AppContent() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/drivers" element={<Drivers />} />
             <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
-            <Route path="/constructors" element={<ConstructorsStandings />} />
+            <Route path="/constructors" element={<Constructors />} />
+            <Route path="/standings" element={<Standings />} />
+            <Route path="/standings/constructors" element={<ConstructorsStandings />} />
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
@@ -192,7 +198,9 @@ function AppContent() {
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/races/:raceId" element={<RaceDetailPage />} />
-        <Route path="/constructors" element={<ConstructorsStandings />} />
+        <Route path="/standings" element={<Standings />} />
+        <Route path="/standings/constructors" element={<ConstructorsStandings />} />
+        <Route path="/constructors" element={<Constructors />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />
       </Routes>

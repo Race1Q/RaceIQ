@@ -19,4 +19,27 @@ export class RacesController {
   findOne(@Param('id') id: string) {
     return this.racesService.findOne(id);
   }
+
+  @Get('constructor/:constructorId/poles')
+async getConstructorPoles(
+  @Param('constructorId', ParseIntPipe) constructorId: number,
+): Promise<{ constructorId: number; poles: number }> {
+  const poles = await this.racesService.getConstructorPolePositions(constructorId);
+  return { constructorId, poles };
+}
+
+@Get('constructor/:constructorId/poles-by-season')
+async getConstructorPolesBySeason(
+  @Param('constructorId', ParseIntPipe) constructorId: number,
+): Promise<any[]> {
+  return this.racesService.getConstructorPolePositionsBySeason(constructorId);
+}
+
+@Get('constructor/:constructorId/points-by-circuit')
+  async getConstructorPointsByCircuit(
+    @Param('constructorId', ParseIntPipe) constructorId: number,
+  ) {
+    return this.racesService.getConstructorPointsByCircuit(constructorId);
+  }
+ 
 }

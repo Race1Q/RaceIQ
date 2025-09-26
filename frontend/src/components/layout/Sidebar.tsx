@@ -21,6 +21,7 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/drivers', label: 'Drivers', icon: Users },
     { path: '/constructors', label: 'Constructors', icon: Wrench },
+    { path: '/standings', label: 'Standings', icon: Wrench },
     { path: '/compare', label: 'Compare', icon: GitCompareArrows },
     { path: '/races', label: 'Races', icon: Flag },
     { path: '/about', label: 'About', icon: Info },
