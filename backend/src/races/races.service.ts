@@ -11,6 +11,7 @@ import { Lap } from '../laps/laps.entity';
 import { PitStop } from '../pit-stops/pit-stops.entity';
 import { TireStint } from '../tire-stints/tire-stints.entity';
 import { RaceEvent } from '../race-events/race-events.entity';
+import { Season } from '../seasons/seasons.entity';
 
 @Injectable()
 export class RacesService {
@@ -31,6 +32,8 @@ export class RacesService {
     private readonly tireStintRepository: Repository<TireStint>,
     @InjectRepository(RaceEvent)
     private readonly raceEventRepository: Repository<RaceEvent>,
+    @InjectRepository(Season)
+    private readonly seasonRepository: Repository<Season>,
   ) {}
 
   async getRaceDetails(raceId: number): Promise<RaceDetailsDto> {
@@ -118,6 +121,37 @@ export class RacesService {
 
     return raceDetails;
   }
+
+  async getConstructorPolePositions(constructorId: number): Promise<number> {
+    const poles = await this.qualifyingResultRepository.count({
+      where: {
+        constructor_id: constructorId,
+        position: 1, // Pole position
+      },
+    });
+  
+    return poles;
+  }
+
+  // FIXED: now joins sessions → races → seasons
+  async getConstructorPolePositionsBySeason(constructorId: number) {
+    const poles = await this.qualifyingResultRepository
+      .createQueryBuilder('qr')
+      .innerJoin('qr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('r.season', 'se')
+      .select('se.id', 'seasonId')           // Return season ID instead of year
+      .addSelect('COUNT(*)', 'poleCount')
+      .where('qr.constructor_id = :constructorId', { constructorId })
+      .andWhere('qr.position = 1')
+      .groupBy('se.id')
+      .orderBy('se.id', 'ASC')
+      .getRawMany();
+  
+    return poles; // [{ seasonId: 1, poleCount: 3 }, { seasonId: 2, poleCount: 1 }, ...]
+  }
+  
 }
+
 
 

@@ -92,10 +92,9 @@ export class RaceResultsService {
       .eq('constructor_id', constructorId);
   
     if (error) throw new Error(error.message);
-  
     if (!raceResults?.length) return [];
   
-    // Fetch the sessions for these session_ids
+    // Fetch sessions for these session_ids
     const sessionIds = raceResults.map((r) => r.session_id);
     const { data: sessions, error: sessionsError } = await this.supabaseService.client
       .from('sessions')
@@ -106,7 +105,7 @@ export class RaceResultsService {
   
     const raceIds = sessions.map((s) => s.race_id);
   
-    // Fetch races for those race_ids to get season_id
+    // Fetch races to get season_id
     const { data: races, error: racesError } = await this.supabaseService.client
       .from('races')
       .select('id, season_id')
@@ -125,7 +124,7 @@ export class RaceResultsService {
     const seasonMap: Record<number, any> = {};
     raceResults.forEach((r) => {
       const season = sessionToSeason[r.session_id];
-      if (!season) return;
+      if (season === undefined) return;
   
       if (!seasonMap[season]) {
         seasonMap[season] = {
@@ -143,9 +142,27 @@ export class RaceResultsService {
       seasonMap[season].totalRaces += 1;
     });
   
+    // --- Fill missing seasons ---
+    const seasons = races.map((r) => r.season_id);
+    const minSeason = Math.min(...seasons);
+    const maxSeason = Math.max(...seasons);
+  
+    for (let s = minSeason; s <= maxSeason; s++) {
+      if (!seasonMap[s]) {
+        seasonMap[s] = {
+          season: s,
+          points: 0,
+          wins: 0,
+          podiums: 0,
+          totalRaces: 0,
+        };
+      }
+    }
+  
     // Convert map to array sorted by season
     return Object.values(seasonMap).sort((a, b) => a.season - b.season);
   }
+  
   
 
   async getConstructorPointsProgression(constructorId: number, seasonId: number) {
@@ -214,6 +231,54 @@ export class RaceResultsService {
   
     return progression;
   }
+
+
+  async debugConstructorRaces(constructorId: number, seasonId: number) {
+    // Get all races for the given season
+    const { data: races, error: racesError } = await this.supabaseService.client
+      .from('races')
+      .select('id, name, season_id')
+      .eq('season_id', seasonId);
+  
+    if (racesError) throw new Error(racesError.message);
+  
+    // Get sessions for those races
+    const raceIds = races.map(r => r.id);
+    const { data: sessions, error: sessionsError } = await this.supabaseService.client
+      .from('sessions')
+      .select('id, race_id')
+      .in('race_id', raceIds);
+  
+    if (sessionsError) throw new Error(sessionsError.message);
+  
+    // Get race results for those sessions + constructor
+    const sessionIds = sessions.map(s => s.id);
+    const { data: results, error: resultsError } = await this.supabaseService.client
+      .from('race_results')
+      .select('id, session_id, constructor_id, position, points')
+      .in('session_id', sessionIds)
+      .eq('constructor_id', constructorId);
+  
+    if (resultsError) throw new Error(resultsError.message);
+  
+    // Merge for readability
+    const detailedResults = results.map(r => {
+      const session = sessions.find(s => s.id === r.session_id);
+      const race = races.find(rc => rc.id === session?.race_id);
+      return {
+        season: race?.season_id,
+        race: race?.name,
+        position: r.position,
+        points: r.points,
+      };
+    });
+  
+    this.logger.debug(`Constructor ${constructorId} in season ${seasonId}:`);
+    this.logger.debug(detailedResults);
+  
+    return detailedResults;
+  }
+  
   
   
   

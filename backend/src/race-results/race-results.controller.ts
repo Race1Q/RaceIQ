@@ -51,4 +51,13 @@ async getConstructorProgression(
 ) {
   return this.resultsService.getConstructorPointsProgression(constructorId, seasonId);
 }
+
+@Get('constructor/:constructorId/season/:seasonId/debug')
+async debugConstructorSeason(
+  @Param('constructorId', ParseIntPipe) constructorId: number,
+  @Param('seasonId', ParseIntPipe) seasonId: number,
+) {
+  return this.resultsService.debugConstructorRaces(constructorId, seasonId);
+}
+
 }
