@@ -11,7 +11,6 @@ export const teamLogoMap: { [key: string]: string } = {
   "Haas F1 Team": "/assets/Haas_F1_Team_Logo.svg.png",
   "RB F1 Team": "/assets/Logotipo_da_RB_F1_Team.png",
   "Sauber": "/assets/Sauber_F1_Team_logo.svg.png",
-  "Default": "/assets/logos/f1-logo.svg"
 };
 
 // Normalize varying API names with sponsors to a canonical key used above
@@ -20,13 +19,13 @@ export function getTeamLogo(teamName: string | undefined | null): string {
   const name = teamName.toLowerCase();
 
   // RB / AlphaTauri variants
-  if (name.includes('visa cash app rb') || name.includes('vcarb') || name.includes('rb f1') || name.includes('alphatauri')) {
-    return teamLogoMap['AlphaTauri'] || teamLogoMap['Default'];
+  if (name.includes('visa cash app rb') || name.includes('vcarb') || name.includes('RB F1 Team') || name.includes('alphatauri')) {
+    return teamLogoMap['RB F1 Team'] || teamLogoMap['Default'];
   }
 
   // Sauber / Stake / Alfa Romeo variants
-  if (name.includes('stake') || name.includes('sauber') || name.includes('alfa romeo')) {
-    return teamLogoMap['Alfa Romeo'] || teamLogoMap['Default'];
+  if (name.includes('stake') || name.includes('Sauber') || name.includes('alfa romeo')) {
+    return teamLogoMap['Sauber'] || teamLogoMap['Default'];
   }
 
   // Mercedes variants
@@ -73,3 +72,4 @@ export function getTeamLogo(teamName: string | undefined | null): string {
   if (teamLogoMap[teamName]) return teamLogoMap[teamName];
   return teamLogoMap['Default'];
 }
+
