@@ -1,29 +1,47 @@
 import { Heading, Text, VStack, HStack, Box, Image } from '@chakra-ui/react';
-import WidgetCard from './WidgetCard';
-import { driverHeadshots } from '../../../lib/driverHeadshots';
+import type { HeadToHead } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
+import WidgetCard from './WidgetCard';
 
-function HeadToHeadQuickCompareWidget() {
-  // Using real driver data with proper headshots and team logos
+interface HeadToHeadQuickCompareWidgetProps {
+  data?: HeadToHead;
+}
+
+function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProps) {
+  if (!data) {
+    return (
+      <WidgetCard>
+        <VStack align="start" spacing="md">
+          <Heading color="brand.red" size="md" fontFamily="heading">
+            Head to Head
+          </Heading>
+          <Text color="text-muted">Loading...</Text>
+        </VStack>
+      </WidgetCard>
+    );
+  }
+
   const driver1 = {
-    name: "Lando Norris",
-    team: "McLaren",
-    teamColor: teamColors["McLaren"] || teamColors['Default'],
-    teamLogo: getTeamLogo("McLaren"),
-    image: driverHeadshots["Lando Norris"] || '',
-    wins: 5,
-    podiums: 15
+    name: data.driver1.fullName,
+    team: data.driver1.teamName,
+    teamColor: teamColors[data.driver1.teamName] || teamColors['Default'],
+    teamLogo: getTeamLogo(data.driver1.teamName),
+    image: data.driver1.headshotUrl,
+    wins: data.driver1.wins,
+    podiums: data.driver1.podiums,
+    points: data.driver1.points
   };
 
   const driver2 = {
-    name: "Oscar Piastri", 
-    team: "McLaren",
-    teamColor: teamColors["McLaren"] || teamColors['Default'],
-    teamLogo: getTeamLogo("McLaren"),
-    image: driverHeadshots["Oscar Piastri"] || '',
-    wins: 2,
-    podiums: 8
+    name: data.driver2.fullName,
+    team: data.driver2.teamName,
+    teamColor: teamColors[data.driver2.teamName] || teamColors['Default'],
+    teamLogo: getTeamLogo(data.driver2.teamName),
+    image: data.driver2.headshotUrl,
+    wins: data.driver2.wins,
+    podiums: data.driver2.podiums,
+    points: data.driver2.points
   };
 
   return (
@@ -81,6 +99,9 @@ function HeadToHeadQuickCompareWidget() {
               </Text>
               <Text color="text-muted" fontSize="xs">
                 Podiums: {driver1.podiums}
+              </Text>
+              <Text color="text-secondary" fontSize="xs">
+                Points: {driver1.points}
               </Text>
             </VStack>
           </VStack>
@@ -145,6 +166,9 @@ function HeadToHeadQuickCompareWidget() {
               </Text>
               <Text color="text-muted" fontSize="xs">
                 Podiums: {driver2.podiums}
+              </Text>
+              <Text color="text-secondary" fontSize="xs">
+                Points: {driver2.points}
               </Text>
             </VStack>
           </VStack>

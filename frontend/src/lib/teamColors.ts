@@ -8,8 +8,8 @@ export const teamColors: { [key: string]: string } = {
   "Williams": "64C4FF",
   "Haas F1 Team": "B6BABD",
   "Sauber": "52E252",
+  "Kick Sauber": "52E252",
   "RB F1 Team": "6692FF",
-  "Red Bull": "3671C6",
   // Add fallback or other teams as needed
   "TBA": "FFFFFF",
   "Default": "CCCCCC",

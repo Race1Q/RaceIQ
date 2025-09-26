@@ -9,7 +9,7 @@ export const useActiveRoute = (path: string): boolean => {
   }
   
   // For specific routes that should have exact matches, use exact matching
-  const exactMatchRoutes = ['/drivers', '/drivers-dashboard', '/races', '/about', '/admin'];
+  const exactMatchRoutes = ['/drivers', '/drivers-dashboard', '/races', '/about', '/admin', '/standings'];
   if (exactMatchRoutes.includes(path)) {
     return location.pathname === path;
   }

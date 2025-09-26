@@ -39,9 +39,9 @@ function Navbar() {
     { path: '/', label: isAuthenticated ? 'Dashboard' : 'Home' },
     { path: '/drivers', label: 'Drivers' },
     { path: '/constructors', label: 'Constructors' },
-    { path: '/standings', label: 'Standings' },
-    { path: '/standings/constructors', label: 'ConstructorStandings' },
     ...(isAuthenticated ? [
+      { path: '/standings', label: 'Standings' },
+      { path: '/standings/constructors', label: 'ConstructorStandings' },
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
       { path: '/admin', label: 'Admin' },
@@ -66,9 +66,9 @@ function Navbar() {
             src="/race_IQ_logo.svg" 
             alt="RaceIQ Logo" 
             style={{ 
-              height: '50px', 
-              width: 'auto',
-              filter: 'brightness(0) saturate(100%) invert(100%)' // Makes SVG white/transparent
+              height: '90px', 
+              width: 'auto'
+              // Removed filter to show original colors
             }}
           />
         </HStack>
@@ -198,8 +198,6 @@ function AppContent() {
         <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/races/:raceId" element={<RaceDetailPage />} />
-        <Route path="/standings" element={<Standings />} />
-        <Route path="/standings/constructors" element={<ConstructorsStandings />} />
         <Route path="/constructors" element={<Constructors />} />
         <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
         <Route path="/compare" element={<CompareDriversPage />} />

@@ -7,16 +7,14 @@ import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
-import {
-  DriverStanding,
-  ConstructorStanding,
-  StandingsResponseDto,
-} from './dto/standings-response.dto';
+import { DriverStandingDto, ConstructorStanding, StandingsResponseDto } from './dto/standings-response.dto';
+import { DriverStandingMaterialized } from './driver-standings-materialized.entity';
 
 @Injectable()
 export class StandingsService {
   constructor(
-    // WE NEED TO INJECT MORE REPOSITORIES
+    @InjectRepository(DriverStandingMaterialized)
+    private readonly standingsViewRepository: Repository<DriverStandingMaterialized>,
     @InjectRepository(Season)
     private readonly seasonRepository: Repository<Season>,
     @InjectRepository(Race)
@@ -27,57 +25,35 @@ export class StandingsService {
     private readonly raceResultRepository: Repository<RaceResult>,
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(ConstructorEntity)
+    private readonly constructorRepository: Repository<ConstructorEntity>,
   ) {}
 
   async getStandingsByYearAndRound(
     year: number,
     round: number,
   ): Promise<StandingsResponseDto> {
-    // 1. Find the Season ID
-    const season = await this.seasonRepository.findOne({ where: { year } });
-    if (!season) {
-      throw new NotFoundException(`Season with year ${year} not found`);
-    }
-
-    // 2. NEW LOGIC: Find all Race IDs for this season up to the given round
-    const races = await this.raceRepository.find({
-      where: {
-        season: { id: season.id },
-        round: LessThanOrEqual(round),
-      },
-      select: ['id'],
+    // Query materialized view for this season
+    const fromView = await this.standingsViewRepository.find({
+      where: { seasonYear: year },
+      order: { seasonPoints: 'DESC' as const },
     });
 
-    if (!races.length) {
-      return { driverStandings: [], constructorStandings: [] };
-    }
-    const raceIds = races.map((r) => r.id);
-
-    // 3. NEW LOGIC: Find all *RACE* Session IDs for those races
-    const sessions = await this.sessionRepository.find({
-      where: {
-        race: { id: In(raceIds) },
-        type: 'RACE',
-      },
-      select: ['id'],
-    });
-
-    if (!sessions.length) {
-      return { driverStandings: [], constructorStandings: [] };
-    }
-    const sessionIds = sessions.map((s) => s.id);
-
-    // 4. Run the parallel calculations with the clean Session ID list
-    const [driverStandings, constructorStandings] = await Promise.all([
-      this.calculateDriverStandings(sessionIds),
-      this.calculateConstructorStandings(sessionIds),
-    ]);
+    const driverStandings: DriverStandingDto[] = fromView.map((row, index) => ({
+      position: index + 1,
+      points: Number(row.seasonPoints),
+      wins: row.seasonWins,
+      constructorName: row.constructorName,
+      driverId: row.driverId,
+      driverFullName: row.driverFullName,
+      driverNumber: row.driverNumber ?? null,
+      driverCountryCode: row.countryCode ?? null,
+      driverProfileImageUrl: row.profileImageUrl ?? null,
+    }));
 
     return {
-      driverStandings: this.addPositions(driverStandings) as DriverStanding[],
-      constructorStandings: this.addPositions(
-        constructorStandings,
-      ) as ConstructorStanding[],
+      driverStandings,
+      constructorStandings: [],
     };
   }
 
@@ -91,35 +67,7 @@ export class StandingsService {
       }));
   }
 
-  // This function is now simpler: it just takes a list of session IDs
-  private async calculateDriverStandings(
-    sessionIds: number[],
-  ): Promise<Partial<DriverStanding>[]> {
-    const standings = await this.raceResultRepository
-      .createQueryBuilder('rr')
-      .select('rr.driver_id', 'driverId')
-      .addSelect('SUM(rr.points)', 'points')
-      .addSelect(
-        'SUM(CASE WHEN rr.position = 1 THEN 1 ELSE 0 END)::int',
-        'wins',
-      )
-      .where('rr.session_id IN (:...sessionIds)', { sessionIds })
-      .groupBy('rr.driver_id')
-      .orderBy('points', 'DESC')
-      .getRawMany();
-
-    // The query returns raw data; now we need to join the full Driver objects
-    const drivers = await this.driverRepository.find({
-      where: { id: In(standings.map((s) => s.driverId)) },
-    });
-    const driverMap = new Map(drivers.map((d) => [d.id, d]));
-
-    return standings.map((s) => ({
-      driver: driverMap.get(s.driverId),
-      points: parseFloat(s.points) || 0,
-      wins: s.wins || 0,
-    }));
-  }
+  // Removed complex joins in favor of materialized view lookup
 
   // ✅ New method: get standings by year (latest round)
   async getStandingsByYear(year: number): Promise<StandingsResponseDto> {

@@ -8,7 +8,14 @@ import { RaceResult } from '../race-results/race-results.entity'; // 1. IMPORT
 import {
   CareerStatsDto,
   DriverStatsResponseDto,
-} from './dto/driver-stats.dto'; // 2. IMPORT
+} from './dto/driver-stats.dto';
+
+// Define the shape of the data we will return
+interface RecentFormResult {
+  position: number;
+  raceName: string;
+  countryCode: string;
+} // 2. IMPORT
 
 @Injectable()
 export class DriversService {
@@ -77,7 +84,6 @@ export class DriversService {
     };
   }
 
-<<<<<<< HEAD
   // 🆕 Standings for a specific season + round
   async getDriversByStandings(season: number): Promise<any[]> {
     const rawResults = await this.raceResultRepository
@@ -144,22 +150,20 @@ export class DriversService {
       points: parseFloat(r.points) || 0,
     }));
   }
-}  
 
-=======
-  async getDriverRecentForm(driverId: number): Promise<{ position: number; raceName: string; countryCode: string }[]> {
-    // Find the driver first to ensure they exist
+  async getDriverRecentForm(driverId: number): Promise<RecentFormResult[]> {
+    // First, ensure the driver exists. This will throw a 404 if not found.
     await this.findOne(driverId);
 
     const rawResults = await this.raceResultRepository.createQueryBuilder('rr')
       .select([
         'rr.position AS position',
         'r.name AS "raceName"',
-        'c.country_code AS "countryCode"', // NEW: Select the circuit's country code
+        'c.country_code AS "countryCode"',
       ])
       .innerJoin('rr.session', 's')
       .innerJoin('s.race', 'r')
-      .innerJoin('r.circuit', 'c') // NEW: Join to the circuits table
+      .innerJoin('r.circuit', 'c')
       .where('rr.driver_id = :driverId', { driverId })
       .andWhere('r.date < NOW()')
       .andWhere("s.type = 'RACE'")
@@ -167,10 +171,9 @@ export class DriversService {
       .limit(5)
       .getRawMany();
 
-    // The method now returns the full array of objects
     return rawResults;
   }
-}
->>>>>>> main
+}  
+
 
 

@@ -48,5 +48,4 @@ export const driverHeadshots: { [key: string]: string } = {
   "Juan Manuel Fangio": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/J/JUAFAN01_Juan_Manuel_Fangio/juanmanuelfangio.png.transform/2col-retina/image.png", // CORRECTED
   "Alberto Ascari": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ALBASC01_Alberto_Ascari/albertoascari.png.transform/2col-retina/image.png", // CORRECTED
   "Giuseppe Farina": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GIUFAR01_Giuseppe_Farina/giuseppefarina.png.transform/2col-retina/image.png", // CORRECTED
-  "default": "/src/assets/default_user.jpg",
 };

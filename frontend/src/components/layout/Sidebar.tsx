@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, Settings
 } from 'lucide-react';
 import {
-  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer
+  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
@@ -21,7 +21,8 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/drivers', label: 'Drivers', icon: Users },
     { path: '/constructors', label: 'Constructors', icon: Wrench },
-    { path: '/standings', label: 'Standings', icon: Wrench },
+    { path: '/standings', label: 'Driver Standings', icon: Users },
+    { path: '/standings/constructors', label: 'Constructor Standings', icon: Wrench },
     { path: '/compare', label: 'Compare', icon: GitCompareArrows },
     { path: '/races', label: 'Races', icon: Flag },
     { path: '/about', label: 'About', icon: Info },
@@ -139,10 +140,15 @@ function Sidebar({ onWidthChange }: SidebarProps) {
     >
       <Flex direction="column" h="full" p="lg">
         {/* Logo */}
-        <HStack as={Link} to="/dashboard" mb="md" justify={isExpanded ? "flex-start" : "center"}>
-          <Icon viewBox="0 0 200 200" boxSize={isExpanded ? 10 : 8} color="logo-primary" /* Other SVG props */ />
-          {isExpanded && <Text fontFamily="heading" fontSize="2xl" color="logo-primary">RaceIQ</Text>}
-        </HStack>
+        <Box as={Link} to="/dashboard" mb="md" display="flex" justify="center" w="100%">
+          <Image 
+            src="/race_IQ_logo.svg" 
+            alt="RaceIQ Logo" 
+            w={isExpanded ? "60%" : "70%"}
+            h="auto"
+            // Removed filters to show original colors
+          />
+        </Box>
 
         {/* Navigation Links */}
         <SidebarNav isExpanded={isExpanded} />

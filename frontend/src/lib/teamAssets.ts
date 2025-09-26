@@ -1,17 +1,16 @@
 // Map team names to existing files under /public/assets
 // Prefer SVG when available; otherwise use provided PNG assets.
 export const teamLogoMap: { [key: string]: string } = {
-  "Red Bull Racing": "/assets/teamLogos/2025redbullracinglogowhite.png",
-  "Mercedes": "/assets/teamLogos/2025mercedeslogowhite.png",
-  "Ferrari": "/assets/teamLogos/2025ferrarilogolight.png",
-  "McLaren": "/assets/teamLogos/2025mclarenlogowhite.png",
-  "Aston Martin": "/assets/teamLogos/2025astonmartinlogowhite.png",
-  "Alpine": "/assets/teamLogos/2025alpinelogowhite.png",
-  "Williams": "/assets/teamLogos/2025williamslogowhite.png",
-  "Haas F1 Team": "/assets/teamLogos/2025haaslogowhite.png",
-  "RB F1 Team": "/assets/teamLogos/2025racingbullslogowhite.png",
-  "Sauber": "/assets/teamLogos/2025kicksauberlogowhite.png",
-  "Default": "/assets/logos/f1-logo.svg"
+  "Red Bull": "/assets/Red_Bull_Racing_logo.svg.png",
+  "Mercedes": "/assets/Mercedes_F1_Logo.svg.png",
+  "Ferrari": "/assets/Ferrari-Logo.png",
+  "McLaren": "/assets/McLaren_Racing_logo.svg.png",
+  "Aston Martin": "/assets/aston-martin-f1-seeklogo.png",
+  "Alpine F1 Team": "/assets/Alpine_F1_Team_Logo.svg.png",
+  "Williams": "/assets/Williams_Racing_logo.svg.png",
+  "Haas F1 Team": "/assets/Haas_F1_Team_Logo.svg.png",
+  "RB F1 Team": "/assets/Logotipo_da_RB_F1_Team.png",
+  "Sauber": "/assets/Sauber_F1_Team_logo.svg.png",
 };
 
 // Normalize varying API names with sponsors to a canonical key used above
