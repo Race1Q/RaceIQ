@@ -43,7 +43,7 @@ interface CumulativeProgression {
 }
 
 interface SeasonPoles {
-  seasonId: number; // changed from season
+  seasonId: number;
   poleCount: string;
 }
 
@@ -107,7 +107,10 @@ const ConstructorDetails: React.FC = () => {
         setSeasons(seasonsData);
 
         if (seasonsData.length > 0) {
-          const latestSeasonObj = seasonsData.reduce((prev, curr) => (curr.year > prev.year ? curr : prev), seasonsData[0]);
+          const latestSeasonObj = seasonsData.reduce(
+            (prev, curr) => (curr.year > prev.year ? curr : prev),
+            seasonsData[0]
+          );
           const latestSeasonId = latestSeasonObj.id;
 
           const cumulativeData: CumulativeProgression[] = await authedFetch(
@@ -155,7 +158,6 @@ const ConstructorDetails: React.FC = () => {
     });
   }, [pointsPerSeason, seasons]);
 
-  // ✅ Fixed poles mapping
   const mappedPolesPerSeason = useMemo(() => {
     if (!polesBySeason || !Array.isArray(polesBySeason)) return [];
     return polesBySeason
@@ -185,7 +187,6 @@ const ConstructorDetails: React.FC = () => {
     return latest;
   }, [pointsPerSeason, seasons]);
 
-  // ✅ Correct latest season poles
   const latestSeasonPoles = useMemo(() => {
     if (!latestSeason) return 0;
     const latestSeasonObj = seasons.find(s => s.id === latestSeason.season);
@@ -214,7 +215,7 @@ const ConstructorDetails: React.FC = () => {
 
   return (
     <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
-      {/* Header Bar */}
+      {/* Header */}
       <Flex justify="space-between" align="center" mb={4} p={4} borderRadius="md" bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}>
         <Flex direction="row" align="center" gap={4}>
           <Image src={getTeamLogo(constructor.name)} alt={`${constructor.name} logo`} boxSize="80px" objectFit="contain" />
@@ -226,119 +227,131 @@ const ConstructorDetails: React.FC = () => {
         <Button onClick={() => navigate('/constructors')} color="white">Back to Constructors</Button>
       </Flex>
 
-      {/* Stats */}
-      <Flex gap={6} wrap="wrap" mb={6}>
-        <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-          <Text fontSize="lg" fontWeight="bold">Total Points</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalPoints}</Text>
-        </Box>
-        <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-          <Text fontSize="lg" fontWeight="bold">Total Wins</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalWins}</Text>
-        </Box>
-        <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-          <Text fontSize="lg" fontWeight="bold">Total Podiums</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalPodiums}</Text>
-        </Box>
-        <Box p={4} bg="gray.700" borderRadius="md" minW="150px">
-          <Text fontSize="lg" fontWeight="bold">Total Poles</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalPoles}</Text>
+      {/* Two-column split */}
+      <Flex direction={['column', 'column', 'row']} gap={6}>
+        {/* Left section: totals + charts */}
+        <Box flex={1} display="flex" flexDirection="column" gap={6}>
+          {/* Totals in one horizontal row */}
+          <Flex gap={4} wrap="wrap">
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Points</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalPoints}</Text>
+            </Box>
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Wins</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalWins}</Text>
+            </Box>
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Podiums</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalPodiums}</Text>
+            </Box>
+            <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold">Total Poles</Text>
+              <Text fontSize="2xl" fontWeight="bold">{totalPoles}</Text>
+            </Box>
+          </Flex>
+
+          {/* Charts stacked below totals */}
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Points by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonLabel" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Line type="monotone" dataKey="points" stroke={teamColor} strokeWidth={3}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Wins by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonLabel" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Line type="monotone" dataKey="wins" stroke="#F56565" strokeWidth={3}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Podiums by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonLabel" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Line type="monotone" dataKey="podiums" stroke="#ECC94B" strokeWidth={3}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+
+          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+            <Text fontSize="lg" fontWeight="bold" mb={2}>Poles by Season</Text>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={mappedPolesPerSeason}>
+                <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
+                <XAxis dataKey="seasonYear" stroke="white"/>
+                <YAxis stroke="white"/>
+                <Tooltip/>
+                <Line type="monotone" dataKey="poleCount" stroke="#63B3ED" strokeWidth={3}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
         </Box>
 
-        {latestSeason && (
-          <>
-            <Box p={4} bg="gray.600" borderRadius="md" minW="150px">
-              <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Points</Text>
-              <Text fontSize="2xl" fontWeight="bold">{latestSeason.points}</Text>
+        {/* Right section: latest season totals + cumulative progression */}
+        <Box flex={1} display="flex" flexDirection="column" gap={6}>
+          {latestSeason && (
+            <Flex gap={4} wrap="wrap">
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Points</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeason.points}</Text>
+              </Box>
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Wins</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeason.wins}</Text>
+              </Box>
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Podiums</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeason.podiums}</Text>
+              </Box>
+              <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Poles</Text>
+                <Text fontSize="2xl" fontWeight="bold">{latestSeasonPoles}</Text>
+              </Box>
+            </Flex>
+          )}
+
+          {cumulativeProgression.length > 0 && (
+            <Box w="100%" h="625px" bg="gray.800" p={4} borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold" mb={2}>Cumulative Points Progression ({seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'})</Text>
+              <ResponsiveContainer width="100%" height="90%">
+                <LineChart data={cumulativeProgression}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                  <XAxis dataKey="round" stroke="white" />
+                  <YAxis stroke="white" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="cumulativePoints" stroke={teamColor} strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
             </Box>
-            <Box p={4} bg="gray.600" borderRadius="md" minW="150px">
-              <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Wins</Text>
-              <Text fontSize="2xl" fontWeight="bold">{latestSeason.wins}</Text>
-            </Box>
-            <Box p={4} bg="gray.600" borderRadius="md" minW="150px">
-              <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Podiums</Text>
-              <Text fontSize="2xl" fontWeight="bold">{latestSeason.podiums}</Text>
-            </Box>
-            <Box p={4} bg="gray.600" borderRadius="md" minW="150px">
-              <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Poles</Text>
-              <Text fontSize="2xl" fontWeight="bold">{latestSeasonPoles}</Text>
-            </Box>
-          </>
-        )}
+          )}
+        </Box>
       </Flex>
-
-      {/* Charts */}
-      <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md">
-        <Text fontSize="lg" fontWeight="bold" mb={2}>Points by Season</Text>
-        <ResponsiveContainer width="100%" height="90%">
-          <LineChart data={mappedPointsPerSeason.sort((a, b) => Number(a.seasonLabel) - Number(b.seasonLabel))}>
-            <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-            <XAxis dataKey="seasonLabel" stroke="white" />
-            <YAxis stroke="white" />
-            <Tooltip />
-            <Line type="monotone" dataKey="points" stroke={teamColor} strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
-      </Box>
-
-      <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md" mt={6}>
-        <Text fontSize="lg" fontWeight="bold" mb={2}>Wins by Season</Text>
-        <ResponsiveContainer width="100%" height="90%">
-          <LineChart data={mappedPointsPerSeason.sort((a, b) => Number(a.seasonLabel) - Number(b.seasonLabel))}>
-            <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-            <XAxis dataKey="seasonLabel" stroke="white" />
-            <YAxis stroke="white" />
-            <Tooltip />
-            <Line type="monotone" dataKey="wins" stroke="#F56565" strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
-      </Box>
-
-      <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md" mt={6}>
-        <Text fontSize="lg" fontWeight="bold" mb={2}>Podiums by Season</Text>
-        <ResponsiveContainer width="100%" height="90%">
-          <LineChart data={mappedPointsPerSeason.sort((a, b) => Number(a.seasonLabel) - Number(b.seasonLabel))}>
-            <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-            <XAxis dataKey="seasonLabel" stroke="white" />
-            <YAxis stroke="white" />
-            <Tooltip />
-            <Line type="monotone" dataKey="podiums" stroke="#ECC94B" strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
-      </Box>
-
-      <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md" mt={6}>
-        <Text fontSize="lg" fontWeight="bold" mb={2}>Poles by Season</Text>
-        <ResponsiveContainer width="100%" height="90%">
-          <LineChart data={mappedPolesPerSeason}>
-            <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-            <XAxis dataKey="seasonLabel" stroke="white" />
-            <YAxis stroke="white" />
-            <Tooltip />
-            <Line type="monotone" dataKey="poleCount" stroke="#63B3ED" strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
-      </Box>
-
-      {cumulativeProgression.length > 0 && (
-        <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md" mt={6}>
-          <Text fontSize="lg" fontWeight="bold" mb={2}>Cumulative Points Progression ({seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'})</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={cumulativeProgression}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-              <XAxis dataKey="round" stroke="white" />
-              <YAxis stroke="white" />
-              <Tooltip />
-              <Line type="monotone" dataKey="cumulativePoints" stroke={teamColor} strokeWidth={3} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Box>
-      )}
     </Box>
   );
 };
 
 export default ConstructorDetails;
+
+
+
 
 
 
