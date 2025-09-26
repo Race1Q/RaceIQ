@@ -1,12 +1,11 @@
-// frontend/src/types/races.ts
-export interface Race {
+// src/types/races.ts
+// UI-friendly Race type used by the pages and cards.
+
+export type Race = {
   id: number;
-  season_id: number;
-  circuit_id: number;
-  round: number;
   name: string;
-  date: string;
-  time: string;
-}
-
-
+  round: number;
+  date: string;        // "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss"
+  circuit_id: number;  // numeric for consistency in frontend
+  season_id: number;   // year (e.g., 2025)
+};

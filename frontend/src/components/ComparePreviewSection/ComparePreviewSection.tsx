@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Crown } from 'lucide-react';
+import { Crown, Shuffle } from 'lucide-react';
 import { 
   Box, 
   Container, 
@@ -16,18 +16,19 @@ import {
   Flex, 
   Spinner
 } from '@chakra-ui/react';
+import { driverHeadshots } from '../../lib/driverHeadshots';
+import { teamColors } from '../../lib/teamColors';
+import { supabase } from '../../lib/supabase';
 
-// Interface for comparison driver data
+// Interface for comparison driver data (real stats)
 interface ComparisonDriver {
   fullName: string;
   teamName: string;
   imageUrl: string;
   teamColorToken: string;
   stats: {
-    fastestLap: string;
-    fastestLapRank: number;
     championships: number;
-    championshipsRank: number;
+    allTimeFastestLapMs: number | null;
   };
 }
 
@@ -40,99 +41,177 @@ const ComparePreviewSection: React.FC = () => {
   const { loginWithRedirect } = useAuth0();
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [randomizeLoading, setRandomizeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Helper function to convert lap time to seconds for comparison
-  const timeToSeconds = (timeString: string): number => {
-    const [minutes, seconds] = timeString.split(':');
-    return parseInt(minutes) * 60 + parseFloat(seconds);
+  // Helper: centralized headshot lookup with local default
+  const getDriverImageUrl = (fullName: string): string => {
+    return driverHeadshots[fullName] || driverHeadshots['default'];
   };
 
-  // Helper function to calculate bar width for "higher is better" stats
+  // Helper: team color from shared map
+  const getTeamColor = (teamName: string): string => {
+    const hex = teamColors[teamName] ?? teamColors['Default'];
+    return `#${hex}`;
+  };
+
+  // Helper: format lap time from ms
+  const formatLapTime = (ms: number | null): string => {
+    if (ms === null || ms <= 0 || Number.isNaN(ms)) return 'N/A';
+    const date = new Date(ms);
+    const minutes = date.getUTCMinutes();
+    const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+    const milliseconds = date.getUTCMilliseconds().toString().padStart(3, '0');
+    return `${minutes}:${seconds}.${milliseconds}`;
+  };
+
+  // Helpers: bar width calculations from ms and numbers
   const calculateHigherIsBetterBarWidth = (value1: number, value2: number, currentValue: number): number => {
-    const maxValue = Math.max(value1, value2);
-    return (currentValue / maxValue) * 100;
+    const maxValue = Math.max(value1, value2, 1);
+    return Math.max(0, Math.min(100, (currentValue / maxValue) * 100));
   };
 
-  // Helper function to calculate bar width for "lower is better" stats (like lap times)
-  const calculateLowerIsBetterBarWidth = (time1: string, time2: string, currentTime: string): number => {
-    const time1Seconds = timeToSeconds(time1);
-    const time2Seconds = timeToSeconds(time2);
-    const currentTimeSeconds = timeToSeconds(currentTime);
-    const bestTime = Math.min(time1Seconds, time2Seconds);
-    return (bestTime / currentTimeSeconds) * 100;
+  const calculateLowerIsBetterBarWidthMs = (ms1: number | null, ms2: number | null, currentMs: number | null): number => {
+    const v1 = typeof ms1 === 'number' && ms1 > 0 ? ms1 : Number.POSITIVE_INFINITY;
+    const v2 = typeof ms2 === 'number' && ms2 > 0 ? ms2 : Number.POSITIVE_INFINITY;
+    const cur = typeof currentMs === 'number' && currentMs > 0 ? currentMs : Number.POSITIVE_INFINITY;
+    const best = Math.min(v1, v2);
+    if (!Number.isFinite(best) || !Number.isFinite(cur)) return 0;
+    const pct = (best / cur) * 100;
+    return Math.max(0, Math.min(100, pct));
   };
 
-  // Winner determination logic
+  // Winner determination using real stats
   const getWinners = () => {
-    if (!comparisonData) return { fastestLap: null, championships: null };
-    
+    if (!comparisonData) return { fastestLap: null as null | 'driver1' | 'driver2', championships: null as null | 'driver1' | 'driver2' };
     const { driver1, driver2 } = comparisonData;
-    
-    // For fastest lap, lower time is better
-    const driver1LapSeconds = timeToSeconds(driver1.stats.fastestLap);
-    const driver2LapSeconds = timeToSeconds(driver2.stats.fastestLap);
-    const fastestLapWinner = driver1LapSeconds < driver2LapSeconds ? 'driver1' : 'driver2';
-    
-    // For championships, higher number is better
-    const championshipsWinner = driver1.stats.championships > driver2.stats.championships ? 'driver1' : 'driver2';
-    
-    return {
-      fastestLap: fastestLapWinner,
-      championships: championshipsWinner
-    };
+
+    // Fastest lap: lower ms wins; if one is null, the other wins; if both null -> null
+    let fastestLap: null | 'driver1' | 'driver2' = null;
+    const ms1 = driver1.stats.allTimeFastestLapMs;
+    const ms2 = driver2.stats.allTimeFastestLapMs;
+    if (typeof ms1 === 'number' && ms1 > 0 && typeof ms2 === 'number' && ms2 > 0) {
+      fastestLap = ms1 < ms2 ? 'driver1' : 'driver2';
+    } else if (typeof ms1 === 'number' && ms1 > 0 && (ms2 === null || ms2 <= 0)) {
+      fastestLap = 'driver1';
+    } else if (typeof ms2 === 'number' && ms2 > 0 && (ms1 === null || ms1 <= 0)) {
+      fastestLap = 'driver2';
+    }
+
+    // Championships: higher wins; tie -> null
+    let championships: null | 'driver1' | 'driver2' = null;
+    if (driver1.stats.championships > driver2.stats.championships) championships = 'driver1';
+    else if (driver2.stats.championships > driver1.stats.championships) championships = 'driver2';
+
+    return { fastestLap, championships };
   };
 
   const winners = getWinners();
 
-  useEffect(() => {
-    const fetchComparisonData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Mock data for Lewis Hamilton vs Max Verstappen comparison
-        const mockComparisonData: ComparisonData = {
-          driver1: {
-            fullName: "Lewis Hamilton",
-            teamName: "Mercedes",
-            imageUrl: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png",
-            teamColorToken: "#00D2BE", // Mercedes teal
-            stats: {
-              fastestLap: "1:18.123",
-              fastestLapRank: 2,
-              championships: 7,
-              championshipsRank: 1
-            }
-          },
-          driver2: {
-            fullName: "Max Verstappen",
-            teamName: "Red Bull Racing",
-            imageUrl: "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png",
-            teamColorToken: "#3671C6", // Red Bull blue
-            stats: {
-              fastestLap: "1:17.456",
-              fastestLapRank: 1,
-              championships: 3,
-              championshipsRank: 9
-            }
-          }
-        };
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setComparisonData(mockComparisonData);
-        
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        setError(errorMessage);
-        console.error('Error fetching comparison data:', err);
-      } finally {
-        setLoading(false);
+  // Randomize: query Supabase only on click
+  const handleRandomize = async () => {
+    try {
+      setRandomizeLoading(true);
+      setError(null);
+
+      // Fetch from materialized view with filters
+      const { data, error } = await supabase
+        .from('driver_career_stats_materialized')
+        .select('*')
+        .gte('championships', 1)
+        .gte('lastActiveYear', 2000);
+
+      if (error) {
+        throw new Error(`Supabase Query Error: ${error.message}`);
       }
+
+      const eligible = Array.isArray(data) ? data : [];
+      if (eligible.length < 2) {
+        throw new Error('Not enough eligible drivers to randomize');
+      }
+
+      // pick two distinct random indices
+      const firstIndex = Math.floor(Math.random() * eligible.length);
+      let secondIndex = Math.floor(Math.random() * eligible.length);
+      if (secondIndex === firstIndex) {
+        secondIndex = (secondIndex + 1) % eligible.length;
+      }
+
+      const d1 = eligible[firstIndex] as any;
+      const d2 = eligible[secondIndex] as any;
+
+      // Try to resolve names/teams across possible column aliases
+      const d1FullName: string = d1.fullName || `${d1.first_name ?? ''} ${d1.last_name ?? ''}`.trim() || d1.driverFullName || 'Unknown Driver 1';
+      const d2FullName: string = d2.fullName || `${d2.first_name ?? ''} ${d2.last_name ?? ''}`.trim() || d2.driverFullName || 'Unknown Driver 2';
+      const d1Team: string = d1.teamName || d1.constructorName || d1.team_name || 'Unknown Team';
+      const d2Team: string = d2.teamName || d2.constructorName || d2.team_name || 'Unknown Team';
+
+      const d1Championships: number = typeof d1.championships === 'number' ? d1.championships : (d1.worldChampionships ?? 0);
+      const d2Championships: number = typeof d2.championships === 'number' ? d2.championships : (d2.worldChampionships ?? 0);
+
+      const d1LapMs: number | null = typeof d1.allTimeFastestLapMs === 'number' ? d1.allTimeFastestLapMs : (typeof d1.fastestLapMs === 'number' ? d1.fastestLapMs : null);
+      const d2LapMs: number | null = typeof d2.allTimeFastestLapMs === 'number' ? d2.allTimeFastestLapMs : (typeof d2.fastestLapMs === 'number' ? d2.fastestLapMs : null);
+
+      const newComparisonData: ComparisonData = {
+        driver1: {
+          fullName: d1FullName,
+          teamName: d1Team,
+          imageUrl: getDriverImageUrl(d1FullName),
+          teamColorToken: getTeamColor(d1Team),
+          stats: {
+            championships: d1Championships,
+            allTimeFastestLapMs: d1LapMs,
+          },
+        },
+        driver2: {
+          fullName: d2FullName,
+          teamName: d2Team,
+          imageUrl: getDriverImageUrl(d2FullName),
+          teamColorToken: getTeamColor(d2Team),
+          stats: {
+            championships: d2Championships,
+            allTimeFastestLapMs: d2LapMs,
+          },
+        },
+      };
+
+      setComparisonData(newComparisonData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to randomize drivers';
+      setError(errorMessage);
+      console.error('Error randomizing drivers:', err);
+    } finally {
+      setRandomizeLoading(false);
+    }
+  };
+
+  // Initial load: set mock data synchronously, no fetch
+  useEffect(() => {
+    const mockComparisonData: ComparisonData = {
+      driver1: {
+        fullName: 'Lewis Hamilton',
+        teamName: 'Mercedes',
+        imageUrl: getDriverImageUrl('Lewis Hamilton'),
+        teamColorToken: getTeamColor('Mercedes'),
+        stats: {
+          championships: 7,
+          allTimeFastestLapMs: 78123, // 1:18.123
+        },
+      },
+      driver2: {
+        fullName: 'Max Verstappen',
+        teamName: 'Red Bull Racing',
+        imageUrl: getDriverImageUrl('Max Verstappen'),
+        teamColorToken: getTeamColor('Red Bull Racing'),
+        stats: {
+          championships: 3,
+          allTimeFastestLapMs: 77456, // 1:17.456
+        },
+      },
     };
 
-    fetchComparisonData();
+    setComparisonData(mockComparisonData);
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -147,7 +226,7 @@ const ComparePreviewSection: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M10 10 Q50 5 90 10 Q95 50 90 90 Q50 95 10 90 Q5 50 10 10" stroke="%23ff0000" stroke-width="0.5" fill="none" opacity="0.05"/%3E%3C/svg%3E")',
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\"100\" height=\"100\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M10 10 Q50 5 90 10 Q95 50 90 90 Q50 95 10 90 Q5 50 10 10\" stroke=\"%23ff0000\" stroke-width=\"0.5\" fill=\"none\" opacity=\"0.05\"/%3E%3C/svg%3E")',
           backgroundRepeat: 'repeat',
           backgroundSize: '200px 200px',
           opacity: 0.05,
@@ -164,7 +243,7 @@ const ComparePreviewSection: React.FC = () => {
   }
 
   if (error || !comparisonData) {
-    return null; // Fail silently for public preview
+    return null; // Public preview: fail silently
   }
 
   return (
@@ -178,7 +257,7 @@ const ComparePreviewSection: React.FC = () => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M10 10 Q50 5 90 10 Q95 50 90 90 Q50 95 10 90 Q5 50 10 10" stroke="%23ff0000" stroke-width="0.5" fill="none" opacity="0.05"/%3E%3C/svg%3E")',
+        backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\"100\" height=\"100\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M10 10 Q50 5 90 10 Q95 50 90 90 Q50 95 10 90 Q5 50 10 10\" stroke=\"%23ff0000\" stroke-width=\"0.5\" fill=\"none\" opacity=\"0.05\"/%3E%3C/svg%3E")',
         backgroundRepeat: 'repeat',
         backgroundSize: '200px 200px',
         opacity: 0.05,
@@ -191,16 +270,17 @@ const ComparePreviewSection: React.FC = () => {
           <GridItem>
             <VStack align="flex-start" justify="center" spacing="lg" h="full">
               <VStack align="flex-start" spacing="sm">
-                <Text 
-                  color="brand.red" 
-                  fontWeight="bold" 
-                  fontSize="sm" 
-                  textTransform="uppercase" 
-                  letterSpacing="wide"
+                <Heading
+                  as="h4"
+                  size="sm"
+                  color="brand.red"
+                  textTransform="uppercase"
+                  letterSpacing="wider"
+                  fontWeight="bold"
                 >
-                  Head-to-Head
-                </Text>
-                
+                  HEAD-TO-HEAD
+                </Heading>
+
                 <Heading 
                   as="h2" 
                   size="2xl" 
@@ -248,9 +328,22 @@ const ComparePreviewSection: React.FC = () => {
           {/* Right Column - Visual Showdown */}
           <GridItem>
             <VStack spacing="lg" w="100%">
-              {/* Section for Driver Images and VS */}
+              {/* Randomize action centered above images */}
+              <Button
+                leftIcon={<Shuffle size={16} />}
+                onClick={handleRandomize}
+                isLoading={randomizeLoading}
+                variant="ghost"
+                _hover={{ bg: 'brand.red', color: 'white' }}
+                _active={{ bg: 'brand.redDark', color: 'white' }}
+                alignSelf="center"
+              >
+                Randomize
+              </Button>
+
+              {/* Images and VS */}
               <Flex align="center" justify="center" w="100%">
-                {/* Lewis Hamilton Image */}
+                {/* Driver 1 Image */}
                 <VStack spacing="sm">
                   <Box
                     _hover={{ transform: 'scale(1.05)' }}
@@ -273,8 +366,11 @@ const ComparePreviewSection: React.FC = () => {
                       />
                     </Box>
                   </Box>
-                  <Text fontSize="sm" color="brand.red" fontWeight="bold">
-                    2020
+                  <Heading as="h3" size="md" color={comparisonData.driver1.teamColorToken}>
+                    {comparisonData.driver1.fullName}
+                  </Heading>
+                  <Text fontSize="sm" color={comparisonData.driver1.teamColorToken} mt={1}>
+                    {comparisonData.driver1.teamName}
                   </Text>
                 </VStack>
 
@@ -282,7 +378,7 @@ const ComparePreviewSection: React.FC = () => {
                   VS
                 </Heading>
 
-                {/* Max Verstappen Image */}
+                {/* Driver 2 Image */}
                 <VStack spacing="sm">
                   <Box
                     _hover={{ transform: 'scale(1.05)' }}
@@ -305,68 +401,75 @@ const ComparePreviewSection: React.FC = () => {
                       />
                     </Box>
                   </Box>
-                  <Text fontSize="sm" color="brand.red" fontWeight="bold">
-                    2023
+                  <Heading as="h3" size="md" color={comparisonData.driver2.teamColorToken}>
+                    {comparisonData.driver2.fullName}
+                  </Heading>
+                  <Text fontSize="sm" color={comparisonData.driver2.teamColorToken} mt={1}>
+                    {comparisonData.driver2.teamName}
                   </Text>
                 </VStack>
               </Flex>
 
-              {/* Section for Stat Comparisons with Visual Bars */}
+              {/* Stat Comparisons */}
               <VStack spacing={6} w="100%" maxW="450px" pt="md">
-                {/* Comparison 1: Fastest Lap */}
+                {/* Fastest Lap */}
                 <VStack w="100%">
                   <Text color="text-muted" fontWeight="bold" textTransform="uppercase" fontSize="sm">
-                    Fastest Lap
+                    Fastest Lap (All-Time)
                   </Text>
-                  <Grid templateColumns="1fr 1fr" gap={4} w="100%">
-                    {/* Driver 1 (Hamilton) Stat */}
+                  <Grid templateColumns="1fr auto 1fr" gap={4} w="100%" alignItems="start">
+                    {/* Driver 1 */}
                     <VStack align="flex-start" spacing={1}>
                       <Flex align="center" gap={2}>
-                        <Text fontSize="xl" fontWeight="bold">{comparisonData.driver1.stats.fastestLap}</Text>
+                        <Text fontSize="xl" fontWeight="bold">{formatLapTime(comparisonData.driver1.stats.allTimeFastestLapMs)}</Text>
                         {winners.fastestLap === 'driver1' && <Crown color="#FFD700" size={20} />}
                       </Flex>
                       <Box w="100%" h="8px" bg="bg-surface" borderRadius="md" overflow="hidden">
                         <Box 
-                          w={`${calculateLowerIsBetterBarWidth(
-                            comparisonData.driver1.stats.fastestLap, 
-                            comparisonData.driver2.stats.fastestLap, 
-                            comparisonData.driver1.stats.fastestLap
+                          w={`${calculateLowerIsBetterBarWidthMs(
+                            comparisonData.driver1.stats.allTimeFastestLapMs,
+                            comparisonData.driver2.stats.allTimeFastestLapMs,
+                            comparisonData.driver1.stats.allTimeFastestLapMs
                           )}%`} 
                           h="100%" 
                           bg={comparisonData.driver1.teamColorToken} 
                         /> 
                       </Box>
-                      <Text fontSize="xs" color="text-muted">All-time: #{comparisonData.driver1.stats.fastestLapRank}</Text>
                     </VStack>
-                    {/* Driver 2 (Verstappen) Stat */}
+                    {/* Middle indicator for draw */}
+                    <Flex align="center" justify="center" h="full" pt={6}>
+                      {winners.fastestLap === null && (
+                        <Crown color="#FFD700" size={20} aria-label="draw" />
+                      )}
+                    </Flex>
+                    {/* Driver 2 */}
                     <VStack align="flex-end" spacing={1}>
                       <Flex align="center" gap={2} direction="row-reverse">
-                        <Text fontSize="xl" fontWeight="bold">{comparisonData.driver2.stats.fastestLap}</Text>
+                        <Text fontSize="xl" fontWeight="bold">{formatLapTime(comparisonData.driver2.stats.allTimeFastestLapMs)}</Text>
                         {winners.fastestLap === 'driver2' && <Crown color="#FFD700" size={20} />}
                       </Flex>
                       <Box w="100%" h="8px" bg="bg-surface" borderRadius="md" overflow="hidden" dir="rtl">
                         <Box 
-                          w={`${calculateLowerIsBetterBarWidth(
-                            comparisonData.driver1.stats.fastestLap, 
-                            comparisonData.driver2.stats.fastestLap, 
-                            comparisonData.driver2.stats.fastestLap
+                          w={`${calculateLowerIsBetterBarWidthMs(
+                            comparisonData.driver1.stats.allTimeFastestLapMs,
+                            comparisonData.driver2.stats.allTimeFastestLapMs,
+                            comparisonData.driver2.stats.allTimeFastestLapMs
                           )}%`} 
                           h="100%" 
                           bg={comparisonData.driver2.teamColorToken} 
                         />
                       </Box>
-                      <Text fontSize="xs" color="text-muted">All-time: #{comparisonData.driver2.stats.fastestLapRank}</Text>
                     </VStack>
                   </Grid>
                 </VStack>
 
-                {/* Comparison 2: Championships */}
+                {/* Championships */}
                 <VStack w="100%">
                   <Text color="text-muted" fontWeight="bold" textTransform="uppercase" fontSize="sm">
                     Championships
                   </Text>
-                  <Grid templateColumns="1fr 1fr" gap={4} w="100%">
-                    {/* Driver 1 (Hamilton) Stat */}
+                  <Grid templateColumns="1fr auto 1fr" gap={4} w="100%" alignItems="start">
+                    {/* Driver 1 */}
                     <VStack align="flex-start" spacing={1}>
                       <Flex align="center" gap={2}>
                         <Text fontSize="xl" fontWeight="bold">{comparisonData.driver1.stats.championships}</Text>
@@ -383,9 +486,14 @@ const ComparePreviewSection: React.FC = () => {
                           bg={comparisonData.driver1.teamColorToken} 
                         />
                       </Box>
-                      <Text fontSize="xs" color="text-muted">All-time: #{comparisonData.driver1.stats.championshipsRank}</Text>
                     </VStack>
-                    {/* Driver 2 (Verstappen) Stat */}
+                    {/* Middle indicator for draw */}
+                    <Flex align="center" justify="center" h="full" pt={6}>
+                      {winners.championships === null && (
+                        <Crown color="#FFD700" size={20} aria-label="draw" />
+                      )}
+                    </Flex>
+                    {/* Driver 2 */}
                     <VStack align="flex-end" spacing={1}>
                       <Flex align="center" gap={2} direction="row-reverse">
                         <Text fontSize="xl" fontWeight="bold">{comparisonData.driver2.stats.championships}</Text>
@@ -402,7 +510,6 @@ const ComparePreviewSection: React.FC = () => {
                           bg={comparisonData.driver2.teamColorToken} 
                         />
                       </Box>
-                      <Text fontSize="xs" color="text-muted">All-time: #{comparisonData.driver2.stats.championshipsRank}</Text>
                     </VStack>
                   </Grid>
                 </VStack>

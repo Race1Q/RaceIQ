@@ -1,0 +1,95 @@
+.card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 1rem;
+    height: 200px;
+    background-image: linear-gradient(135deg, var(--accent-color) 0%, #000 150%);
+    border-top: 2px solid var(--accent-color);
+  }
+  
+  .positionIndicator {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+    font-weight: bold;
+    z-index: 3;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); /* CHANGED: Added text shadow */
+  }
+
+  /* Light mode text enhancements */
+  [data-theme='light'] .driverName,
+  [data-theme='light'] .teamName,
+  [data-theme='light'] .points,
+  [data-theme='light'] .positionIndicator {
+    color: var(--color-static-white);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  }
+  
+  .textContent {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    height: 100%;
+  }
+  
+  .driverName {
+    color: var(--color-text-light);
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); /* CHANGED: Enhanced text shadow */
+  }
+  
+  .teamName {
+    color: var(--color-text-medium);
+    font-size: 0.9rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); /* CHANGED: Added text shadow */
+  }
+  
+  .points {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    color: var(--color-text-light);
+    font-size: 1.5rem;
+    font-weight: 700;
+    z-index: 3;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+  
+    /* Colored Frosted Glass */
+    background-color: rgba(var(--accent-rgb), 0.4);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
+  }
+  
+  .driverImage {
+    position: absolute;
+    right: -20px;
+    bottom: 0;
+    height: 100%;
+    object-fit: contain;
+    object-position: right bottom;
+    z-index: 1;
+    opacity: 0.95;
+    mix-blend-mode: normal;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .card {
+      height: 180px;
+    }
+    .driverName {
+      font-size: 1.5rem;
+    }
+    .points {
+      font-size: 1.25rem;
+    }
+  }
