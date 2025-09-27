@@ -3,17 +3,18 @@
 **RaceIQ** is a simple and easy-to-use tool for tracking Formula 1 race stats and performance.  
 It gathers race data and shows key info like lap times, driver positions, pit stops, and sector performance — with a few surprises. 😉
 
-[![codecov](https://codecov.io/gh/Race1Q/RaceIQ/graph/badge.svg?token=0B9G4DM0W3)](https://codecov.io/gh/Race1Q/RaceIQ)
----
+## [![codecov](https://codecov.io/gh/Race1Q/RaceIQ/graph/badge.svg?token=0B9G4DM0W3)](https://codecov.io/gh/Race1Q/RaceIQ)
 
-## ⚙️ Tech Stack
+## ⚙️ Tech Stack ⚙️
 
 ### Frontend:
+
 - **React + TypeScript + Vite**
 - Hot Module Reloading (HMR)
 - ESLint support with customizable linting rules
 
 ### Backend:
+
 - **NestJS** (Progressive Node.js framework)
 - TypeScript-based, scalable and efficient server-side architecture
 
@@ -48,3 +49,4 @@ npm run test:e2e
 
 # Test coverage
 npm run test:cov
+```
