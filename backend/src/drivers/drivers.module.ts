@@ -6,11 +6,22 @@ import { Driver } from './drivers.entity';
 import { DriversController } from './drivers.controller';
 import { DriversService } from './drivers.service';
 import { CountriesModule } from '../countries/countries.module';
-import { RaceResult } from '../race-results/race-results.entity'; // 1. IMPORT
+import { RaceResult } from '../race-results/race-results.entity';
+import { WinsPerSeasonMaterialized } from './wins-per-season-materialized.entity';
+import { DriverCareerStatsMaterialized } from './driver-career-stats-materialized.entity';
+import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
+import { RaceFastestLapMaterialized } from '../dashboard/race-fastest-laps-materialized.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Driver, RaceResult]), // 2. ADD RaceResult
+    TypeOrmModule.forFeature([
+      Driver, 
+      RaceResult, 
+      WinsPerSeasonMaterialized,
+      DriverCareerStatsMaterialized,
+      DriverStandingMaterialized,
+      RaceFastestLapMaterialized
+    ]),
     CountriesModule,
   ],
   controllers: [DriversController],

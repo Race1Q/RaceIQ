@@ -148,8 +148,6 @@ const Drivers = () => {
                       />
                       <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
                         {driversInTeam.map(driver => {
-                          const driverSlug = driver.fullName.toLowerCase().replace(/ /g, '_');
-                          
                           const driverCardData = {
                             id: driver.id.toString(),
                             name: driver.fullName,
@@ -163,8 +161,8 @@ const Drivers = () => {
                           return (
                             <Link 
                               key={driver.id}
-                              to={`/drivers/${driverSlug}`} 
-                              state={{ driverId: driver.id }}
+                              // ENSURE THIS USES THE NUMERIC ID, NOT A SLUG
+                              to={`/drivers/${driver.id}`} 
                             >
                               <DriverProfileCard driver={driverCardData} />
                             </Link>

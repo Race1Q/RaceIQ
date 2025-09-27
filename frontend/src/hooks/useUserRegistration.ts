@@ -7,12 +7,9 @@ export const useUserRegistration = () => {
 
   const ensureUserExists = useCallback(async () => {
     try {
-      const token = await getAccessTokenSilently({
-        authorizationParams: { 
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE, 
-          scope: "read:drivers" 
-        },
-      });
+      // REMOVED: The incorrect authorizationParams that limited the scope.
+      // Now, it will use the default scope from your Auth0Provider, which includes the email.
+      const token = await getAccessTokenSilently();
 
       const response = await fetch(buildApiUrl('/api/users/ensure-exists'), {
         method: 'POST',
@@ -32,7 +29,7 @@ export const useUserRegistration = () => {
       return result;
     } catch (error) {
       console.error('Error ensuring user exists:', error);
-      throw error;
+      throw new Error('Internal server error'); // Throw a generic error for the UI
     }
   }, [getAccessTokenSilently]);
 

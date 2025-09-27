@@ -1,238 +1,112 @@
- //frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
-
-import React, { useState, useEffect } from 'react';
-import { Container, Flex, Box, Text, VStack, Button, useToast } from '@chakra-ui/react';
+// frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
+import React from 'react';
+import { Container, Box, Text, Button, Heading, Flex, Grid, HStack, Image } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-
-// Import our standard API hook and components
-import { useApi } from '@/hooks/useApi';
-import DashboardGrid from '../../components/DashboardGrid/DashboardGrid';
+import { useDriverDetails } from '../../hooks/useDriverDetails';
 import KeyInfoBar from '../../components/KeyInfoBar/KeyInfoBar';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import ReactCountryFlag from 'react-country-flag';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamCarImages } from '../../lib/teamCars';
-import styles from './DriverDetailPage.module.css';
-
-// Interfaces to type the data coming from our API
-interface DriverDetailsResponse {
-  driverId: number;
-  fullName: string;
-  firstName: string;
-  lastName: string;
-  countryCode: string;
-  dateOfBirth: string;
-  team: { name: string; color: string | null };
-  careerStats: { wins: number; podiums: number; fastestLaps: number; totalPoints: number };
-  profile: { imageUrl: string | null; funFact: string };
-}
-
-interface DriverPerformanceResponse {
-  season: string;
-  championshipStanding: number | null;
-  winsPerSeason: Array<{ season: string; wins: number }>;
-  recentRace: { raceName: string; position: number } | null;
-}
-
-
-// --- Fastest Lap summary type ---
-type FastestLapSummary = {
-  driver_id: number;
-  driver_name?: string;
-  driver_picture?: string;
-  lap_number: number;
-  time_ms: number;
-};
+import { teamColors } from '../../lib/teamColors';
+import StatSection from '../../components/DriverDetails/StatSection';
+import WinsPerSeasonChart from '../../components/WinsPerSeasonChart/WinsPerSeasonChart';
 
 const DriverDetailPage: React.FC = () => {
-  const { authedFetch } = useApi(); // Use our standard, shared hook
   const { driverId } = useParams<{ driverId: string }>();
-  const toast = useToast();
+  const { driverDetails, loading, error } = useDriverDetails(driverId);
 
-  const [driverData, setDriverData] = useState<any | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [fastestLap, setFastestLap] = useState<FastestLapSummary | null>(null);
-  const [fastestLapLoading, setFastestLapLoading] = useState<boolean>(true);
-  const [fastestLapError, setFastestLapError] = useState<string | null>(null);
+  // --- DEBUG STEP 3: Log the data as it's received by the page component ---
+  console.log("%c3. Data Received by Page Component:", "color: orange; font-weight: bold;", driverDetails);
 
-  useEffect(() => {
-    if (!driverId) {
-      setError("Driver ID not found in URL.");
-      setLoading(false);
-      return;
-    }
+  if (loading) return <F1LoadingSpinner text="Loading Driver Details..." />;
+  if (error || !driverDetails) return <Text p="lg">Error: {error || 'Driver data could not be loaded.'}</Text>;
 
-    const fetchDriverData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Fetch both primary and secondary data in parallel
-        const [details, performance] = await Promise.all([
-          authedFetch<DriverDetailsResponse>(`/api/drivers/${driverId}/details`),
-          authedFetch<DriverPerformanceResponse>(`/api/drivers/${driverId}/performance/2025`), // Hardcoded to 2025 for now
-        ]);
-        // Combine the data from both API calls into a single object for the UI
-        const combinedData = {
-          id: details.driverId,
-          fullName: details.fullName,
-          firstName: details.firstName,
-          lastName: details.lastName,
-          countryCode: details.countryCode,
-          dateOfBirth: details.dateOfBirth,
-          teamName: details.team?.name || 'N/A',
-          teamColor: details.team?.color,
-          funFact: details.profile?.funFact,
-          imageUrl: driverHeadshots[details.fullName] || details.profile?.imageUrl,
-          wins: details.careerStats?.wins,
-          podiums: details.careerStats?.podiums,
-          fastestLaps: details.careerStats?.fastestLaps,
-          points: details.careerStats?.totalPoints,
-          championshipStanding: performance?.championshipStanding != null ? `P${performance.championshipStanding}` : 'N/A',
-          winsPerSeason: performance?.winsPerSeason || [],
-        };
-        setDriverData(combinedData);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load driver data.';
-        setError(errorMessage);
-        toast({
-          title: 'Error Loading Driver',
-          description: errorMessage,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const teamColor = teamColors[driverDetails.teamName] || '#333333';
+  const twoLetterCountryCode = countryCodeMap[driverDetails.countryCode?.toUpperCase()] || driverDetails.countryCode;
 
-    // Fetch fastest lap for this driver (from summary endpoint for all races)
-    const fetchFastestLap = async () => {
-      setFastestLapLoading(true);
-      setFastestLapError(null);
-      try {
-        // You may want to loop over all races, or if you have a driver-summary endpoint, use that
-        // For demo, fetch the fastest lap for the latest race (e.g., 2025)
-        // Replace 2025 with the actual raceId or get a list of races for this driver
-        const res = await authedFetch<any>(`/api/race-summary?race_id=2025`); // Replace 2025 as needed
-        if (res && res.fastestLap && res.fastestLap.driver_id == Number(driverId)) {
-          setFastestLap(res.fastestLap);
-        } else {
-          setFastestLap(null);
-        }
-      } catch (err) {
-        setFastestLapError('Could not fetch fastest lap');
-        setFastestLap(null);
-      } finally {
-        setFastestLapLoading(false);
-      }
-    };
-
-    fetchDriverData();
-    fetchFastestLap();
-  }, [driverId, authedFetch, toast]);
-
-  if (loading) {
-    return <F1LoadingSpinner text="Loading Driver Details..." />;
-  }
-
-  if (error || !driverData) {
-    return (
-      <Container centerContent>
-        <VStack spacing={4} mt={10} color="white">
-          <Text fontSize="2xl">{error || 'Driver data could not be loaded.'}</Text>
-          <Link to="/drivers">
-            <Button leftIcon={<ArrowLeft />} colorScheme="red" variant="outline">
-              Back to Drivers
-            </Button>
-          </Link>
-        </VStack>
-      </Container>
-    );
-  }
-
-  // Render the page with the combined, live data
   return (
-    <>
+    <Box>
+      {/* --- NEW LAYERED HERO SECTION --- */}
       <Box
         position="relative"
-        minH="30vh"
-        bgImage={`url(${teamCarImages[driverData.teamName] || "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13"})`}
-        bgSize="cover"
-        bgPosition="center"
-        _before={{
-          content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, bg: 'blackAlpha.600', zIndex: 1,
+        minH={{ base: '30vh', md: '50vh' }}
+        bgColor={teamColor}
+        overflow="hidden"
+        _after={{ // Abstract geometric pattern overlay
+          content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1,
+          bgImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3e%3cpath d='M-100 100L100 200L100 0L-100 100Z' fill-opacity='0.02' fill='%23fff'/%3e%3c/svg%3e")`,
+          backgroundSize: '300px',
         }}
       >
-        <Container maxW="1400px" position="relative" zIndex={2} h="30vh" display="flex" alignItems="center">
-          <div className={styles.heroContentLayout}>
-            <div className={styles.heroTitleBlock}>
-              <h1 className={styles.heroTitle}>
-                <span className={styles.firstName}>{driverData.firstName}</span>
-                <span className={styles.lastName}>{driverData.lastName}</span>
-              </h1>
-            </div>
-            <div className={styles.heroBioBlock}>
-              {(() => {
-                const twoLetter = countryCodeMap[driverData.countryCode?.toUpperCase()] || driverData.countryCode;
-                return twoLetter ? (
-                  <ReactCountryFlag
-                    countryCode={twoLetter.toLowerCase()}
-                    svg
-                    className={styles.flagImage}
-                    title={driverData.countryCode}
-                  />
-                ) : null;
-              })()}
-              <div className={styles.bioText}>
-                <span>Born: {new Date(driverData.dateOfBirth).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
+        <Image
+          src={teamCarImages[driverDetails.teamName]}
+          alt={`${driverDetails.teamName} car`}
+          position="absolute"
+          top="50%"
+          right={{ base: '-50%', md: '0' }}
+          transform="translateY(-50%)"
+          w={{ base: '100%', md: '70%' }}
+          zIndex={2}
+          opacity={0.4}
+        />
+        <Image
+          src={driverDetails.imageUrl || ''}
+          alt={driverDetails.fullName}
+          position="absolute"
+          bottom={0}
+          right={{ base: '0', md: '5%' }}
+          h={{ base: '80%', md: '90%' }}
+          zIndex={3}
+          objectFit="contain"
+          filter="drop-shadow(0 10px 15px rgba(0,0,0,0.4))"
+        />
+        <Container maxW="1400px" h="100%" position="relative" zIndex={4}>
+          <Flex direction="column" justify="center" h="100%" align="flex-start" color="white" textShadow="0 2px 10px rgba(0,0,0,0.5)">
+            <Heading as="h1" lineHeight={1}>
+              <Text fontFamily="signature" fontSize={{ base: '5xl', md: '8xl' }} fontWeight="normal" mb={{ base: -4, md: -8 }}>
+                {driverDetails.firstName}
+              </Text>
+              <Text fontFamily="heading" fontSize={{ base: '4xl', md: '7xl' }} fontWeight="bold" textTransform="uppercase">
+                {driverDetails.lastName}
+              </Text>
+            </Heading>
+            <HStack mt="md" spacing="md" bg="blackAlpha.300" p={2} borderRadius="md" backdropFilter="blur(5px)">
+              <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '32px', height: '24px' }} title={driverDetails.countryCode} />
+              <Text>{driverDetails.countryCode}</Text>
+              <Text>•</Text>
+              <Text>{driverDetails.teamName}</Text>
+              <Text>•</Text>
+              {/* Ensure driver number is displayed */}
+              <Text fontWeight="bold">#{driverDetails.number}</Text>
+            </HStack>
+          </Flex>
         </Container>
       </Box>
 
-      <Container maxWidth="1400px" py={6} mb={4}>
+      <KeyInfoBar driver={driverDetails} />
+
+      <Container maxW="1400px" py="xl">
         <Link to="/drivers">
-          <Button leftIcon={<ArrowLeft />} variant="outline" className={styles.backButton}>
-            Back to Drivers
-          </Button>
+          <Button leftIcon={<ArrowLeft />} variant="outline" mb="lg">Back to Drivers</Button>
         </Link>
-      </Container>
+        
+        {/* --- NEW STATS SECTIONS --- */}
+        <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap="xl">
+          <StatSection title="2025 Season" stats={driverDetails.currentSeasonStats} />
+          <StatSection title="Career" stats={driverDetails.careerStats} />
+        </Grid>
 
-      <Container maxWidth="1400px">
-        <KeyInfoBar driver={{
-          ...driverData,
-          team: driverData.teamName, // Pass team name for logo resolution
-        }} />
-      </Container>
-
-      <Container maxWidth="1400px" paddingX={['1rem', '2rem', '3rem']} paddingY="2rem">
-        <Flex direction={['column', 'column', 'row']} gap={6}>
-          <Box flex={1}>
-            <DashboardGrid driver={driverData} />
-            <Box mt={8} p={4} border="1px solid #eee" borderRadius="md" bg="gray.900">
-              <Text fontSize="xl" fontWeight="bold" color="white" mb={2}>Fastest Lap (Latest Race)</Text>
-              {fastestLapLoading ? (
-                <Text color="gray.400">Loading fastest lap...</Text>
-              ) : fastestLapError ? (
-                <Text color="red.400">{fastestLapError}</Text>
-              ) : fastestLap ? (
-                <VStack align="start" spacing={1} color="white">
-                  <Text>Lap: {fastestLap.lap_number}</Text>
-                  <Text>Time: {(fastestLap.time_ms / 1000).toFixed(3)}s</Text>
-                </VStack>
-              ) : (
-                <Text color="gray.400">No fastest lap found for this driver in the latest race.</Text>
-              )}
-            </Box>
+        {/* --- NEW GRAPH SECTION --- */}
+        <Box mt="xl">
+          <Heading size="md" fontFamily="heading" mb="md">Wins Per Season (Last 5 Years)</Heading>
+          <Box bg="bg-surface" p="lg" borderRadius="lg" border="1px solid" borderColor="border-primary">
+            <WinsPerSeasonChart data={driverDetails.winsPerSeason} teamColor={teamColor} />
           </Box>
-        </Flex>
+        </Box>
       </Container>
-    </>
+    </Box>
   );
 };
 

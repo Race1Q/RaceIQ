@@ -8,7 +8,6 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-
 import App from './App/App.tsx';
 import theme from './styles/theme';
 import Fonts from './styles/fonts';
@@ -49,7 +48,7 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: auth0Config.audience,
-        scope: 'openid profile email read:drivers read:standings read:constructors read:race-results read:races',
+        scope: 'openid profile email read:drivers read:standings read:constructors read:race-results read:races offline_access',
       }}
       useRefreshTokens={true}
       cacheLocation="localstorage"

@@ -87,3 +87,92 @@ export interface DashboardData {
   lastRaceFastestLap: FastestLap;
   headToHead: HeadToHead;
 }
+
+// --- Driver Details Page Types ---
+
+export interface Stat {
+  label: string;
+  value: string | number;
+}
+
+// NEW: This interface matches the exact nested shape of the backend API response
+export interface ApiDriverStatsResponse {
+  driver: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    driver_number: number;
+    country_code: string;
+    date_of_birth: string;
+    profile_image_url: string | null;
+    teamName: string; // Enriched on the backend
+  };
+  careerStats: {
+    wins: number;
+    podiums: number;
+    fastestLaps: number;
+    points: number;
+    grandsPrixEntered: number;
+    dnfs: number;
+    highestRaceFinish: number;
+    firstRace: { year: number; event: string };
+    winsPerSeason: Array<{ season: number; wins: number }>;
+  };
+  currentSeasonStats: {
+    wins: number;
+    podiums: number;
+    fastestLaps: number;
+    standing: string;
+  };
+}
+
+// API Response Shapes
+export interface DriverStatsResponse {
+  driver: {
+    id: number;
+    // UPDATED to snake_case to match the API response
+    first_name: string;
+    last_name: string;
+    country_code: string;
+    date_of_birth: string;
+    profile_image_url: string | null;
+  };
+  careerStats: {
+    wins: number;
+    podiums: number;
+    poles: number;
+    totalPoints: number;
+    fastestLaps: number;
+    racesCompleted: number;
+    firstRace?: { year: string; event: string };
+  };
+}
+
+export interface RecentFormItem {
+  position: number;
+  raceName: string;
+  countryCode: string;
+}
+
+// This existing interface is our target "flattened" shape for the UI components
+export interface DriverDetailsData {
+  id: number;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  countryCode: string;
+  dateOfBirth: string;
+  teamName: string;
+  imageUrl: string | null;
+  number: number; // Add this from the API
+  wins: number;
+  podiums: number;
+  points: number;
+  championshipStanding: string;
+  firstRace: { year: string; event: string };
+  currentSeasonStats: Stat[];
+  careerStats: Stat[];
+  winsPerSeason: Array<{ season: string; wins: number }>;
+  funFact: string; // For the profile section
+  recentForm: RecentFormItem[];
+}

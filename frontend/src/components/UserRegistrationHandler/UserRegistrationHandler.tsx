@@ -1,56 +1,32 @@
 // frontend/src/components/UserRegistrationHandler/UserRegistrationHandler.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserRegistration } from '../../hooks/useUserRegistration';
-import { useToast } from '@chakra-ui/react';
-import F1LoadingSpinner from '../F1LoadingSpinner/F1LoadingSpinner';
 
 interface UserRegistrationHandlerProps {
   children: React.ReactNode;
 }
 
 const UserRegistrationHandler: React.FC<UserRegistrationHandlerProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, user } = useAuth0();
+  const { isAuthenticated, isLoading } = useAuth0();
   const { ensureUserExists } = useUserRegistration();
-  const toast = useToast();
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [hasRegistered, setHasRegistered] = useState(false);
+  const [isRegistrationComplete, setIsRegistrationComplete] = useState(false);
+  const registrationAttempted = useRef(false); // Flag to prevent infinite loops
 
   useEffect(() => {
     const handleUserRegistration = async () => {
-      if (isAuthenticated && user && !isRegistering && !hasRegistered) {
+      // Only run if the user is authenticated and we haven't tried yet
+      if (isAuthenticated && !registrationAttempted.current) {
+        registrationAttempted.current = true; // Mark that we are trying
+        console.log('Ensuring user exists in database...');
         try {
-          setIsRegistering(true);
-          console.log('Ensuring user exists in database...');
-          
-          const result = await ensureUserExists();
-          
-          if (result.wasCreated) {
-            console.log('New user created in database');
-            toast({
-              title: 'Welcome to RaceIQ!',
-              description: 'Your account has been set up successfully.',
-              status: 'success',
-              duration: 3000,
-              isClosable: true,
-            });
-          } else {
-            console.log('Existing user found in database');
-          }
-          
-          setHasRegistered(true);
+          await ensureUserExists();
+          console.log('Existing user found in database');
         } catch (error) {
           console.error('Failed to ensure user exists:', error);
-          toast({
-            title: 'Registration Error',
-            description: 'There was an issue setting up your account. Please try again.',
-            status: 'error',
-            duration: 5000,
-            isClosable: true,
-          });
         } finally {
-          setIsRegistering(false);
+          setIsRegistrationComplete(true); // Allow the app to render
         }
       }
     };
@@ -58,14 +34,14 @@ const UserRegistrationHandler: React.FC<UserRegistrationHandlerProps> = ({ child
     if (!isLoading) {
       handleUserRegistration();
     }
-  }, [isAuthenticated, user, isLoading, ensureUserExists, toast, isRegistering, hasRegistered]);
+  }, [isAuthenticated, isLoading, ensureUserExists]);
 
-  // Show loading spinner while registering
-  if (isRegistering) {
-    return <F1LoadingSpinner text="Setting up your account..." />;
+  // Don't render the rest of the app until the user is authenticated
+  // and the registration check is complete.
+  if (isAuthenticated && !isRegistrationComplete) {
+    return null; // Or a loading spinner
   }
 
-  // Render children normally
   return <>{children}</>;
 };
 
