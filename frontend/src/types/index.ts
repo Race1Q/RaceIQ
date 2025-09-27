@@ -90,6 +90,11 @@ export interface DashboardData {
 
 // --- Driver Details Page Types ---
 
+export interface Stat {
+  label: string;
+  value: string | number;
+}
+
 // API Response Shapes
 export interface DriverStatsResponse {
   driver: {
@@ -133,8 +138,12 @@ export interface DriverDetailsData {
   fastestLaps: number;
   points: number;
   championshipStanding: string;
-  winsPerSeason: Array<{ season: string; wins: number }>; // For the chart
+  firstRace: { year: string; event: string };
+  // NEW: Add specific stat objects
+  currentSeasonStats: Stat[];
+  careerStats: Stat[];
+  // Ensure winsPerSeason is defined
+  winsPerSeason: Array<{ season: string; wins: number }>;
   funFact: string; // For the profile section
   recentForm: RecentFormItem[];
-  firstRace: { year: string; event: string };
 }

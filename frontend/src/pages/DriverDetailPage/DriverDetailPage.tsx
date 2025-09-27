@@ -1,86 +1,82 @@
+// frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, VStack, Button, Alert, AlertIcon, AlertTitle, Heading, Flex } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Flex, Grid, HStack, Image } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
-import DashboardGrid from '../../components/DashboardGrid/DashboardGrid';
 import KeyInfoBar from '../../components/KeyInfoBar/KeyInfoBar';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import ReactCountryFlag from 'react-country-flag';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
 import { teamCarImages } from '../../lib/teamCars';
-
-const FallbackBanner = () => (
-  <Container maxW="1400px" pt={4}>
-    <Alert status="warning" variant="solid" bg="brand.red" color="white" borderRadius="md">
-      <AlertIcon as={AlertTriangle} color="white" />
-      <AlertTitle fontFamily="heading" fontSize="md">Live Data Unavailable. Showing cached data.</AlertTitle>
-    </Alert>
-  </Container>
-);
+import { teamColors } from '../../lib/teamColors';
+import StatSection from '../../components/DriverDetails/StatSection';
+import WinsPerSeasonChart from '../../components/WinsPerSeasonChart/WinsPerSeasonChart';
 
 const DriverDetailPage: React.FC = () => {
   const { driverId } = useParams<{ driverId: string }>();
-  const { driverDetails, loading, error, isFallback } = useDriverDetails(driverId);
+  const { driverDetails, loading, error } = useDriverDetails(driverId);
 
   if (loading) return <F1LoadingSpinner text="Loading Driver Details..." />;
-  
-  if (error && !driverDetails) {
-    return (
-      <Container centerContent>
-        <VStack spacing={4} mt={10}>
-          <Text fontSize="2xl" color="text-primary">{error}</Text>
-          <Link to="/drivers">
-            <Button leftIcon={<ArrowLeft />} colorScheme="red" variant="outline">Back to Drivers</Button>
-          </Link>
-        </VStack>
-      </Container>
-    );
-  }
-  
-  if (!driverDetails) return <Text p="lg">Driver not found.</Text>;
+  if (error || !driverDetails) return <Text p="lg">Error: {error || 'Driver data could not be loaded.'}</Text>;
 
+  const teamColor = teamColors[driverDetails.teamName] || '#333333';
   const twoLetterCountryCode = countryCodeMap[driverDetails.countryCode?.toUpperCase()] || driverDetails.countryCode;
 
   return (
     <Box>
-      {isFallback && <FallbackBanner />}
+      {/* --- NEW LAYERED HERO SECTION --- */}
       <Box
         position="relative"
-        minH="40vh"
-        bgImage={`url(${teamCarImages[driverDetails.teamName] || "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13"})`}
-        bgSize="cover"
-        bgPosition="center 80%"
-        _before={{
-          content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          bgGradient: 'linear(to-t, blackAlpha.800 10%, blackAlpha.600 50%, blackAlpha.400 100%)',
-          zIndex: 1,
+        minH={{ base: '30vh', md: '50vh' }}
+        bgColor={teamColor}
+        overflow="hidden"
+        _after={{ // Abstract geometric pattern overlay
+          content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1,
+          bgImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3e%3cpath d='M-100 100L100 200L100 0L-100 100Z' fill-opacity='0.02' fill='%23fff'/%3e%3c/svg%3e")`,
+          backgroundSize: '300px',
         }}
       >
-        <Container maxW="1400px" h="40vh" position="relative" zIndex={2} display="flex" alignItems="flex-end">
-          <Flex justify="space-between" align="flex-end" w="100%" pb="xl">
-            <VStack align="flex-start" spacing={0}>
-              <Heading as="h1" lineHeight={1} color="white" textShadow="0 2px 10px rgba(0,0,0,0.5)">
-                <Text fontFamily="signature" fontSize={{ base: '5xl', md: '7xl' }} fontWeight="normal" mb={{ base: -4, md: -8 }}>
-                  {driverDetails.firstName}
-                </Text>
-                <Text fontFamily="heading" fontSize={{ base: '4xl', md: '6xl' }} fontWeight="bold" textTransform="uppercase">
-                  {driverDetails.lastName}
-                </Text>
-              </Heading>
-            </VStack>
-            <Flex
-              align="center"
-              gap="md"
-              color="whiteAlpha.800"
-              bg="blackAlpha.400"
-              p="sm"
-              borderRadius="md"
-              backdropFilter="blur(5px)"
-            >
-              <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '40px', height: '30px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }} title={driverDetails.countryCode} />
-              <Text fontSize="sm">Born: {new Date(driverDetails.dateOfBirth).toLocaleDateString()}</Text>
-            </Flex>
+        <Image
+          src={teamCarImages[driverDetails.teamName]}
+          alt={`${driverDetails.teamName} car`}
+          position="absolute"
+          top="50%"
+          right={{ base: '-50%', md: '0' }}
+          transform="translateY(-50%)"
+          w={{ base: '100%', md: '70%' }}
+          zIndex={2}
+          opacity={0.4}
+        />
+        <Image
+          src={driverDetails.imageUrl || ''}
+          alt={driverDetails.fullName}
+          position="absolute"
+          bottom={0}
+          right={{ base: '0', md: '5%' }}
+          h={{ base: '80%', md: '90%' }}
+          zIndex={3}
+          objectFit="contain"
+          filter="drop-shadow(0 10px 15px rgba(0,0,0,0.4))"
+        />
+        <Container maxW="1400px" h="100%" position="relative" zIndex={4}>
+          <Flex direction="column" justify="center" h="100%" align="flex-start" color="white" textShadow="0 2px 10px rgba(0,0,0,0.5)">
+            <Heading as="h1" lineHeight={1}>
+              <Text fontFamily="signature" fontSize={{ base: '5xl', md: '8xl' }} fontWeight="normal" mb={{ base: -4, md: -8 }}>
+                {driverDetails.firstName}
+              </Text>
+              <Text fontFamily="heading" fontSize={{ base: '4xl', md: '7xl' }} fontWeight="bold" textTransform="uppercase">
+                {driverDetails.lastName}
+              </Text>
+            </Heading>
+            <HStack mt="md" spacing="md" bg="blackAlpha.300" p={2} borderRadius="md" backdropFilter="blur(5px)">
+              <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '32px', height: '24px' }} title={driverDetails.countryCode} />
+              <Text>{driverDetails.countryCode}</Text>
+              <Text>•</Text>
+              <Text>{driverDetails.teamName}</Text>
+              <Text>•</Text>
+              <Text fontWeight="bold">#{driverDetails.id}</Text>
+            </HStack>
           </Flex>
         </Container>
       </Box>
@@ -89,14 +85,21 @@ const DriverDetailPage: React.FC = () => {
 
       <Container maxW="1400px" py="xl">
         <Link to="/drivers">
-          <Button leftIcon={<ArrowLeft />} variant="outline" mb="lg">
-            Back to Drivers
-          </Button>
+          <Button leftIcon={<ArrowLeft />} variant="outline" mb="lg">Back to Drivers</Button>
         </Link>
-        <DashboardGrid driver={driverDetails} />
-        <Box mt={8} p="lg" border="1px solid" borderColor="border-primary" borderRadius="lg" bg="bg-surface">
-          <Heading size="md" mb={2}>Fastest Lap (Latest Race)</Heading>
-          <Text color="text-muted">Feature coming soon. API endpoint required.</Text>
+        
+        {/* --- NEW STATS SECTIONS --- */}
+        <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap="xl">
+          <StatSection title="2025 Season" stats={driverDetails.currentSeasonStats} />
+          <StatSection title="Career" stats={driverDetails.careerStats} />
+        </Grid>
+
+        {/* --- NEW GRAPH SECTION --- */}
+        <Box mt="xl">
+          <Heading size="md" fontFamily="heading" mb="md">Wins Per Season (Last 5 Years)</Heading>
+          <Box bg="bg-surface" p="lg" borderRadius="lg" border="1px solid" borderColor="border-primary">
+            <WinsPerSeasonChart data={driverDetails.winsPerSeason} teamColor={teamColor} />
+          </Box>
         </Box>
       </Container>
     </Box>

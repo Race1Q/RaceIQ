@@ -15,14 +15,29 @@ export const fallbackDriverDetails: DriverDetailsData = {
   fastestLaps: 5,
   points: 550,
   championshipStanding: "P1",
+  firstRace: { year: "2023", event: "Bahrain GP" },
   winsPerSeason: [
-    { season: "2024", wins: 7 },
+    { season: "2021", wins: 6 },
+    { season: "2022", wins: 5 },
+    { season: "2023", wins: 7 },
+    { season: "2024", wins: 9 },
     { season: "2025", wins: 2 },
   ],
-  funFact: "Oscar is the first driver since Lewis Hamilton to win the F3 and F2 championships in consecutive rookie seasons.",
-  recentForm: [
-    { position: 3, raceName: "Italian GP", countryCode: "ITA" },
-    { position: 1, raceName: "Dutch GP", countryCode: "NLD" },
+  // NEW: Add structured stat objects
+  currentSeasonStats: [
+    { label: "Wins", value: 2 },
+    { label: "Podiums", value: 5 },
+    { label: "Fastest Laps", value: 1 },
   ],
-  firstRace: { year: "2023", event: "Bahrain GP" },
+  careerStats: [
+    { label: "Wins", value: 9 },
+    { label: "Podiums", value: 24 },
+    { label: "Fastest Laps", value: 5 },
+    { label: "Grands Prix Entered", value: 58 },
+    { label: "DNFs", value: 3 },
+    { label: "Highest Finish", value: "1st" },
+  ],
+  // Other properties can be added as needed
+  funFact: "Oscar is the first driver since Lewis Hamilton to win the F3 and F2 championships in consecutive rookie seasons.",
+  recentForm: [],
 };

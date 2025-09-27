@@ -1,29 +1,35 @@
-// src/drivers/drivers.service.ts
+// backend/src/drivers/drivers.service.ts
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Driver } from './drivers.entity';
-import { RaceResult } from '../race-results/race-results.entity'; // 1. IMPORT
-import {
-  CareerStatsDto,
-  DriverStatsResponseDto,
-} from './dto/driver-stats.dto';
+import { RaceResult } from '../race-results/race-results.entity';
+import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
+import { DriverCareerStatsMaterialized } from './driver-career-stats-materialized.entity';
+import { WinsPerSeasonMaterialized } from './wins-per-season-materialized.entity';
+import { DriverStatsResponseDto } from './dto/driver-stats.dto';
 
 // Define the shape of the data we will return
 interface RecentFormResult {
   position: number;
   raceName: string;
   countryCode: string;
-} // 2. IMPORT
+}
 
 @Injectable()
 export class DriversService {
   constructor(
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
-    @InjectRepository(RaceResult) // 3. INJECT
+    @InjectRepository(RaceResult)
     private readonly raceResultRepository: Repository<RaceResult>,
+    @InjectRepository(DriverCareerStatsMaterialized)
+    private readonly careerStatsViewRepo: Repository<DriverCareerStatsMaterialized>,
+    @InjectRepository(DriverStandingMaterialized)
+    private readonly standingsViewRepo: Repository<DriverStandingMaterialized>,
+    @InjectRepository(WinsPerSeasonMaterialized)
+    private readonly winsPerSeasonViewRepo: Repository<WinsPerSeasonMaterialized>,
   ) {}
 
   async findAll(): Promise<Driver[]> {
@@ -41,42 +47,27 @@ export class DriversService {
     return driver;
   }
 
-  // Career stats - Enhanced to include team information
   async getDriverCareerStats(driverId: number): Promise<DriverStatsResponseDto> {
-    const driver = await this.findOne(driverId);
+    const currentYear = new Date().getFullYear();
 
-    // Get career stats
-    const statsQuery = this.raceResultRepository
-      .createQueryBuilder('rr')
-      .select('SUM(CASE WHEN rr.position = 1 THEN 1 ELSE 0 END)::int', 'wins')
-      .addSelect(
-        'SUM(CASE WHEN rr.position <= 3 THEN 1 ELSE 0 END)::int',
-        'podiums',
-      )
-      .addSelect('SUM(CASE WHEN rr.grid = 1 THEN 1 ELSE 0 END)::int', 'poles')
-      .addSelect('SUM(rr.points)', 'totalPoints')
-      .addSelect(
-        'SUM(CASE WHEN rr.fastest_lap_rank = 1 THEN 1 ELSE 0 END)::int',
-        'fastestLaps',
-      )
-      .addSelect('COUNT(rr.id)::int', 'racesCompleted')
-      .where('rr.driver_id = :driverId', { driverId });
+    const [driver, careerStats, currentSeason, winsPerSeason, firstRace] = await Promise.all([
+      this.findOne(driverId),
+      this.careerStatsViewRepo.findOne({ where: { driverId } }),
+      this.standingsViewRepo.findOne({ where: { driverId, seasonYear: currentYear } }),
+      this.winsPerSeasonViewRepo.find({ 
+        where: { driverId }, 
+        order: { seasonYear: 'DESC' }, 
+        take: 5 
+      }),
+      this.raceResultRepository.findOne({ 
+        where: { driver: { id: driverId } }, 
+        relations: ['session.race'], 
+        order: { session: { race: { date: 'ASC' } } } 
+      }),
+    ]);
 
-    const rawStats = await statsQuery.getRawOne();
-    
-    const careerStats: CareerStatsDto = {
-      wins: 0,
-      podiums: 0,
-      poles: 0,
-      totalPoints: 0,
-      fastestLaps: 0,
-      racesCompleted: 0,
-    };
-
-    if (rawStats) {
-      for (const key in careerStats) {
-        careerStats[key] = parseFloat(rawStats[key]) || 0;
-      }
+    if (!driver || !careerStats) {
+      throw new NotFoundException(`Stats not found for driver ID ${driverId}`);
     }
 
     // Try to get the most recent team name for this driver
@@ -100,7 +91,29 @@ export class DriversService {
 
     return {
       driver: enrichedDriver,
-      careerStats,
+      careerStats: {
+        wins: careerStats.totalWins,
+        podiums: careerStats.totalPodiums,
+        fastestLaps: careerStats.totalFastestLaps,
+        points: Number(careerStats.totalPoints),
+        grandsPrixEntered: careerStats.grandsPrixEntered,
+        dnfs: careerStats.dnfs,
+        highestRaceFinish: careerStats.highestRaceFinish,
+        firstRace: {
+          year: firstRace ? new Date(firstRace.session.race.date).getFullYear() : 0,
+          event: firstRace ? firstRace.session.race.name : 'N/A',
+        },
+        winsPerSeason: winsPerSeason.map(w => ({ 
+          season: w.seasonYear, 
+          wins: w.wins 
+        })),
+      },
+      currentSeasonStats: {
+        wins: currentSeason?.seasonWins || 0,
+        podiums: currentSeason?.seasonPodiums || 0,
+        fastestLaps: 0, // This is not in the standings view, placeholder for now
+        standing: `P${currentSeason?.driverId ? currentSeason.driverId : 'N/A'}`,
+      },
     };
   }
 
@@ -193,7 +206,4 @@ export class DriversService {
 
     return rawResults;
   }
-}  
-
-
-
+}
