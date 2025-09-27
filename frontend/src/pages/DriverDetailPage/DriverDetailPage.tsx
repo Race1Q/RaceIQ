@@ -75,7 +75,8 @@ const DriverDetailPage: React.FC = () => {
               <Text>•</Text>
               <Text>{driverDetails.teamName}</Text>
               <Text>•</Text>
-              <Text fontWeight="bold">#{driverDetails.id}</Text>
+              {/* Ensure driver number is displayed */}
+              <Text fontWeight="bold">#{driverDetails.number}</Text>
             </HStack>
           </Flex>
         </Container>

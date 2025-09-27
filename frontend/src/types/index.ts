@@ -95,6 +95,37 @@ export interface Stat {
   value: string | number;
 }
 
+// NEW: This interface matches the exact nested shape of the backend API response
+export interface ApiDriverStatsResponse {
+  driver: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    driver_number: number;
+    country_code: string;
+    date_of_birth: string;
+    profile_image_url: string | null;
+    teamName: string; // Enriched on the backend
+  };
+  careerStats: {
+    wins: number;
+    podiums: number;
+    fastestLaps: number;
+    points: number;
+    grandsPrixEntered: number;
+    dnfs: number;
+    highestRaceFinish: number;
+    firstRace: { year: number; event: string };
+    winsPerSeason: Array<{ season: number; wins: number }>;
+  };
+  currentSeasonStats: {
+    wins: number;
+    podiums: number;
+    fastestLaps: number;
+    standing: string;
+  };
+}
+
 // API Response Shapes
 export interface DriverStatsResponse {
   driver: {
@@ -123,7 +154,7 @@ export interface RecentFormItem {
   countryCode: string;
 }
 
-// Final, combined data object the component will use
+// This existing interface is our target "flattened" shape for the UI components
 export interface DriverDetailsData {
   id: number;
   fullName: string;
@@ -133,16 +164,14 @@ export interface DriverDetailsData {
   dateOfBirth: string;
   teamName: string;
   imageUrl: string | null;
+  number: number; // Add this from the API
   wins: number;
   podiums: number;
-  fastestLaps: number;
   points: number;
   championshipStanding: string;
   firstRace: { year: string; event: string };
-  // NEW: Add specific stat objects
   currentSeasonStats: Stat[];
   careerStats: Stat[];
-  // Ensure winsPerSeason is defined
   winsPerSeason: Array<{ season: string; wins: number }>;
   funFact: string; // For the profile section
   recentForm: RecentFormItem[];
