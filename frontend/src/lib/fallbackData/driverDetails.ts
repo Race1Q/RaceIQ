@@ -1,5 +1,5 @@
 // frontend/src/lib/fallbackData/driverDetails.ts
-import { DriverDetailsData } from "../../types";
+import type { DriverDetailsData } from "../../types";
 
 export const fallbackDriverDetails: DriverDetailsData = {
   id: 609,
@@ -24,4 +24,5 @@ export const fallbackDriverDetails: DriverDetailsData = {
     { position: 3, raceName: "Italian GP", countryCode: "ITA" },
     { position: 1, raceName: "Dutch GP", countryCode: "NLD" },
   ],
+  firstRace: { year: "2023", event: "Bahrain GP" },
 };

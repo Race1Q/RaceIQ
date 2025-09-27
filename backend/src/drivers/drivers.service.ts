@@ -41,10 +41,11 @@ export class DriversService {
     return driver;
   }
 
-  // Career stats
+  // Career stats - Enhanced to include team information
   async getDriverCareerStats(driverId: number): Promise<DriverStatsResponseDto> {
     const driver = await this.findOne(driverId);
 
+    // Get career stats
     const statsQuery = this.raceResultRepository
       .createQueryBuilder('rr')
       .select('SUM(CASE WHEN rr.position = 1 THEN 1 ELSE 0 END)::int', 'wins')
@@ -78,8 +79,27 @@ export class DriversService {
       }
     }
 
+    // Try to get the most recent team name for this driver
+    const mostRecentTeamQuery = this.raceResultRepository
+      .createQueryBuilder('rr')
+      .select('c.name', 'teamName')
+      .innerJoin('rr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('rr.team', 'c')
+      .where('rr.driver_id = :driverId', { driverId })
+      .orderBy('r.date', 'DESC')
+      .limit(1);
+
+    const teamResult = await mostRecentTeamQuery.getRawOne();
+    
+    // Enrich the driver object with team information
+    const enrichedDriver = {
+      ...driver,
+      teamName: teamResult?.teamName || 'N/A',
+    };
+
     return {
-      driver,
+      driver: enrichedDriver,
       careerStats,
     };
   }

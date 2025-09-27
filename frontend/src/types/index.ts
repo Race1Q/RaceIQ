@@ -94,11 +94,12 @@ export interface DashboardData {
 export interface DriverStatsResponse {
   driver: {
     id: number;
-    firstName: string;
-    lastName: string;
-    countryCode: string;
-    dateOfBirth: string;
-    profileImageUrl: string | null;
+    // UPDATED to snake_case to match the API response
+    first_name: string;
+    last_name: string;
+    country_code: string;
+    date_of_birth: string;
+    profile_image_url: string | null;
   };
   careerStats: {
     wins: number;
@@ -107,6 +108,7 @@ export interface DriverStatsResponse {
     totalPoints: number;
     fastestLaps: number;
     racesCompleted: number;
+    firstRace?: { year: string; event: string };
   };
 }
 
@@ -134,4 +136,5 @@ export interface DriverDetailsData {
   winsPerSeason: Array<{ season: string; wins: number }>; // For the chart
   funFact: string; // For the profile section
   recentForm: RecentFormItem[];
+  firstRace: { year: string; event: string };
 }

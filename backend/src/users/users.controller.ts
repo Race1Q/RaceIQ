@@ -1,7 +1,10 @@
 import { Controller, Get, Post, Body, UseGuards, Req, Patch } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { User } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -54,26 +57,21 @@ export class UsersController {
   }
 
   // Endpoint to ensure user exists in database (called after Auth0 signup)
+  // Updated to use the new ensureExists method as specified in the prompt
   @Post('ensure-exists')
-  @UseGuards(JwtAuthGuard)
-  async ensureUserExists(@Req() req: any) {
-    try {
-      const auth0Sub = req.user.sub;
-      const email = req.user.email; // Get email from JWT payload
-      
-      // Find or create user
-      const user = await this.usersService.findOrCreateByAuth0Sub(auth0Sub, email);
-      
-      return {
-        message: 'User ensured successfully',
-        user,
-      };
-    } catch (error) {
-      return {
-        message: 'Error ensuring user exists',
-        error: error.message,
-      };
-    }
+  @UseGuards(AuthGuard('jwt')) // This protects the endpoint
+  async ensureUserExists(@Req() req): Promise<User> {
+    const auth0User = req.user; // Auth0 user profile from the token
+    
+    // UPDATED: Read the email from the correct namespaced claim
+    const email = auth0User['https://api.raceiq.dev/email'];
+    
+    const createUserDto: CreateUserDto = {
+      auth0_sub: auth0User.sub,
+      email: email, // Pass the correctly retrieved email
+    };
+
+    return this.usersService.ensureExists(createUserDto);
   }
 
 }

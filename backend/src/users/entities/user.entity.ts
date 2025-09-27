@@ -1,12 +1,50 @@
-// src/users/entities/user.entity.ts
+// backend/src/users/entities/user.entity.ts
 
+import { Entity, PrimaryColumn, Column, BeforeInsert, ManyToOne, JoinColumn } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
+import { ConstructorEntity } from '../../constructors/constructors.entity';
+import { Driver } from '../../drivers/drivers.entity';
+
+// This decorator is crucial for TypeORM to recognize this class as a table.
+@Entity({ name: 'users' })
 export class User {
-    id?: number; // Supabase auto-generated ID
-    auth0_sub: string; // Primary key
-    username: string | null;
-    email: string | null;
-    favorite_constructor_id: number | null;
-    favorite_driver_id: number | null;
-    role: string;
-    created_at: Date;
+  @PrimaryColumn('uuid')
+  id: string;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
+
+  @Column({ type: 'text', unique: true })
+  auth0_sub: string;
+
+  @Column({ type: 'text', unique: true, nullable: true })
+  username: string;
+
+  @Column({ type: 'text', nullable: true })
+  email: string;
+
+  @Column({ type: 'bigint', nullable: true })
+  favorite_constructor_id: number;
+
+  @Column({ type: 'bigint', nullable: true })
+  favorite_driver_id: number;
+
+  @Column({ type: 'text', default: 'dark' })
+  theme_preference: 'dark' | 'light';
+
+  @Column({ type: 'timestamp with time zone', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+
+  // Relationships (optional but good practice)
+  @ManyToOne(() => ConstructorEntity)
+  @JoinColumn({ name: 'favorite_constructor_id' })
+  favoriteConstructor: ConstructorEntity;
+
+  @ManyToOne(() => Driver)
+  @JoinColumn({ name: 'favorite_driver_id' })
+  favoriteDriver: Driver;
 }
