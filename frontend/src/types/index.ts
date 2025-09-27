@@ -87,3 +87,51 @@ export interface DashboardData {
   lastRaceFastestLap: FastestLap;
   headToHead: HeadToHead;
 }
+
+// --- Driver Details Page Types ---
+
+// API Response Shapes
+export interface DriverStatsResponse {
+  driver: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    countryCode: string;
+    dateOfBirth: string;
+    profileImageUrl: string | null;
+  };
+  careerStats: {
+    wins: number;
+    podiums: number;
+    poles: number;
+    totalPoints: number;
+    fastestLaps: number;
+    racesCompleted: number;
+  };
+}
+
+export interface RecentFormItem {
+  position: number;
+  raceName: string;
+  countryCode: string;
+}
+
+// Final, combined data object the component will use
+export interface DriverDetailsData {
+  id: number;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  countryCode: string;
+  dateOfBirth: string;
+  teamName: string;
+  imageUrl: string | null;
+  wins: number;
+  podiums: number;
+  fastestLaps: number;
+  points: number;
+  championshipStanding: string;
+  winsPerSeason: Array<{ season: string; wins: number }>; // For the chart
+  funFact: string; // For the profile section
+  recentForm: RecentFormItem[];
+}
