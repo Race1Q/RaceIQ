@@ -1,6 +1,6 @@
 // src/pages/RaceDetailPage/RaceDetailPage.tsx
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, CheckboxGroup, Stack, SimpleGrid, Table,
@@ -12,6 +12,7 @@ import type { Race } from '../../types/races';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import CircuitTrack3D from '../RacesPage/components/CircuitTrack3D';
+import { teamColors } from '../../lib/teamColors';
 
 const MotionBox = motion.create(Box);
 
@@ -184,6 +185,10 @@ type RaceSummary = {
     time_ms?: number | null;
   } | null;
   event_count: number;
+  events?: {
+    redFlags?: number;
+    yellowFlags?: number;
+  };
 };
 
 const fetchRaceSummary = async (raceId: string | number): Promise<RaceSummary> => {
@@ -408,7 +413,7 @@ const RaceDetailPage: React.FC = () => {
             <Tab>Summary</Tab>
             <Tab>Race</Tab>
             <Tab>Qualifying</Tab>
-            <Tab>Quali → Race</Tab>
+            <Tab>Qualifying → Race</Tab>
             <Tab>Analysis</Tab>
             <Tab>Lap Times / Pit Stops</Tab>
           </TabList>
@@ -419,68 +424,285 @@ const RaceDetailPage: React.FC = () => {
               <VStack align="stretch" spacing={4}>
                 <Text fontSize="xl" fontWeight="bold" color="text-primary">Summary</Text>
 
-                {/* overlay controls placeholders */}
-                <HStack wrap="wrap" spacing={3}>
-                  <Badge>Flags</Badge>
-                  <Badge>Sectors</Badge>
-                  <Badge>Overtakes</Badge>
-                  <HStack>
-                    <Text>Lap:</Text>
-                    <Select
-                      size="sm"
-                      value={lapFilter === 'all' ? 'all' : String(lapFilter)}
-                      onChange={(e) => setLapFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                    >
-                      <option value="all">All</option>
-                      {uniq(laps.map(l => l.lap_number)).map(n => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </Select>
-                  </HStack>
-                </HStack>
-
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                  {/* Podium Visual (with actual podium steps) */}
                   <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
-                    <Text fontWeight="bold">Podium</Text>
-                    <Divider my={2}/>
-                    {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.podium?.length ? (
-                      summary.podium.map((r, i) => (
-                        <HStack key={i} justify="space-between">
-                          <Text>#{i + 1} {r.driver_code ?? r.driver_name ?? r.driver_id}</Text>
-                          <Text>{r.constructor_name ?? r.constructor_id}</Text>
-                        </HStack>
-                      ))
-                    ) : <Text>—</Text>}
+                    <Text fontWeight="bold" mb={2}>Podium</Text>
+                    <Divider my={2} />
+
+                    {summaryLoading ? (
+                      <Spinner size="sm" />
+                    ) : summaryError ? (
+                      <Text color="red.500">{summaryError}</Text>
+                    ) : summary?.podium?.length ? (
+                      <Box position="relative" minH="280px">
+                        {/* Podium base shadow */}
+                        <Box
+                          position="absolute"
+                          bottom="18px"
+                          left="50%"
+                          transform="translateX(-50%)"
+                          w="90%"
+                          h="10px"
+                          borderRadius="full"
+                          bg="blackAlpha.500"
+                          filter="blur(6px)"
+                          opacity={0.3}
+                        />
+
+                        {/* Podium steps */}
+                        <Flex align="flex-end" justify="center" gap={6} pt={6} pb={6}>
+                          {/* 2nd place (left, medium height) */}
+                          <Box textAlign="center" w="30%">
+                            {/* avatar sits on top via translateY */}
+                            <Box mb={-6} transform="translateY(-34px)">
+                              <Box
+                                mx="auto"
+                                w="70px"
+                                h="70px"
+                                borderRadius="full"
+                                bg="gray.200"
+                                overflow="hidden"
+                                border="2px solid"
+                                borderColor="brand.red"
+                              >
+                                <img
+                                  src={`https://raceiq.app/images/drivers/${summary.podium[1]?.driver_id ?? 'placeholder'}.jpg`}
+                                  alt={summary.podium[1]?.driver_name ?? 'Driver'}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
+                                />
+                              </Box>
+                            </Box>
+
+                            {/* step block */}
+                            <Box
+                              mx="auto"
+                              w="100%"
+                              h="120px"
+                              bg="gray.700"
+                              borderRadius="md"
+                              border="1px solid"
+                              borderColor="gray.600"
+                              position="relative"
+                            >
+                              {/* face label */}
+                              <Box
+                                position="absolute"
+                                top={2}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                px={3}
+                                py={1}
+                                bg="gray.300"
+                                borderRadius="md"
+                                fontWeight="bold"
+                                fontSize="sm"
+                                color="gray.800"
+                                minW="32px"
+                              >
+                                2
+                              </Box>
+                              {/* name on riser */}
+                              <Text
+                                position="absolute"
+                                bottom={3}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                fontWeight="bold"
+                                fontSize="md"
+                                color="text-primary"
+                                noOfLines={1}
+                                maxW="90%"
+                              >
+                                {summary.podium[1]?.driver_name ?? summary.podium[1]?.driver_code ?? summary.podium[1]?.driver_id}
+                              </Text>
+                            </Box>
+                          </Box>
+
+                          {/* 1st place (center, tallest) */}
+                          <Box textAlign="center" w="30%">
+                            <Box mb={-8} transform="translateY(-46px)">
+                              <Box
+                                mx="auto"
+                                w="84px"
+                                h="84px"
+                                borderRadius="full"
+                                bg="yellow.200"
+                                overflow="hidden"
+                                border="3px solid"
+                                borderColor="brand.red"
+                              >
+                                <img
+                                  src={`https://raceiq.app/images/drivers/${summary.podium[0]?.driver_id ?? 'placeholder'}.jpg`}
+                                  alt={summary.podium[0]?.driver_name ?? 'Driver'}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
+                                />
+                              </Box>
+                            </Box>
+
+                            <Box
+                              mx="auto"
+                              w="100%"
+                              h="160px"
+                              bg="yellow.400"
+                              borderRadius="md"
+                              border="1px solid"
+                              borderColor="yellow.500"
+                              position="relative"
+                            >
+                              <Box
+                                position="absolute"
+                                top={2}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                px={3}
+                                py={1}
+                                bg="yellow.300"
+                                borderRadius="md"
+                                fontWeight="bold"
+                                fontSize="sm"
+                                color="gray.900"
+                                minW="32px"
+                              >
+                                1
+                              </Box>
+                              <Text
+                                position="absolute"
+                                bottom={3}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                fontWeight="bold"
+                                fontSize="lg"
+                                color="brand.red"
+                                noOfLines={1}
+                                maxW="90%"
+                              >
+                                {summary.podium[0]?.driver_name ?? summary.podium[0]?.driver_code ?? summary.podium[0]?.driver_id}
+                              </Text>
+                            </Box>
+                          </Box>
+
+                          {/* 3rd place (right, shortest) */}
+                          <Box textAlign="center" w="30%">
+                            <Box mb={-4} transform="translateY(-24px)">
+                              <Box
+                                mx="auto"
+                                w="70px"
+                                h="70px"
+                                borderRadius="full"
+                                bg="orange.200"
+                                overflow="hidden"
+                                border="2px solid"
+                                borderColor="brand.red"
+                              >
+                                <img
+                                  src={`https://raceiq.app/images/drivers/${summary.podium[2]?.driver_id ?? 'placeholder'}.jpg`}
+                                  alt={summary.podium[2]?.driver_name ?? 'Driver'}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
+                                />
+                              </Box>
+                            </Box>
+
+                            <Box
+                              mx="auto"
+                              w="100%"
+                              h="100px"
+                              bg="orange.400"
+                              borderRadius="md"
+                              border="1px solid"
+                              borderColor="orange.500"
+                              position="relative"
+                            >
+                              <Box
+                                position="absolute"
+                                top={2}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                px={3}
+                                py={1}
+                                bg="orange.300"
+                                borderRadius="md"
+                                fontWeight="bold"
+                                fontSize="sm"
+                                color="gray.900"
+                                minW="32px"
+                              >
+                                3
+                              </Box>
+                              <Text
+                                position="absolute"
+                                bottom={3}
+                                left="50%"
+                                transform="translateX(-50%)"
+                                fontWeight="bold"
+                                fontSize="md"
+                                color="text-primary"
+                                noOfLines={1}
+                                maxW="90%"
+                              >
+                                {summary.podium[2]?.driver_name ?? summary.podium[2]?.driver_code ?? summary.podium[2]?.driver_id}
+                              </Text>
+                            </Box>
+                          </Box>
+                        </Flex>
+                      </Box>
+                    ) : (
+                      <Text>—</Text>
+                    )}
                   </Box>
 
-                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
-                    <Text fontWeight="bold">Fastest Lap</Text>
+
+
+                  {/* Fastest Lap Chakra Card */}
+                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" boxShadow="md">
+                    <Text fontWeight="bold" mb={2} color="brand.red">Fastest Lap</Text>
                     <Divider my={2}/>
                     {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.fastestLap ? (
-                      <VStack align="start" spacing={1}>
-                        <Text>Driver: {summary.fastestLap.driver_name ?? summary.fastestLap.driver_id}</Text>
+                      <VStack align="start" spacing={2}>
+                        <HStack>
+                          <Text fontWeight="bold" color="text-primary">Driver:</Text>
+                          <Text color="text-secondary">{summary.fastestLap.driver_name ?? summary.fastestLap.driver_id}</Text>
+                        </HStack>
                         {'lap_number' in summary.fastestLap && summary.fastestLap.lap_number !== undefined && (
-                          <Text>Lap: {summary.fastestLap.lap_number}</Text>
+                          <HStack>
+                            <Text fontWeight="bold" color="text-primary">Lap:</Text>
+                            <Text color="text-secondary">{summary.fastestLap.lap_number}</Text>
+                          </HStack>
                         )}
                         {'time_ms' in summary.fastestLap && summary.fastestLap.time_ms != null ? (
-                          <Text>Time: {(summary.fastestLap.time_ms / 1000).toFixed(3)}s</Text>
+                          <HStack>
+                            <Text fontWeight="bold" color="text-primary">Time:</Text>
+                            <Text color="text-secondary">{(summary.fastestLap.time_ms / 1000).toFixed(3)}s</Text>
+                          </HStack>
                         ) : (
-                          <Text>Time: —</Text>
+                          <HStack>
+                            <Text fontWeight="bold" color="text-primary">Time:</Text>
+                            <Text color="text-secondary">—</Text>
+                          </HStack>
                         )}
                       </VStack>
                     ) : <Text>—</Text>}
                   </Box>
                 </SimpleGrid>
 
-                {/* Events summary: red and yellow flags */}
-                <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" mt={2}>
-                  <Text fontWeight="bold">Events</Text>
+                {/* Events summary: Chakra UI card style */}
+                <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" mt={2} boxShadow="md">
+                  <Text fontWeight="bold" mb={2} color="brand.red">Events</Text>
                   <Divider my={2}/>
                   {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.events ? (
-                    <VStack align="start" spacing={1}>
-                      <Text>Red Flags: {summary.events.redFlags}</Text>
-                      <Text>Yellow Flags: {summary.events.yellowFlags}</Text>
-                    </VStack>
+                    <HStack spacing={8}>
+                      <VStack align="center" spacing={1}>
+                        <Text fontWeight="bold" color="red.500">Red Flags</Text>
+                        <Box fontSize="2xl" fontWeight="bold" color="red.500">{summary.events.redFlags}</Box>
+                      </VStack>
+                      <VStack align="center" spacing={1}>
+                        <Text fontWeight="bold" color="yellow.500">Yellow Flags</Text>
+                        <Box fontSize="2xl" fontWeight="bold" color="yellow.500">{summary.events.yellowFlags}</Box>
+                      </VStack>
+                    </HStack>
                   ) : <Text>—</Text>}
                 </Box>
               </VStack>
@@ -491,26 +713,50 @@ const RaceDetailPage: React.FC = () => {
               <VStack align="stretch" spacing={4}>
                 <HStack justify="space-between" wrap="wrap" gap={3}>
                   <Text fontSize="xl" fontWeight="bold" color="text-primary">Race Results</Text>
-                  <HStack>
-                    <Checkbox
-                      isChecked={driverFilter.length === 0}
-                      onChange={(e) => setDriverFilter(e.target.checked ? [] : driversInRace)}
+                  <HStack wrap="wrap" gap={2}>
+                    <Box
+                      as="button"
+                      px={3} py={1}
+                      borderRadius="md"
+                      borderWidth={2}
+                      borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
+                      boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                      bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                      fontWeight="bold"
+                      color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                      onClick={() => setDriverFilter([])}
+                      transition="all 0.2s"
                     >
-                      Select all
-                    </Checkbox>
-                    <CheckboxGroup
-                      value={driverFilter.length ? driverFilter : driversInRace}
-                      onChange={(v) => setDriverFilter(v as string[])}
-                    >
-                      <Stack direction="row" wrap="wrap">
-                        {driversInRace.map(d => {
-                          // Find the first race result for this driver code/id
-                          const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === d);
-                          const label = driverResult?.driver_name || d;
-                          return <Checkbox key={d} value={d}>{label}</Checkbox>;
-                        })}
-                      </Stack>
-                    </CheckboxGroup>
+                      All Drivers
+                    </Box>
+                    {driversInRace.map(d => {
+                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === d);
+                      const label = driverResult?.driver_name || '';
+                      if (!label) return null;
+                      const selected = driverFilter.includes(d);
+                      return (
+                        <Box
+                          as="button"
+                          key={d}
+                          px={3} py={1}
+                          borderRadius="md"
+                          borderWidth={2}
+                          borderColor={selected ? 'brand.red' : 'border-subtle'}
+                          boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                          bg={selected ? 'bg-elevated' : 'bg-surface'}
+                          fontWeight="bold"
+                          color={selected ? 'brand.red' : 'text-primary'}
+                          cursor="pointer"
+                          m={1}
+                          transition="all 0.2s"
+                          onClick={() => {
+                            setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
+                          }}
+                        >
+                          {label}
+                        </Box>
+                      );
+                    })}
                   </HStack>
                 </HStack>
 
@@ -541,32 +787,86 @@ const RaceDetailPage: React.FC = () => {
               <VStack align="stretch" spacing={4}>
                 <HStack justify="space-between" wrap="wrap" gap={3}>
                   <Text fontSize="xl" fontWeight="bold" color="text-primary">Qualifying</Text>
-                  <HStack>
-                    <Select size="sm" value={qualiPhase} onChange={(e) => setQualiPhase(e.target.value as any)}>
-                      <option value="all">All</option>
-                      <option value="q1">Q1</option>
-                      <option value="q2">Q2</option>
-                      <option value="q3">Q3</option>
-                    </Select>
-                    <Checkbox
-                      isChecked={driverFilter.length === 0}
-                      onChange={(e) => setDriverFilter(e.target.checked ? [] : driversInRace)}
-                    >
-                      Select all
-                    </Checkbox>
-                    <CheckboxGroup
-                      value={driverFilter.length ? driverFilter : driversInRace}
-                      onChange={(v) => setDriverFilter(v as string[])}
-                    >
-                      <Stack direction="row" wrap="wrap">
-                        {driversInRace.map(d => {
-                          // Find the first quali result for this driver code/id
-                          const qualiResult = qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d);
-                          const label = qualiResult?.driver_name || d;
-                          return <Checkbox key={d} value={d}>{label}</Checkbox>;
+                  <HStack wrap="wrap" gap={2}>
+                    {/* Phase filter above driver filter, blue color for distinction */}
+                    <Box mb={2}>
+                      <Text fontWeight="bold" mb={1}>Phase:</Text>
+                      <HStack wrap="wrap" gap={2}>
+                        {['all', 'q1', 'q2', 'q3'].map(phase => {
+                          const label = phase === 'all' ? 'All' : phase.toUpperCase();
+                          const selected = qualiPhase === phase;
+                          return (
+                            <Box
+                              as="button"
+                              key={phase}
+                              px={3} py={1}
+                              borderRadius="md"
+                              borderWidth={2}
+                              borderColor={selected ? 'blue.400' : 'border-subtle'}
+                              boxShadow={selected ? '0 0 8px 2px #4299E1' : undefined}
+                              bg={selected ? 'bg-elevated' : 'bg-surface'}
+                              fontWeight="bold"
+                              color={selected ? 'blue.400' : 'text-primary'}
+                              cursor="pointer"
+                              m={1}
+                              transition="all 0.2s"
+                              onClick={() => setQualiPhase(phase as typeof qualiPhase)}
+                            >
+                              {label}
+                            </Box>
+                          );
                         })}
-                      </Stack>
-                    </CheckboxGroup>
+                      </HStack>
+                    </Box>
+                    {/* Driver filter below phase filter, separated by VStack */}
+                    <Box mb={2}>
+                      <Text fontWeight="bold" mb={1}>Drivers:</Text>
+                      <HStack wrap="wrap" gap={2}>
+                        <Box
+                          as="button"
+                          px={3} py={1}
+                          borderRadius="md"
+                          borderWidth={2}
+                          borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
+                          boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                          bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                          fontWeight="bold"
+                          color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                          onClick={() => setDriverFilter([])}
+                          transition="all 0.2s"
+                        >
+                          All Drivers
+                        </Box>
+                        {driversInRace.map(d => {
+                          const qualiResult = qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d);
+                          const label = qualiResult?.driver_name || '';
+                          if (!label) return null;
+                          const selected = driverFilter.includes(d);
+                          return (
+                            <Box
+                              as="button"
+                              key={d}
+                              px={3} py={1}
+                              borderRadius="md"
+                              borderWidth={2}
+                              borderColor={selected ? 'brand.red' : 'border-subtle'}
+                              boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                              bg={selected ? 'bg-elevated' : 'bg-surface'}
+                              fontWeight="bold"
+                              color={selected ? 'brand.red' : 'text-primary'}
+                              cursor="pointer"
+                              m={1}
+                              transition="all 0.2s"
+                              onClick={() => {
+                                setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
+                              }}
+                            >
+                              {label}
+                            </Box>
+                          );
+                        })}
+                      </HStack>
+                    </Box>
                   </HStack>
                 </HStack>
 
@@ -593,59 +893,293 @@ const RaceDetailPage: React.FC = () => {
               </VStack>
             </TabPanel>
 
-            {/* QUALI → RACE (simple SVG) */}
+{/* QUALI → RACE (improved SVG) */}
+<TabPanel>
+  <VStack align="stretch" spacing={4}>
+    <Text fontSize="xl" fontWeight="bold" color="text-primary">Grid to Finish</Text>
+
+    <Box
+      overflow="hidden"
+      border="1px solid"
+      borderColor="border-subtle"
+      borderRadius="lg"
+      bg="bg-elevated"
+      p={3}
+    >
+      {(() => {
+        const rowHeight = 32;
+        const W = 1600;
+        const LEFT_X = 300;
+        const RIGHT_X = 1300;
+        const NAME_LEFT_X = LEFT_X - 20;
+        const NAME_RIGHT_X = RIGHT_X + 40;
+        const TOP = 60;
+        const BASE_Y = 80;
+        const bottomPad = 60; // breathing room below the lowest element
+
+        // Sort once by grid to define left column order
+        const leftOrdered = filteredRaceResults
+          .slice()
+          .sort((a, b) => (a.grid ?? 99) - (b.grid ?? 99));
+
+        // Build a quick lookup by driver_id for finish order index
+        // (fallback to grid order index when position is missing/duplicated)
+        const finishOrder = filteredRaceResults
+          .slice()
+          .sort((a, b) => (a.position ?? 99) - (b.position ?? 99));
+
+        const finishIndexByDriver: Record<string | number, number> = {};
+        finishOrder.forEach((rr, idx) => {
+          const key = rr.driver_id ?? rr.driver_code ?? `${idx}`;
+          finishIndexByDriver[key] = idx;
+        });
+
+        // Precompute all positions and track the true max Y across both sides
+        const items = leftOrdered.map((r, i) => {
+          const key = r.driver_id ?? r.driver_code ?? `${i}`;
+          const y1 = BASE_Y + i * rowHeight;
+          const idx2 = finishIndexByDriver[key] ?? i;
+          const y2 = BASE_Y + idx2 * rowHeight;
+
+          const constructor = r.constructor_name ?? r.constructor_id;
+          const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
+          let color = teamColors[constructorKey] || teamColors["Default"];
+          if (!color && typeof constructorKey === "string") {
+            const k = Object.keys(teamColors).find(t => constructorKey.toLowerCase().includes(t.toLowerCase()));
+            color = k ? teamColors[k] : teamColors["Default"];
+          }
+          color = `#${color}`;
+
+          const driverLabel = r.driver_name ?? r.driver_code ?? r.driver_id;
+
+          return { y1, y2, color, driverLabel };
+        });
+
+        const maxY = items.length
+          ? Math.max(...items.map(it => Math.max(it.y1, it.y2)))
+          : BASE_Y; // safe default if list is empty
+
+        const lastY = maxY; // where vertical lines should end
+        const height = lastY + bottomPad;
+
+        return (
+          <svg
+            viewBox={`0 0 ${W + 100} ${height}`}
+            width="100%"
+            height={height}
+            preserveAspectRatio="xMidYMid meet"
+          >
+            {/* Vertical rails end exactly at lastY */}
+            <line x1={LEFT_X}  y1={TOP} x2={LEFT_X}  y2={lastY} stroke="currentColor" strokeWidth={3} />
+            <line x1={RIGHT_X} y1={TOP} x2={RIGHT_X} y2={lastY} stroke="currentColor" strokeWidth={3} />
+
+            <text x={NAME_LEFT_X - 100} y={45} fontSize="26" fontWeight="bold">Grid</text>
+            <text x={RIGHT_X + 20} y={45} fontSize="26" fontWeight="bold">Finish</text>
+
+            {items.map((it, i) => (
+              <g key={i}>
+                {/* Left name & node */}
+                <text
+                  x={NAME_LEFT_X}
+                  y={it.y1 + 8}
+                  fontSize={18}
+                  fontWeight="bold"
+                  fill={it.color}
+                  textAnchor="end"
+                >
+                  {it.driverLabel}
+                </text>
+                <circle cx={LEFT_X} cy={it.y1} r={10} fill={it.color} />
+
+                {/* Right node & name */}
+                <circle cx={RIGHT_X} cy={it.y2} r={10} fill={it.color} />
+                <text
+                  x={NAME_RIGHT_X}
+                  y={it.y2 + 8}
+                  fontSize={18}
+                  fontWeight="bold"
+                  fill={it.color}
+                  textAnchor="start"
+                >
+                  {it.driverLabel}
+                </text>
+
+                {/* Connecting line */}
+                <line x1={LEFT_X} y1={it.y1} x2={RIGHT_X} y2={it.y2} stroke={it.color} strokeWidth={6} />
+              </g>
+            ))}
+          </svg>
+        );
+      })()}
+    </Box>
+  </VStack>
+</TabPanel>
+
+
+
+
+            {/* ANALYSIS TAB: Race Position & Lap Time Graphs with Driver Filters */}
             <TabPanel>
               <VStack align="stretch" spacing={4}>
-                <Text fontSize="xl" fontWeight="bold" color="text-primary">Grid to Finish</Text>
-                <Box overflowX="auto" border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={3}>
-                  <svg width="900" height={Math.max(200, driversInRace.length * 18)}>
-                    <line x1="100" y1="20" x2="100" y2="180" stroke="currentColor" />
-                    <line x1="800" y1="20" x2="800" y2="180" stroke="currentColor" />
-                    <text x="60" y="15">Grid</text>
-                    <text x="820" y="15">Finish</text>
-                    {filteredRaceResults.map((r, i) => {
-                      const d = r.driver_code ?? r.driver_name ?? String(r.driver_id);
-                      const grid = r.grid ?? 99;
-                      const finish = r.position ?? 99;
-                      const y1 = 20 + Math.min(160, (grid - 1) * (160 / 19));
-                      const y2 = 20 + Math.min(160, (finish - 1) * (160 / 19));
-                      const color = 'currentColor';
+                <Text fontSize="xl" fontWeight="bold" color="text-primary">Analysis</Text>
+                {/* Driver filter for graphs */}
+                <Box mb={2}>
+                  <Text fontWeight="bold">Select Drivers:</Text>
+                  <HStack wrap="wrap" gap={2}>
+                    <Box
+                      as="button"
+                      px={3} py={1}
+                      borderRadius="md"
+                      borderWidth={2}
+                      borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
+                      boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                      bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                      fontWeight="bold"
+                      color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                      onClick={() => setDriverFilter([])}
+                      transition="all 0.2s"
+                    >
+                      All Drivers
+                    </Box>
+                    {driversInRace.map(d => {
+                      const label =
+                        raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === d)?.driver_name ||
+                        qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d)?.driver_name ||
+                        d;
+                      const selected = driverFilter.includes(d);
                       return (
-                        <g key={i}>
-                          <circle cx="100" cy={y1} r="3" fill={color} />
-                          <circle cx="800" cy={y2} r="3" fill={color} />
-                          <line x1="100" y1={y1} x2="800" y2={y2} stroke={color} />
-                          <text x="105" y={y1 - 2} fontSize="10">{d}</text>
-                        </g>
+                        <Box
+                          as="button"
+                          key={d}
+                          px={3} py={1}
+                          borderRadius="md"
+                          borderWidth={2}
+                          borderColor={selected ? 'brand.red' : 'border-subtle'}
+                          boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                          bg={selected ? 'bg-elevated' : 'bg-surface'}
+                          fontWeight="bold"
+                          color={selected ? 'brand.red' : 'text-primary'}
+                          cursor="pointer"
+                          m={1}
+                          transition="all 0.2s"
+                          onClick={() => {
+                            setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
+                          }}
+                        >
+                          {label}
+                        </Box>
+                      );
+                    })}
+                  </HStack>
+                </Box>
+                {/* Race Position Graph */}
+                <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4} mb={4}>
+                  <Text fontWeight="bold" mb={2}>Race Positions by Lap</Text>
+                  {/* Simple SVG line graph: lap vs position for selected drivers */}
+                  <svg width={1200} height={400}>
+                    {/* Axes */}
+                    <line x1={60} y1={40} x2={60} y2={360} stroke="#888" />
+                    <line x1={60} y1={360} x2={1150} y2={360} stroke="#888" />
+                    {/* Axis labels */}
+                    <text x={20} y={30} fontSize={16}>Pos</text>
+                    <text x={1150} y={390} fontSize={16}>Lap</text>
+                    {/* Driver lines */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      // Find constructor name or id for this driver from raceResults or qualiResults
+                      const driverKey = driverLaps[0]?.driver_code ?? String(driverLaps[0]?.driver_id);
+                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === driverKey)
+                        || qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === driverKey);
+                      const constructor =
+                        driverResult?.constructor_name ?? driverResult?.constructor_id ?? "Default";
+                      const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
+                      const color = teamColors[constructorKey] || teamColors["Default"];
+                      // Map laps to SVG points
+                      const points = driverLaps.map(l => {
+                        const x = 60 + ((l.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
+                        const y = 360 - ((l.position ?? 20) - 1) * ((320) / 19);
+                        return `${x},${y}`;
+                      }).join(' ');
+                      return (
+                        <polyline
+                          key={d}
+                          points={points}
+                          fill="none"
+                          stroke={`#${color}`}
+                          strokeWidth={3}
+                        />
+                      );
+                    })}
+                    {/* Driver labels at last lap */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      const lastLap = driverLaps[driverLaps.length - 1];
+                      const x = 60 + ((lastLap.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
+                      const y = 360 - ((lastLap.position ?? 20) - 1) * ((320) / 19);
+                      return (
+                        <text key={d} x={x + 5} y={y} fontSize={14} fill="#222">{d}</text>
                       );
                     })}
                   </svg>
                 </Box>
-              </VStack>
-            </TabPanel>
-
-            {/* ANALYSIS (basic preview table; swap to charts later if you like) */}
-            <TabPanel>
-              <VStack align="stretch" spacing={4}>
-                <Text fontSize="xl" fontWeight="bold" color="text-primary">Analysis</Text>
+                {/* Lap Time Analysis Graph */}
                 <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4}>
-                  <Text fontWeight="bold" mb={2}>Race Positions by Lap (sample)</Text>
-                  <Table size="sm">
-                    <Thead>
-                      <Tr>
-                        <Th>Driver</Th><Th isNumeric>Lap</Th><Th isNumeric>Pos</Th><Th isNumeric>Lap Time</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {Array.from(new Set(laps.map(l => l.driver_code ?? String(l.driver_id)))).slice(0, 6).flatMap(d =>
-                        laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d).slice(0, 6).map((l, i) => (
-                          <Tr key={`${d}-${i}`}>
-                            <Td>{d}</Td><Td isNumeric>{l.lap_number}</Td><Td isNumeric>{l.position ?? '-'}</Td><Td isNumeric>{fmtMs(l.time_ms)}</Td>
-                          </Tr>
-                        ))
-                      )}
-                    </Tbody>
-                  </Table>
+                  <Text fontWeight="bold" mb={2}>Lap Time Comparison</Text>
+                  {/* Simple SVG line graph: lap vs lap time for selected drivers */}
+                  <svg width={1200} height={400}>
+                    {/* Axes */}
+                    <line x1={60} y1={40} x2={60} y2={360} stroke="#888" />
+                    <line x1={60} y1={360} x2={1150} y2={360} stroke="#888" />
+                    {/* Axis labels */}
+                    <text x={20} y={30} fontSize={16}>Lap Time (s)</text>
+                    <text x={1150} y={390} fontSize={16}>Lap</text>
+                    {/* Driver lines */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      // Find constructor name or id for this driver from raceResults or qualiResults
+                      const driverKey = driverLaps[0]?.driver_code ?? String(driverLaps[0]?.driver_id);
+                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === driverKey)
+                        || qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === driverKey);
+                      const constructor =
+                        driverResult?.constructor_name ?? driverResult?.constructor_id ?? "Default";
+                      const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
+                      const color = teamColors[constructorKey] || teamColors["Default"];
+                      // Find min/max lap time for scaling
+                      const minLap = Math.min(...driverLaps.map(l => l.lap_number));
+                      const maxLap = Math.max(...driverLaps.map(l => l.lap_number));
+                      const minTime = Math.min(...driverLaps.map(l => l.time_ms ?? 0));
+                      const maxTime = Math.max(...driverLaps.map(l => l.time_ms ?? 0));
+                      // Map laps to SVG points
+                      const points = driverLaps.map(l => {
+                        const x = 60 + ((l.lap_number - minLap) * ((1150 - 60) / Math.max(1, maxLap - minLap)));
+                        const y = 360 - ((l.time_ms ?? minTime) - minTime) * (320 / Math.max(1, maxTime - minTime));
+                        return `${x},${y}`;
+                      }).join(' ');
+                      return (
+                        <polyline
+                          key={d}
+                          points={points}
+                          fill="none"
+                          stroke={`#${color}`}
+                          strokeWidth={3}
+                        />
+                      );
+                    })}
+                    {/* Driver labels at last lap */}
+                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
+                      if (!driverLaps.length) return null;
+                      const lastLap = driverLaps[driverLaps.length - 1];
+                      const x = 60 + ((lastLap.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
+                      const y = 360 - ((lastLap.time_ms ?? 0) - Math.min(...driverLaps.map(l => l.time_ms ?? 0))) * (320 / Math.max(1, Math.max(...driverLaps.map(l => l.time_ms ?? 0)) - Math.min(...driverLaps.map(l => l.time_ms ?? 0))));
+                      return (
+                        <text key={d} x={x + 5} y={y} fontSize={14} fill="#222">{d}</text>
+                      );
+                    })}
+                  </svg>
                 </Box>
               </VStack>
             </TabPanel>
@@ -723,4 +1257,42 @@ const RaceDetailPage: React.FC = () => {
   );
 };
 
-export default RaceDetailPage;
+// Footer for RaceDetailPage
+const Footer = () => (
+  <Box
+    as="footer"
+    bg="bg-surface-raised"
+    borderTop="2px solid"
+    borderColor="brand.red"
+    py="xl"
+    w="100%"
+    position="fixed"
+    left={0}
+    bottom={0}
+    zIndex={100}
+  >
+    <Container maxW="1200px">
+      <Flex justify="space-between" align="center" wrap="wrap" gap="md">
+        <HStack spacing="lg">
+          <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+          <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
+          <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
+        </HStack>
+        <Text color="text-muted" fontSize="sm">
+          ©{new Date().getFullYear()} RaceIQ. All rights reserved.
+        </Text>
+      </Flex>
+    </Container>
+  </Box>
+);
+
+const RaceDetailPageLayout: React.FC = () => (
+  <Box minH="100vh" display="flex" flexDirection="column" bg="bg-primary" color="text-primary">
+    <Box flex="1">
+      <RaceDetailPage />
+    </Box>
+    <Footer />
+  </Box>
+);
+
+export default RaceDetailPageLayout;

@@ -8,6 +8,7 @@ import {
   Float32BufferAttribute,
 } from 'three';
 import { Line, Html } from '@react-three/drei';
+import { Spinner, Text } from '@chakra-ui/react';
 import { circuitFileMap } from './circuitFileMap';
 
 type GeoJSONGeometry =
@@ -176,7 +177,8 @@ export const CircuitTrack3D: React.FC<Props> = ({
   onStatusChange,
 }) => {
   const [coords, setCoords] = useState<Vector3[] | null>(null);
-  const [attemptedFiles, setAttemptedFiles] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingFailed, setLoadingFailed] = useState<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,8 +201,6 @@ export const CircuitTrack3D: React.FC<Props> = ({
     ]
       .filter(Boolean)
       .filter((v, i, a) => a.indexOf(v) === i) as string[];
-
-    setAttemptedFiles(candidates);
 
     async function tryLoad(url: string): Promise<number[][] | null> {
       const res = await fetch(url, { cache: 'no-store' });
@@ -228,6 +228,8 @@ export const CircuitTrack3D: React.FC<Props> = ({
     }
 
     async function loadGeometry() {
+      setLoading(true);
+      setLoadingFailed(false);
       onStatusChange?.('loading');
       setCoords(null);
 
@@ -246,6 +248,8 @@ export const CircuitTrack3D: React.FC<Props> = ({
 
       if (!lines || lines.length < 2) {
         if (!cancelled) {
+          setLoading(false);
+          setLoadingFailed(true);
           onStatusChange?.('missing');
         }
         return;
@@ -266,6 +270,8 @@ export const CircuitTrack3D: React.FC<Props> = ({
 
       if (!cancelled) {
         setCoords(normalized);
+        setLoading(false);
+        setLoadingFailed(false);
         onStatusChange?.('ready');
       }
     }
@@ -286,8 +292,22 @@ export const CircuitTrack3D: React.FC<Props> = ({
     return curve.getPoints(samples);
   }, [coords]);
 
+  if (loading) {
+    // Show a nice loading spinner in 3D space
+    return (
+      <Html center style={{ pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <Spinner size="lg" color="brand.red" thickness="4px" />
+          <Text color="white" fontSize="sm" fontWeight="medium">
+            Loading track layout...
+          </Text>
+        </div>
+      </Html>
+    );
+  }
+
   if (!linePoints) {
-    // Helpful placeholder with file hints
+    // Show a simple placeholder track when data is missing
     const ellipse = new EllipseCurve(0, 0, 20, 12, 0, Math.PI * 2, false, 0);
     const points2d = ellipse.getPoints(200);
     const positions: number[] = [];
@@ -303,31 +323,28 @@ export const CircuitTrack3D: React.FC<Props> = ({
           <primitive object={geometry} attach="geometry" />
           <lineBasicMaterial color="#666" linewidth={1} />
         </line>
-        <Html center style={{ pointerEvents: 'none' }}>
-          <div
-            style={{
-              background: 'rgba(0,0,0,0.6)',
-              color: 'white',
-              padding: '8px 12px',
-              borderRadius: 6,
-              fontSize: 12,
-              maxWidth: 420,
-              textAlign: 'center',
-            }}
-          >
-            Track data missing for {circuitName || `circuit#${circuitId}`}<br />
-            Looked for (in order):<br />
-            {attemptedFiles.map((f, i) => (
-              <div key={`${f}-${i}`} style={{ opacity: 0.9 }}>
-                {f.replace('/circuits/', '')}
-              </div>
-            ))}
-            <div style={{ marginTop: 6, opacity: 0.9 }}>
-              Ensure files live under <code>/public/circuits/</code> and open
-              <code> /circuits/&lt;name&gt;.geojson</code> directly in the browser to verify.
+        {loadingFailed && (
+          <Html center style={{ pointerEvents: 'none' }}>
+            <div
+              style={{
+                background: 'rgba(0,0,0,0.7)',
+                color: 'white',
+                padding: '12px 16px',
+                borderRadius: 8,
+                fontSize: 14,
+                textAlign: 'center',
+                maxWidth: 300,
+              }}
+            >
+              <Text fontSize="sm" mb={2} color="gray.300">
+                Track layout not available
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                {circuitName || `Circuit #${circuitId}`}
+              </Text>
             </div>
-          </div>
-        </Html>
+          </Html>
+        )}
       </>
     );
   }

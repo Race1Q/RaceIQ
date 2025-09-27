@@ -14,7 +14,7 @@ import { RacesService } from './races.service';
 import { SeasonsModule } from '../seasons/seasons.module';
 import { CircuitsModule } from '../circuits/circuits.module';
 import { DriversModule } from '../drivers/drivers.module';
-
+import { RaceResultsController } from './races.controller'; 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -31,7 +31,7 @@ import { DriversModule } from '../drivers/drivers.module';
   CircuitsModule,
   DriversModule,
   ],
-  controllers: [RacesController, RaceSummaryController],
+  controllers: [RacesController, RaceSummaryController,RaceResultsController],
   providers: [RacesService],
   exports: [TypeOrmModule],
 })

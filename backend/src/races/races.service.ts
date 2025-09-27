@@ -113,20 +113,35 @@ export class RacesService {
     return raceDetails;
   }
 
-  async findAll(query: any): Promise<Race[]> {
-    // Implementation for finding races with optional filters
-    const whereCondition: any = {};
-    
-    if (query.season || query.season_id || query.year) {
-      whereCondition.season = { id: query.season_id || query.season || query.year };
-    }
+// races.service.ts
+async findAll(query: Record<string, any>): Promise<Race[]> {
+  const year =
+    query.year !== undefined
+      ? Number(query.year)
+      : query.season !== undefined
+      ? Number(query.season) // treat ?season= as a year
+      : undefined;
 
-    return this.raceRepository.find({
-      where: whereCondition,
-      relations: ['circuit', 'season'],
-      order: { round: 'ASC' },
-    });
+  const seasonId =
+    query.season_id !== undefined ? Number(query.season_id) : undefined;
+
+  const where: any = {};
+
+  if (Number.isFinite(year)) {
+    // ✅ correct: season.year, not season.id
+    where.season = { year };
+  } else if (Number.isFinite(seasonId)) {
+    where.season = { id: seasonId };
   }
+
+  return this.raceRepository.find({
+    where,
+    relations: ['circuit', 'season'],
+    order: { round: 'ASC' },
+  });
+}
+
+
 
   async listYears(): Promise<number[]> {
     // Get distinct years from races
