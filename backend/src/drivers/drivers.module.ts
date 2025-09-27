@@ -10,6 +10,7 @@ import { RaceResult } from '../race-results/race-results.entity';
 import { WinsPerSeasonMaterialized } from './wins-per-season-materialized.entity';
 import { DriverCareerStatsMaterialized } from './driver-career-stats-materialized.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
+import { RaceFastestLapMaterialized } from '../dashboard/race-fastest-laps-materialized.entity';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { DriverStandingMaterialized } from '../standings/driver-standings-materi
       RaceResult, 
       WinsPerSeasonMaterialized,
       DriverCareerStatsMaterialized,
-      DriverStandingMaterialized
+      DriverStandingMaterialized,
+      RaceFastestLapMaterialized
     ]),
     CountriesModule,
   ],

@@ -17,6 +17,9 @@ const DriverDetailPage: React.FC = () => {
   const { driverId } = useParams<{ driverId: string }>();
   const { driverDetails, loading, error } = useDriverDetails(driverId);
 
+  // --- DEBUG STEP 3: Log the data as it's received by the page component ---
+  console.log("%c3. Data Received by Page Component:", "color: orange; font-weight: bold;", driverDetails);
+
   if (loading) return <F1LoadingSpinner text="Loading Driver Details..." />;
   if (error || !driverDetails) return <Text p="lg">Error: {error || 'Driver data could not be loaded.'}</Text>;
 

@@ -8,6 +8,7 @@ import { RaceResult } from '../race-results/race-results.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { DriverCareerStatsMaterialized } from './driver-career-stats-materialized.entity';
 import { WinsPerSeasonMaterialized } from './wins-per-season-materialized.entity';
+import { RaceFastestLapMaterialized } from '../dashboard/race-fastest-laps-materialized.entity';
 import { DriverStatsResponseDto } from './dto/driver-stats.dto';
 
 // Define the shape of the data we will return
@@ -30,6 +31,8 @@ export class DriversService {
     private readonly standingsViewRepo: Repository<DriverStandingMaterialized>,
     @InjectRepository(WinsPerSeasonMaterialized)
     private readonly winsPerSeasonViewRepo: Repository<WinsPerSeasonMaterialized>,
+    @InjectRepository(RaceFastestLapMaterialized)
+    private readonly fastestLapViewRepo: Repository<RaceFastestLapMaterialized>,
   ) {}
 
   async findAll(): Promise<Driver[]> {
@@ -50,7 +53,8 @@ export class DriversService {
   async getDriverCareerStats(driverId: number): Promise<DriverStatsResponseDto> {
     const currentYear = new Date().getFullYear();
 
-    const [driver, careerStats, currentSeason, winsPerSeason, firstRace] = await Promise.all([
+    // Add a query for this season's fastest laps to the parallel execution
+    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings] = await Promise.all([
       this.findOne(driverId),
       this.careerStatsViewRepo.findOne({ where: { driverId } }),
       this.standingsViewRepo.findOne({ where: { driverId, seasonYear: currentYear } }),
@@ -64,11 +68,23 @@ export class DriversService {
         relations: ['session.race'], 
         order: { session: { race: { date: 'ASC' } } } 
       }),
+      // NEW QUERY: Count fastest laps for the current season from our reliable view
+      this.fastestLapViewRepo.count({ where: { driverId } }),
+      // NEW QUERY: Get all standings for current season to calculate position
+      this.standingsViewRepo.find({ 
+        where: { seasonYear: currentYear }, 
+        order: { seasonPoints: 'DESC' } 
+      }),
     ]);
 
     if (!driver || !careerStats) {
       throw new NotFoundException(`Stats not found for driver ID ${driverId}`);
     }
+
+    // Calculate the driver's position in the current season standings
+    const driverPosition = allCurrentSeasonStandings.findIndex(
+      standing => standing.driverId === driverId
+    ) + 1; // +1 because array index is 0-based, but positions start at 1
 
     // Try to get the most recent team name for this driver
     const mostRecentTeamQuery = this.raceResultRepository
@@ -111,8 +127,9 @@ export class DriversService {
       currentSeasonStats: {
         wins: currentSeason?.seasonWins || 0,
         podiums: currentSeason?.seasonPodiums || 0,
-        fastestLaps: 0, // This is not in the standings view, placeholder for now
-        standing: `P${currentSeason?.driverId ? currentSeason.driverId : 'N/A'}`,
+        fastestLaps: seasonFastestLaps, // USE THE LIVE DATA
+        // BUG FIX: Use the calculated position from standings
+        standing: driverPosition > 0 ? `P${driverPosition}` : 'N/A', 
       },
     };
   }

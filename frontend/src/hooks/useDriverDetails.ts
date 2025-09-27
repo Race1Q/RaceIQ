@@ -38,8 +38,8 @@ export const useDriverDetails = (driverId?: string) => {
         }
 
         const apiData: ApiDriverStatsResponse = await response.json();
-
-        // --- MAPPER: Transform nested API data to flattened UI data ---
+        
+        // --- FINAL MAPPER: Transform live API data to the flattened UI shape ---
         const fullName = `${apiData.driver.first_name} ${apiData.driver.last_name}`;
         const mappedData: DriverDetailsData = {
           id: apiData.driver.id,
@@ -51,6 +51,7 @@ export const useDriverDetails = (driverId?: string) => {
           teamName: apiData.driver.teamName,
           imageUrl: driverHeadshots[fullName] || apiData.driver.profile_image_url,
           number: apiData.driver.driver_number,
+          // Flattened top-level stats for KeyInfoBar
           wins: apiData.careerStats.wins,
           podiums: apiData.careerStats.podiums,
           points: apiData.careerStats.points,
@@ -59,6 +60,7 @@ export const useDriverDetails = (driverId?: string) => {
             year: String(apiData.careerStats.firstRace.year),
             event: apiData.careerStats.firstRace.event,
           },
+          // Structured stats for the new Stat Sections
           currentSeasonStats: [
             { label: "Wins", value: apiData.currentSeasonStats.wins },
             { label: "Podiums", value: apiData.currentSeasonStats.podiums },
@@ -72,10 +74,11 @@ export const useDriverDetails = (driverId?: string) => {
             { label: "DNFs", value: apiData.careerStats.dnfs },
             { label: "Highest Finish", value: apiData.careerStats.highestRaceFinish },
           ],
+          // Chart data
           winsPerSeason: apiData.careerStats.winsPerSeason.map(w => ({...w, season: String(w.season)})),
-          // Legacy fields for compatibility
-          funFact: fallbackDriverDetails.funFact, // Keep fallback for now
-          recentForm: [], // Will be fetched separately if needed
+          // Other data (placeholders for now, can be added to /stats later)
+          funFact: fallbackDriverDetails.funFact,
+          recentForm: [], 
         };
         // --- END MAPPER ---
 

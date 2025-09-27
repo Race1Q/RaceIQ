@@ -33,6 +33,9 @@ interface KeyInfoBarProps {
 }
 
 const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver }) => {
+  // --- DEBUG STEP 4: Log the data as it's received by a child component ---
+  console.log("%c4. Data Received by KeyInfoBar:", "color: violet; font-weight: bold;", driver);
+
   return (
     <Flex
       direction={{ base: 'column', lg: 'row' }}
