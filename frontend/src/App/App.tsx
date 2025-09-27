@@ -28,6 +28,7 @@ import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import Standings from '../pages/Standings/Standings';
+import DriverStandings from '../pages/Standings/DriverStandings';
 
 
 
@@ -42,6 +43,7 @@ function Navbar() {
     ...(isAuthenticated ? [
       { path: '/standings', label: 'Standings' },
       { path: '/standings/constructors', label: 'ConstructorStandings' },
+      { path: '/standings/drivers', label: 'DriverStandings' },
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
       { path: '/admin', label: 'Admin' },
@@ -145,6 +147,7 @@ function AppContent() {
             <Route path="/constructors" element={<Constructors />} />
             <Route path="/standings" element={<Standings />} />
             <Route path="/standings/constructors" element={<ConstructorsStandings />} />
+            <Route path="/standings/drivers" element={<DriverStandings />} />
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />

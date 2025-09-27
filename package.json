@@ -3,6 +3,7 @@
         "node": "20.x"
     },
     "dependencies": {
+        "@auth0/auth0-react": "^2.5.0",
         "@chakra-ui/react": "^3.25.0",
         "@emotion/react": "^11.14.0",
         "@fontsource/roboto": "^5.2.6",
