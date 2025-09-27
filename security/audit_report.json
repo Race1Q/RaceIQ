@@ -1,0 +1,35 @@
+{
+  "root": "C:\\Users\\koven\\Documents\\3rd Year\\CA3\\SDP\\ProjectSDP\\RaceIQ",
+  "lockfiles_scanned": [
+    "backend\\package-lock.json",
+    "frontend\\package-lock.json",
+    "package-lock.json"
+  ],
+  "reports": [
+    {
+      "lockfile": "backend\\package-lock.json",
+      "matches": [],
+      "summary": {
+        "by_package": {},
+        "count": 0
+      }
+    },
+    {
+      "lockfile": "frontend\\package-lock.json",
+      "matches": [],
+      "summary": {
+        "by_package": {},
+        "count": 0
+      }
+    },
+    {
+      "lockfile": "package-lock.json",
+      "matches": [],
+      "summary": {
+        "by_package": {},
+        "count": 0
+      }
+    }
+  ],
+  "total_matches": 0
+}
