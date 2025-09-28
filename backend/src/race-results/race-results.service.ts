@@ -486,7 +486,7 @@ async getDriversPointsProgression3() {
   if (seasonError || !latestSeasonData) throw new Error(seasonError?.message || 'Latest season not found');
 
   const latestSeasonId = latestSeasonData.id;
-  console.log('Latest season:', latestSeasonData);
+  //console.log('Latest season:', latestSeasonData);
 
 
   // Step 2: Get all drivers with standings in the latest season
@@ -498,7 +498,7 @@ async getDriversPointsProgression3() {
   if (driversError || !drivers?.length) return [];
 
   const driverIds = drivers.map(d => d.driverId);
-  console.log('Drivers in latest season:', drivers);
+  //console.log('Drivers in latest season:', drivers);
 
 
   // Step 3: Fetch all race_results for these drivers in the latest season
@@ -529,7 +529,7 @@ async getDriversPointsProgression3() {
     .eq('season_id', latestSeasonId);
 
   if (racesError) throw new Error(racesError.message);
-  console.log('Races fetched for season:', races);
+  //console.log('Races fetched for season:', races);
 
 
   // Step 6: Map session -> race
@@ -539,7 +539,7 @@ async getDriversPointsProgression3() {
     if (race) sessionToRace[s.id] = { round: race.round, name: race.name };
   });
 
-  console.log('Session to race mapping:', sessionToRace);
+  //console.log('Session to race mapping:', sessionToRace);
 
 
   // Step 7: Aggregate points per driver
