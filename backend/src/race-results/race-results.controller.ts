@@ -81,7 +81,7 @@ async debugConstructorSeason(
     return this.resultsService.getDriversProgression(seasonIdNum);
   }
 
-  @Get('drivers/progression3')
+  @Get('drivers/progression')
   @Scopes('read:race-results')
   async getDriversProgression3() {
     return this.resultsService.getDriversPointsProgression3();

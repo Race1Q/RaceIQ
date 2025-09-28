@@ -1,6 +1,6 @@
 // src/pages/DriverStandings.tsx
 import React, { useState, useMemo } from 'react';
-import { Box, Flex, Text, Button } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, Heading, Center } from '@chakra-ui/react';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +47,7 @@ const DriverStandingsPage: React.FC = () => {
     <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
       {/* Season Selector + Back Button */}
         <Flex mb={4} alignItems="center" justifyContent="space-between">
+
             <Box maxW="220px">
                 <SearchableSelect
                 label="Select Season"
@@ -56,6 +57,10 @@ const DriverStandingsPage: React.FC = () => {
                 isClearable={false}
             />
             </Box>
+
+            <Heading mb={6} color="white" textAlign="center">
+        Formula 1 Driver Championship Standings
+      </Heading>
             <Button size="sm" onClick={() => navigate(-1)}>
             ← Back to Standings
             </Button>

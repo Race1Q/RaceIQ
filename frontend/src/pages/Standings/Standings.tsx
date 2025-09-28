@@ -32,6 +32,7 @@ interface ConstructorProgression {
 interface DriverProgression {
   driverId: number;
   driverName: string;
+  driverTeam: string;
   progression: ProgressionEntry[];
 }
 
@@ -40,13 +41,12 @@ const Standings: React.FC = () => {
   const [driversProgression, setDriversProgression] = useState<DriverProgression[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch data
   useEffect(() => {
     const fetchProgressions = async () => {
       try {
         const [constructorsRes, driversRes] = await Promise.all([
           fetch(`${BACKEND_URL}api/race-results/constructors/26/progression`),
-          fetch(`${BACKEND_URL}api/race-results/drivers/progression3`),
+          fetch(`${BACKEND_URL}api/race-results/drivers/progression`),
         ]);
         if (!constructorsRes.ok || !driversRes.ok) throw new Error('Failed to fetch progressions');
 
@@ -65,7 +65,6 @@ const Standings: React.FC = () => {
     fetchProgressions();
   }, []);
 
-  // Flatten constructors progression for chart
   const constructorsChartData: any[] = [];
   constructorsProgression.forEach((c) =>
     c.progression.forEach((p) => {
@@ -79,7 +78,6 @@ const Standings: React.FC = () => {
   );
   constructorsChartData.sort((a, b) => a.round - b.round);
 
-  // Flatten drivers progression for chart
   const driversChartData: any[] = [];
   driversProgression.forEach((d) =>
     d.progression.forEach((p) => {
@@ -93,171 +91,185 @@ const Standings: React.FC = () => {
   );
   driversChartData.sort((a, b) => a.round - b.round);
 
-  // Constructor colors
   const constructorColors: Record<string, string> = {};
   constructorsProgression.forEach((c) => {
     constructorColors[c.constructorName] =
       teamColors[c.constructorName] || `#${Math.floor(Math.random() * 16777215).toString(16)}`;
   });
 
-  // Driver colors
   const driverColorsMap: Record<string, string> = {};
-  driversProgression.forEach((d) => {
-    // Optional: populate driver colors if needed
+  driversProgression.forEach((driver) => {
+    driverColorsMap[driver.driverName] = teamColors[driver.driverTeam] || '#ff0000';
   });
 
   return (
     <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
       <Heading mb={6} color="white">
-        F1 Standings
+        Formula 1 Championship Standings
       </Heading>
-
-      <Flex gap={6} flexDirection={['column', 'row']}>
-        {/* Drivers Standings Card */}
-        <Box
-          flex={1}
-          p={6}
-          borderRadius="2xl"
-          bg="gray.800"
-          color="white"
-          boxShadow="xl"
-          _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
-        >
-          <Heading size="md" mb={3}>
-            Drivers Standings
-          </Heading>
-          <Text mb={4} color="gray.300">
-            View all drivers ranked by points, wins, and positions for each season.
-          </Text>
-          <Button as={Link} to="/standings/drivers" colorScheme="red">
-            View Drivers
-          </Button>
-        </Box>
-
-        {/* Constructors Standings Card */}
-        <Box
-          flex={1}
-          p={6}
-          borderRadius="2xl"
-          bg="gray.800"
-          color="white"
-          boxShadow="xl"
-          _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
-        >
-          <Heading size="md" mb={3}>
-            Constructors Standings
-          </Heading>
-          <Text mb={4} color="gray.300">
-            Explore constructor rankings, team performance, and championship points.
-          </Text>
-          <Button as={Link} to="/standings/constructors" colorScheme="blue">
-            View Constructors
-          </Button>
-        </Box>
-      </Flex>
 
       {loading ? (
         <F1LoadingSpinner text="Loading Standings..." />
       ) : (
-        <>
-          {/* Constructors Chart */}
-          {constructorsProgression.length > 0 && (
-            <Box w="100%" h="400px" mt={8} bg="gray.700" p={4} borderRadius="md">
-              <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                2025 Constructors Points Progression
-              </Text>
-              <ResponsiveContainer width="100%" height="90%">
-                <LineChart data={constructorsChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-                  <XAxis dataKey="round" stroke="white" />
-                  <YAxis stroke="white" />
-                  <Tooltip
-                    content={({ active, payload, label }) => {
-                      if (!active || !payload || !payload.length) return null;
-                      const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
-                      return (
-                        <Box bg="gray.800" p={2} borderRadius="md" color="white">
-                          <Text fontWeight="bold">Round {label}</Text>
-                          {sortedPayload.map((entry, index) => (
-                            <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
-                              <Text>{entry.name}</Text>
-                              <Text>{entry.value}</Text>
-                            </Flex>
-                          ))}
-                        </Box>
-                      );
-                    }}
-                  />
-                  {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => (
-                    <Line
-                      key={name}
-                      type="monotone"
-                      dataKey={name}
-                      stroke={`#${constructorColors[name]}` || '#ff0000'}
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive={false}
-                      name={name}
-                      connectNulls
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          )}
+        <Flex gap={6} flexDirection={['column', 'row']}>
 
-          {/* Drivers Chart */}
-          {driversProgression.length > 0 && (
-            <Box w="100%" h="400px" mt={8} bg="gray.700" p={4} borderRadius="md">
-              <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                2025 Drivers Points Progression
+          {/* Left Side: Boxes stacked vertically */}
+          <Box flex={1} display="flex" flexDirection="column" gap={6}>
+            <Box
+              flex={1}
+              p={6}
+              borderRadius="2xl"
+              bg="gray.800"
+              color="white"
+              boxShadow="xl"
+              _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
+            >
+              <Heading size="md" mb={3}>
+                Drivers Standings
+              </Heading>
+              <Text mb={4} color="gray.300">
+                View all drivers ranked by points, wins, and positions for each season.
               </Text>
-              <ResponsiveContainer width="100%" height="90%">
-                <LineChart data={driversChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-                  <XAxis dataKey="round" stroke="white" />
-                  <YAxis stroke="white" />
-                  <Tooltip
-                    content={({ active, payload, label }) => {
-                      if (!active || !payload || !payload.length) return null;
-                      const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
-                      return (
-                        <Box bg="gray.800" p={2} borderRadius="md" color="white">
-                          <Text fontWeight="bold">Round {label}</Text>
-                          {sortedPayload.map((entry, index) => (
-                            <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
-                              <Text>{entry.name}</Text>
-                              <Text>{entry.value}</Text>
-                            </Flex>
-                          ))}
-                        </Box>
-                      );
-                    }}
-                  />
-                  {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => (
-                    <Line
-                      key={name}
-                      type="monotone"
-                      dataKey={name}
-                      stroke={driverColorsMap[name] || '#ff0000'}
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive={false}
-                      name={name}
-                      connectNulls
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
+              <Button as={Link} to="/standings/drivers" colorScheme="red">
+                View Drivers
+              </Button>
             </Box>
-          )}
-        </>
+
+            <Box
+              flex={1}
+              p={6}
+              borderRadius="2xl"
+              bg="gray.800"
+              color="white"
+              boxShadow="xl"
+              _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
+            >
+              <Heading size="md" mb={3}>
+                Constructors Standings
+              </Heading>
+              <Text mb={4} color="gray.300">
+                Explore constructor rankings, team performance, and championship points.
+              </Text>
+              <Button as={Link} to="/standings/constructors" colorScheme="blue">
+                View Constructors
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Right Side: Charts stacked vertically */}
+          <Box flex={3} display="flex" flexDirection="column" gap={6}>
+            {/* Drivers Chart */}
+            {driversProgression.length > 0 && (
+              <Box h="400px" bg="gray.700" p={4} borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
+                  2025 Drivers Points Progression
+                </Text>
+                <ResponsiveContainer width="100%" height="90%">
+                  <LineChart data={driversChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                    <XAxis dataKey="round" stroke="white" />
+                    <YAxis stroke="white" />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload || !payload.length) return null;
+
+                        const raceEntry = driversChartData.find((d) => d.round === label);
+                        const raceName = raceEntry ? raceEntry.raceName : '';
+
+                        const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+
+                        return (
+                          <Box bg="gray.800" p={2} borderRadius="md" color="white">
+                            <Text fontWeight="bold">Round {label}: {raceName}</Text>
+                            {sortedPayload.map((entry, index) => (
+                              <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+                                <Text>{entry.name}</Text>
+                                <Text>{entry.value}</Text>
+                              </Flex>
+                            ))}
+                          </Box>
+                        );
+                      }}
+                    />
+                    {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => (
+                      <Line
+                        key={name}
+                        type="monotone"
+                        dataKey={name}
+                        stroke={`#${driverColorsMap[name]}` || '#ff0000'}
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={true}
+                        name={name}
+                        connectNulls
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+
+            {/* Constructors Chart */}
+            {constructorsProgression.length > 0 && (
+              <Box h="400px" bg="gray.700" p={4} borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
+                  2025 Constructors Points Progression
+                </Text>
+                <ResponsiveContainer width="100%" height="90%">
+                  <LineChart data={constructorsChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                    <XAxis dataKey="round" stroke="white" />
+                    <YAxis stroke="white" />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload || !payload.length) return null;
+
+                        const raceEntry = constructorsChartData.find((d) => d.round === label);
+                        const raceName = raceEntry ? raceEntry.raceName : '';
+
+                        const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+
+                        return (
+                          <Box bg="gray.800" p={2} borderRadius="md" color="white">
+                            <Text fontWeight="bold">Round {label}: {raceName}</Text>
+                            {sortedPayload.map((entry, index) => (
+                              <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+                                <Text>{entry.name}</Text>
+                                <Text>{entry.value}</Text>
+                              </Flex>
+                            ))}
+                          </Box>
+                        );
+                      }}
+                    />
+                    {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => (
+                      <Line
+                        key={name}
+                        type="monotone"
+                        dataKey={name}
+                        stroke={`#${constructorColors[name]}` || '#ff0000'}
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={true}
+                        name={name}
+                        connectNulls
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+          </Box>
+        </Flex>
       )}
     </Box>
   );
 };
 
 export default Standings;
+
+
+
 
 
 

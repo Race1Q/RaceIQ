@@ -492,7 +492,7 @@ async getDriversPointsProgression3() {
   // Step 2: Get all drivers with standings in the latest season
   const { data: drivers, error: driversError } = await this.supabaseService.client
     .from('driver_standings_materialized')
-    .select('driverId, driverFullName')
+    .select('driverId, driverFullName, constructorName')
     .eq('seasonYear', latestSeasonData.year);
 
   if (driversError || !drivers?.length) return [];
@@ -546,6 +546,7 @@ async getDriversPointsProgression3() {
   const driverProgression: Array<{
     driverId: number;
     driverName: string;
+    driverTeam: string;
     progression: { round: number; raceName: string; racePoints: number; cumulativePoints: number }[];
   }> = [];
 
@@ -576,6 +577,7 @@ async getDriversPointsProgression3() {
     driverProgression.push({
       driverId: d.driverId,
       driverName: d.driverFullName,
+      driverTeam: d.constructorName,
       progression,
     });
   });
