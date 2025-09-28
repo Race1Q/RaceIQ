@@ -60,4 +60,11 @@ async debugConstructorSeason(
   return this.resultsService.debugConstructorRaces(constructorId, seasonId);
 }
 
+@Get('constructors/:seasonId/progression')
+@Scopes('read:race-results')
+  async getConstructorsProgression(@Param('seasonId') seasonId: string) {
+    const seasonIdNum = Number(seasonId);
+    return this.resultsService.getAllConstructorsProgression(seasonIdNum);
+  }
+
 }

@@ -279,8 +279,28 @@ export class RaceResultsService {
     return detailedResults;
   }
   
+  async getAllConstructorsProgression(seasonId: number) {
+    // Fetch all constructors
+    const { data: constructors, error: constructorsError } = await this.supabaseService.client
+      .from('constructors')
+      .select('id, name')
+      .eq('is_active', true); // only active teams
   
+    if (constructorsError) throw new Error(constructorsError.message);
+    if (!constructors?.length) return [];
   
+    const results: { constructorId: number; constructorName: string; progression: { round: number; raceName: string; racePoints: number; cumulativePoints: number }[] }[] = [];
   
+    for (const constructor of constructors) {
+      const progression = await this.getConstructorPointsProgression(constructor.id, seasonId);
+      results.push({
+        constructorId: constructor.id,
+        constructorName: constructor.name,
+        progression,
+      });
+    }
+    console.log(results[0]);
+    return results;
+  }
   
 }
