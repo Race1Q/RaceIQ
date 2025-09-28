@@ -73,4 +73,40 @@ import {
 
     @OneToMany(() => TireStint, 'driver')
     tireStints: TireStint[];
+
+    // Computed property for full name
+    get full_name(): string {
+      if (this.first_name && this.last_name) {
+        return `${this.first_name} ${this.last_name}`;
+      }
+      return this.first_name || this.last_name || this.name_acronym || `Driver ${this.id}`;
+    }
+
+    // Additional getters for compatibility with frontend expectations
+    get given_name(): string | null {
+      return this.first_name;
+    }
+
+    get family_name(): string | null {
+      return this.last_name;
+    }
+
+    get code(): string | null {
+      return this.name_acronym;
+    }
+
+    get current_team_name(): string | null {
+      // This would need to be populated by a service method
+      // For now, return null and let the service handle team info
+      return null;
+    }
+
+    get image_url(): string | null {
+      return this.profile_image_url;
+    }
+
+    get team_color(): string | null {
+      // This would need to be populated by a service method
+      return null;
+    }
   }

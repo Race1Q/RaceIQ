@@ -5,11 +5,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Driver } from './drivers.entity';
 import { RaceResult } from '../race-results/race-results.entity';
+import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { DriverCareerStatsMaterialized } from './driver-career-stats-materialized.entity';
 import { WinsPerSeasonMaterialized } from './wins-per-season-materialized.entity';
 import { RaceFastestLapMaterialized } from '../dashboard/race-fastest-laps-materialized.entity';
-import { DriverStatsResponseDto } from './dto/driver-stats.dto';
+import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
 
 // Define the shape of the data we will return
 interface RecentFormResult {
@@ -25,6 +26,8 @@ export class DriversService {
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(RaceResult)
     private readonly raceResultRepository: Repository<RaceResult>,
+    @InjectRepository(QualifyingResult)
+    private readonly qualifyingResultRepository: Repository<QualifyingResult>,
     @InjectRepository(DriverCareerStatsMaterialized)
     private readonly careerStatsViewRepo: Repository<DriverCareerStatsMaterialized>,
     @InjectRepository(DriverStandingMaterialized)
@@ -35,8 +38,27 @@ export class DriversService {
     private readonly fastestLapViewRepo: Repository<RaceFastestLapMaterialized>,
   ) {}
 
-  async findAll(): Promise<Driver[]> {
-    return this.driverRepository.find({ relations: ['country'] });
+  async findAll(): Promise<any[]> {
+    const drivers = await this.driverRepository.find({ relations: ['country'] });
+    
+    // Transform the data to match frontend expectations
+    return drivers.map(driver => ({
+      id: driver.id,
+      full_name: driver.first_name && driver.last_name 
+        ? `${driver.first_name} ${driver.last_name}`
+        : driver.first_name || driver.last_name || driver.name_acronym || `Driver ${driver.id}`,
+      given_name: driver.first_name,
+      family_name: driver.last_name,
+      code: driver.name_acronym,
+      current_team_name: null, // Will be populated later if needed
+      image_url: driver.profile_image_url,
+      team_color: null, // Will be populated later if needed
+      country_code: driver.country_code,
+      driver_number: driver.driver_number,
+      date_of_birth: driver.date_of_birth,
+      bio: driver.bio,
+      fun_fact: driver.fun_fact,
+    }));
   }
 
   async findOne(id: number): Promise<Driver> {
@@ -99,14 +121,28 @@ export class DriversService {
 
     const teamResult = await mostRecentTeamQuery.getRawOne();
     
-    // Enrich the driver object with team information
-    const enrichedDriver = {
-      ...driver,
-      teamName: teamResult?.teamName || 'N/A',
+    // Transform and enrich the driver object with team information
+    const transformedDriver = {
+      id: driver.id,
+      full_name: driver.first_name && driver.last_name 
+        ? `${driver.first_name} ${driver.last_name}`
+        : driver.first_name || driver.last_name || driver.name_acronym || `Driver ${driver.id}`,
+      given_name: driver.first_name,
+      family_name: driver.last_name,
+      code: driver.name_acronym,
+      current_team_name: teamResult?.teamName || null,
+      image_url: driver.profile_image_url,
+      team_color: null, // Will be populated later if needed
+      country_code: driver.country_code,
+      driver_number: driver.driver_number,
+      date_of_birth: driver.date_of_birth,
+      bio: driver.bio,
+      fun_fact: driver.fun_fact,
+      teamName: teamResult?.teamName || 'N/A', // Legacy field for compatibility
     };
 
     return {
-      driver: enrichedDriver,
+      driver: transformedDriver,
       careerStats: {
         wins: careerStats.totalWins,
         podiums: careerStats.totalPodiums,
@@ -222,5 +258,133 @@ export class DriversService {
       .getRawMany();
 
     return rawResults;
+  }
+
+  // NEW: Driver comparison stats method
+  async getDriverStats(driverId: number, year?: number): Promise<DriverComparisonStatsResponseDto> {
+    // Verify driver exists
+    const driver = await this.findOne(driverId);
+    
+    // Build the DNF condition predicate
+    const dnfCondition = `(
+      rr.status IS NULL 
+      OR (rr.status NOT ILIKE 'Finished%' 
+          AND rr.status NOT ILIKE '+% Lap%' 
+          AND rr.status NOT ILIKE 'Classified%')
+    )`;
+
+    // Career stats query (race results only)
+    const careerRaceQuery = this.raceResultRepository
+      .createQueryBuilder('rr')
+      .select([
+        'COUNT(CASE WHEN rr.position = 1 THEN 1 END) AS wins',
+        'COUNT(CASE WHEN rr.position <= 3 THEN 1 END) AS podiums',
+        'COUNT(CASE WHEN rr.fastest_lap_rank = 1 THEN 1 END) AS fastest_laps',
+        'SUM(COALESCE(rr.points, 0) + COALESCE(rr.points_for_fastest_lap, 0)) AS points',
+        `COUNT(CASE WHEN ${dnfCondition} THEN 1 END) AS dnfs`,
+      ])
+      .innerJoin('rr.session', 's')
+      .where('rr.driver_id = :driverId', { driverId })
+      .andWhere("s.type = 'RACE'");
+
+    // Career stats query (sprint results only)  
+    const careerSprintQuery = this.raceResultRepository
+      .createQueryBuilder('rr')
+      .select([
+        'COUNT(CASE WHEN rr.position = 1 THEN 1 END) AS sprint_wins',
+        'COUNT(CASE WHEN rr.position <= 3 THEN 1 END) AS sprint_podiums',
+      ])
+      .innerJoin('rr.session', 's')
+      .where('rr.driver_id = :driverId', { driverId })
+      .andWhere("s.type = 'SPRINT'");
+
+    // Execute base queries
+    const [careerRaceStats, careerSprintStats] = await Promise.all([
+      careerRaceQuery.getRawOne(),
+      careerSprintQuery.getRawOne(),
+    ]);
+
+    // Year-specific stats (only if year is provided)
+    let yearRaceStats: any = null;
+    let yearSprintStats: any = null; 
+    let yearPolesStats: any = null;
+
+    if (year) {
+      // Year race stats
+      const yearRaceQuery = this.raceResultRepository
+        .createQueryBuilder('rr')
+        .select([
+          'COUNT(CASE WHEN rr.position = 1 THEN 1 END) AS wins',
+          'COUNT(CASE WHEN rr.position <= 3 THEN 1 END) AS podiums',
+          'COUNT(CASE WHEN rr.fastest_lap_rank = 1 THEN 1 END) AS fastest_laps',
+          'SUM(COALESCE(rr.points, 0) + COALESCE(rr.points_for_fastest_lap, 0)) AS points',
+          `COUNT(CASE WHEN ${dnfCondition} THEN 1 END) AS dnfs`,
+        ])
+        .innerJoin('rr.session', 's')
+        .innerJoin('s.race', 'r')
+        .innerJoin('r.season', 'season')
+        .where('rr.driver_id = :driverId', { driverId })
+        .andWhere("s.type = 'RACE'")
+        .andWhere('season.year = :year', { year });
+
+      // Year sprint stats
+      const yearSprintQuery = this.raceResultRepository
+        .createQueryBuilder('rr')
+        .select([
+          'COUNT(CASE WHEN rr.position = 1 THEN 1 END) AS sprint_wins',
+          'COUNT(CASE WHEN rr.position <= 3 THEN 1 END) AS sprint_podiums',
+        ])
+        .innerJoin('rr.session', 's')
+        .innerJoin('s.race', 'r')
+        .innerJoin('r.season', 'season')
+        .where('rr.driver_id = :driverId', { driverId })
+        .andWhere("s.type = 'SPRINT'")
+        .andWhere('season.year = :year', { year });
+
+      // Year poles (from qualifying results)
+      const yearPolesQuery = this.qualifyingResultRepository
+        .createQueryBuilder('qr')
+        .select('COUNT(CASE WHEN qr.position = 1 THEN 1 END) AS poles')
+        .innerJoin('qr.session', 's')
+        .innerJoin('s.race', 'r')
+        .innerJoin('r.season', 'season')
+        .where('qr.driver_id = :driverId', { driverId })
+        .andWhere("s.type = 'QUALIFYING'")
+        .andWhere('season.year = :year', { year });
+
+      // Execute year-specific queries
+      [yearRaceStats, yearSprintStats, yearPolesStats] = await Promise.all([
+        yearRaceQuery.getRawOne(),
+        yearSprintQuery.getRawOne(), 
+        yearPolesQuery.getRawOne(),
+      ]);
+    }
+
+    // Build response
+    const response: DriverComparisonStatsResponseDto = {
+      driverId,
+      year: year || null,
+      career: {
+        wins: parseInt(careerRaceStats?.wins || '0', 10),
+        podiums: parseInt(careerRaceStats?.podiums || '0', 10),
+        fastestLaps: parseInt(careerRaceStats?.fastest_laps || '0', 10),
+        points: parseFloat(careerRaceStats?.points || '0'),
+        dnfs: parseInt(careerRaceStats?.dnfs || '0', 10),
+        sprintWins: parseInt(careerSprintStats?.sprint_wins || '0', 10),
+        sprintPodiums: parseInt(careerSprintStats?.sprint_podiums || '0', 10),
+      },
+      yearStats: year ? {
+        wins: parseInt(yearRaceStats?.wins || '0', 10),
+        podiums: parseInt(yearRaceStats?.podiums || '0', 10),
+        fastestLaps: parseInt(yearRaceStats?.fastest_laps || '0', 10),
+        points: parseFloat(yearRaceStats?.points || '0'),
+        dnfs: parseInt(yearRaceStats?.dnfs || '0', 10),
+        sprintWins: parseInt(yearSprintStats?.sprint_wins || '0', 10),
+        sprintPodiums: parseInt(yearSprintStats?.sprint_podiums || '0', 10),
+        poles: parseInt(yearPolesStats?.poles || '0', 10),
+      } : null,
+    };
+
+    return response;
   }
 }

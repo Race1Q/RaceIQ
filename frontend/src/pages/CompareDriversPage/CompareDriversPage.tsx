@@ -1,26 +1,53 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button } from '@chakra-ui/react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack } from '@chakra-ui/react';
 import { useDriverComparison } from '../../hooks/useDriverComparison';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { DriverSelectionPanel } from './components/DriverSelectionPanel';
 import { ComparisonTable } from './components/ComparisonTable';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 
+
 const CompareDriversPage = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
 
-  // ✅ This hook should internally fetch:
-  // - /api/drivers (for dropdowns)
-  // - /api/drivers/:id/stats (for selected driver details)
-  const { allDrivers, driver1, driver2, loading, error, handleSelectDriver } =
-    useDriverComparison();
+  // Enhanced hook with new comparison features
+  const { 
+    allDrivers, 
+    driver1, 
+    driver2, 
+    loading, 
+    error, 
+    handleSelectDriver,
+    // NEW: Comparison features
+    years,
+    selection1,
+    selection2,
+    stats1,
+    stats2,
+    enabledMetrics,
+    score,
+    selectDriver,
+    toggleMetric,
+  } = useDriverComparison();
 
-  // Build dropdown options with the new entity getter full_name
-  const driverOptions: SelectOption[] = allDrivers.map((d) => ({
-    value: d.id,
-    label: d.full_name,
-  }));
+  // Build dropdown options with proper name fallbacks
+  const driverOptions: SelectOption[] = allDrivers.map((d) => {
+    // Create a proper display name with fallbacks
+    const displayName = d.full_name || 
+                       (d.given_name && d.family_name ? `${d.given_name} ${d.family_name}` : '') ||
+                       d.code ||
+                       `Driver ${d.id}`;
+    
+    return {
+      value: String(d.id),
+      label: displayName,
+    };
+  }).filter(option => option.label.trim() !== ''); // Remove any entries with empty labels
+
+
+
+
 
   if (!isAuthenticated) {
     return (
@@ -48,6 +75,34 @@ const CompareDriversPage = () => {
       {loading && <F1LoadingSpinner text="Fetching data..." />}
       {error && <Text color="brand.red" textAlign="center" fontSize="lg" p="xl">{error}</Text>}
 
+      {/* Composite Score Display */}
+      {score.d1 !== null && score.d2 !== null && (
+        <Box bg="bg-surface" p="lg" borderRadius="md" mb="xl" textAlign="center">
+          <Heading size="lg" mb="md" fontFamily="heading">Composite Score</Heading>
+          <HStack justify="center" spacing="xl">
+            <Box>
+              <Text fontSize="sm" color="text-secondary">
+                {selection1 ? `Driver 1 ${selection1.year === 'career' ? '(Career)' : `(${selection1.year})`}` : 'Driver 1'}
+              </Text>
+              <Text fontSize="3xl" fontWeight="bold" color="brand.red">
+                {score.d1}/100
+              </Text>
+            </Box>
+            <Text fontSize="2xl" color="text-secondary">VS</Text>
+            <Box>
+              <Text fontSize="sm" color="text-secondary">
+                {selection2 ? `Driver 2 ${selection2.year === 'career' ? '(Career)' : `(${selection2.year})`}` : 'Driver 2'}
+              </Text>
+              <Text fontSize="3xl" fontWeight="bold" color="brand.red">
+                {score.d2}/100
+              </Text>
+            </Box>
+          </HStack>
+        </Box>
+      )}
+
+
+
       <Grid
         templateColumns={{ base: '1fr', lg: '1fr auto 1fr' }}
         gap="lg"
@@ -60,8 +115,19 @@ const CompareDriversPage = () => {
           title="Driver 1"
           allDrivers={driverOptions}
           selectedDriverData={driver1}
-          onDriverSelect={(id) => handleSelectDriver(1, id)}
+          onDriverSelect={(id) => {
+            handleSelectDriver(1, String(id)); // Legacy compatibility
+            selectDriver(1, String(id), 'career'); // New functionality
+          }}
           isLoading={loading}
+          // NEW: Year selection support - using simplified controls in panel
+          extraControl={selection1 ? (
+            <VStack spacing="sm" align="stretch" w="100%">
+              <Text fontSize="sm" fontWeight="medium" color="text-secondary">
+                {selection1.year === 'career' ? 'Career Stats' : `${selection1.year} Season`}
+              </Text>
+            </VStack>
+          ) : null}
         />
 
         <Flex
@@ -79,13 +145,42 @@ const CompareDriversPage = () => {
           title="Driver 2"
           allDrivers={driverOptions}
           selectedDriverData={driver2}
-          onDriverSelect={(id) => handleSelectDriver(2, id)}
+          onDriverSelect={(id) => {
+            handleSelectDriver(2, String(id)); // Legacy compatibility
+            selectDriver(2, String(id), 'career'); // New functionality
+          }}
           isLoading={loading}
+          // NEW: Year selection support - using simplified controls in panel  
+          extraControl={selection2 ? (
+            <VStack spacing="sm" align="stretch" w="100%">
+              <Text fontSize="sm" fontWeight="medium" color="text-secondary">
+                {selection2.year === 'career' ? 'Career Stats' : `${selection2.year} Season`}
+              </Text>
+            </VStack>
+          ) : null}
         />
       </Grid>
 
       {driver1 && driver2 && (
-        <ComparisonTable driver1={driver1} driver2={driver2} />
+        <ComparisonTable 
+          driver1={driver1} 
+          driver2={driver2} 
+          // NEW: Pass additional stats for enhanced comparison
+          stats1={stats1}
+          stats2={stats2}
+          enabledMetrics={enabledMetrics}
+          selection1={selection1}
+          selection2={selection2}
+          // NEW: Pass handlers for the updated filter styling
+          onYearChange={(driverIndex, year) => {
+            const driverId = driverIndex === 1 ? selection1?.driverId : selection2?.driverId;
+            if (driverId) {
+              selectDriver(driverIndex, driverId, year);
+            }
+          }}
+          onMetricToggle={toggleMetric}
+          availableYears={years}
+        />
       )}
     </Box>
   );
