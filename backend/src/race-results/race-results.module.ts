@@ -7,6 +7,7 @@ import { SessionsModule } from '../sessions/sessions.module';
 import { DriversModule } from '../drivers/drivers.module';
 import { ConstructorsModule } from '../constructors/constructors.module';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { SeasonsModule } from 'src/seasons/seasons.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SupabaseModule } from '../supabase/supabase.module';
     DriversModule,
     ConstructorsModule,
     SupabaseModule, // ✅ add this so SupabaseService can be injected
+    SeasonsModule,
   ],
   controllers: [RaceResultsController],
   providers: [RaceResultsService],

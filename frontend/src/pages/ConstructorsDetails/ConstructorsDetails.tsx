@@ -20,6 +20,7 @@ import {
   Bar,
 } from 'recharts';
 
+
 interface Constructor {
   id: number;
   name: string;
@@ -42,12 +43,13 @@ interface Season {
 
 interface CumulativeProgression {
   round: number;
+  raceName: string;
+  racePoints: number;
   cumulativePoints: number;
 }
-
 interface SeasonPoles {
-  seasonId: number;
-  poleCount: string;
+  year: number;
+  poles: number;
 }
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
@@ -65,6 +67,8 @@ const ConstructorDetails: React.FC = () => {
   const [totalPoles, setTotalPoles] = useState<number>(0);
   const [polesBySeason, setPolesBySeason] = useState<SeasonPoles[]>([]);
   const [loading, setLoading] = useState(true);
+  const [topRace, setTopRace] = useState<{ round: number; raceName: string; points: number } | null>(null);
+
 
   const authedFetch = useCallback(
     async (url: string) => {
@@ -120,18 +124,27 @@ const ConstructorDetails: React.FC = () => {
             `${BACKEND_URL}api/race-results/constructor/${constructorId}/season/${latestSeasonId}/progression`
           );
           setCumulativeProgression(cumulativeData);
-        }
+          if (cumulativeData.length > 0) {
+            const bestRace = cumulativeData.reduce((prev, curr) =>
+              curr.racePoints > prev.racePoints ? curr : prev
+            );
+            setTopRace({ round: bestRace.round, raceName: bestRace.raceName, points: bestRace.racePoints });
+          }
+          
+        }        
 
         // Poles
         const polesData = await authedFetch(
           `${BACKEND_URL}api/races/constructor/${constructorId}/poles`
         );
         setTotalPoles(polesData.poles);
+        //console.log('Total Poles:', polesData.poles);
 
         const polesBySeasonData: SeasonPoles[] = await authedFetch(
           `${BACKEND_URL}api/races/constructor/${constructorId}/poles-by-season`
         );
         setPolesBySeason(polesBySeasonData);
+        //console.log('Poles by Season:', polesBySeasonData);
 
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
@@ -161,21 +174,15 @@ const ConstructorDetails: React.FC = () => {
     });
   }, [pointsPerSeason, seasons]);
 
-  const mappedPolesPerSeason = useMemo(() => {
-    if (!polesBySeason || !Array.isArray(polesBySeason)) return [];
+   // Map poles per season for chart
+   const mappedPolesPerSeason = useMemo(() => {
     return polesBySeason
-      .map((s) => {
-        const seasonObj = seasons.find(season => season.id === Number(s.seasonId));
-        return {
-          ...s,
-          poleCount: Number(s.poleCount),
-          seasonId: Number(s.seasonId),
-          seasonYear: seasonObj ? seasonObj.year : 0,
-          seasonLabel: seasonObj ? seasonObj.year.toString() : `Season ${s.seasonId}`,
-        };
-      })
+      .map((s) => ({
+        seasonYear: s.year,
+        poleCount: Number(s.poles),
+      }))
       .sort((a, b) => a.seasonYear - b.seasonYear);
-  }, [polesBySeason, seasons]);
+  }, [polesBySeason]);
 
   const latestSeason = useMemo(() => {
     if (!pointsPerSeason || pointsPerSeason.length === 0) return null;
@@ -190,12 +197,13 @@ const ConstructorDetails: React.FC = () => {
     return latest;
   }, [pointsPerSeason, seasons]);
 
+  // Latest season poles (fixed mapping by year)
   const latestSeasonPoles = useMemo(() => {
     if (!latestSeason) return 0;
-    const latestSeasonObj = seasons.find(s => s.id === latestSeason.season);
-    if (!latestSeasonObj) return 0;
-    const polesEntry = mappedPolesPerSeason.find(s => s.seasonYear === latestSeasonObj.year);
-    return polesEntry ? polesEntry.poleCount : 0;
+    const latestYear = seasons.find(s => s.id === latestSeason.season)?.year;
+    if (!latestYear) return 0;
+    const entry = mappedPolesPerSeason.find(p => p.seasonYear === latestYear);
+    return entry ? entry.poleCount : 0;
   }, [latestSeason, mappedPolesPerSeason, seasons]);
 
   const totalPoints = useMemo(
@@ -324,7 +332,8 @@ const ConstructorDetails: React.FC = () => {
             </ResponsiveContainer>
           </Box>
 
-          <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
+           {/* Poles per Season */}
+           <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
             <Text fontSize="lg" fontWeight="bold" mb={2}>Poles by Season</Text>
             <ResponsiveContainer width="100%" height="90%">
               <BarChart data={mappedPolesPerSeason}>
@@ -375,7 +384,19 @@ const ConstructorDetails: React.FC = () => {
               </ResponsiveContainer>
             </Box>
           )}
+          {topRace && (
+          <Box mt={0} p={4} bg="gray.700" borderRadius="md"  minW="200px">
+            <Text fontSize="lg" fontWeight="bold" textAlign="left">
+              {constructor.name} {seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'} BEST RACE:
+            </Text>
+            <Text fontSize="lg" fontWeight="bold" textAlign="left">
+              Round {topRace.round}: {topRace.raceName}
+            </Text>
+            <Text fontSize="xl" mt={2} textAlign="left">Points: {topRace.points}</Text>
+          </Box>
+        )}
         </Box>
+
       </Flex>
     </Box>
   );

@@ -17,6 +17,7 @@ import FavoriteTeamSnapshotWidget from './widgets/FavoriteTeamSnapshotWidget';
 import HeadToHeadQuickCompareWidget from './widgets/HeadToHeadQuickCompareWidget';
 import LatestF1NewsWidget from './widgets/LatestF1NewsWidget';
 import { AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom'; 
 
 // Apply WidthProvider to ResponsiveGridLayout
 const ResponsiveGridLayout = WidthProvider(RGL);
@@ -94,7 +95,11 @@ function DashboardPage() {
   // Widget components map
   const widgetComponents: { [key: string]: React.ReactNode } = {
     nextRace: <NextRaceWidget data={dashboardData?.nextRace} />,
-    standings: <StandingsWidget data={dashboardData?.championshipStandings} />,
+    standings: (
+      <Link to="/standings/drivers">
+        <StandingsWidget data={dashboardData?.championshipStandings} />
+      </Link>
+    ),
     lastPodium: <LastPodiumWidget data={dashboardData?.lastRacePodium} />,
     fastestLap: <FastestLapWidget data={dashboardData?.lastRaceFastestLap} />,
     favoriteDriver: <FavoriteDriverSnapshotWidget />,

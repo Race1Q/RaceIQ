@@ -37,19 +37,19 @@ export class DriversController {
     return this.driversService.getDriverCareerStats(id);
   }
 
-  // 🆕 Get drivers by standings (season)
-  @Get('by-standings/:season')
-  async getDriversByStandings(
-    @Param('season', ParseIntPipe) season: number,
-  ) {
-    return this.driversService.getDriversByStandings3(season);
-  }
 
   @Get(':id/recent-form')
   async getDriverRecentForm(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ position: number; raceName: string; countryCode: string }[]> {
     return this.driversService.getDriverRecentForm(id);
+  }
+
+  @Get('standings/:season')
+  async getDriverStandings(
+    @Param('season', ParseIntPipe) season: number,
+  ) {
+    return this.driversService.getDriverStandings(season);
   }
 }
 
