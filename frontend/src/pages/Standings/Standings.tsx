@@ -12,10 +12,11 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { teamColors } from '../../lib/teamColors';
+import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-interface ConstructorProgressionEntry {
+interface ProgressionEntry {
   round: number;
   raceName: string;
   racePoints: number;
@@ -25,20 +26,35 @@ interface ConstructorProgressionEntry {
 interface ConstructorProgression {
   constructorId: number;
   constructorName: string;
-  progression: ConstructorProgressionEntry[];
+  progression: ProgressionEntry[];
+}
+
+interface DriverProgression {
+  driverId: number;
+  driverName: string;
+  progression: ProgressionEntry[];
 }
 
 const Standings: React.FC = () => {
   const [constructorsProgression, setConstructorsProgression] = useState<ConstructorProgression[]>([]);
+  const [driversProgression, setDriversProgression] = useState<DriverProgression[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch data
   useEffect(() => {
-    const fetchConstructorsProgression = async () => {
+    const fetchProgressions = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/race-results/constructors/progression`);
-        if (!response.ok) throw new Error('Failed to fetch constructors progression');
-        const data: ConstructorProgression[] = await response.json();
-        setConstructorsProgression(data);
+        const [constructorsRes, driversRes] = await Promise.all([
+          fetch(`${BACKEND_URL}api/race-results/constructors/26/progression`),
+          fetch(`${BACKEND_URL}api/race-results/drivers/progression3`),
+        ]);
+        if (!constructorsRes.ok || !driversRes.ok) throw new Error('Failed to fetch progressions');
+
+        const constructorsData: ConstructorProgression[] = await constructorsRes.json();
+        const driversData: DriverProgression[] = await driversRes.json();
+
+        setConstructorsProgression(constructorsData);
+        setDriversProgression(driversData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -46,28 +62,48 @@ const Standings: React.FC = () => {
       }
     };
 
-    fetchConstructorsProgression();
+    fetchProgressions();
   }, []);
 
-  // Flatten progression for Recharts
-  const chartData: any[] = [];
-  constructorsProgression.forEach((c) => {
+  // Flatten constructors progression for chart
+  const constructorsChartData: any[] = [];
+  constructorsProgression.forEach((c) =>
     c.progression.forEach((p) => {
-      let entry = chartData.find((d) => d.round === p.round);
+      let entry = constructorsChartData.find((d) => d.round === p.round);
       if (!entry) {
         entry = { round: p.round, raceName: p.raceName };
-        chartData.push(entry);
+        constructorsChartData.push(entry);
       }
       entry[c.constructorName] = p.cumulativePoints;
-    });
-  });
-  chartData.sort((a, b) => a.round - b.round);
+    })
+  );
+  constructorsChartData.sort((a, b) => a.round - b.round);
 
-  // Map constructorName → color
+  // Flatten drivers progression for chart
+  const driversChartData: any[] = [];
+  driversProgression.forEach((d) =>
+    d.progression.forEach((p) => {
+      let entry = driversChartData.find((e) => e.round === p.round);
+      if (!entry) {
+        entry = { round: p.round, raceName: p.raceName };
+        driversChartData.push(entry);
+      }
+      entry[d.driverName] = p.cumulativePoints;
+    })
+  );
+  driversChartData.sort((a, b) => a.round - b.round);
+
+  // Constructor colors
   const constructorColors: Record<string, string> = {};
   constructorsProgression.forEach((c) => {
     constructorColors[c.constructorName] =
       teamColors[c.constructorName] || `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  });
+
+  // Driver colors
+  const driverColorsMap: Record<string, string> = {};
+  driversProgression.forEach((d) => {
+    // Optional: populate driver colors if needed
   });
 
   return (
@@ -120,59 +156,109 @@ const Standings: React.FC = () => {
         </Box>
       </Flex>
 
-      {/* Points Progression Chart (outside the card but inline) */}
-      {!loading && constructorsProgression.length > 0 && (
-        <Box w="100%" h="400px" mt={8} bg="gray.700" p={4} borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-            2025 Constructors Points Progression
-          </Text>
-          <ResponsiveContainer width="100%" height="90%">
-  <LineChart data={chartData}>
-    <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-    <XAxis dataKey="round" stroke="white" />
-    <YAxis stroke="white" />
-    <Tooltip
-      content={({ active, payload, label }) => {
-        if (!active || !payload || !payload.length) return null;
+      {loading ? (
+        <F1LoadingSpinner text="Loading Standings..." />
+      ) : (
+        <>
+          {/* Constructors Chart */}
+          {constructorsProgression.length > 0 && (
+            <Box w="100%" h="400px" mt={8} bg="gray.700" p={4} borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
+                2025 Constructors Points Progression
+              </Text>
+              <ResponsiveContainer width="100%" height="90%">
+                <LineChart data={constructorsChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                  <XAxis dataKey="round" stroke="white" />
+                  <YAxis stroke="white" />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+                      return (
+                        <Box bg="gray.800" p={2} borderRadius="md" color="white">
+                          <Text fontWeight="bold">Round {label}</Text>
+                          {sortedPayload.map((entry, index) => (
+                            <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+                              <Text>{entry.name}</Text>
+                              <Text>{entry.value}</Text>
+                            </Flex>
+                          ))}
+                        </Box>
+                      );
+                    }}
+                  />
+                  {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => (
+                    <Line
+                      key={name}
+                      type="monotone"
+                      dataKey={name}
+                      stroke={`#${constructorColors[name]}` || '#ff0000'}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                      name={name}
+                      connectNulls
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          )}
 
-        // Sort by cumulative points descending
-        const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
-
-        return (
-          <Box bg="gray.800" p={2} borderRadius="md" color="white">
-            <Text fontWeight="bold">Round {label}</Text>
-            {sortedPayload.map((entry, index) => (
-              <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
-                <Text>{entry.name}</Text>
-                <Text>{entry.value}</Text>
-              </Flex>
-            ))}
-          </Box>
-        );
-      }}
-    />
-    {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => (
-      <Line
-        key={name}
-        type="monotone"
-        dataKey={name}
-        stroke={`#${constructorColors[name]}`}
-        strokeWidth={2}
-        dot={false}
-        isAnimationActive={false}
-        name={name}
-        connectNulls
-      />
-    ))}
-  </LineChart>
-</ResponsiveContainer>
-
-        </Box>
+          {/* Drivers Chart */}
+          {driversProgression.length > 0 && (
+            <Box w="100%" h="400px" mt={8} bg="gray.700" p={4} borderRadius="md">
+              <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
+                2025 Drivers Points Progression
+              </Text>
+              <ResponsiveContainer width="100%" height="90%">
+                <LineChart data={driversChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                  <XAxis dataKey="round" stroke="white" />
+                  <YAxis stroke="white" />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+                      return (
+                        <Box bg="gray.800" p={2} borderRadius="md" color="white">
+                          <Text fontWeight="bold">Round {label}</Text>
+                          {sortedPayload.map((entry, index) => (
+                            <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+                              <Text>{entry.name}</Text>
+                              <Text>{entry.value}</Text>
+                            </Flex>
+                          ))}
+                        </Box>
+                      );
+                    }}
+                  />
+                  {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => (
+                    <Line
+                      key={name}
+                      type="monotone"
+                      dataKey={name}
+                      stroke={driverColorsMap[name] || '#ff0000'}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                      name={name}
+                      connectNulls
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          )}
+        </>
       )}
     </Box>
   );
 };
 
 export default Standings;
+
+
 
 
