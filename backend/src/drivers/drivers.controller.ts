@@ -1,9 +1,9 @@
 /* backend/src/drivers/drivers.controller.ts */
 
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
-import { DriverStatsResponseDto } from './dto/driver-stats.dto'; // 1. IMPORT
+import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
 
 @Controller('drivers')
 export class DriversController {
@@ -19,8 +19,18 @@ export class DriversController {
     return this.driversService.findOne(id);
   }
 
-  // 2. UNCOMMENT THIS ENDPOINT
+  // NEW: Driver comparison stats endpoint
   @Get(':id/stats')
+  async getDriverStats(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('year') year?: string,
+  ): Promise<DriverComparisonStatsResponseDto> {
+    const yearNumber = year ? parseInt(year, 10) : undefined;
+    return this.driversService.getDriverStats(id, yearNumber);
+  }
+
+  // EXISTING: Driver career stats endpoint (keep for backward compatibility)
+  @Get(':id/career-stats')
   async getDriverCareerStats(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<DriverStatsResponseDto> {

@@ -2,13 +2,58 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { buildApiUrl } from '../lib/api';
 import { driverHeadshots } from '../lib/driverHeadshots';
 import { fallbackDriverDetails } from '../lib/fallbackData/driverDetails';
-import type { ApiDriverStatsResponse, DriverDetailsData } from '../types';
+
+// Define types for the new driver details model
+export type DriverDetailsModel = {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  number: number | null;
+  countryCode: string;
+  imageUrl: string;
+  teamName: string;
+  currentSeasonStats?: { wins: number; podiums: number; fastestLaps: number; standing: string };
+  careerStats?: { wins: number; podiums: number; fastestLaps: number; points: number; grandsPrixEntered: number; dnfs: number; highestRaceFinish: number };
+  winsPerSeason?: Array<{ season: number; wins: number }>;
+};
+
+// Type guards
+const isDriverStatsResponse = (data: any): boolean => {
+  return data && typeof data === 'object' && 
+         data.driver && typeof data.driver === 'object' &&
+         data.careerStats && typeof data.careerStats === 'object' &&
+         data.currentSeasonStats && typeof data.currentSeasonStats === 'object';
+};
+
+const isDriverEntity = (data: any): boolean => {
+  return data && typeof data === 'object' && 
+         (data.first_name || data.firstName) && 
+         (data.last_name || data.lastName);
+};
+
+// Safe field access helper
+const safeGet = (obj: any, ...keys: string[]) => {
+  for (const key of keys) {
+    if (obj && obj[key] !== undefined && obj[key] !== null) {
+      return obj[key];
+    }
+  }
+  return '';
+};
+
+const safeGetNumber = (obj: any, ...keys: string[]) => {
+  for (const key of keys) {
+    if (obj && typeof obj[key] === 'number') {
+      return obj[key];
+    }
+  }
+  return null;
+};
 
 export const useDriverDetails = (driverId?: string) => {
-  const [driverDetails, setDriverDetails] = useState<DriverDetailsData | null>(null);
+  const [driverDetails, setDriverDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFallback, setIsFallback] = useState(false);
@@ -28,55 +73,111 @@ export const useDriverDetails = (driverId?: string) => {
         setError(null);
         setIsFallback(false);
         const token = await getAccessTokenSilently();
+        const API = (window as any).__API_BASE__ || '/api';
 
-        const response = await fetch(buildApiUrl(`/api/drivers/${driverId}/stats`), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        let apiData: any = null;
+        let driverEntity: any = null;
+        let hasStats = false;
 
-        if (!response.ok) {
-          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        // First, try to fetch driver career stats (the correct endpoint for driver details)
+        try {
+          const statsResponse = await fetch(`${API}/drivers/${driverId}/career-stats`, {
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+          });
+
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            if (isDriverStatsResponse(statsData)) {
+              apiData = statsData;
+              driverEntity = statsData.driver;
+              hasStats = true;
+            }
+          }
+        } catch (statsErr) {
+          console.warn('Career stats endpoint failed, will try basic driver endpoint');
         }
 
-        const apiData: ApiDriverStatsResponse = await response.json();
+        // If stats didn't work or doesn't have driver details, fetch basic driver info
+        if (!driverEntity) {
+          const driverResponse = await fetch(`${API}/drivers/${driverId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+          });
+
+          if (!driverResponse.ok) {
+            throw new Error(`API Error: ${driverResponse.status} ${driverResponse.statusText}`);
+          }
+
+          driverEntity = await driverResponse.json();
+          if (!isDriverEntity(driverEntity)) {
+            throw new Error('Invalid driver data structure received');
+          }
+        }
+
+        // --- ROBUST MAPPER: Transform API data to the flattened UI shape ---
+        const firstName = safeGet(driverEntity, 'given_name', 'first_name', 'firstName') || '';
+        const lastName = safeGet(driverEntity, 'family_name', 'last_name', 'lastName') || '';
+        const fullName = driverEntity.full_name || `${firstName} ${lastName}`.trim() || `Driver ${driverId}`;
         
-        // --- FINAL MAPPER: Transform live API data to the flattened UI shape ---
-        const fullName = `${apiData.driver.first_name} ${apiData.driver.last_name}`;
-        const mappedData: DriverDetailsData = {
-          id: apiData.driver.id,
+        const mappedData = {
+          id: driverEntity.id || parseInt(driverId, 10),
           fullName: fullName,
-          firstName: apiData.driver.first_name,
-          lastName: apiData.driver.last_name,
-          countryCode: apiData.driver.country_code,
-          dateOfBirth: apiData.driver.date_of_birth,
-          teamName: apiData.driver.teamName,
-          imageUrl: driverHeadshots[fullName] || apiData.driver.profile_image_url,
-          number: apiData.driver.driver_number,
-          // Flattened top-level stats for KeyInfoBar
-          wins: apiData.careerStats.wins,
-          podiums: apiData.careerStats.podiums,
-          points: apiData.careerStats.points,
-          championshipStanding: apiData.currentSeasonStats.standing,
-          firstRace: {
-            year: String(apiData.careerStats.firstRace.year),
-            event: apiData.careerStats.firstRace.event,
-          },
-          // Structured stats for the new Stat Sections
-          currentSeasonStats: [
-            { label: "Wins", value: apiData.currentSeasonStats.wins },
-            { label: "Podiums", value: apiData.currentSeasonStats.podiums },
-            { label: "Fastest Laps", value: apiData.currentSeasonStats.fastestLaps },
+          firstName: firstName,
+          lastName: lastName,
+          countryCode: safeGet(driverEntity, 'country_code', 'countryCode') || '',
+          dateOfBirth: safeGet(driverEntity, 'date_of_birth', 'dateOfBirth') || '',
+          teamName: safeGet(driverEntity, 'teamName', 'current_team_name') || 'N/A',
+          imageUrl: driverHeadshots[fullName] || 
+                   safeGet(driverEntity, 'image_url', 'profile_image_url', 'imageUrl') || '',
+          number: safeGetNumber(driverEntity, 'driver_number', 'number') || null,
+          
+          // Stats data (use from stats API if available, otherwise defaults)
+          wins: hasStats ? (apiData.careerStats?.wins || 0) : 0,
+          podiums: hasStats ? (apiData.careerStats?.podiums || 0) : 0,
+          points: hasStats ? (apiData.careerStats?.points || 0) : 0,
+          championshipStanding: hasStats ? (apiData.currentSeasonStats?.standing || 'N/A') : 'N/A',
+          
+          firstRace: hasStats ? {
+            year: String(apiData.careerStats?.firstRace?.year || ''),
+            event: apiData.careerStats?.firstRace?.event || 'N/A',
+          } : { year: '', event: 'N/A' },
+
+          // Structured stats for the stat sections
+          currentSeasonStats: hasStats ? [
+            { label: "Wins", value: apiData.currentSeasonStats?.wins || 0 },
+            { label: "Podiums", value: apiData.currentSeasonStats?.podiums || 0 },
+            { label: "Fastest Laps", value: apiData.currentSeasonStats?.fastestLaps || 0 },
+          ] : [
+            { label: "Wins", value: 0 },
+            { label: "Podiums", value: 0 },
+            { label: "Fastest Laps", value: 0 },
           ],
-          careerStats: [
-            { label: "Wins", value: apiData.careerStats.wins },
-            { label: "Podiums", value: apiData.careerStats.podiums },
-            { label: "Fastest Laps", value: apiData.careerStats.fastestLaps },
-            { label: "Grands Prix Entered", value: apiData.careerStats.grandsPrixEntered },
-            { label: "DNFs", value: apiData.careerStats.dnfs },
-            { label: "Highest Finish", value: apiData.careerStats.highestRaceFinish },
+
+          careerStats: hasStats ? [
+            { label: "Wins", value: apiData.careerStats?.wins || 0 },
+            { label: "Podiums", value: apiData.careerStats?.podiums || 0 },
+            { label: "Fastest Laps", value: apiData.careerStats?.fastestLaps || 0 },
+            { label: "Grands Prix Entered", value: apiData.careerStats?.grandsPrixEntered || 0 },
+            { label: "DNFs", value: apiData.careerStats?.dnfs || 0 },
+            { label: "Highest Finish", value: apiData.careerStats?.highestRaceFinish || 0 },
+          ] : [
+            { label: "Wins", value: 0 },
+            { label: "Podiums", value: 0 },
+            { label: "Fastest Laps", value: 0 },
+            { label: "Grands Prix Entered", value: 0 },
+            { label: "DNFs", value: 0 },
+            { label: "Highest Finish", value: 0 },
           ],
+
           // Chart data
-          winsPerSeason: apiData.careerStats.winsPerSeason.map(w => ({...w, season: String(w.season)})),
-          // Other data (placeholders for now, can be added to /stats later)
+          winsPerSeason: hasStats ? 
+            (apiData.careerStats?.winsPerSeason || []).map((w: any) => ({
+              ...w, 
+              season: String(w.season)
+            })) : [],
+
+          // Other data (use fallback values)
           funFact: fallbackDriverDetails.funFact,
           recentForm: [], 
         };
