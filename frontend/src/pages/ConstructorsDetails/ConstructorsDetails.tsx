@@ -43,6 +43,8 @@ interface Season {
 
 interface CumulativeProgression {
   round: number;
+  raceName: string;
+  racePoints: number;
   cumulativePoints: number;
 }
 interface SeasonPoles {
@@ -65,6 +67,8 @@ const ConstructorDetails: React.FC = () => {
   const [totalPoles, setTotalPoles] = useState<number>(0);
   const [polesBySeason, setPolesBySeason] = useState<SeasonPoles[]>([]);
   const [loading, setLoading] = useState(true);
+  const [topRace, setTopRace] = useState<{ round: number; raceName: string; points: number } | null>(null);
+
 
   const authedFetch = useCallback(
     async (url: string) => {
@@ -120,7 +124,14 @@ const ConstructorDetails: React.FC = () => {
             `${BACKEND_URL}api/race-results/constructor/${constructorId}/season/${latestSeasonId}/progression`
           );
           setCumulativeProgression(cumulativeData);
-        }
+          if (cumulativeData.length > 0) {
+            const bestRace = cumulativeData.reduce((prev, curr) =>
+              curr.racePoints > prev.racePoints ? curr : prev
+            );
+            setTopRace({ round: bestRace.round, raceName: bestRace.raceName, points: bestRace.racePoints });
+          }
+          
+        }        
 
         // Poles
         const polesData = await authedFetch(
@@ -373,7 +384,19 @@ const ConstructorDetails: React.FC = () => {
               </ResponsiveContainer>
             </Box>
           )}
+          {topRace && (
+          <Box mt={0} p={4} bg="gray.700" borderRadius="md"  minW="200px">
+            <Text fontSize="lg" fontWeight="bold" textAlign="left">
+              {constructor.name} {seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'} BEST RACE:
+            </Text>
+            <Text fontSize="lg" fontWeight="bold" textAlign="left">
+              Round {topRace.round}: {topRace.raceName}
+            </Text>
+            <Text fontSize="xl" mt={2} textAlign="left">Points: {topRace.points}</Text>
+          </Box>
+        )}
         </Box>
+
       </Flex>
     </Box>
   );
