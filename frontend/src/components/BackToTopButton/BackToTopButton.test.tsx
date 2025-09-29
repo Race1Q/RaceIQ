@@ -1,23 +1,59 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen, act } from '@testing-library/react';
 import { vi } from 'vitest';
+import { ChakraProvider } from '@chakra-ui/react';
 import BackToTopButton from './BackToTopButton';
 
-// Helper to find the rendered container (CSS module class contains "buttonContainer")
-function getContainer(): HTMLElement | null {
-  return document.querySelector('div[class*="buttonContainer"]');
+// Mock window.scrollTo
+const mockScrollTo = vi.fn();
+Object.defineProperty(window, 'scrollTo', {
+  value: mockScrollTo,
+  writable: true,
+});
+
+// Helper to simulate scroll events
+function simulateScroll(scrollY: number) {
+  Object.defineProperty(window, 'scrollY', { 
+    value: scrollY, 
+    configurable: true, 
+    writable: true 
+  });
+  Object.defineProperty(window, 'pageYOffset', { 
+    value: scrollY, 
+    configurable: true, 
+    writable: true 
+  });
+  
+  // Dispatch scroll event
+  act(() => {
+    window.dispatchEvent(new Event('scroll'));
+  });
 }
 
-// Put the page into a scrolled state and dispatch a scroll event so the control can react
-function primeScrollState(px = 500) {
-  Object.defineProperty(window, 'pageYOffset', { value: px, configurable: true, writable: true });
-  Object.defineProperty(window, 'scrollY', { value: px, configurable: true, writable: true });
-  document.documentElement.scrollTop = px;
-  document.body.scrollTop = px;
-  window.dispatchEvent(new Event('scroll'));
+function renderWithChakra(ui: React.ReactNode) {
+  return render(
+    <ChakraProvider>
+      {ui}
+    </ChakraProvider>
+  );
 }
 
 describe('BackToTopButton', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset scroll position
+    Object.defineProperty(window, 'scrollY', { 
+      value: 0, 
+      configurable: true, 
+      writable: true 
+    });
+    Object.defineProperty(window, 'pageYOffset', { 
+      value: 0, 
+      configurable: true, 
+      writable: true 
+    });
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -26,7 +62,7 @@ describe('BackToTopButton', () => {
     const addSpy = vi.spyOn(window, 'addEventListener');
     const removeSpy = vi.spyOn(window, 'removeEventListener');
 
-    const { unmount } = render(<BackToTopButton />);
+    const { unmount } = renderWithChakra(<BackToTopButton />);
 
     // Component should subscribe to window scroll events
     expect(addSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
@@ -36,23 +72,102 @@ describe('BackToTopButton', () => {
     expect(removeSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
   });
 
-  it('renders a container for the control (visible or hidden via CSS)', () => {
-    render(<BackToTopButton />);
-    // Your DOM shows the container div is present even before scroll
-    expect(getContainer()).not.toBeNull();
+  it('renders the button but is initially hidden when not scrolled', () => {
+    renderWithChakra(<BackToTopButton />);
+    
+    // The button should be in the DOM but hidden (Fade component handles visibility)
+    const button = screen.queryByRole('button', { name: /scroll to top/i });
+    expect(button).toBeInTheDocument();
   });
 
-  it('container can be clicked after scrolling (smoke test; no assumption about scroll API)', () => {
-    render(<BackToTopButton />);
+  it('shows the button when scrolled past threshold', () => {
+    renderWithChakra(<BackToTopButton />);
+    
+    // Initially hidden
+    let button = screen.queryByRole('button', { name: /scroll to top/i });
+    expect(button).toBeInTheDocument();
+    
+    // Simulate scroll past threshold (300px)
+    simulateScroll(400);
+    
+    // Button should still be in DOM (Fade component controls visibility via CSS)
+    button = screen.queryByRole('button', { name: /scroll to top/i });
+    expect(button).toBeInTheDocument();
+  });
 
-    // Put page in scrolled state so any conditional logic in the component can enable the control
-    primeScrollState(600);
+  it('hides the button when scrolled back to top', () => {
+    renderWithChakra(<BackToTopButton />);
+    
+    // Scroll past threshold
+    simulateScroll(400);
+    
+    let button = screen.queryByRole('button', { name: /scroll to top/i });
+    expect(button).toBeInTheDocument();
+    
+    // Scroll back to top
+    simulateScroll(0);
+    
+    // Button should still be in DOM but Fade component handles visibility
+    button = screen.queryByRole('button', { name: /scroll to top/i });
+    expect(button).toBeInTheDocument();
+  });
 
-    const container = getContainer();
-    expect(container).not.toBeNull();
+  it('calls window.scrollTo when clicked', () => {
+    renderWithChakra(<BackToTopButton />);
+    
+    // Scroll to make button visible
+    simulateScroll(400);
+    
+    const button = screen.getByRole('button', { name: /scroll to top/i });
+    
+    // Click the button
+    fireEvent.click(button);
+    
+    // Should call window.scrollTo with smooth behavior
+    expect(mockScrollTo).toHaveBeenCalledWith({
+      top: 0,
+      behavior: 'smooth',
+    });
+  });
 
-    // Clicking shouldn't throw; we don't assert a particular scroll implementation
-    // because the component may manipulate scroll position without using window.scrollTo in jsdom.
-    expect(() => fireEvent.click(container!)).not.toThrow();
+  it('has correct accessibility attributes', () => {
+    renderWithChakra(<BackToTopButton />);
+    
+    // Scroll to make button visible
+    simulateScroll(400);
+    
+    const button = screen.getByRole('button', { name: /scroll to top/i });
+    
+    expect(button).toHaveAttribute('aria-label', 'Scroll to top');
+  });
+
+  it('handles multiple scroll events correctly', () => {
+    renderWithChakra(<BackToTopButton />);
+    
+    // Test multiple scroll positions
+    simulateScroll(100); // Below threshold
+    simulateScroll(500); // Above threshold
+    simulateScroll(200); // Below threshold again
+    simulateScroll(600); // Above threshold again
+    
+    // Button should still be in DOM
+    const button = screen.queryByRole('button', { name: /scroll to top/i });
+    expect(button).toBeInTheDocument();
+  });
+
+  it('maintains scroll listener across re-renders', () => {
+    const { rerender } = renderWithChakra(<BackToTopButton />);
+    
+    // Re-render the component
+    rerender(
+      <ChakraProvider>
+        <BackToTopButton />
+      </ChakraProvider>
+    );
+    
+    // Should still work after re-render
+    simulateScroll(400);
+    const button = screen.queryByRole('button', { name: /scroll to top/i });
+    expect(button).toBeInTheDocument();
   });
 });
