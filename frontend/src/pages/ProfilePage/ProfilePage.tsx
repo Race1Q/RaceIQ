@@ -31,6 +31,7 @@ import { buildApiUrl } from '../../lib/api';
 import { useProfile } from '../../hooks/useProfile';
 import { sendRaceUpdate } from '../../services/notifications';
 import { useProfileUpdate } from '../../context/ProfileUpdateContext';
+import { driverHeadshots } from '../../lib/driverHeadshots';
 
 // SelectOption type imported from SearchableSelect component
 
@@ -147,6 +148,18 @@ const ProfilePage: React.FC = () => {
     [driverOptions]
   );
 
+  // Get the favorite driver's headshot for profile picture
+  const profilePictureSrc = useMemo(() => {
+    if (profile?.favorite_driver_id && driverOptions.length > 0) {
+      const favoriteDriver = driverOptions.find((driver: any) => driver.id === profile.favorite_driver_id);
+      if (favoriteDriver) {
+        const driverName = favoriteDriver.full_name || [favoriteDriver.first_name, favoriteDriver.last_name].filter(Boolean).join(' ');
+        return driverHeadshots[driverName] || user?.picture;
+      }
+    }
+    return user?.picture;
+  }, [profile?.favorite_driver_id, driverOptions, user?.picture]);
+
   const handleSelectChange = (field: 'favoriteDriver' | 'favoriteTeam', selectedOption: SelectOption | null) => {
     setFormData(prev => ({
       ...prev,
@@ -161,6 +174,25 @@ const ProfilePage: React.FC = () => {
   const handleSaveChanges = async () => {
     try {
       setSaving(true);
+      
+      // Check if any changes were made
+      const hasChanges = 
+        (formData.username !== (profile?.username || user?.name || '')) ||
+        (formData.favoriteTeam !== (profile?.favorite_constructor_id ?? '')) ||
+        (formData.favoriteDriver !== (profile?.favorite_driver_id ?? '')) ||
+        (pendingTheme && pendingTheme !== profile?.theme_preference);
+
+      if (!hasChanges) {
+        toast({
+          title: 'No changes made',
+          description: 'Your profile is already up to date.',
+          status: 'warning',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
       const payload: any = {
         username: formData.username || undefined,
         favorite_constructor_id: formData.favoriteTeam === '' ? null : Number(formData.favoriteTeam),
@@ -291,7 +323,7 @@ const ProfilePage: React.FC = () => {
               <HStack spacing={4} mb={4}>
                 <Avatar 
                   size="lg" 
-                  src={user?.picture} 
+                  src={profilePictureSrc} 
                   name={user?.name}
                   border="3px solid var(--dynamic-accent-color, var(--color-primary-red))"
                 />
@@ -365,7 +397,7 @@ const ProfilePage: React.FC = () => {
             <HStack spacing={4} justify="flex-end">
               <Button
                 onClick={handleSendRaceInfo}
-                colorScheme="blue"
+                colorScheme="red"
                 variant="outline"
                 isDisabled={sending}
                 _hover={{
