@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
-  Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, CheckboxGroup, Stack, SimpleGrid, Table,
-  Thead, Tbody, Tr, Th, Td, Badge, Divider, Select,
+  Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, SimpleGrid, Table,
+  Thead, Tbody, Tr, Th, Td, Divider,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -13,20 +13,12 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import CircuitTrack3D from '../RacesPage/components/CircuitTrack3D';
 import { teamColors } from '../../lib/teamColors';
+import { apiFetch } from '../../lib/api';
 
 const MotionBox = motion.create(Box);
 
-// ---------- inline API helpers (force /api base) ----------
-const API = '/api';
-
-async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) throw new Error(`${path} -> ${res.status} ${res.statusText}`);
-  return res.json();
-}
+// Unified JSON helper backed by apiFetch, automatically prefixes /api.
+const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? path : `/${path}`}`);
 
 function combine(date?: string | null, time?: string | null) {
   if (!date && !time) return '';
@@ -217,7 +209,7 @@ const RaceDetailPage: React.FC = () => {
   const [qualiResults, setQualiResults] = useState<QualiResult[]>([]);
   const [pitStops, setPitStops] = useState<PitStop[]>([]);
   const [laps, setLaps] = useState<Lap[]>([]);
-  const [events, setEvents] = useState<RaceEvent[]>([]);
+  const [events, setEvents] = useState<RaceEvent[]>([]); // kept for future use (events tab)
 
   // summary state
   const [summary, setSummary] = useState<RaceSummary | null>(null);
@@ -234,7 +226,7 @@ const RaceDetailPage: React.FC = () => {
   );
   const [driverFilter, setDriverFilter] = useState<string[]>([]);
   const [qualiPhase, setQualiPhase] = useState<'all' | 'q1' | 'q2' | 'q3'>('all');
-  const [lapFilter, setLapFilter] = useState<number | 'all'>('all');
+  // const [lapFilter, setLapFilter] = useState<number | 'all'>('all'); // not currently used in UI
 
   // base race
   useEffect(() => {
@@ -268,7 +260,7 @@ const RaceDetailPage: React.FC = () => {
     fetchQualifyingResultsByRaceId(raceId).then(d => { if (alive) setQualiResults(d); });
     fetchPitStopsByRaceId(raceId).then(d => { if (alive) setPitStops(d); });
     fetchLapsByRaceId(raceId).then(d => { if (alive) setLaps(d); });
-    fetchRaceEventsByRaceId(raceId).then(d => { if (alive) setEvents(d); });
+  fetchRaceEventsByRaceId(raceId).then(d => { if (alive) setEvents(d); });
     // Fetch summary
     setSummaryLoading(true);
     setSummaryError(null);

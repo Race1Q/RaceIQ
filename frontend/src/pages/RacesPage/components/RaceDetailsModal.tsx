@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import CircuitTrack3D from './CircuitTrack3D';
+import { apiFetch } from '../../../lib/api';
 
 interface Props {
   raceId: number;
@@ -41,14 +42,10 @@ const RaceDetailsModal: React.FC<Props> = ({ raceId, onClose }) => {
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    fetch(`/api/races/${raceId}`)
-      .then(async (res) => res.ok ? res.json() : null)
-      .then((data: Race | null) => {
-        if (isMounted) setRace(data);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+    apiFetch<Race>(`/api/races/${raceId}`)
+      .then((data) => { if (isMounted) setRace(data); })
+      .catch(() => { if (isMounted) setRace(null); })
+      .finally(() => { if (isMounted) setLoading(false); });
     return () => {
       isMounted = false;
     };
@@ -58,14 +55,10 @@ const RaceDetailsModal: React.FC<Props> = ({ raceId, onClose }) => {
     let isMounted = true;
     if (!race) return;
     setCircuitLoading(true);
-    fetch(`/api/circuits/id/${race.circuit_id}`)
-      .then((res) => res.ok ? res.json() : null)
-      .then((c) => {
-        if (isMounted && c) setCircuitName(c.name);
-      })
-      .finally(() => {
-        if (isMounted) setCircuitLoading(false);
-      });
+    apiFetch<{ name: string }>(`/api/circuits/id/${race.circuit_id}`)
+      .then((c) => { if (isMounted && c) setCircuitName(c.name); })
+      .catch(() => {})
+      .finally(() => { if (isMounted) setCircuitLoading(false); });
     return () => {
       isMounted = false;
     };

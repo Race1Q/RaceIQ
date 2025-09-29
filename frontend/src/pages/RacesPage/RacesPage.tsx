@@ -9,19 +9,10 @@ import { AlertTriangle } from 'lucide-react';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
 import type { Race } from '../../types/races';
+import { apiFetch } from '../../lib/api';
 
-// ---------- inline API helpers (force /api base) ----------
-const API = '/api'; // works with Vite proxy or Azure rewrite
-
-async function getJSON<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    ...init,
-  });
-  if (!res.ok) throw new Error(`${path} -> ${res.status} ${res.statusText}`);
-  return res.json();
-}
+// Local wrapper to keep minimalist callsites
+const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? path : `/${path}`}`);
 
 function combine(date?: string | null, time?: string | null) {
   if (!date && !time) return '';
@@ -53,12 +44,12 @@ function mapRace(b: BackendRace): Race {
 
 async function fetchAvailableYears(): Promise<number[]> {
   try {
-    const seasons = await getJSON<Array<{ year: number }>>(`/seasons`);
+  const seasons = await getJSON<Array<{ year: number }>>(`/seasons`);
     const ys = seasons.map(s => s.year).filter(Number.isFinite);
     if (ys.length) return ys.sort((a, b) => b - a);
   } catch {}
   try {
-    const ys = await getJSON<number[]>(`/races/years`);
+  const ys = await getJSON<number[]>(`/races/years`);
     if (Array.isArray(ys) && ys.length) return ys.sort((a, b) => b - a);
   } catch {}
   const now = new Date().getFullYear();
@@ -75,7 +66,7 @@ async function fetchRacesByYear(year: number): Promise<Race[]> {
   let last: any;
   for (const p of candidates) {
     try {
-      const data = await getJSON<BackendRace[]>(p);
+  const data = await getJSON<BackendRace[]>(p);
       return data
         .slice()
         .sort((a, b) => (Date.parse(combine(b.date, b.time)) || 0) - (Date.parse(combine(a.date, a.time)) || 0))
