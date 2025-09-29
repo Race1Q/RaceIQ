@@ -32,6 +32,7 @@ import { ConstructorStandingMaterialized } from './dashboard/constructor-standin
 import { Driver } from './drivers/drivers.entity';
 import { Country } from './countries/countries.entity';
 import { ConstructorEntity } from './constructors/constructors.entity';
+import { ConstructorDriver } from './constructors/constructor-drivers.entity';
 import { Season } from './seasons/seasons.entity';
 import { Race } from './races/races.entity';
 import { Session } from './sessions/sessions.entity';
@@ -63,6 +64,7 @@ import { User } from './users/entities/user.entity';
           Driver,
           Country,
           ConstructorEntity,
+          ConstructorDriver,
           Season,
           Circuit,
           Race,

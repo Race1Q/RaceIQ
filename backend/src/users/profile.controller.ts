@@ -1,9 +1,13 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Delete, SetMetadata } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import { User } from './entities/user.entity';
+
+// Helper to attach metadata
+export const Permissions = (...permissions: string[]) => SetMetadata('permissions', permissions);
 
 @Controller('profile') // Sets the route to /api/profile
 @UseGuards(JwtAuthGuard) // Protect all routes in this controller
@@ -23,5 +27,13 @@ export class ProfileController {
     @Body() updateProfileDto: UpdateProfileDto,
   ): Promise<User> {
     return this.usersService.updateProfile(authUser.sub, updateProfileDto);
+  }
+
+  @Delete()
+  @UseGuards(PermissionsGuard)
+  @Permissions('delete:users')
+  async deleteProfile(@AuthUser() authUser: any): Promise<{ success: true }>{
+    await this.usersService.deleteByAuth0Sub(authUser.sub);
+    return { success: true };
   }
 }

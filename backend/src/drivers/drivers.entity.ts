@@ -14,6 +14,7 @@ import {
   import { PitStop } from '../pit-stops/pit-stops.entity';
   import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
   import { TireStint } from '../tire-stints/tire-stints.entity';
+  import { ConstructorDriver } from '../constructors/constructor-drivers.entity';
   
   @Entity({ name: 'drivers' })
   export class Driver {
@@ -73,6 +74,9 @@ import {
 
     @OneToMany(() => TireStint, 'driver')
     tireStints: TireStint[];
+
+    @OneToMany(() => ConstructorDriver, (constructorDriver) => constructorDriver.driver)
+    teamEntries: ConstructorDriver[];
 
     // Computed property for full name
     get full_name(): string {

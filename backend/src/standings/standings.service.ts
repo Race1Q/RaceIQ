@@ -9,6 +9,9 @@ import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
 import { DriverStandingDto, ConstructorStanding, StandingsResponseDto } from './dto/standings-response.dto';
 import { DriverStandingMaterialized } from './driver-standings-materialized.entity';
+import { FeaturedDriverDto } from './dto/featured-driver.dto';
+import { DriversService } from '../drivers/drivers.service';
+import { DriverCareerStatsMaterialized } from '../drivers/driver-career-stats-materialized.entity';
 
 @Injectable()
 export class StandingsService {
@@ -27,6 +30,9 @@ export class StandingsService {
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(ConstructorEntity)
     private readonly constructorRepository: Repository<ConstructorEntity>,
+    @InjectRepository(DriverCareerStatsMaterialized)
+    private readonly careerStatsViewRepo: Repository<DriverCareerStatsMaterialized>,
+    private readonly driversService: DriversService,
   ) {}
 
   async getStandingsByYearAndRound(
@@ -54,6 +60,50 @@ export class StandingsService {
     return {
       driverStandings,
       constructorStandings: [],
+    };
+  }
+
+  async getFeaturedDriver(): Promise<FeaturedDriverDto> {
+    const latestYearResult = await this.standingsViewRepository
+      .createQueryBuilder('ds')
+      .select('MAX(ds.seasonYear)', 'latestYear')
+      .getRawOne<{ latestYear: number }>();
+
+    if (!latestYearResult?.latestYear) {
+      throw new NotFoundException('No standings data available to determine featured driver.');
+    }
+
+    const latestYear = latestYearResult.latestYear;
+
+    const topDriver = await this.standingsViewRepository.findOne({
+      where: { seasonYear: latestYear },
+      order: { seasonPoints: 'DESC' as const },
+    });
+
+    if (!topDriver) {
+      throw new NotFoundException('Could not find the top driver for the latest season.');
+    }
+
+    const [careerStats, recentForm] = await Promise.all([
+      this.careerStatsViewRepo.findOne({ where: { driverId: topDriver.driverId } }),
+      this.driversService.getDriverRecentForm(topDriver.driverId),
+    ]);
+
+    return {
+      id: topDriver.driverId,
+      fullName: topDriver.driverFullName,
+      driverNumber: topDriver.driverNumber ?? null,
+      countryCode: topDriver.countryCode ?? null,
+      teamName: topDriver.constructorName,
+      seasonPoints: Number(topDriver.seasonPoints),
+      seasonWins: topDriver.seasonWins,
+      position: 1,
+      careerStats: {
+        wins: (careerStats as any)?.totalWins ?? 0,
+        podiums: (careerStats as any)?.totalPodiums ?? 0,
+        poles: 0,
+      },
+      recentForm,
     };
   }
 

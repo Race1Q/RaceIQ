@@ -163,6 +163,23 @@ export interface RecentFormItem {
   countryCode: string;
 }
 
+export interface FeaturedDriver {
+  id: number;
+  fullName: string;
+  driverNumber: number | null;
+  countryCode: string | null;
+  teamName: string;
+  seasonPoints: number;
+  seasonWins: number;
+  position: number;
+  careerStats: {
+    wins: number;
+    podiums: number;
+    poles: number;
+  };
+  recentForm: RecentFormItem[];
+}
+
 // This existing interface is our target "flattened" shape for the UI components
 export interface DriverDetailsData {
   id: number;

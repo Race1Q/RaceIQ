@@ -10,8 +10,9 @@ export class DriversController {
   constructor(private readonly driversService: DriversService) {}
 
   @Get()
-  async findAll(): Promise<Driver[]> {
-    return this.driversService.findAll();
+  async findAll(@Query('year') year?: string): Promise<Driver[]> {
+    const yearNumber = year ? parseInt(year, 10) : undefined;
+    return this.driversService.findAll({ year: yearNumber });
   }
 
   @Get(':id')

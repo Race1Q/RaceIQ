@@ -13,7 +13,7 @@ import { useHomePageData } from '../../hooks/useHomePageData';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
-  const { featuredDriver, seasonSchedule, loading: dataLoading, error } = useHomePageData();
+  const { featuredDriver, seasonSchedule, loading: dataLoading, error, isFallback } = useHomePageData();
 
   // Ensure page loads at top
   useEffect(() => {
@@ -63,7 +63,10 @@ function HomePage() {
               >
                 Recent Races
               </Heading>
-              <RaceSlider seasonSchedule={seasonSchedule} />
+              {/* Render slider only if we have schedule data available */}
+              {!dataLoading && Array.isArray(seasonSchedule) && seasonSchedule.length > 0 && (
+                <RaceSlider seasonSchedule={seasonSchedule} />
+              )}
             </VStack>
           </VStack>
         </Container>

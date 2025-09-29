@@ -14,6 +14,13 @@ import {
   FormLabel,
   Divider,
   useToast,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  useDisclosure,
 } from '@chakra-ui/react';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
@@ -21,6 +28,7 @@ import HeroSection from '../../components/HeroSection/HeroSection';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
 import { buildApiUrl } from '../../lib/api';
+import { useProfile } from '../../hooks/useProfile';
 import { sendRaceUpdate } from '../../services/notifications';
 import { useProfileUpdate } from '../../context/ProfileUpdateContext';
 
@@ -29,6 +37,7 @@ import { useProfileUpdate } from '../../context/ProfileUpdateContext';
 const ProfilePage: React.FC = () => {
   // 1. Get the isLoading flag from the hook
   const { user, getAccessTokenSilently, isLoading } = useAuth0();
+  const { profile, loading: isProfileLoading, updateProfile } = useProfile();
   const { triggerRefresh } = useProfileUpdate();
   const toast = useToast();
   
@@ -43,12 +52,16 @@ const ProfilePage: React.FC = () => {
   const [constructorOptions, setConstructorOptions] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [sending, setSending] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [pendingTheme, setPendingTheme] = useState<'light' | 'dark' | null>(null);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const authedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = await getAccessTokenSilently({
       authorizationParams: {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "read:drivers read:constructors read:standings", // Need both for dropdowns
+        scope: 'read:drivers read:constructors read:standings delete:users update:users',
       },
     });
 
@@ -74,44 +87,51 @@ const ProfilePage: React.FC = () => {
   }, [getAccessTokenSilently]);
 
 
+  // Sync form state from profile
   useEffect(() => {
-    const fetchData = async () => {
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        username: profile.username || user?.name || '',
+        favoriteTeam: profile.favorite_constructor_id ?? '',
+        favoriteDriver: profile.favorite_driver_id ?? '',
+      }));
+      // reflect theme into pendingTheme so save can persist it
+      if (profile.theme_preference === 'light' || profile.theme_preference === 'dark') {
+        setPendingTheme(profile.theme_preference);
+      }
+    }
+  }, [profile, user?.name]);
+
+  // Fetch latest season, then load constructors/drivers for that season
+  useEffect(() => {
+    const fetchSelectOptions = async () => {
       try {
         setLoading(true);
-        const [userData, constructorsData, driversData] = await Promise.all([
-          authedFetch(buildApiUrl('/api/users/me')),
-          authedFetch(buildApiUrl('/api/constructors')),
-          authedFetch(buildApiUrl('/api/drivers'))
+        const seasons = await authedFetch(buildApiUrl('/api/seasons'));
+        if (!seasons || seasons.length === 0) {
+          throw new Error('No seasons data available.');
+        }
+        const latestYear = seasons[0].year;
+        const [constructorsData, driversData] = await Promise.all([
+          authedFetch(buildApiUrl(`/api/constructors?year=${latestYear}`)),
+          authedFetch(buildApiUrl(`/api/drivers?year=${latestYear}`)),
         ]);
-
-        setFormData(prev => ({
-          ...prev,
-          username: userData.databaseUser?.username || user?.name || '',
-          favoriteTeam: userData.databaseUser?.favorite_constructor_id || '',
-          favoriteDriver: userData.databaseUser?.favorite_driver_id || '',
-        }));
         setConstructorOptions(constructorsData);
         setDriverOptions(driversData);
-
-      } catch (error: any) {
-        console.error("CAUGHT ERROR:", error); 
+      } catch (err: any) {
         toast({
-          title: 'Failed to load profile data',
-          description: error.message,
+          title: 'Could not load selection lists',
+          description: err instanceof Error ? err.message : 'An unknown error occurred.',
           status: 'error',
-          duration: 4000,
-          isClosable: true,
         });
       } finally {
         setLoading(false);
       }
     };
-
-    // 2. Wait until the user exists AND the loading is complete
     if (user && !isLoading) {
-      fetchData();
+      fetchSelectOptions();
     }
-  // 3. Add isLoading to the dependency array
   }, [user, isLoading, authedFetch, toast]);
   
   const transformedConstructorOptions = useMemo(() =>
@@ -140,55 +160,60 @@ const ProfilePage: React.FC = () => {
   
   const handleSaveChanges = async () => {
     try {
-      if (!user?.sub) throw new Error('No authenticated user');
-
-      const payload = {
+      setSaving(true);
+      const payload: any = {
         username: formData.username || undefined,
         favorite_constructor_id: formData.favoriteTeam === '' ? null : Number(formData.favoriteTeam),
         favorite_driver_id: formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver),
       };
-
-      await authedFetch(buildApiUrl('/api/users/profile'), {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
-
-      // Optimistically sync local state with saved values
+      if (pendingTheme) {
+        payload.theme_preference = pendingTheme;
+      }
+      await updateProfile(payload);
+      // Optimistically sync
       setFormData(prev => ({
         ...prev,
         favoriteTeam: payload.favorite_constructor_id === null ? '' : Number(payload.favorite_constructor_id),
         favoriteDriver: payload.favorite_driver_id === null ? '' : Number(payload.favorite_driver_id),
       }));
-
-      // Trigger refresh of dashboard widgets
       triggerRefresh();
-
       toast({
-        title: 'Changes saved',
+        title: 'Changes Saved',
         description: 'Your profile has been updated successfully.',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Failed to save changes',
-        description: error.message,
+        description: 'Please try again.',
         status: 'error',
         duration: 4000,
         isClosable: true,
       });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDeleteAccount = () => {
-    toast({
-       title: 'Account deletion',
-       description: 'This feature will be implemented in a future update.',
-       status: 'warning',
-       duration: 5000,
-       isClosable: true,
-     });
+    onOpen();
+  };
+
+  const confirmDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      await authedFetch(buildApiUrl('/api/profile'), { method: 'DELETE' });
+      toast({ title: 'Account deleted', status: 'success', duration: 3000, isClosable: true });
+      onClose();
+      // Log out the user immediately after successful deletion
+      window.location.href = '/api/auth/logout';
+    } catch (e: any) {
+      toast({ title: 'Failed to delete account', description: e.message, status: 'error', duration: 4000, isClosable: true });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleSendRaceInfo = async () => {
@@ -333,47 +358,42 @@ const ProfilePage: React.FC = () => {
                 <Text fontSize="sm" color="var(--color-text-medium)">
                   Switch between light and dark themes:
                 </Text>
-                <ThemeToggleButton />
+                <ThemeToggleButton onToggle={(theme) => setPendingTheme(theme)} />
               </HStack>
             </Box>
             <Divider borderColor="var(--color-border-gray)" />
             <HStack spacing={4} justify="flex-end">
               <Button
                 onClick={handleSendRaceInfo}
-                bg="var(--dynamic-accent-color, var(--color-primary-red))"
-                color="var(--color-text-light)"
+                colorScheme="blue"
+                variant="outline"
                 isDisabled={sending}
                 _hover={{
-                  bg: 'var(--color-primary-red-dark)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 15px rgba(225, 6, 0, 0.3)'
+                  transform: 'translateY(-2px)'
                 }}
               >
                 {sending ? 'Sending…' : 'Get race info'}
               </Button>
               <Button
                 onClick={handleDeleteAccount}
-                variant="outline"
                 colorScheme="red"
-                borderColor="var(--color-primary-red)"
-                color="var(--color-primary-red)"
+                variant="outline"
+                isLoading={deleting}
+                loadingText="Deleting"
                 _hover={{
-                  bg: 'var(--color-primary-red)',
-                  color: 'var(--color-text-light)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 15px rgba(225, 6, 0, 0.3)'
+                  transform: 'translateY(-2px)'
                 }}
               >
                 Delete Account
               </Button>
               <Button
                 onClick={handleSaveChanges}
-                bg="var(--dynamic-accent-color, var(--color-primary-red))"
-                color="var(--color-text-light)"
+                colorScheme="green"
+                isLoading={saving}
+                loadingText="Saving"
+                isDisabled={saving}
                 _hover={{
-                  bg: 'var(--color-primary-red-dark)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 15px rgba(225, 6, 0, 0.3)'
+                  transform: 'translateY(-2px)'
                 }}
               >
                 Save Changes
@@ -382,6 +402,47 @@ const ProfilePage: React.FC = () => {
           </VStack>
         </Box>
       </Container>
+
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog isOpen={isOpen} onClose={onClose} isCentered>
+        <AlertDialogOverlay bg="blackAlpha.600" backdropFilter="blur(4px)">
+          <AlertDialogContent bg="var(--color-surface-gray)" border="1px solid var(--color-border-gray)" boxShadow="2xl">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="var(--color-text-light)">
+              Delete Account
+            </AlertDialogHeader>
+
+            <AlertDialogBody color="var(--color-text-medium)">
+              <Text mb={4}>
+                This action will permanently delete your account and cannot be undone. You will also immediately be logged out.
+              </Text>
+              <Text fontWeight="semibold" color="var(--color-primary-red)">
+                Are you sure you want to continue?
+              </Text>
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button 
+                onClick={onClose} 
+                colorScheme="gray" 
+                variant="outline"
+                mr={3}
+                _hover={{ transform: 'translateY(-1px)' }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmDeleteAccount}
+                colorScheme="red"
+                isLoading={deleting}
+                loadingText="Deleting..."
+                _hover={{ transform: 'translateY(-1px)' }}
+              >
+                Delete Account
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </div>
   );
   
