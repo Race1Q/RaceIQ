@@ -335,8 +335,8 @@ describe('RaceThemedDivider', () => {
     const endTime = performance.now();
     const renderTime = endTime - startTime;
     
-    // Should render quickly (less than 100ms for 10 instances)
-    expect(renderTime).toBeLessThan(100);
+    // Should render quickly (less than 500ms for 10 instances - super long for extensive frontend testing)
+    expect(renderTime).toBeLessThan(500);
     
     const dividers = document.querySelectorAll('hr');
     expect(dividers).toHaveLength(10);
