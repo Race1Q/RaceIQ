@@ -27,7 +27,6 @@ import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
-import Standings from '../pages/Standings/Standings';
 import DriverStandings from '../pages/Standings/DriverStandings';
 
 
@@ -157,9 +156,9 @@ function AppContent() {
             <Route path="/drivers" element={<Drivers />} />
             <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
             <Route path="/constructors" element={<Constructors />} />
-            <Route path="/standings" element={<Standings />} />
+            {/* Standings: default to drivers; constructors available via tab/deep link */}
+            <Route path="/standings" element={<DriverStandings />} />
             <Route path="/standings/constructors" element={<ConstructorsStandings />} />
-            <Route path="/standings/drivers" element={<DriverStandings />} />
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
