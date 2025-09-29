@@ -25,7 +25,9 @@ interface ConstructorStanding {
 type GroupedConstructors = { [teamName: string]: ConstructorStanding[] };
 type SeasonOption = SelectOption & { value: number };
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// Normalize backend URL to guarantee a trailing slash
+const RAW_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = RAW_BACKEND_URL.endsWith('/') ? RAW_BACKEND_URL : `${RAW_BACKEND_URL}/`;
 
 const ConstructorStandings: React.FC = () => {
   const toast = useToast();
@@ -64,7 +66,7 @@ const ConstructorStandings: React.FC = () => {
     const fetchStandings = async () => {
       setLoading(true);
       try {
-        const data = await publicFetch(`${BACKEND_URL}api/standings/year/${selectedSeason}`);
+  const data = await publicFetch(`${BACKEND_URL}api/standings/year/${selectedSeason}`);
         setStandings(data.constructorStandings || []);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';

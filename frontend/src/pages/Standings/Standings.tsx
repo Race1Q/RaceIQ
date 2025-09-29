@@ -14,7 +14,9 @@ import {
 import { teamColors } from '../../lib/teamColors';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// Normalize backend URL to guarantee a trailing slash
+const RAW_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = RAW_BACKEND_URL.endsWith('/') ? RAW_BACKEND_URL : `${RAW_BACKEND_URL}/`;
 
 interface ProgressionEntry {
   round: number;

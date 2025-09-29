@@ -52,7 +52,9 @@ interface SeasonPoles {
   poles: number;
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// Ensure BACKEND_URL always has a single trailing slash so we can safely append paths like `api/...`
+const RAW_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = RAW_BACKEND_URL.endsWith('/') ? RAW_BACKEND_URL : `${RAW_BACKEND_URL}/`;
 
 const ConstructorDetails: React.FC = () => {
   const { constructorId } = useParams<{ constructorId: string }>();
@@ -110,7 +112,7 @@ const ConstructorDetails: React.FC = () => {
         );
         setPointsPerSeason(seasonPointsData);
 
-        const seasonsData: Season[] = await authedFetch(`${BACKEND_URL}api/seasons`);
+  const seasonsData: Season[] = await authedFetch(`${BACKEND_URL}api/seasons`);
         setSeasons(seasonsData);
 
         if (seasonsData.length > 0) {
