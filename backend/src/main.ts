@@ -31,17 +31,35 @@ async function bootstrap() {
   // Get ConfigService instance
   const configService = app.get(ConfigService);
 
- // Add this section for CORS
-const frontendURL = configService.get<string>('FRONTEND_URL');
+ // Robust CORS configuration
+ const allowedOriginsFromEnv = (configService.get<string>('ALLOWED_ORIGINS') ?? '')
+   .split(',')
+   .map((s) => s.trim())
+   .filter(Boolean);
 
-app.enableCors({
-  origin: [
-    'http://localhost:5173',
-    frontendURL // The variable itself, NOT in quotes
-  ],
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  credentials: true,
-});
+ app.enableCors({
+   origin: (origin, callback) => {
+     if (!origin) return callback(null, true);
+     let hostname: string;
+     try {
+       hostname = new URL(origin).hostname;
+     } catch {
+       return callback(new Error('Invalid Origin'), false);
+     }
+     const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(origin);
+     const isAzureStaticApps = /\.azurestaticapps\.net$/.test(hostname);
+
+     // You can add your custom domain here in the future
+     // const isRaceIQDomain = /(^|\.)raceiq\.app$/i.test(hostname);
+
+     const isListed = allowedOriginsFromEnv.includes(origin);
+
+     const allowed = isListed || isLocalhost || isAzureStaticApps;
+     return callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
+   },
+   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+   credentials: true,
+ });
 
   // Your port logic is correct
   const port = configService.get<number>('PORT') ?? 3000;
