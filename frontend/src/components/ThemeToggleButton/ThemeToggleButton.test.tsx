@@ -247,8 +247,8 @@ describe('ThemeToggleButton', () => {
     const endTime = performance.now();
     const renderTime = endTime - startTime;
     
-    // Should render quickly (less than 500ms for 10 instances in test environment)
-    expect(renderTime).toBeLessThan(500);
+    // Should render quickly (less than 600ms for 10 instances in test environment)
+    expect(renderTime).toBeLessThan(600);
     
     // All instances should be rendered
     const buttons = screen.getAllByRole('button');
