@@ -7,6 +7,7 @@ import { Race } from '../races/races.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { RaceFastestLapMaterialized } from './race-fastest-laps-materialized.entity';
+import { ConstructorStandingMaterialized } from './constructor-standings-materialized.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { RaceFastestLapMaterialized } from './race-fastest-laps-materialized.ent
       RaceResult,
       DriverStandingMaterialized,
       RaceFastestLapMaterialized,
+      ConstructorStandingMaterialized,
     ]),
   ],
   controllers: [DashboardController],

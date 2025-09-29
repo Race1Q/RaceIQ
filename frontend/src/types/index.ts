@@ -45,6 +45,7 @@ export interface NextRace {
 export interface StandingsItem {
   position: number;
   driverFullName: string;
+  driverHeadshotUrl: string | null;
   constructorName: string;
   points: number;
 }
@@ -79,13 +80,21 @@ export interface HeadToHead {
   driver2: HeadToHeadDriver;
 }
 
+export interface ConstructorStandingsItem {
+  position: number;
+  constructorName: string;
+  points: number;
+}
+
 // This is the shape of the full response from GET /api/dashboard
 export interface DashboardData {
+  standingsYear: number;
   nextRace: NextRace;
   championshipStandings: StandingsItem[];
   lastRacePodium: LastRacePodium;
   lastRaceFastestLap: FastestLap;
   headToHead: HeadToHead;
+  constructorStandings: ConstructorStandingsItem[];
 }
 
 // --- Driver Details Page Types ---

@@ -18,6 +18,7 @@ import {
 interface WidgetVisibility {
   nextRace: boolean;
   standings: boolean;
+  constructorStandings: boolean;
   lastPodium: boolean;
   fastestLap: boolean;
   favoriteDriver: boolean;
@@ -42,6 +43,7 @@ function CustomizeDashboardModal({
   const widgets = [
     { key: 'nextRace' as keyof WidgetVisibility, label: 'Next Race', description: 'Upcoming race information and countdown' },
     { key: 'standings' as keyof WidgetVisibility, label: 'Championship Standings', description: 'Current driver championship positions' },
+    { key: 'constructorStandings' as keyof WidgetVisibility, label: 'Constructor Standings', description: 'Current constructor championship positions' },
     { key: 'lastPodium' as keyof WidgetVisibility, label: 'Last Race Podium', description: 'Previous race podium finishers' },
     { key: 'fastestLap' as keyof WidgetVisibility, label: 'Fastest Lap', description: 'Fastest lap time from last race' },
     { key: 'favoriteDriver' as keyof WidgetVisibility, label: 'Favorite Driver', description: 'Snapshot of your favorite driver\'s stats' },

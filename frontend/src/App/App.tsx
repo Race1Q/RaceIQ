@@ -2,7 +2,7 @@
 
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, HStack, Button, Text, Container } from '@chakra-ui/react';
+import { Box, Flex, HStack, Button, Text, Container, Spinner } from '@chakra-ui/react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
@@ -127,10 +127,22 @@ function Navbar() {
 function AppContent() {
   useScrollToTop();
   const location = useLocation();
-  const { isAuthenticated } = useAuth0();
+  const { isAuthenticated, isLoading } = useAuth0();
   
   // Don't show navbar on driver detail pages (they have their own custom header)
   const showNavbar = !location.pathname.startsWith('/drivers/') || location.pathname === '/drivers';
+
+  // Gate route rendering until Auth0 finishes loading to avoid route mismatch races
+  if (isLoading) {
+    return (
+      <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
+        {showNavbar && <Navbar />}
+        <Flex flex="1" align="center" justify="center">
+          <Spinner thickness="3px" speed="0.65s" emptyColor="whiteAlpha.200" color="brand.red" size="lg" />
+        </Flex>
+      </Box>
+    );
+  }
 
   if (isAuthenticated) {
     return (
