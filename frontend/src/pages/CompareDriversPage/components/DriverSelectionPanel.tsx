@@ -4,6 +4,7 @@ import SearchableSelect from '../../../components/DropDownSearch/SearchableSelec
 import type { SelectOption } from '../../../components/DropDownSearch/SearchableSelect';
 import type { DriverDetails } from '../../../hooks/useDriverComparison';
 import type { ReactNode } from 'react';
+import { driverHeadshots } from '../../../lib/driverHeadshots';
 
 interface Props {
   title: string;
@@ -43,7 +44,7 @@ export const DriverSelectionPanel: React.FC<Props> = ({
     {selectedDriverData && (
       <VStack spacing="sm" bg="bg-surface-raised" p="md" borderRadius="md" borderTopWidth="5px" borderColor={selectedDriverData.teamColorToken}>
         <Image
-          src={selectedDriverData.imageUrl}
+          src={driverHeadshots[selectedDriverData.fullName] || selectedDriverData.imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
           alt={selectedDriverData.fullName}
           boxSize="150px" objectFit="cover" borderRadius="full"
           borderWidth="4px" borderColor="bg-surface"

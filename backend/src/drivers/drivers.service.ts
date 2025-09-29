@@ -1,8 +1,8 @@
 // backend/src/drivers/drivers.service.ts
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Driver } from './drivers.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
@@ -37,9 +37,69 @@ export class DriversService {
     @InjectRepository(RaceFastestLapMaterialized)
     private readonly fastestLapViewRepo: Repository<RaceFastestLapMaterialized>,
   ) {}
+  private readonly logger = new Logger(DriversService.name);
 
-  async findAll(): Promise<any[]> {
-    const drivers = await this.driverRepository.find({ relations: ['country'] });
+  async findAll(options: { status?: 'active' | 'inactive'; year?: number } = {}): Promise<any[]> {
+    const { status, year } = options;
+    let drivers: Driver[];
+    if (year) {
+      this.logger.log(`findAll(year=${year}) → querying standings view`);
+      let standings = await this.standingsViewRepo.find({
+        where: { seasonYear: year },
+        select: ['driverId'],
+      });
+      this.logger.log(`standings entries: ${standings.length}`);
+      if (standings.length === 0) {
+        // fallback to latest available year in standings
+        const latest = await this.standingsViewRepo.createQueryBuilder('ds')
+          .select('MAX(ds.seasonYear)', 'max')
+          .getRawOne<{ max: number }>();
+        const fallbackYear = latest?.max ? Number(latest.max) : undefined;
+        this.logger.warn(`No driver standings found for year=${year}. Fallback to latest standings year=${fallbackYear}`);
+        if (!fallbackYear) return [];
+        standings = await this.standingsViewRepo.find({ where: { seasonYear: fallbackYear }, select: ['driverId'] });
+      }
+      const ids = Array.from(new Set(standings.map(s => s.driverId)));
+      this.logger.log(`unique driverIds: ${ids.length}`);
+      this.logger.debug(`driverIds (sample up to 20): ${ids.slice(0, 20).join(', ')}`);
+      drivers = await this.driverRepository.find({
+        where: { id: In(ids) },
+        relations: ['country'],
+        order: { last_name: 'ASC' },
+      });
+      this.logger.log(`loaded drivers: ${drivers.length}`);
+      this.logger.debug(
+        `drivers fetched (sample up to 20): ${drivers
+          .slice(0, 20)
+          .map(d => `${d.id}:${(d.first_name||'').trim()} ${(d.last_name||'').trim()}`.trim())
+          .join(', ')}`
+      );
+    } else {
+      const where: any = {};
+      if (status === 'active') where.is_active = true;
+      if (status === 'inactive') where.is_active = false;
+      // if no status filter provided, auto-pick latest standings year
+      if (!status) {
+        const latest = await this.standingsViewRepo.createQueryBuilder('ds')
+          .select('MAX(ds.seasonYear)', 'max')
+          .getRawOne<{ max: number }>();
+        const fallbackYear = latest?.max ? Number(latest.max) : undefined;
+        this.logger.log(`findAll(no year) → using latest standings year=${fallbackYear}`);
+        if (fallbackYear) {
+          const standings = await this.standingsViewRepo.find({ where: { seasonYear: fallbackYear }, select: ['driverId'] });
+          const ids = Array.from(new Set(standings.map(s => s.driverId)));
+          drivers = await this.driverRepository.find({ where: { id: In(ids) }, relations: ['country'], order: { last_name: 'ASC' } });
+          this.logger.log(`loaded drivers (latest year): ${drivers.length}`);
+        } else {
+          drivers = await this.driverRepository.find({ relations: ['country'], where, order: { last_name: 'ASC' } });
+          this.logger.log(`loaded drivers (no standings fallback available): ${drivers.length}`);
+        }
+      } else {
+        this.logger.log(`findAll(no year) where=${JSON.stringify(where)}`);
+        drivers = await this.driverRepository.find({ relations: ['country'], where, order: { last_name: 'ASC' } });
+        this.logger.log(`loaded drivers: ${drivers.length}`);
+      }
+    }
     
     // Transform the data to match frontend expectations
     return drivers.map(driver => ({

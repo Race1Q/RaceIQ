@@ -1,10 +1,13 @@
-import { Controller, Get, Query } from '@nestjs/common';
+// backend/src/races/race-summary.controller.ts
+
+import { Controller, Get, Query, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Lap } from '../laps/laps.entity';
 import { RaceEvent } from '../race-events/race-events.entity';
-import { Driver } from '../drivers/drivers.entity';
+import { RaceFastestLapMaterialized } from '../dashboard/race-fastest-laps-materialized.entity';
+import { Race } from './races.entity';
 
 @Controller('race-summary')
 export class RaceSummaryController {
@@ -15,67 +18,60 @@ export class RaceSummaryController {
     private readonly lapsRepo: Repository<Lap>,
     @InjectRepository(RaceEvent)
     private readonly eventsRepo: Repository<RaceEvent>,
-    @InjectRepository(Driver)
-    private readonly driversRepo: Repository<Driver>,
+    @InjectRepository(RaceFastestLapMaterialized)
+    private readonly fastestLapViewRepo: Repository<RaceFastestLapMaterialized>,
+    @InjectRepository(Race)
+    private readonly raceRepo: Repository<Race>,
   ) {}
 
   @Get()
   async getSummary(@Query('race_id') raceId: number) {
     if (!raceId || isNaN(Number(raceId))) {
-      throw new Error('Missing or invalid race_id');
+      throw new NotFoundException('Missing or invalid race_id');
     }
-    // Podium
-    const sessionIds = await this._getSessionIds(raceId);
-    const podium = await this.resultsRepo.find({
-      where: {
-        position: In([1, 2, 3]),
-        session_id: In(sessionIds),
-      },
-      relations: ['driver'],
-      order: { position: 'ASC' },
-    });
-    // Fastest lap: use Supabase view
-    const fastestLapRows = await this.lapsRepo.manager.query(
-      'SELECT * FROM fastest_laps_by_race WHERE race_id = $1 LIMIT 1',
-      [raceId]
-    );
-    let fastestLap: any = null;
-    if (fastestLapRows.length) {
-      const fl = fastestLapRows[0];
-      const foundDriver = await this.driversRepo.findOne({ where: { id: fl.driver_id } });
-      fastestLap = {
-        driver_id: fl.driver_id,
-        driver_name: foundDriver ? `${foundDriver.first_name} ${foundDriver.last_name}` : undefined,
-        driver_picture: foundDriver?.profile_image_url,
-        lap_number: fl.lap_number,
-        time_ms: fl.total_time_ms,
-      };
-    }
-  // Events: count red/yellow flags by type and metadata.colour
-  const events = await this.eventsRepo.find({ where: { session_id: In(sessionIds) } });
-  const flagEvents = events.filter(e => typeof e.type === 'string' && e.type.toLowerCase() === 'flag');
-   const yellowFlags = flagEvents.filter(e => {
-     const flag = e.metadata?.flag;
-     return typeof flag === 'string' && flag.toLowerCase() === 'yellow';
-   }).length;
-   const redFlags = flagEvents.filter(e => {
-     const flag = e.metadata?.flag;
-     return typeof flag === 'string' && flag.toLowerCase() === 'red';
-   }).length;
+
+    // First, find the race to get the session IDs
+    const race = await this.raceRepo.findOne({ where: { id: raceId }, relations: ['sessions'] });
+    if (!race) throw new NotFoundException('Race not found');
+    const sessionIds = race.sessions.map(s => s.id);
+
+    // Fetch podium, fastest lap, and events in parallel
+    const [podiumResults, fastestLapResult, events] = await Promise.all([
+      this.resultsRepo.find({
+        where: {
+          position: In([1, 2, 3]),
+          session: { id: In(sessionIds) },
+        },
+        // FIX: Eagerly load the 'team' (constructor) relation as well
+        relations: ['driver', 'team'],
+        order: { position: 'ASC' },
+      }),
+      // OPTIMIZATION: Use the new materialized view for a single, fast query
+      this.fastestLapViewRepo.findOne({ where: { raceId } }),
+      this.eventsRepo.find({ where: { session: { id: In(sessionIds) } } }),
+    ]);
+
+    // Process flags (this logic is fine)
+    const flagEvents = events.filter(e => e.type === 'FLAG');
+    const yellowFlags = flagEvents.filter(e => e.metadata?.flag?.toLowerCase() === 'yellow').length;
+    const redFlags = flagEvents.filter(e => e.metadata?.flag?.toLowerCase() === 'red').length;
+
     return {
-      podium: podium.map(r => ({
-        driver_id: r.driver_id,
-        driver_name: r.driver ? `${r.driver.first_name} ${r.driver.last_name}` : undefined,
-        driver_picture: r.driver?.profile_image_url,
+      podium: podiumResults.map(r => ({
         position: r.position,
+        driver_id: r.driver_id,
+        driver_name: r.driver ? `${r.driver.first_name} ${r.driver.last_name}` : 'N/A',
+        driver_picture: r.driver?.profile_image_url,
+        // FIX: Add the team name to the response
+        team_name: r.team?.name || 'N/A',
       })),
-      fastestLap,
+      fastestLap: fastestLapResult ? {
+        driver_id: fastestLapResult.driverId,
+        driver_name: fastestLapResult.driverFullName,
+        time_ms: fastestLapResult.lapTimeMs,
+        // driver_picture and lap_number are not in this view, can be added if needed
+      } : null,
       events: { yellowFlags, redFlags },
     };
-  }
-
-  private async _getSessionIds(raceId: number): Promise<number[]> {
-    const rows = await this.resultsRepo.manager.query('SELECT id FROM sessions WHERE race_id = $1', [raceId]);
-    return rows.map((r: any) => r.id);
   }
 }

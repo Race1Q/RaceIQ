@@ -14,13 +14,24 @@ import { ErrorResponse } from '../common/dto/error-response.dto';
 export class DriversController {
   constructor(private readonly driversService: DriversService) {}
 
-  @Get()
   @Public()
-  @ApiOperation({ summary: 'List drivers' })
-  @ApiOkResponse({ type: DriverListDto, isArray: true })
-  @ApiBadRequestResponse({ type: ErrorResponse })
-  async findAll(): Promise<Driver[]> {
-    return this.driversService.findAll();
+  @ApiOperation({ 
+    summary: 'List drivers',
+    description: 'Returns a list of all drivers. Can be optionally filtered by a specific season year.'
+  })
+  @ApiQuery({ 
+    name: 'year', 
+    required: false, 
+    type: Number, 
+    description: 'Filter drivers by a specific season year' 
+  })
+  @ApiOkResponse({ type: Driver, isArray: true }) // Assuming Driver is the response type
+  @ApiBadRequestResponse({ description: 'Bad Request' })
+  async findAll(@Query('year') year?: string): Promise<Driver[]> {
+    const yearNumber = year ? parseInt(year, 10) : undefined;
+
+    // The service method needs to handle an options object that may or may not have a year
+    return this.driversService.findAll({ year: yearNumber });
   }
 
   @Get(':id')

@@ -9,6 +9,8 @@ import { RaceResult } from '../race-results/race-results.entity';
 import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
 import { DriverStandingMaterialized } from './driver-standings-materialized.entity';
+import { DriverCareerStatsMaterialized } from '../drivers/driver-career-stats-materialized.entity';
+import { DriversModule } from '../drivers/drivers.module';
 
 @Module({
   imports: [
@@ -20,7 +22,9 @@ import { DriverStandingMaterialized } from './driver-standings-materialized.enti
       Driver,
       ConstructorEntity,
       DriverStandingMaterialized,
+      DriverCareerStatsMaterialized,
     ]),
+    DriversModule,
   ],
   controllers: [StandingsController],
   providers: [StandingsService],

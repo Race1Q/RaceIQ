@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 
@@ -7,8 +7,11 @@ export class ConstructorsController {
   constructor(private readonly constructorsService: ConstructorsService) {}
 
   @Get()
-  async findAll(): Promise<ConstructorEntity[]> {
-    return this.constructorsService.findAll();
+  async findAll(
+    @Query('year') year?: string,
+  ): Promise<ConstructorEntity[]> {
+    const yearNumber = year ? parseInt(year, 10) : undefined;
+    return this.constructorsService.findAll(yearNumber);
   }
 
   @Get(':id')
