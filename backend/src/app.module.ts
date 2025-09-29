@@ -26,6 +26,7 @@ import { DriverStandingMaterialized } from './standings/driver-standings-materia
 import { RaceFastestLapMaterialized } from './dashboard/race-fastest-laps-materialized.entity';
 import { WinsPerSeasonMaterialized } from './drivers/wins-per-season-materialized.entity';
 import { DriverCareerStatsMaterialized } from './drivers/driver-career-stats-materialized.entity';
+import { ConstructorStandingMaterialized } from './dashboard/constructor-standings-materialized.entity';
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -77,6 +78,7 @@ import { User } from './users/entities/user.entity';
           RaceFastestLapMaterialized,
           WinsPerSeasonMaterialized,
           DriverCareerStatsMaterialized,
+          ConstructorStandingMaterialized,
           ],
           synchronize: false, // trust the db schema
           ssl: isLocal ? false : { rejectUnauthorized: false },
