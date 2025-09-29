@@ -1,6 +1,20 @@
 # Automated Test Catalog
 
 ## Frontend (Vitest)
+to run frontend testing and get the coverage report use this line in your terminal: npx vitest run --coverage
+
+## Coverage Exclusions
+The following files are excluded from coverage reporting as they are low-value for testing:
+- `src/theme.ts` - Theme configuration (no logic to test)
+- `src/data/**` - Mock data and type definitions (static data)
+- `src/types/**` - TypeScript type definitions (no runtime logic)
+- `src/lib/assets.ts` - Asset utilities (simple file operations)
+- `src/lib/teamAssets.ts` - Team assets (static data)
+- `src/lib/teamCars.ts` - Team cars (static data)
+- `src/services/f1Api.ts` - F1 API service (external API calls)
+- `src/hooks/useApi.ts` - API hook (external API calls)
+- `src/context/ThemeContext.tsx` - Theme context (configuration only)
+
 
 - src/0.main.test.tsx: Bootstraps main entry with providers and verifies environment-driven Auth0 config and routing renders without errors.
 - src/App/App.test.tsx: Checks unauthenticated vs authenticated navbar, and that clicking Drivers navigates to the Drivers page content.

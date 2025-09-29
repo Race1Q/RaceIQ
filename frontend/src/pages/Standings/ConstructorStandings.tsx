@@ -1,39 +1,38 @@
 // src/pages/Standings/ConstructorStandings.tsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useToast, Box, Flex, Text } from '@chakra-ui/react';
+import React, { useState, useMemo } from 'react';
+import { useToast, Box, Flex, Heading } from '@chakra-ui/react';
+import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
-import { teamColors } from '../../lib/teamColors';
+// import { teamColors } from '../../lib/teamColors';
+import { useConstructorStandings } from '../../hooks/useConstructorStandings';
+import ConstructorStandingCard from '../../components/Standings/ConstructorStandingCard';
 
 // Interfaces
-interface ApiConstructor {
-  id: number;
-  constructor_id: string; // for navigation
-  name: string;
-  nationality: string;
-}
-
-interface ConstructorStanding {
+interface UiConstructorStanding {
   position: number;
   points: number;
   wins: number;
-  constructor: ApiConstructor;
+  constructorId: number;
+  constructorName: string;
+  nationality?: string; // not present in materialized view currently
 }
 
-type GroupedConstructors = { [teamName: string]: ConstructorStanding[] };
+type GroupedConstructors = { [teamName: string]: UiConstructorStanding[] };
 type SeasonOption = SelectOption & { value: number };
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// Normalize backend URL to guarantee a trailing slash
+// Removed bespoke BACKEND_URL logic; using buildApiUrl for all requests.
 
 const ConstructorStandings: React.FC = () => {
   const toast = useToast();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const [standings, setStandings] = useState<ConstructorStanding[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [standings, setStandings] = useState<UiConstructorStanding[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<number>(new Date().getFullYear());
+  const { standings: supaStandings, loading, error } = useConstructorStandings(selectedSeason);
 
   // Generate season options from 2025 → 1950
   const seasonOptions: SeasonOption[] = useMemo(() => {
@@ -44,63 +43,53 @@ const ConstructorStandings: React.FC = () => {
     return options;
   }, []);
 
-  const publicFetch = useCallback(
-    async (url: string) => {
-      const response = await fetch(url);
+  React.useEffect(() => {
+    if (supaStandings) {
+      const mapped: UiConstructorStanding[] = supaStandings.map(row => ({
+        position: row.position,
+        points: Number(row.seasonPoints) || 0,
+        wins: row.seasonWins,
+        constructorId: row.constructorId,
+        constructorName: row.constructorName,
+      }));
+      setStandings(mapped);
+    }
+  }, [supaStandings]);
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(
-          `Failed to fetch data: ${response.status} ${response.statusText} - ${errorBody}`
-        );
-      }
-
-      return response.json();
-    },
-    []
-  );
-
-  useEffect(() => {
-    const fetchStandings = async () => {
-      setLoading(true);
-      try {
-        const data = await publicFetch(`${BACKEND_URL}api/standings/year/${selectedSeason}`);
-        setStandings(data.constructorStandings || []);
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
-        toast({
-          title: 'Failed to fetch constructor standings',
-          description: errorMessage,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStandings();
-  }, [publicFetch, selectedSeason, toast]);
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Failed to fetch constructor standings',
+        description: error,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }, [error, toast]);
 
   const { orderedTeamNames, groupedConstructors } = useMemo(() => {
     const groups: GroupedConstructors = {};
     standings.forEach((standing) => {
-      const team = standing.constructor.name;
+      const team = standing.constructorName;
       if (!groups[team]) groups[team] = [];
       groups[team].push(standing);
     });
-    const orderedTeams = [...new Set(standings.map((s) => s.constructor.name))];
+    const orderedTeams = [...new Set(standings.map((s) => s.constructorName))];
     return { orderedTeamNames: orderedTeams, groupedConstructors: groups };
   }, [standings]);
 
   const teamsToRender = orderedTeamNames;
 
+  // No internal tab state; navigation handled by component buttons
+
   if (loading) return <F1LoadingSpinner text="Loading Constructor Standings..." />;
 
   return (
     <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
-      {/* Season Selector */}
+      <Heading mb={6} color="white">Formula 1 Championship Standings</Heading>
+      <StandingsTabs active="constructors" />
+
       <Box mb={4} maxW="220px">
         <SearchableSelect
           label="Select Season"
@@ -111,68 +100,21 @@ const ConstructorStandings: React.FC = () => {
         />
       </Box>
 
-      {/* Header Row */}
-      <Flex
-        minW="700px"
-        px={4}
-        py={4}
-        bg="gray.800"
-        borderRadius="md"
-        fontWeight="bold"
-        color="#fff"
-        display="grid"
-        gridTemplateColumns="60px 1fr 100px 80px 1fr"
-        columnGap={4}
-        mb={2}
-      >
-        <Text textAlign="center">#</Text>
-        <Text>Constructor</Text>
-        <Text textAlign="right">Points</Text>
-        <Text textAlign="right">Wins</Text>
-        <Text textAlign="right">Nationality</Text>
-      </Flex>
-
-      {/* Constructor Bars */}
       <Flex flexDirection="column" gap={3} overflowX="auto">
-        {teamsToRender.map((teamName) => {
+        {teamsToRender.flatMap(teamName => {
           const constructors = groupedConstructors[teamName];
-          if (!constructors || constructors.length === 0) return null;
-
-          const teamColor = `#${teamColors[teamName] || teamColors.Default}`;
-          const textColor = '#fff';
-
+          if (!constructors) return [];
           return constructors
             .sort((a, b) => a.position - b.position)
-            .map((standing) => (
-              <Flex
-                key={standing.constructor.constructor_id}
-                minW="700px"
-                px={4}
-                py={4}
-                bgGradient={`linear(to-br, ${teamColor} 0%, rgba(0,0,0,0.2) 100%)`}
-                borderRadius="xl"
-                alignItems="center"
-                justifyContent="space-between"
-                _hover={{
-                  transform: 'translateY(-2px)',
-                  boxShadow: 'lg',
-                  transition: 'all 0.2s ease-in-out',
-                  cursor: 'pointer',
-                }}
-                color={textColor}
-                display="grid"
-                gridTemplateColumns="60px 1fr 100px 80px 1fr"
-                columnGap={4}
-                onClick={() =>
-                  navigate(`/constructors/${standing.constructor.constructor_id}`)
-                }
-              >
-                <Text textAlign="center">{standing.position}</Text>
-                <Text>{standing.constructor.name}</Text>
-                <Text textAlign="right">{standing.points}</Text>
-                <Text textAlign="right">{standing.wins}</Text>
-                <Text textAlign="right">{standing.constructor.nationality}</Text>
-              </Flex>
+            .map(standing => (
+              <ConstructorStandingCard
+                key={standing.constructorId}
+                constructorId={standing.constructorId}
+                position={standing.position}
+                constructorName={standing.constructorName}
+                points={standing.points}
+                wins={standing.wins}
+              />
             ));
         })}
       </Flex>

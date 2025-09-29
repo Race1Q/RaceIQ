@@ -8,6 +8,7 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
+import { buildApiUrl } from '../../lib/api';
 import {
   LineChart,
   Line,
@@ -52,7 +53,7 @@ interface SeasonPoles {
   poles: number;
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// Removed bespoke BACKEND_URL logic; all endpoints now built via buildApiUrl.
 
 const ConstructorDetails: React.FC = () => {
   const { constructorId } = useParams<{ constructorId: string }>();
@@ -71,7 +72,7 @@ const ConstructorDetails: React.FC = () => {
 
 
   const authedFetch = useCallback(
-    async (url: string) => {
+    async (path: string) => {
       const token = await getAccessTokenSilently({
         authorizationParams: {
           audience: import.meta.env.VITE_AUTH0_AUDIENCE,
@@ -79,7 +80,7 @@ const ConstructorDetails: React.FC = () => {
         },
       });
 
-      const response = await fetch(url, {
+      const response = await fetch(buildApiUrl(path), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -101,16 +102,16 @@ const ConstructorDetails: React.FC = () => {
       setLoading(true);
       try {
         const constructorData: Constructor = await authedFetch(
-          `${BACKEND_URL}api/constructors/${constructorId}`
+          `/api/constructors/${constructorId}`
         );
         setConstructor(constructorData);
 
         const seasonPointsData: SeasonPoints[] = await authedFetch(
-          `${BACKEND_URL}api/race-results/constructor/${constructorId}/season-points`
+          `/api/race-results/constructor/${constructorId}/season-points`
         );
         setPointsPerSeason(seasonPointsData);
 
-        const seasonsData: Season[] = await authedFetch(`${BACKEND_URL}api/seasons`);
+        const seasonsData: Season[] = await authedFetch(`/api/seasons`);
         setSeasons(seasonsData);
 
         if (seasonsData.length > 0) {
@@ -121,7 +122,7 @@ const ConstructorDetails: React.FC = () => {
           const latestSeasonId = latestSeasonObj.id;
 
           const cumulativeData: CumulativeProgression[] = await authedFetch(
-            `${BACKEND_URL}api/race-results/constructor/${constructorId}/season/${latestSeasonId}/progression`
+            `/api/race-results/constructor/${constructorId}/season/${latestSeasonId}/progression`
           );
           setCumulativeProgression(cumulativeData);
           if (cumulativeData.length > 0) {
@@ -135,13 +136,13 @@ const ConstructorDetails: React.FC = () => {
 
         // Poles
         const polesData = await authedFetch(
-          `${BACKEND_URL}api/races/constructor/${constructorId}/poles`
+          `/api/races/constructor/${constructorId}/poles`
         );
         setTotalPoles(polesData.poles);
         //console.log('Total Poles:', polesData.poles);
 
         const polesBySeasonData: SeasonPoles[] = await authedFetch(
-          `${BACKEND_URL}api/races/constructor/${constructorId}/poles-by-season`
+          `/api/races/constructor/${constructorId}/poles-by-season`
         );
         setPolesBySeason(polesBySeasonData);
         //console.log('Poles by Season:', polesBySeasonData);

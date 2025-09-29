@@ -1,13 +1,14 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { ChakraProvider } from '@chakra-ui/react';
+import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ProfilePage from './ProfilePage';
+import { ProfileUpdateProvider } from '../../context/ProfileUpdateContext';
 
 // ---- Mock CSS module ----
 vi.mock('./ProfilePage.module.css', () => ({
   default: { profilePage: 'profilePage', settingsCard: 'settingsCard' },
-}), { virtual: true });
+}));
 
 // ---- Mock child components ----
 vi.mock('../../components/HeroSection/HeroSection', () => ({
@@ -86,8 +87,22 @@ vi.mock('chakra-react-select', () => {
 });
 
 // ---- Helpers ----
+const testTheme = extendTheme({
+  colors: {
+    brand: {
+      red: '#FF0000',
+    },
+  },
+});
+
 function renderWithProviders(ui: React.ReactElement) {
-  return render(<ChakraProvider>{ui}</ChakraProvider>);
+  return render(
+    <ChakraProvider theme={testTheme}>
+      <ProfileUpdateProvider>
+        {ui}
+      </ProfileUpdateProvider>
+    </ChakraProvider>
+  );
 }
 
 const fetchMock = vi.fn();
