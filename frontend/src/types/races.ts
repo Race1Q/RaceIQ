@@ -8,4 +8,11 @@ export type Race = {
   date: string;        // "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss"
   circuit_id: number;  // numeric for consistency in frontend
   season_id: number;   // year (e.g., 2025)
+  // Optional country metadata if provided by API (joined circuit)
+  countryCode?: string | null;
+  country?: string | null;
+  circuit?: {
+    country_code?: string | null;
+    country?: string | null;
+  } | null;
 };
