@@ -1,7 +1,6 @@
 // frontend/src/hooks/useDriverComparison.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-const API = (typeof window !== 'undefined' && (window as any).__API_BASE__) || '/api';
+import { apiFetch } from '../lib/api';
 
 // NEW: Types for the comparison feature
 export type DriverSelection = {
@@ -89,21 +88,8 @@ type HookState = {
   toggleMetric: (metric: MetricKey) => void;
 };
 
-// HTTP helpers
-async function getJSON<T>(path: string): Promise<T> {
-  const url = `${API}${path}`;
-  const res = await fetch(url, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`${path} -> ${res.status} ${res.statusText}${text ? `: ${text}` : ''}`);
-  }
-  
-  return res.json();
-}
+// HTTP helper using central apiFetch with automatic /api prefix.
+const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? path : `/${path}`}`);
 
 // Fetch functions
 async function fetchDriversList(): Promise<DriverListItem[]> {
@@ -288,8 +274,7 @@ export function useDriverComparison(): HookState {
   const selectDriver = useCallback((slot: 1 | 2, driverId: string, year: number | 'career') => {
     if (!driverId) return;
     
-    const selection = { driverId, year };
-    const base = getListItem(driverId);
+  const selection = { driverId, year };
     
     setLoading(true);
     setError(null);
