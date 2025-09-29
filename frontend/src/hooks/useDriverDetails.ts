@@ -4,6 +4,7 @@ import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { driverHeadshots } from '../lib/driverHeadshots';
 import { fallbackDriverDetails } from '../lib/fallbackData/driverDetails';
+import { apiFetch } from '../lib/api';
 
 // Define types for the new driver details model
 export type DriverDetailsModel = {
@@ -72,8 +73,7 @@ export const useDriverDetails = (driverId?: string) => {
         setLoading(true);
         setError(null);
         setIsFallback(false);
-        const token = await getAccessTokenSilently();
-        const API = (window as any).__API_BASE__ || '/api';
+  const token = await getAccessTokenSilently();
 
         let apiData: any = null;
         let driverEntity: any = null;
@@ -81,38 +81,27 @@ export const useDriverDetails = (driverId?: string) => {
 
         // First, try to fetch driver career stats (the correct endpoint for driver details)
         try {
-          const statsResponse = await fetch(`${API}/drivers/${driverId}/career-stats`, {
+          const statsData = await apiFetch<any>(`/api/drivers/${driverId}/career-stats`, {
             headers: { Authorization: `Bearer ${token}` },
-            credentials: 'include',
           });
-
-          if (statsResponse.ok) {
-            const statsData = await statsResponse.json();
-            if (isDriverStatsResponse(statsData)) {
-              apiData = statsData;
-              driverEntity = statsData.driver;
-              hasStats = true;
-            }
+          if (isDriverStatsResponse(statsData)) {
+            apiData = statsData;
+            driverEntity = statsData.driver;
+            hasStats = true;
           }
-        } catch (statsErr) {
-          console.warn('Career stats endpoint failed, will try basic driver endpoint');
+        } catch {
+          // fall through to basic endpoint
         }
 
         // If stats didn't work or doesn't have driver details, fetch basic driver info
         if (!driverEntity) {
-          const driverResponse = await fetch(`${API}/drivers/${driverId}`, {
+          const entity = await apiFetch<any>(`/api/drivers/${driverId}`, {
             headers: { Authorization: `Bearer ${token}` },
-            credentials: 'include',
           });
-
-          if (!driverResponse.ok) {
-            throw new Error(`API Error: ${driverResponse.status} ${driverResponse.statusText}`);
-          }
-
-          driverEntity = await driverResponse.json();
-          if (!isDriverEntity(driverEntity)) {
+          if (!isDriverEntity(entity)) {
             throw new Error('Invalid driver data structure received');
           }
+          driverEntity = entity;
         }
 
         // --- ROBUST MAPPER: Transform API data to the flattened UI shape ---
