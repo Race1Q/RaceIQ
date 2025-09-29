@@ -26,6 +26,8 @@ import { DriverStandingMaterialized } from './standings/driver-standings-materia
 import { RaceFastestLapMaterialized } from './dashboard/race-fastest-laps-materialized.entity';
 import { WinsPerSeasonMaterialized } from './drivers/wins-per-season-materialized.entity';
 import { DriverCareerStatsMaterialized } from './drivers/driver-career-stats-materialized.entity';
+import { ConstructorStandingEntity } from './standings/constructor-standings.entity';
+
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -74,6 +76,7 @@ import { User } from './users/entities/user.entity';
           RaceEvent,
           User,
           DriverStandingMaterialized,
+          ConstructorStandingEntity,
           RaceFastestLapMaterialized,
           WinsPerSeasonMaterialized,
           DriverCareerStatsMaterialized,

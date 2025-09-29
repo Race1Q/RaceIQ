@@ -1,11 +1,12 @@
 // src/pages/Standings/ConstructorStandings.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useToast, Box, Flex, Text } from '@chakra-ui/react';
+import { useToast, Box, Flex, Text, Heading, Button } from '@chakra-ui/react';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { useNavigate } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
+import { useAuth0 } from '@auth0/auth0-react';
 
 // Interfaces
 interface ApiConstructor {
@@ -30,6 +31,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 const ConstructorStandings: React.FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
+  const { getAccessTokenSilently } = useAuth0();
 
   const [standings, setStandings] = useState<ConstructorStanding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,9 +46,18 @@ const ConstructorStandings: React.FC = () => {
     return options;
   }, []);
 
-  const publicFetch = useCallback(
+  const authedFetch = useCallback(
     async (url: string) => {
-      const response = await fetch(url);
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          scope: 'read:standings',
+        },
+      });
+
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!response.ok) {
         const errorBody = await response.text();
@@ -57,15 +68,31 @@ const ConstructorStandings: React.FC = () => {
 
       return response.json();
     },
-    []
+    [getAccessTokenSilently]
   );
 
   useEffect(() => {
     const fetchStandings = async () => {
       setLoading(true);
       try {
-        const data = await publicFetch(`${BACKEND_URL}api/standings/year/${selectedSeason}`);
-        setStandings(data.constructorStandings || []);
+        const data = await authedFetch(
+          `${BACKEND_URL}api/standings/constructors/season/${selectedSeason}`
+        );
+
+        // Map backend `team` → frontend `constructor`
+        const mappedData: ConstructorStanding[] = (data || []).map((s: any) => ({
+          position: s.position,
+          points: s.points,
+          wins: s.wins,
+          constructor: {
+            id: s.team.id,
+            constructor_id: s.team.id.toString(), // for navigation
+            name: s.team.name,
+            nationality: s.team.nationality,
+          },
+        }));
+
+        setStandings(mappedData);
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
         toast({
@@ -81,7 +108,7 @@ const ConstructorStandings: React.FC = () => {
     };
 
     fetchStandings();
-  }, [publicFetch, selectedSeason, toast]);
+  }, [authedFetch, selectedSeason, toast]);
 
   const { orderedTeamNames, groupedConstructors } = useMemo(() => {
     const groups: GroupedConstructors = {};
@@ -99,18 +126,31 @@ const ConstructorStandings: React.FC = () => {
   if (loading) return <F1LoadingSpinner text="Loading Constructor Standings..." />;
 
   return (
-    <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
+    <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
       {/* Season Selector */}
-      <Box mb={4} maxW="220px">
+      <Flex mb={4} alignItems="center" justifyContent="space-between">
+        <Box mb={4} maxW="220px">
         <SearchableSelect
           label="Select Season"
           options={seasonOptions}
-          value={seasonOptions.find(o => o.value === selectedSeason) || null}
-          onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
+          value={seasonOptions.find((o) => o.value === selectedSeason) || null}
+          onChange={(option) => {
+            if (option && (option as SeasonOption).value) {
+              setSelectedSeason(Number((option as SeasonOption).value));
+            }
+          }}
           isClearable={false}
         />
       </Box>
 
+      <Heading mb={6} color="white" textAlign="center">
+        Formula 1 Constructor Championship Standings
+      </Heading>
+            <Button size="sm" onClick={() => navigate(-1)}>
+            ← Back to Standings
+      </Button>
+      </Flex>
+    
       {/* Header Row */}
       <Flex
         minW="700px"
@@ -163,9 +203,7 @@ const ConstructorStandings: React.FC = () => {
                 display="grid"
                 gridTemplateColumns="60px 1fr 100px 80px 1fr"
                 columnGap={4}
-                onClick={() =>
-                  navigate(`/constructors/${standing.constructor.constructor_id}`)
-                }
+                onClick={() => navigate(`/constructors/${standing.constructor.constructor_id}`)}
               >
                 <Text textAlign="center">{standing.position}</Text>
                 <Text>{standing.constructor.name}</Text>
@@ -181,6 +219,9 @@ const ConstructorStandings: React.FC = () => {
 };
 
 export default ConstructorStandings;
+
+
+
 
 
 

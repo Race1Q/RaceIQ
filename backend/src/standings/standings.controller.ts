@@ -1,6 +1,7 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe} from '@nestjs/common';
 import { StandingsService } from './standings.service';
-import { StandingsResponseDto } from './dto/standings-response.dto';
+import { StandingsResponseDto, ConstructorStanding} from './dto/standings-response.dto';
+import { Scopes } from 'src/auth/scopes.decorator';
 
 @Controller('standings')
 export class StandingsController {
@@ -20,6 +21,16 @@ export class StandingsController {
   ): Promise<StandingsResponseDto> {
     return this.standingsService.getStandingsByYear(year);
   }
+
+
+  @Get('constructors/season/:year')
+  @Scopes('read:standings')
+async getConstructorStandingsByYear(
+  @Param('year', ParseIntPipe) year: number,
+): Promise<ConstructorStanding[]> {
+  return this.standingsService.getConstructorStandingsByYear(year);
+}
+
 }
 
 

@@ -9,6 +9,7 @@ import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
 import { DriverStandingDto, ConstructorStanding, StandingsResponseDto } from './dto/standings-response.dto';
 import { DriverStandingMaterialized } from './driver-standings-materialized.entity';
+import { ConstructorStandingEntity } from './constructor-standings.entity';
 
 @Injectable()
 export class StandingsService {
@@ -27,7 +28,10 @@ export class StandingsService {
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(ConstructorEntity)
     private readonly constructorRepository: Repository<ConstructorEntity>,
+    @InjectRepository(ConstructorStandingEntity)
+    private readonly constructorStandingsRepo: Repository<ConstructorStandingEntity>,
   ) {}
+
 
   async getStandingsByYearAndRound(
     year: number,
@@ -117,6 +121,140 @@ export class StandingsService {
       wins: s.wins || 0,
     }));
   }
+
+  async getStandingsByYearAndRound2(
+    year: number,
+    round: number,
+  ): Promise<StandingsResponseDto> {
+    // Query driver standings from materialized view
+    const fromView = await this.standingsViewRepository.find({
+      where: { seasonYear: year },
+      order: { seasonPoints: 'DESC' as const },
+    });
+  
+    const driverStandings: DriverStandingDto[] = fromView.map((row, index) => ({
+      position: index + 1,
+      points: Number(row.seasonPoints),
+      wins: row.seasonWins,
+      constructorName: row.constructorName,
+      driverId: row.driverId,
+      driverFullName: row.driverFullName,
+      driverNumber: row.driverNumber ?? null,
+      driverCountryCode: row.countryCode ?? null,
+      driverProfileImageUrl: row.profileImageUrl ?? null,
+    }));
+  
+    // ✅ Fetch constructor standings
+    const season = await this.seasonRepository.findOne({ where: { year } });
+    if (!season) throw new NotFoundException(`Season ${year} not found`);
+  
+    const races = await this.raceRepository.find({
+      where: { season: { id: season.id }, round: LessThanOrEqual(round) },
+      relations: ['sessions'],
+    });
+  
+    const sessionIds = races.flatMap((r) => r.sessions.map((s) => s.id));
+    const rawConstructorStandings = await this.calculateConstructorStandings(sessionIds);
+  
+    // Convert into DTO
+    const constructorStandings: ConstructorStanding[] = this.addPositions(
+      rawConstructorStandings.map((s) => ({
+        points: s.points,
+        wins: s.wins,
+        constructor: {
+          id: s.team?.id,
+          name: s.team?.name,
+          nationality: s.team?.nationality,
+        },
+      })),
+    );
+  
+    return {
+      driverStandings,
+      constructorStandings,
+    };
+  }
+
+  // ✅ New method: get constructor standings by year (latest round)
+// ✅ Get constructor standings by year (all races up to the latest round)
+async getConstructorStandingsByYearTest(year: number): Promise<ConstructorStanding[]> {
+  const season = await this.seasonRepository.findOne({ where: { year } });
+  if (!season) throw new NotFoundException(`Season ${year} not found`);
+  console.log('Found season:', season);
+
+  // Find the latest race in this season
+  const latestRace = await this.raceRepository.findOne({
+    where: { season: { id: season.id } },
+    order: { round: 'DESC' },
+  });
+  if (!latestRace) return [];
+  console.log('Latest Race: ', latestRace);
+
+  // Collect all sessions up to the latest round
+  const races = await this.raceRepository.find({
+    where: { season: { id: season.id }, round: LessThanOrEqual(latestRace.round) },
+    relations: ['sessions'],
+  });
+  console.log('Races: ', races);
+
+  const sessionIds = races.flatMap((r) => r.sessions.map((s) => s.id));
+  const rawConstructorStandings = await this.calculateConstructorStandings(sessionIds);
+
+  return this.addPositions(
+    rawConstructorStandings.map((s) => ({
+      points: s.points,
+      wins: s.wins,
+      constructor: {
+        id: s.team?.id,
+        name: s.team?.name,
+        nationality: s.team?.nationality,
+      },
+    })),
+  );
+}
+
+async getConstructorStandingsByYear(year: number): Promise<ConstructorStanding[]> {
+  // Find the season
+  const season = await this.seasonRepository.findOne({ where: { year } });
+  if (!season) throw new NotFoundException(`Season ${year} not found`);
+
+  // Get all races in this season
+  const races = await this.raceRepository.find({
+    where: { season: { id: season.id } },
+  });
+  const raceIds = races.map(r => r.id);
+
+  // Fetch all constructor standings for these races
+  const rawStandings = await this.constructorStandingsRepo.find({
+    where: { race_id: In(raceIds) },
+  });
+
+  // Aggregate points and wins per constructor
+  const aggregated: Record<number, { points: number; wins: number }> = {};
+  rawStandings.forEach(s => {
+    if (!aggregated[s.constructor_id]) aggregated[s.constructor_id] = { points: 0, wins: 0 };
+    aggregated[s.constructor_id].points += s.points;
+    aggregated[s.constructor_id].wins += s.wins;
+  });
+
+  // Fetch all constructors to get full ConstructorEntity objects
+  const constructorIds = Object.keys(aggregated).map(id => Number(id));
+  const constructors = await this.constructorRepository.findBy({ id: In(constructorIds) });
+  const constructorMap = new Map(constructors.map(c => [c.id, c]));
+
+  // Map aggregated results into ConstructorStanding[]
+  const standings: ConstructorStanding[] = Object.entries(aggregated).map(([id, val], index) => ({
+    position: 0, // will be set below
+    points: val.points,
+    wins: val.wins,
+    team: constructorMap.get(Number(id))!, // full entity
+  }));
+
+  // Add positions based on points
+  return this.addPositions(standings);
+}
+
+  
 }
 
 
