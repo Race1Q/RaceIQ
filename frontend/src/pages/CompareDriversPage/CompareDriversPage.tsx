@@ -72,44 +72,14 @@ const CompareDriversPage = () => {
         Driver Comparison
       </Heading>
 
-      {loading && <F1LoadingSpinner text="Fetching data..." />}
       {error && <Text color="brand.red" textAlign="center" fontSize="lg" p="xl">{error}</Text>}
 
-      {/* Composite Score Display */}
-      {score.d1 !== null && score.d2 !== null && (
-        <Box bg="bg-surface" p="lg" borderRadius="md" mb="xl" textAlign="center">
-          <Heading size="lg" mb="md" fontFamily="heading">Composite Score</Heading>
-          <HStack justify="center" spacing="xl">
-            <Box>
-              <Text fontSize="sm" color="text-secondary">
-                {selection1 ? `Driver 1 ${selection1.year === 'career' ? '(Career)' : `(${selection1.year})`}` : 'Driver 1'}
-              </Text>
-              <Text fontSize="3xl" fontWeight="bold" color="brand.red">
-                {score.d1}/100
-              </Text>
-            </Box>
-            <Text fontSize="2xl" color="text-secondary">VS</Text>
-            <Box>
-              <Text fontSize="sm" color="text-secondary">
-                {selection2 ? `Driver 2 ${selection2.year === 'career' ? '(Career)' : `(${selection2.year})`}` : 'Driver 2'}
-              </Text>
-              <Text fontSize="3xl" fontWeight="bold" color="brand.red">
-                {score.d2}/100
-              </Text>
-            </Box>
-          </HStack>
-        </Box>
-      )}
-
-
-
+      {/* Driver Selection Grid - Always visible */}
       <Grid
         templateColumns={{ base: '1fr', lg: '1fr auto 1fr' }}
         gap="lg"
         mb="xl"
         alignItems="flex-start"
-        // Hide grid while initial driver list is loading
-        display={loading && !allDrivers.length ? 'none' : 'grid'}
       >
         <DriverSelectionPanel
           title="Driver 1"
@@ -161,7 +131,11 @@ const CompareDriversPage = () => {
         />
       </Grid>
 
-      {driver1 && driver2 && (
+      {/* Loading Spinner - Below driver selection cards */}
+      {loading && <F1LoadingSpinner text="Loading comparison data..." />}
+
+      {/* Comparison Table - Only show when both drivers are selected and not loading */}
+      {driver1 && driver2 && !loading && (
         <ComparisonTable 
           driver1={driver1} 
           driver2={driver2} 
@@ -171,6 +145,7 @@ const CompareDriversPage = () => {
           enabledMetrics={enabledMetrics}
           selection1={selection1}
           selection2={selection2}
+          score={score}
           // NEW: Pass handlers for the updated filter styling
           onYearChange={(driverIndex, year) => {
             const driverId = driverIndex === 1 ? selection1?.driverId : selection2?.driverId;

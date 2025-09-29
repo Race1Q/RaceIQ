@@ -7,7 +7,7 @@ import { Box, Flex, Text, Button, useToast, Image, SimpleGrid } from '@chakra-ui
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
-import { getTeamLogo } from '../../lib/teamAssets';
+import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import {
   LineChart,
   Line,
@@ -237,12 +237,9 @@ const ConstructorDetails: React.FC = () => {
       >
         {/* Left: Team Logo + Info */}
         <Flex direction="row" align="center" gap={4}>
-          <Image
-            src={getTeamLogo(constructor.name)}
-            alt={`${constructor.name} logo`}
-            boxSize="100px"
-            objectFit="contain"
-          />
+          <Box boxSize="100px" display="flex" alignItems="center" justifyContent="center">
+            <TeamLogo teamName={constructor.name} />
+          </Box>
           <Flex direction="column" justify="center">
             <Text fontSize="3xl" fontWeight="bold" color="white">
               {constructor.name}
