@@ -61,10 +61,10 @@ const DriverStandingsPage: React.FC = () => {
             <Heading mb={6} color="white" textAlign="center">
         Formula 1 Driver Championship Standings
       </Heading>
-            <Button size="sm" onClick={() => navigate(-1)}>
+            <Button size="sm" onClick={() => navigate("/standings")}>
             ← Back to Standings
             </Button>
-            </Flex>
+        </Flex>
 
       {/* Show standings only if available */}
       {standings.length > 0 && (
