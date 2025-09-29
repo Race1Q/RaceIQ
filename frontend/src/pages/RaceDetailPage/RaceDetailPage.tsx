@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, SimpleGrid, Table,
-  Thead, Tbody, Tr, Th, Td, Divider,
+  Thead, Tbody, Tr, Th, Td,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -14,6 +14,9 @@ import { OrbitControls, Environment } from '@react-three/drei';
 import CircuitTrack3D from '../RacesPage/components/CircuitTrack3D';
 import { teamColors } from '../../lib/teamColors';
 import { apiFetch } from '../../lib/api';
+import Podium from '../../components/RaceDetails/Podium';
+import FastestLapWidget from '../../components/RaceDetails/FastestLapWidget';
+import RaceEventsWidget from '../../components/RaceDetails/RaceEventsWidget';
 
 const MotionBox = motion.create(Box);
 
@@ -157,6 +160,8 @@ type RaceSummary = {
     driver_name?: string;
     constructor_id?: number | string;
     constructor_name?: string;
+    team_name?: string;
+    driver_picture?: string | null;
     position: number;
   }>;
   pole: {
@@ -417,286 +422,47 @@ const RaceDetailPage: React.FC = () => {
                 <Text fontSize="xl" fontWeight="bold" color="text-primary">Summary</Text>
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                  {/* Podium Visual (with actual podium steps) */}
-                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
-                    <Text fontWeight="bold" mb={2}>Podium</Text>
-                    <Divider my={2} />
-
+                  {/* Full-width Podium */}
+                  <Box 
+                    p={4} 
+                    border="1px solid" 
+                    borderColor="border-subtle" 
+                    borderRadius="lg" 
+                    bg="bg-elevated" 
+                    gridColumn={{ md: 'span 2' }}
+                  >
+                    <Text fontWeight="bold" mb={4} fontSize="lg">Podium</Text>
                     {summaryLoading ? (
-                      <Spinner size="sm" />
+                      <Spinner size="md" />
                     ) : summaryError ? (
                       <Text color="red.500">{summaryError}</Text>
-                    ) : summary?.podium?.length ? (
-                      <Box position="relative" minH="280px">
-                        {/* Podium base shadow */}
-                        <Box
-                          position="absolute"
-                          bottom="18px"
-                          left="50%"
-                          transform="translateX(-50%)"
-                          w="90%"
-                          h="10px"
-                          borderRadius="full"
-                          bg="blackAlpha.500"
-                          filter="blur(6px)"
-                          opacity={0.3}
-                        />
-
-                        {/* Podium steps */}
-                        <Flex align="flex-end" justify="center" gap={6} pt={6} pb={6}>
-                          {/* 2nd place (left, medium height) */}
-                          <Box textAlign="center" w="30%">
-                            {/* avatar sits on top via translateY */}
-                            <Box mb={-6} transform="translateY(-34px)">
-                              <Box
-                                mx="auto"
-                                w="70px"
-                                h="70px"
-                                borderRadius="full"
-                                bg="gray.200"
-                                overflow="hidden"
-                                border="2px solid"
-                                borderColor="brand.red"
-                              >
-                                <img
-                                  src={`https://raceiq.app/images/drivers/${summary.podium[1]?.driver_id ?? 'placeholder'}.jpg`}
-                                  alt={summary.podium[1]?.driver_name ?? 'Driver'}
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
-                                />
-                              </Box>
-                            </Box>
-
-                            {/* step block */}
-                            <Box
-                              mx="auto"
-                              w="100%"
-                              h="120px"
-                              bg="gray.700"
-                              borderRadius="md"
-                              border="1px solid"
-                              borderColor="gray.600"
-                              position="relative"
-                            >
-                              {/* face label */}
-                              <Box
-                                position="absolute"
-                                top={2}
-                                left="50%"
-                                transform="translateX(-50%)"
-                                px={3}
-                                py={1}
-                                bg="gray.300"
-                                borderRadius="md"
-                                fontWeight="bold"
-                                fontSize="sm"
-                                color="gray.800"
-                                minW="32px"
-                              >
-                                2
-                              </Box>
-                              {/* name on riser */}
-                              <Text
-                                position="absolute"
-                                bottom={3}
-                                left="50%"
-                                transform="translateX(-50%)"
-                                fontWeight="bold"
-                                fontSize="md"
-                                color="text-primary"
-                                noOfLines={1}
-                                maxW="90%"
-                              >
-                                {summary.podium[1]?.driver_name ?? summary.podium[1]?.driver_code ?? summary.podium[1]?.driver_id}
-                              </Text>
-                            </Box>
-                          </Box>
-
-                          {/* 1st place (center, tallest) */}
-                          <Box textAlign="center" w="30%">
-                            <Box mb={-8} transform="translateY(-46px)">
-                              <Box
-                                mx="auto"
-                                w="84px"
-                                h="84px"
-                                borderRadius="full"
-                                bg="yellow.200"
-                                overflow="hidden"
-                                border="3px solid"
-                                borderColor="brand.red"
-                              >
-                                <img
-                                  src={`https://raceiq.app/images/drivers/${summary.podium[0]?.driver_id ?? 'placeholder'}.jpg`}
-                                  alt={summary.podium[0]?.driver_name ?? 'Driver'}
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
-                                />
-                              </Box>
-                            </Box>
-
-                            <Box
-                              mx="auto"
-                              w="100%"
-                              h="160px"
-                              bg="yellow.400"
-                              borderRadius="md"
-                              border="1px solid"
-                              borderColor="yellow.500"
-                              position="relative"
-                            >
-                              <Box
-                                position="absolute"
-                                top={2}
-                                left="50%"
-                                transform="translateX(-50%)"
-                                px={3}
-                                py={1}
-                                bg="yellow.300"
-                                borderRadius="md"
-                                fontWeight="bold"
-                                fontSize="sm"
-                                color="gray.900"
-                                minW="32px"
-                              >
-                                1
-                              </Box>
-                              <Text
-                                position="absolute"
-                                bottom={3}
-                                left="50%"
-                                transform="translateX(-50%)"
-                                fontWeight="bold"
-                                fontSize="lg"
-                                color="brand.red"
-                                noOfLines={1}
-                                maxW="90%"
-                              >
-                                {summary.podium[0]?.driver_name ?? summary.podium[0]?.driver_code ?? summary.podium[0]?.driver_id}
-                              </Text>
-                            </Box>
-                          </Box>
-
-                          {/* 3rd place (right, shortest) */}
-                          <Box textAlign="center" w="30%">
-                            <Box mb={-4} transform="translateY(-24px)">
-                              <Box
-                                mx="auto"
-                                w="70px"
-                                h="70px"
-                                borderRadius="full"
-                                bg="orange.200"
-                                overflow="hidden"
-                                border="2px solid"
-                                borderColor="brand.red"
-                              >
-                                <img
-                                  src={`https://raceiq.app/images/drivers/${summary.podium[2]?.driver_id ?? 'placeholder'}.jpg`}
-                                  alt={summary.podium[2]?.driver_name ?? 'Driver'}
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                  onError={(e) => (e.currentTarget.src = '/default-driver.png')}
-                                />
-                              </Box>
-                            </Box>
-
-                            <Box
-                              mx="auto"
-                              w="100%"
-                              h="100px"
-                              bg="orange.400"
-                              borderRadius="md"
-                              border="1px solid"
-                              borderColor="orange.500"
-                              position="relative"
-                            >
-                              <Box
-                                position="absolute"
-                                top={2}
-                                left="50%"
-                                transform="translateX(-50%)"
-                                px={3}
-                                py={1}
-                                bg="orange.300"
-                                borderRadius="md"
-                                fontWeight="bold"
-                                fontSize="sm"
-                                color="gray.900"
-                                minW="32px"
-                              >
-                                3
-                              </Box>
-                              <Text
-                                position="absolute"
-                                bottom={3}
-                                left="50%"
-                                transform="translateX(-50%)"
-                                fontWeight="bold"
-                                fontSize="md"
-                                color="text-primary"
-                                noOfLines={1}
-                                maxW="90%"
-                              >
-                                {summary.podium[2]?.driver_name ?? summary.podium[2]?.driver_code ?? summary.podium[2]?.driver_id}
-                              </Text>
-                            </Box>
-                          </Box>
-                        </Flex>
-                      </Box>
                     ) : (
-                      <Text>—</Text>
+                      <Podium podiumData={summary?.podium || []} />
                     )}
                   </Box>
 
+                  {/* Fastest Lap Widget */}
+                  <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
+                    {summaryLoading ? (
+                      <Box p={4}><Spinner size="md" /></Box>
+                    ) : summaryError ? (
+                      <Box p={4}><Text color="red.500">{summaryError}</Text></Box>
+                    ) : (
+                      <FastestLapWidget data={summary?.fastestLap} />
+                    )}
+                  </Box>
 
-
-                  {/* Fastest Lap Chakra Card */}
-                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" boxShadow="md">
-                    <Text fontWeight="bold" mb={2} color="brand.red">Fastest Lap</Text>
-                    <Divider my={2}/>
-                    {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.fastestLap ? (
-                      <VStack align="start" spacing={2}>
-                        <HStack>
-                          <Text fontWeight="bold" color="text-primary">Driver:</Text>
-                          <Text color="text-secondary">{summary.fastestLap.driver_name ?? summary.fastestLap.driver_id}</Text>
-                        </HStack>
-                        {'lap_number' in summary.fastestLap && summary.fastestLap.lap_number !== undefined && (
-                          <HStack>
-                            <Text fontWeight="bold" color="text-primary">Lap:</Text>
-                            <Text color="text-secondary">{summary.fastestLap.lap_number}</Text>
-                          </HStack>
-                        )}
-                        {'time_ms' in summary.fastestLap && summary.fastestLap.time_ms != null ? (
-                          <HStack>
-                            <Text fontWeight="bold" color="text-primary">Time:</Text>
-                            <Text color="text-secondary">{(summary.fastestLap.time_ms / 1000).toFixed(3)}s</Text>
-                          </HStack>
-                        ) : (
-                          <HStack>
-                            <Text fontWeight="bold" color="text-primary">Time:</Text>
-                            <Text color="text-secondary">—</Text>
-                          </HStack>
-                        )}
-                      </VStack>
-                    ) : <Text>—</Text>}
+                  {/* Events Widget */}
+                  <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
+                    {summaryLoading ? (
+                      <Box p={4}><Spinner size="md" /></Box>
+                    ) : summaryError ? (
+                      <Box p={4}><Text color="red.500">{summaryError}</Text></Box>
+                    ) : (
+                      <RaceEventsWidget data={summary?.events} />
+                    )}
                   </Box>
                 </SimpleGrid>
-
-                {/* Events summary: Chakra UI card style */}
-                <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" mt={2} boxShadow="md">
-                  <Text fontWeight="bold" mb={2} color="brand.red">Events</Text>
-                  <Divider my={2}/>
-                  {summaryLoading ? <Spinner size="sm" /> : summaryError ? <Text color="red.500">{summaryError}</Text> : summary?.events ? (
-                    <HStack spacing={8}>
-                      <VStack align="center" spacing={1}>
-                        <Text fontWeight="bold" color="red.500">Red Flags</Text>
-                        <Box fontSize="2xl" fontWeight="bold" color="red.500">{summary.events.redFlags}</Box>
-                      </VStack>
-                      <VStack align="center" spacing={1}>
-                        <Text fontWeight="bold" color="yellow.500">Yellow Flags</Text>
-                        <Box fontSize="2xl" fontWeight="bold" color="yellow.500">{summary.events.yellowFlags}</Box>
-                      </VStack>
-                    </HStack>
-                  ) : <Text>—</Text>}
-                </Box>
               </VStack>
             </TabPanel>
 
