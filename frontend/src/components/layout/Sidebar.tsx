@@ -21,8 +21,8 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/drivers', label: 'Drivers', icon: Users },
     { path: '/constructors', label: 'Constructors', icon: Wrench },
-    { path: '/standings', label: 'Driver Standings', icon: Users },
-    { path: '/standings/constructors', label: 'Constructor Standings', icon: Wrench },
+    // Unified Standings entry now defaults to Driver Standings view with in-page tabs
+    { path: '/standings', label: 'Standings', icon: Users },
     { path: '/compare', label: 'Compare', icon: GitCompareArrows },
     { path: '/races', label: 'Races', icon: Flag },
     { path: '/about', label: 'About', icon: Info },
@@ -140,7 +140,7 @@ function Sidebar({ onWidthChange }: SidebarProps) {
     >
       <Flex direction="column" h="full" p="lg">
         {/* Logo */}
-        <Box as={Link} to="/dashboard" mb="md" display="flex" justify="center" w="100%">
+        <Box as={Link} to="/dashboard" mb="md" display="flex" justifyContent="center" w="100%">
           <Image 
             src="/race_IQ_logo.svg" 
             alt="RaceIQ Logo" 
