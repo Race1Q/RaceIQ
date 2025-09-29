@@ -39,7 +39,6 @@ const Constructors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedNationality, setSelectedNationality] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active');
 
   const publicFetch = useCallback(async (url: string) => {
@@ -80,11 +79,6 @@ const Constructors = () => {
     fetchConstructors();
   }, [publicFetch, toast]);
 
-  // Unique nationalities for filter
-  const nationalityOptions: Option[] = useMemo(() => {
-    const unique = Array.from(new Set(constructors.map((c) => c.nationality)));
-    return unique.sort().map((nat) => ({ value: nat, label: nat }));
-  }, [constructors]);
 
   const statusOptions: Option[] = [
     { value: 'active', label: 'Active Teams' },
@@ -99,8 +93,6 @@ const Constructors = () => {
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.nationality.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesNationality = selectedNationality ? c.nationality === selectedNationality : true;
-
       const matchesStatus =
         statusFilter === 'all'
           ? true
@@ -108,9 +100,9 @@ const Constructors = () => {
           ? c.is_active
           : !c.is_active;
 
-      return matchesSearch && matchesNationality && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [constructors, searchTerm, selectedNationality, statusFilter]);
+  }, [constructors, searchTerm, statusFilter]);
 
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" py="lg">
@@ -137,72 +129,47 @@ const Constructors = () => {
               {/* Right: Filters */}
               <Flex gap={4}>
 
-                {/* Left: Search */}
-              <Box maxW="260px" w="100%">
-              <InputGroup>
-                <Input
-                    placeholder="Search by name or nationality"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    bg="gray.700"
-                    color="white"
-                  />
-                  {searchTerm && (
-                  <InputRightElement>
-                    <IconButton
-                        aria-label="Clear search"
-                        icon={<CloseIcon />}
-                        size="sm"
-                        onClick={() => setSearchTerm('')}
-                        bg="gray.600"
-                        _hover={{ bg: 'gray.500' }}
+                {/* Left: Search - Show for All Teams and Inactive Teams */}
+                {(statusFilter === 'all' || statusFilter === 'inactive') && (
+                  <Box maxW="260px" w="100%">
+                    <InputGroup>
+                      <Input
+                        placeholder="Search by name"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        bg="gray.700"
+                        color="white"
                       />
-                    </InputRightElement>
-                    )}
-                </InputGroup>
-              </Box>
+                      {searchTerm && (
+                        <InputRightElement>
+                          <IconButton
+                            aria-label="Clear search"
+                            icon={<CloseIcon />}
+                            size="sm"
+                            onClick={() => setSearchTerm('')}
+                            bg="gray.600"
+                            _hover={{ bg: 'gray.500' }}
+                          />
+                        </InputRightElement>
+                      )}
+                    </InputGroup>
+                  </Box>
+                )}
               
-                {/* Nationality Filter */}
-                <Box maxW="220px" w="220px">
-                  <Select
-                    options={nationalityOptions}
-                    value={nationalityOptions.find((o) => o.value === selectedNationality) || null}
-                    onChange={(option) => {
-                      if (option) {
-                        setSelectedNationality((option as Option).value);
-                      } else {
-                        // Reset to default (no nationality filter)
-                        setSelectedNationality('');
-                      }
-                    }}
-                    placeholder="Nationality"
-                    isClearable={true}
-                    chakraStyles={{
-                      control: (provided) => ({
-                        ...provided,
-                        bg: 'gray.700',
-                        color: 'white',
-                        borderColor: 'gray.600',
-                      }),
-                      menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
-                      option: (provided, state) => ({
-                        ...provided,
-                        bg: state.isFocused ? 'gray.600' : 'gray.700',
-                        color: 'white',
-                      }),
-                      singleValue: (provided) => ({ ...provided, color: 'white' }),
-                    }}
-                  />
-                </Box>
 
                 {/* Status Filter */}
                 <Box maxW="220px" w="220px">
                   <Select
                     options={statusOptions}
                     value={statusOptions.find((o) => o.value === statusFilter) || null}
-                    onChange={(option) =>
-                      setStatusFilter((option as Option).value as 'active' | 'inactive' | 'all')
-                    }
+                    onChange={(option) => {
+                      const newStatus = (option as Option).value as 'active' | 'inactive' | 'all';
+                      setStatusFilter(newStatus);
+                      // Clear search when switching to 'active' (only active teams don't show search)
+                      if (newStatus === 'active') {
+                        setSearchTerm('');
+                      }
+                    }}
                     placeholder="Filter by Status"
                     isClearable={false}
                     chakraStyles={{
@@ -253,10 +220,10 @@ const Constructors = () => {
                     >
                       {/* Left: Info */}
                       <Box textAlign="left">
-                        <Text fontWeight="bold" fontSize="lg" color="white">
+                        <Text fontWeight="bold" fontSize="lg" color="white" fontFamily="heading">
                           {constructor.name}
                         </Text>
-                        <Text fontSize="sm" color="whiteAlpha.800">
+                        <Text fontSize="sm" color="whiteAlpha.800" fontFamily="body">
                           {constructor.nationality}
                         </Text>
                       </Box>
