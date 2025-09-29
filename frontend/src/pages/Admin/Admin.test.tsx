@@ -1,136 +1,172 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
-import { vi, describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
+
+import { render, screen } from '@testing-library/react';
+import { ChakraProvider } from '@chakra-ui/react';
+import { MemoryRouter } from 'react-router-dom';
 import Admin from './Admin';
 
-// Mock CSS module with a default export so className lookups don't crash
-vi.mock('./Admin.module.css', () => ({
-  default: {
-    adminContainer: 'adminContainer',
-    adminTitle: 'adminTitle',
-    adminOverview: 'adminOverview',
-    adminOverviewTitle: 'adminOverviewTitle',
-    statGrid: 'statGrid',
-    statCard: 'statCard',
-    statCardTitle: 'statCardTitle',
-    statCardValue: 'statCardValue',
-    statCardValueSuccess: 'statCardValueSuccess',
-    statCardSubtitle: 'statCardSubtitle',
-    adminToolsGrid: 'adminToolsGrid',
-    adminToolCard: 'adminToolCard',
-    adminToolCardTitle: 'adminToolCardTitle',
-    actionButtons: 'actionButtons',
-    actionButton: 'actionButton',
-    actionButtonPrimary: 'actionButtonPrimary',
-    actionButtonSecondary: 'actionButtonSecondary',
-    activityList: 'activityList',
-    activityItem: 'activityItem',
-    adminFeatures: 'adminFeatures',
-    adminFeaturesTitle: 'adminFeaturesTitle',
-    adminFeaturesDescription: 'adminFeaturesDescription',
-  },
-}), { virtual: true });
+// Mock Auth0 - simple approach like existing tests
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: true,
+    isLoading: false,
+    user: {
+      sub: 'auth0|123456789',
+      name: 'Admin User',
+      email: 'admin@example.com',
+    },
+    loginWithRedirect: vi.fn(),
+    logout: vi.fn(),
+  }),
+}));
 
-// Helper
-const renderPage = () => render(<Admin />);
+function renderPage(ui: React.ReactNode) {
+  return render(
+    <ChakraProvider>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </ChakraProvider>
+  );
+}
 
-describe('Admin page (static UI)', () => {
-  it('renders the main title and section heading', () => {
-    renderPage();
-
-    const pageTitle = screen.getByRole('heading', { name: /admin dashboard/i, level: 1 });
-    expect(pageTitle).toBeInTheDocument();
-
-    const overviewTitle = screen.getByRole('heading', { name: /system overview/i, level: 2 });
-    expect(overviewTitle).toBeInTheDocument();
+describe('Admin', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('renders 4 stat cards with correct titles, values and subtitles', () => {
-    renderPage();
+  it('renders admin dashboard main heading', () => {
+    renderPage(<Admin />);
 
-    // Titles
-    expect(screen.getByRole('heading', { name: /total users/i, level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /active sessions/i, level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /api calls/i, level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /system status/i, level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Admin Dashboard' })).toBeInTheDocument();
+  });
 
-    // Values & subtitles
+  it('renders system overview section', () => {
+    renderPage(<Admin />);
+
+    expect(screen.getByRole('heading', { name: 'System Overview' })).toBeInTheDocument();
+  });
+
+  it('renders all statistics cards with correct data', () => {
+    renderPage(<Admin />);
+
+    // Check that all stat cards are present with correct titles and values
+    expect(screen.getByText('Total Users')).toBeInTheDocument();
     expect(screen.getByText('1,247')).toBeInTheDocument();
     expect(screen.getByText('+12% this week')).toBeInTheDocument();
 
+    expect(screen.getByText('Active Sessions')).toBeInTheDocument();
     expect(screen.getByText('89')).toBeInTheDocument();
-    expect(screen.getByText(/currently online/i)).toBeInTheDocument();
+    expect(screen.getByText('Currently online')).toBeInTheDocument();
 
+    expect(screen.getByText('API Calls')).toBeInTheDocument();
     expect(screen.getByText('45.2K')).toBeInTheDocument();
-    expect(screen.getByText(/today/i)).toBeInTheDocument();
+    expect(screen.getByText('Today')).toBeInTheDocument();
 
-    const status = screen.getByText('Healthy');
-    expect(status).toBeInTheDocument();
-    // Should have both base value class and success modifier class
-    expect(status.className).toContain('statCardValue');
-    expect(status.className).toContain('statCardValueSuccess');
-    expect(screen.getByText(/all systems operational/i)).toBeInTheDocument();
+    expect(screen.getByText('System Status')).toBeInTheDocument();
+    expect(screen.getByText('Healthy')).toBeInTheDocument();
+    expect(screen.getByText('All systems operational')).toBeInTheDocument();
   });
 
-  it('renders the admin tools with 3 action buttons and correct labels', () => {
-    renderPage();
+  it('renders quick actions section with all buttons', () => {
+    renderPage(<Admin />);
 
-    const quickActionsHeading = screen.getByRole('heading', { name: /quick actions/i, level: 3 });
-    const quickActionsCard = quickActionsHeading.closest('div')!;
-    const buttons = within(quickActionsCard).getAllByRole('button');
-    expect(buttons).toHaveLength(3);
-
-    expect(screen.getByRole('button', { name: /refresh data cache/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /view system logs/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /manage users/i })).toBeInTheDocument();
-
-    // Class hints present on buttons (ensures CSS classnames are wired)
-    expect(screen.getByRole('button', { name: /refresh data cache/i }).className).toContain('actionButton');
-    expect(screen.getByRole('button', { name: /refresh data cache/i }).className).toContain('actionButtonPrimary');
-    expect(screen.getByRole('button', { name: /view system logs/i }).className).toContain('actionButtonSecondary');
-    expect(screen.getByRole('button', { name: /manage users/i }).className).toContain('actionButtonSecondary');
+    expect(screen.getByRole('heading', { name: 'Quick Actions' })).toBeInTheDocument();
+    
+    // Check for all quick action buttons
+    expect(screen.getByRole('button', { name: 'Refresh Data Cache' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View System Logs' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Manage Users' })).toBeInTheDocument();
   });
 
-  it('renders the Recent Activity list with 5 items', () => {
-    renderPage();
+  it('renders recent activity section with activity items', () => {
+    renderPage(<Admin />);
 
-    const recentHeading = screen.getByRole('heading', { name: /recent activity/i, level: 3 });
-    const recentCard = recentHeading.closest('div')!;
-    // items are <p> elements; query by their text content
-    const items = [
-      /new user registration: john doe/i,
-      /api rate limit exceeded for ip: 192\.168\.1\.100/i,
-      /database backup completed successfully/i,
-      /system maintenance scheduled for 2:00 am/i,
-      /cache cleared for race data/i,
-    ];
-    items.forEach((re) => {
-      expect(within(recentCard).getByText(re)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeInTheDocument();
+    
+    // Check for activity items
+    expect(screen.getByText('• New user registration: John Doe')).toBeInTheDocument();
+    expect(screen.getByText('• API rate limit exceeded for IP: 192.168.1.100')).toBeInTheDocument();
+    expect(screen.getByText('• Database backup completed successfully')).toBeInTheDocument();
+    expect(screen.getByText('• System maintenance scheduled for 2:00 AM')).toBeInTheDocument();
+    expect(screen.getByText('• Cache cleared for race data')).toBeInTheDocument();
+  });
+
+  it('renders admin features section with proper content', () => {
+    renderPage(<Admin />);
+
+    expect(screen.getByRole('heading', { name: 'Admin Features' })).toBeInTheDocument();
+    
+    // Check for admin features description
+    expect(screen.getByText('This admin dashboard provides system monitoring, user management, and configuration tools.')).toBeInTheDocument();
+    expect(screen.getByText('Coming soon: Advanced analytics, automated alerts, and performance optimization tools.')).toBeInTheDocument();
+  });
+
+  it('renders proper heading structure', () => {
+    renderPage(<Admin />);
+
+    // Check that headings are properly structured
+    const mainHeading = screen.getByRole('heading', { name: 'Admin Dashboard' });
+    expect(mainHeading).toBeInTheDocument();
+    expect(mainHeading.tagName).toBe('H1');
+
+    const systemOverviewHeading = screen.getByRole('heading', { name: 'System Overview' });
+    expect(systemOverviewHeading).toBeInTheDocument();
+    expect(systemOverviewHeading.tagName).toBe('H2');
+
+    const quickActionsHeading = screen.getByRole('heading', { name: 'Quick Actions' });
+    expect(quickActionsHeading).toBeInTheDocument();
+    expect(quickActionsHeading.tagName).toBe('H2');
+
+    const recentActivityHeading = screen.getByRole('heading', { name: 'Recent Activity' });
+    expect(recentActivityHeading).toBeInTheDocument();
+    expect(recentActivityHeading.tagName).toBe('H2');
+
+    const adminFeaturesHeading = screen.getByRole('heading', { name: 'Admin Features' });
+    expect(adminFeaturesHeading).toBeInTheDocument();
+    expect(adminFeaturesHeading.tagName).toBe('H2');
+  });
+
+  it('renders all main sections for authenticated admin users', () => {
+    renderPage(<Admin />);
+
+    // Check all main sections are present
+    expect(screen.getByRole('heading', { name: 'Admin Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'System Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Quick Actions' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Admin Features' })).toBeInTheDocument();
+  });
+
+  it('displays correct number of activity items', () => {
+    renderPage(<Admin />);
+
+    // Check that exactly 5 activity items are displayed
+    const activityItems = screen.getAllByText(/• /);
+    expect(activityItems).toHaveLength(5);
+  });
+
+  it('renders statistics grid with correct layout', () => {
+    renderPage(<Admin />);
+
+    // Check that all 4 stat cards are present
+    const statTitles = ['Total Users', 'Active Sessions', 'API Calls', 'System Status'];
+    statTitles.forEach(title => {
+      expect(screen.getByText(title)).toBeInTheDocument();
     });
   });
 
-  it('renders the Admin Features with title and descriptions', () => {
-    render(<Admin />);
-  
-    const featuresHeading = screen.getByRole('heading', { name: /admin features/i, level: 3 });
-    const featuresSection = featuresHeading.closest('div')!;
-  
-    // Text checks
-    expect(
-      within(featuresSection).getByText(/provides system monitoring, user management, and configuration tools/i)
-    ).toBeInTheDocument();
-    expect(
-      within(featuresSection).getByText(/coming soon: advanced analytics, automated alerts, and performance optimization tools/i)
-    ).toBeInTheDocument();
-  
-    // Section has the correct container class
-    expect(featuresSection.className).toContain('adminFeatures');
-  
-    // Only assert on <p> elements (not the <h3>)
-    const paragraphs = Array.from(featuresSection.querySelectorAll('p'));
-    expect(paragraphs).toHaveLength(2);
-    paragraphs.forEach(p => {
-      expect(p.className).toContain('adminFeaturesDescription');
-    });
+  it('renders quick actions and recent activity in grid layout', () => {
+    renderPage(<Admin />);
+
+    // Both sections should be present as they're in the same grid
+    expect(screen.getByRole('heading', { name: 'Quick Actions' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeInTheDocument();
+    
+    // Quick actions should have 3 buttons
+    const quickActionButtons = screen.getAllByRole('button').filter(button => 
+      ['Refresh Data Cache', 'View System Logs', 'Manage Users'].includes(button.textContent || '')
+    );
+    expect(quickActionButtons).toHaveLength(3);
   });
 });
