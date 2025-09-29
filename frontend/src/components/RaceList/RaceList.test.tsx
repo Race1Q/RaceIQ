@@ -350,10 +350,10 @@ describe('RaceList', () => {
     expect(screen.getByText('Monaco')).toBeInTheDocument();
     expect(screen.getByText('Belgium')).toBeInTheDocument();
     
-    // Check dates (formatted) - component uses toLocaleDateString which formats as M/D/YYYY in test environment
-    expect(screen.getByText('7/14/2024')).toBeInTheDocument();
-    expect(screen.getByText('5/26/2024')).toBeInTheDocument();
-    expect(screen.getByText('8/25/2024')).toBeInTheDocument();
+    // Check dates (formatted) - component uses YYYY/MM/DD format
+    expect(screen.getByText('2024/07/14')).toBeInTheDocument();
+    expect(screen.getByText('2024/05/26')).toBeInTheDocument();
+    expect(screen.getByText('2024/08/25')).toBeInTheDocument();
   });
 
   it('handles empty races array', () => {
@@ -382,7 +382,7 @@ describe('RaceList', () => {
     
     expect(screen.getByText('Silverstone Circuit')).toBeInTheDocument();
     expect(screen.getByText('United Kingdom')).toBeInTheDocument();
-    expect(screen.getByText('7/14/2024')).toBeInTheDocument();
+    expect(screen.getByText('2024/07/14')).toBeInTheDocument();
   });
 
   it('handles race with missing standings', () => {

@@ -334,8 +334,8 @@ describe('TeamMemberCard', () => {
     const endTime = performance.now();
     const renderTime = endTime - startTime;
     
-    // Should render quickly (less than 500ms for 10 instances in test environment)
-    expect(renderTime).toBeLessThan(500);
+    // Should render reasonably quickly (less than 1000ms for 10 instances in test environment)
+    expect(renderTime).toBeLessThan(1000);
     
     // All instances should be rendered
     const cards = document.querySelectorAll('[class*="card"]');

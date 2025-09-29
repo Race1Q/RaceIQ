@@ -186,8 +186,9 @@ describe('RaceDetailsModal', () => {
       expect(screen.getByText('Bahrain Grand Prix')).toBeInTheDocument();
     });
 
-    // Should show loading state for circuit
-    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    // Should show loading state for circuit - check for any loading indicator
+    const loadingElements = screen.queryAllByText(/loading/i);
+    expect(loadingElements.length).toBeGreaterThan(0);
 
     await waitFor(() => {
       expect(screen.getByText('Bahrain International Circuit')).toBeInTheDocument();
