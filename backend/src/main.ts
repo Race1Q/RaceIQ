@@ -4,29 +4,35 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.setGlobalPrefix('api');
 
-  // Initialize Swagger
+  // Initialize Swagger (updated)
+  const version = process.env.npm_package_version ?? '1.0.0';
   const config = new DocumentBuilder()
     .setTitle('RaceIQ API')
-    .setDescription('The RaceIQ backend API for Formula 1 data')
-    .setVersion('1.0')
+    .setDescription('Public and protected endpoints for race/driver data.')
+    .setVersion(version)
     .addBearerAuth()
-    .addTag('drivers', 'Driver management endpoints')
-    .addTag('constructors', 'Constructor management endpoints')
-    .addTag('circuits', 'Circuit management endpoints')
-    .addTag('races', 'Race management endpoints')
-    .addTag('results', 'Race results endpoints')
-    .addTag('standings', 'Championship standings endpoints')
+    // Explicit servers for prod + local (paths already include /api from global prefix)
+    .addServer('https://raceiq-api.azurewebsites.net')
+    .addServer('http://localhost:3000')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
+  // raw JSON
+  app.getHttpAdapter().getInstance().get('/docs-json', (_req, res) => {
+    res.json(document);
+  });
 
   // Get ConfigService instance
   const configService = app.get(ConfigService);
