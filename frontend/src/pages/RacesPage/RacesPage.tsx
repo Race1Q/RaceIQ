@@ -29,6 +29,9 @@ type BackendRace = {
   name: string;
   date: string | null;
   time: string | null;
+  circuit?: { country_code?: string | null; country?: string | null } | null;
+  country_code?: string | null;
+  country?: string | null;
 };
 
 function mapRace(b: BackendRace): Race {
@@ -39,6 +42,9 @@ function mapRace(b: BackendRace): Race {
     date: combine(b.date, b.time),
     circuit_id: Number(b.circuit_id),
     season_id: Number(b.season_id),
+    circuit: b.circuit ?? null,
+    countryCode: b.country_code ?? null,
+    country: b.country ?? b.circuit?.country ?? null,
   };
 }
 

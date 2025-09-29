@@ -26,7 +26,7 @@ const RaceHeader: React.FC<RaceHeaderProps> = ({ race }) => {
                 <ReactCountryFlag
                   countryCode={twoLetter.toLowerCase()}
                   svg
-                  style={{ width: '32px', height: '24px', borderRadius: '4px' }}
+                  style={{ width: '32px', height: '24px' }}
                   title={race.country}
                 />
               ) : null;
