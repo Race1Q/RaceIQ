@@ -150,10 +150,10 @@ describe('Drivers', () => {
     renderPage(<Drivers />);
 
     // Check that all team filter tabs are rendered
-    expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Red Bull Racing' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ferrari' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'McLaren' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'All' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Red Bull Racing' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Ferrari' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'McLaren' })).toBeInTheDocument();
   });
 
   it('renders driver cards for all teams when All is selected', () => {
@@ -234,7 +234,7 @@ describe('Drivers', () => {
     renderPage(<Drivers />);
 
     // Check that all main sections are present
-    expect(screen.getAllByRole('button')).toHaveLength(4); // All + 3 team tabs
+    expect(screen.getAllByRole('tab')).toHaveLength(4); // All + 3 team tabs
     expect(screen.getAllByTestId('driver-card')).toHaveLength(6); // 6 drivers total
     expect(screen.getAllByTestId('team-banner')).toHaveLength(3); // 3 teams
   });

@@ -46,7 +46,7 @@ describe('useActiveRoute', () => {
   });
 
   describe('exact match routes', () => {
-    const exactMatchRoutes = ['/drivers', '/drivers-dashboard', '/races', '/about', '/admin', '/standings'];
+    const exactMatchRoutes = ['/drivers', '/drivers-dashboard', '/races', '/about'];
 
     exactMatchRoutes.forEach(route => {
       it(`should return true for exact match on ${route}`, () => {
@@ -72,6 +72,32 @@ describe('useActiveRoute', () => {
         
         expect(result.current).toBe(false);
       });
+    });
+  });
+
+  describe('special route handling', () => {
+    it('should return true for /admin and /admin sub-routes (prefix matching)', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/admin' });
+      const { result: result1 } = renderHook(() => useActiveRoute('/admin'), { wrapper });
+      expect(result1.current).toBe(true);
+
+      mockUseLocation.mockReturnValue({ pathname: '/admin/users' });
+      const { result: result2 } = renderHook(() => useActiveRoute('/admin'), { wrapper });
+      expect(result2.current).toBe(true);
+    });
+
+    it('should return true for /standings and /standings sub-routes (special handling)', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/standings' });
+      const { result: result1 } = renderHook(() => useActiveRoute('/standings'), { wrapper });
+      expect(result1.current).toBe(true);
+
+      mockUseLocation.mockReturnValue({ pathname: '/standings/constructors' });
+      const { result: result2 } = renderHook(() => useActiveRoute('/standings'), { wrapper });
+      expect(result2.current).toBe(true);
+
+      mockUseLocation.mockReturnValue({ pathname: '/standings/drivers' });
+      const { result: result3 } = renderHook(() => useActiveRoute('/standings'), { wrapper });
+      expect(result3.current).toBe(true);
     });
   });
 

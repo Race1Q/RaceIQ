@@ -48,11 +48,23 @@ vi.mock('./widgets/NextRaceWidget', () => ({
   ),
 }));
 
-vi.mock('./widgets/StandingsWidget', () => ({
-  default: ({ data }: { data: any }) => (
-    <div data-testid="standings-widget">
-      Standings Widget {data ? '(with data)' : '(no data)'}
-    </div>
+vi.mock('./widgets/ChampionshipStandingsWidget', () => ({
+  default: () => (
+    <a href="/standings/drivers">
+      <div>
+        <h2>Driver Standings</h2>
+      </div>
+    </a>
+  ),
+}));
+
+vi.mock('./widgets/ConstructorStandingsWidget', () => ({
+  default: () => (
+    <a href="/standings/constructors">
+      <div>
+        <h2>Constructor Standings</h2>
+      </div>
+    </a>
   ),
 }));
 
@@ -102,6 +114,7 @@ vi.mock('../../components/F1LoadingSpinner/F1LoadingSpinner', () => ({
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
   AlertTriangle: () => <div data-testid="alert-triangle-icon">⚠️</div>,
+  Trophy: () => <div data-testid="trophy-icon">🏆</div>,
 }));
 
 const testTheme = extendTheme({
@@ -198,7 +211,8 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('responsive-grid-layout')).toBeInTheDocument();
       expect(screen.getByTestId('next-race-widget')).toBeInTheDocument();
-      expect(screen.getByTestId('standings-widget')).toBeInTheDocument();
+      expect(screen.getByText('Driver Standings')).toBeInTheDocument();
+      expect(screen.getByText('Constructor Standings')).toBeInTheDocument();
       expect(screen.getByTestId('last-podium-widget')).toBeInTheDocument();
       expect(screen.getByTestId('fastest-lap-widget')).toBeInTheDocument();
       expect(screen.getByTestId('favorite-driver-widget')).toBeInTheDocument();
@@ -213,7 +227,7 @@ describe('DashboardPage', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('next-race-widget')).toHaveTextContent('with data');
-      expect(screen.getByTestId('standings-widget')).toHaveTextContent('with data');
+      expect(screen.getByText('Driver Standings')).toBeInTheDocument();
       expect(screen.getByTestId('last-podium-widget')).toHaveTextContent('with data');
       expect(screen.getByTestId('fastest-lap-widget')).toHaveTextContent('with data');
       expect(screen.getByTestId('head-to-head-widget')).toHaveTextContent('with data');
@@ -302,7 +316,7 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('responsive-grid-layout')).toBeInTheDocument();
       expect(screen.getByTestId('next-race-widget')).toHaveTextContent('no data');
-      expect(screen.getByTestId('standings-widget')).toHaveTextContent('no data');
+      expect(screen.getByText('Driver Standings')).toBeInTheDocument();
       expect(screen.getByTestId('last-podium-widget')).toHaveTextContent('no data');
       expect(screen.getByTestId('fastest-lap-widget')).toHaveTextContent('no data');
       expect(screen.getByTestId('head-to-head-widget')).toHaveTextContent('no data');
@@ -324,12 +338,14 @@ describe('DashboardPage', () => {
     expect(gridLayout).toBeInTheDocument();
   });
 
-  it('renders standings widget with link', async () => {
+  it('renders driver standings widget with link', async () => {
     renderWithProviders(<DashboardPage />);
 
     await waitFor(() => {
-      const standingsWidget = screen.getByTestId('standings-widget');
-      const link = standingsWidget.closest('a');
+      // Look for "Driver Standings" heading instead of specific widget test ID
+      const heading = screen.getByText('Driver Standings');
+      expect(heading).toBeInTheDocument();
+      const link = heading.closest('a');
       expect(link).toHaveAttribute('href', '/standings/drivers');
     });
   });
@@ -340,7 +356,8 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       // All widgets should be visible by default
       expect(screen.getByTestId('next-race-widget')).toBeInTheDocument();
-      expect(screen.getByTestId('standings-widget')).toBeInTheDocument();
+      expect(screen.getByText('Driver Standings')).toBeInTheDocument();
+      expect(screen.getByText('Constructor Standings')).toBeInTheDocument();
       expect(screen.getByTestId('last-podium-widget')).toBeInTheDocument();
       expect(screen.getByTestId('fastest-lap-widget')).toBeInTheDocument();
       expect(screen.getByTestId('favorite-driver-widget')).toBeInTheDocument();
