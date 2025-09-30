@@ -27,6 +27,7 @@ import { RaceFastestLapMaterialized } from './dashboard/race-fastest-laps-materi
 import { WinsPerSeasonMaterialized } from './drivers/wins-per-season-materialized.entity';
 import { DriverCareerStatsMaterialized } from './drivers/driver-career-stats-materialized.entity';
 import { ConstructorStandingMaterialized } from './dashboard/constructor-standings-materialized.entity';
+import { NotificationsModule } from './notifications/notifications.module';
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -106,6 +107,7 @@ import { User } from './users/entities/user.entity';
     StandingsModule,
     UsersModule,
     DashboardModule,
+    NotificationsModule,
     // We have removed all the old, deleted modules 
     // (LapsModule, RacesModule, etc.)
   ],
