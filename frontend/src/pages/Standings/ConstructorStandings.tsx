@@ -83,8 +83,6 @@ const ConstructorStandings: React.FC = () => {
 
   // No internal tab state; navigation handled by component buttons
 
-  if (loading) return <F1LoadingSpinner text="Loading Constructor Standings..." />;
-
   return (
     <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
       <Heading mb={6} color="white">Formula 1 Championship Standings</Heading>
@@ -100,6 +98,9 @@ const ConstructorStandings: React.FC = () => {
         />
       </Box>
 
+      {loading && <F1LoadingSpinner text="Loading Constructor Standings..." />}
+
+      {!loading && (
       <Flex flexDirection="column" gap={3} overflowX="auto">
         {teamsToRender.flatMap(teamName => {
           const constructors = groupedConstructors[teamName];
@@ -118,6 +119,7 @@ const ConstructorStandings: React.FC = () => {
             ));
         })}
       </Flex>
+      )}
     </Box>
   );
 };

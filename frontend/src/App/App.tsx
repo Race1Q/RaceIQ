@@ -11,7 +11,7 @@ import Drivers from '../pages/Drivers/Drivers';
 import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
 import RacesPage from '../pages/RacesPage/RacesPage';
 import RaceDetailPage from '../pages/RaceDetailPage/RaceDetailPage';
-import Admin from '../pages/Admin/Admin';
+// import Admin from '../pages/Admin/Admin';
 import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import ProtectedDetailRoute from '../components/ProtectedDetailRoute/ProtectedDetailRoute';
@@ -46,7 +46,7 @@ function Navbar() {
       { path: '/standings/drivers', label: 'DriverStandings' },
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
-      { path: '/admin', label: 'Admin' },
+      // Admin removed from visible nav
     ] : []),
     { path: '/about', label: 'About' },
   ];
@@ -175,8 +175,7 @@ function AppContent() {
               }
             />
             
-            {/* ADMIN */}
-            <Route path="/admin" element={<Admin />} />
+            {/* ADMIN route disabled */}
           </Routes>
         </AppLayout>
 

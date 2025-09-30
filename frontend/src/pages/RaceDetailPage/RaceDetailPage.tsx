@@ -368,12 +368,28 @@ const RaceDetailPage: React.FC = () => {
             variant="ghost"
           />
           <VStack align="flex-start" spacing={1}>
-            <Text fontSize="2xl" fontWeight="bold" color="text-primary">{race.name}</Text>
+            <Text fontSize="2xl" fontWeight="bold" color="text-primary" fontFamily="heading">{race.name}</Text>
             <Text fontSize="md" color="text-secondary">
               Round {race.round} • {new Date(race.date).toLocaleDateString()}
             </Text>
           </VStack>
         </Flex>
+
+        {/* Upcoming race notice */}
+        {(() => {
+          const now = new Date();
+          const raceDate = new Date(race.date);
+          const isUpcoming = raceDate.getTime() > now.getTime();
+          return isUpcoming ? (
+            <Alert status="info" variant="left-accent" borderRadius="md" mb={6}>
+              <AlertIcon />
+              <Text fontFamily="heading" fontWeight="600" mr={2}>Race not started yet.</Text>
+              <Text color="text-secondary">
+                This event is still to happen. Detailed results, laps, and pit stops will appear once the race concludes.
+              </Text>
+            </Alert>
+          ) : null;
+        })()}
 
         {/* 3D Track Visualization (unchanged block) */}
         <MotionBox
@@ -405,14 +421,118 @@ const RaceDetailPage: React.FC = () => {
         </MotionBox>
 
         {/* Tabs */}
-        <Tabs colorScheme="red" variant="enclosed">
-          <TabList>
-            <Tab>Summary</Tab>
-            <Tab>Race</Tab>
-            <Tab>Qualifying</Tab>
-            <Tab>Qualifying → Race</Tab>
-            <Tab>Analysis</Tab>
-            <Tab>Lap Times / Pit Stops</Tab>
+        <Tabs colorScheme="red" variant="unstyled" mb={8}>
+          <TabList
+            bg="bg-surface"
+            border="1px solid"
+            borderColor="border-primary"
+            borderRadius="full"
+            p="6px"
+            w="fit-content"
+            gap={2}
+          >
+            <Tab
+              px={6}
+              h="44px"
+              fontWeight={600}
+              fontFamily="heading"
+              color="text-secondary"
+              _hover={{ color: "text-primary" }}
+              _selected={{
+                color: "text-on-accent",
+                bg: "brand.red",
+                borderRadius: "full",
+                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+              }}
+              transition="all 0.25s ease"
+            >
+              Summary
+            </Tab>
+            <Tab
+              px={6}
+              h="44px"
+              fontWeight={600}
+              fontFamily="heading"
+              color="text-secondary"
+              _hover={{ color: "text-primary" }}
+              _selected={{
+                color: "text-on-accent",
+                bg: "brand.red",
+                borderRadius: "full",
+                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+              }}
+              transition="all 0.25s ease"
+            >
+              Race
+            </Tab>
+            <Tab
+              px={6}
+              h="44px"
+              fontWeight={600}
+              fontFamily="heading"
+              color="text-secondary"
+              _hover={{ color: "text-primary" }}
+              _selected={{
+                color: "text-on-accent",
+                bg: "brand.red",
+                borderRadius: "full",
+                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+              }}
+              transition="all 0.25s ease"
+            >
+              Qualifying
+            </Tab>
+            <Tab
+              px={6}
+              h="44px"
+              fontWeight={600}
+              fontFamily="heading"
+              color="text-secondary"
+              _hover={{ color: "text-primary" }}
+              _selected={{
+                color: "text-on-accent",
+                bg: "brand.red",
+                borderRadius: "full",
+                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+              }}
+              transition="all 0.25s ease"
+            >
+              Qualifying → Race
+            </Tab>
+            {/* <Tab
+              px={6}
+              h="44px"
+              fontWeight={600}
+              fontFamily="heading"
+              color="text-secondary"
+              _hover={{ color: "text-primary" }}
+              _selected={{
+                color: "text-on-accent",
+                bg: "brand.red",
+                borderRadius: "full",
+                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+              }}
+              transition="all 0.25s ease"
+            >
+              Analysis
+            </Tab>
+            <Tab
+              px={6}
+              h="44px"
+              fontWeight={600}
+              fontFamily="heading"
+              color="text-secondary"
+              _hover={{ color: "text-primary" }}
+              _selected={{
+                color: "text-on-accent",
+                bg: "brand.red",
+                borderRadius: "full",
+                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+              }}
+              transition="all 0.25s ease"
+            >
+              Lap Times / Pit Stops
+            </Tab> */}
           </TabList>
 
           <TabPanels>
@@ -459,7 +579,11 @@ const RaceDetailPage: React.FC = () => {
                     ) : summaryError ? (
                       <Box p={4}><Text color="red.500">{summaryError}</Text></Box>
                     ) : (
-                      <RaceEventsWidget data={summary?.events} />
+                      <RaceEventsWidget
+                        data={summary?.events
+                          ? { redFlags: summary.events.redFlags ?? 0, yellowFlags: summary.events.yellowFlags ?? 0 }
+                          : undefined}
+                      />
                     )}
                   </Box>
                 </SimpleGrid>
@@ -774,114 +898,7 @@ const RaceDetailPage: React.FC = () => {
 </TabPanel>
 
 
-
-
-            {/* ANALYSIS TAB: Race Position & Lap Time Graphs with Driver Filters */}
-            <TabPanel>
-              <VStack align="stretch" spacing={4}>
-                <Text fontSize="xl" fontWeight="bold" color="text-primary">Analysis</Text>
-                {/* Driver filter for graphs */}
-                <Box mb={2}>
-                  <Text fontWeight="bold">Select Drivers:</Text>
-                  <HStack wrap="wrap" gap={2}>
-                    <Box
-                      as="button"
-                      px={3} py={1}
-                      borderRadius="md"
-                      borderWidth={2}
-                      borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
-                      boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
-                      bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
-                      fontWeight="bold"
-                      color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
-                      onClick={() => setDriverFilter([])}
-                      transition="all 0.2s"
-                    >
-                      All Drivers
-                    </Box>
-                    {driversInRace.map(d => {
-                      const label =
-                        raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === d)?.driver_name ||
-                        qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d)?.driver_name ||
-                        d;
-                      const selected = driverFilter.includes(d);
-                      return (
-                        <Box
-                          as="button"
-                          key={d}
-                          px={3} py={1}
-                          borderRadius="md"
-                          borderWidth={2}
-                          borderColor={selected ? 'brand.red' : 'border-subtle'}
-                          boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
-                          bg={selected ? 'bg-elevated' : 'bg-surface'}
-                          fontWeight="bold"
-                          color={selected ? 'brand.red' : 'text-primary'}
-                          cursor="pointer"
-                          m={1}
-                          transition="all 0.2s"
-                          onClick={() => {
-                            setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
-                          }}
-                        >
-                          {label}
-                        </Box>
-                      );
-                    })}
-                  </HStack>
-                </Box>
-                {/* Race Position Graph */}
-                <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4} mb={4}>
-                  <Text fontWeight="bold" mb={2}>Race Positions by Lap</Text>
-                  {/* Simple SVG line graph: lap vs position for selected drivers */}
-                  <svg width={1200} height={400}>
-                    {/* Axes */}
-                    <line x1={60} y1={40} x2={60} y2={360} stroke="#888" />
-                    <line x1={60} y1={360} x2={1150} y2={360} stroke="#888" />
-                    {/* Axis labels */}
-                    <text x={20} y={30} fontSize={16}>Pos</text>
-                    <text x={1150} y={390} fontSize={16}>Lap</text>
-                    {/* Driver lines */}
-                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
-                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
-                      if (!driverLaps.length) return null;
-                      // Find constructor name or id for this driver from raceResults or qualiResults
-                      const driverKey = driverLaps[0]?.driver_code ?? String(driverLaps[0]?.driver_id);
-                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === driverKey)
-                        || qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === driverKey);
-                      const constructor =
-                        driverResult?.constructor_name ?? driverResult?.constructor_id ?? "Default";
-                      const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
-                      const color = teamColors[constructorKey] || teamColors["Default"];
-                      // Map laps to SVG points
-                      const points = driverLaps.map(l => {
-                        const x = 60 + ((l.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
-                        const y = 360 - ((l.position ?? 20) - 1) * ((320) / 19);
-                        return `${x},${y}`;
-                      }).join(' ');
-                      return (
-                        <polyline
-                          key={d}
-                          points={points}
-                          fill="none"
-                          stroke={`#${color}`}
-                          strokeWidth={3}
-                        />
-                      );
-                    })}
-                    {/* Driver labels at last lap */}
-                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
-                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
-                      if (!driverLaps.length) return null;
-                      const lastLap = driverLaps[driverLaps.length - 1];
-                      const x = 60 + ((lastLap.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
-                      const y = 360 - ((lastLap.position ?? 20) - 1) * ((320) / 19);
-                      return (
-                        <text key={d} x={x + 5} y={y} fontSize={14} fill="#222">{d}</text>
-                      );
-                    })}
-                  </svg>
-                </Box>
+                <TabPanel>
                 {/* Lap Time Analysis Graph */}
                 <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4}>
                   <Text fontWeight="bold" mb={2}>Lap Time Comparison</Text>
@@ -894,7 +911,7 @@ const RaceDetailPage: React.FC = () => {
                     <text x={20} y={30} fontSize={16}>Lap Time (s)</text>
                     <text x={1150} y={390} fontSize={16}>Lap</text>
                     {/* Driver lines */}
-                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                    {driverFilter.length ? driverFilter : driversInRace.map((d) => {
                       const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
                       if (!driverLaps.length) return null;
                       // Find constructor name or id for this driver from raceResults or qualiResults
@@ -926,8 +943,9 @@ const RaceDetailPage: React.FC = () => {
                         />
                       );
                     })}
+              
                     {/* Driver labels at last lap */}
-                    {driverFilter.length ? driverFilter : driversInRace.map((d, idx) => {
+                    {driverFilter.length ? driverFilter : driversInRace.map((d) => {
                       const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
                       if (!driverLaps.length) return null;
                       const lastLap = driverLaps[driverLaps.length - 1];
@@ -939,21 +957,19 @@ const RaceDetailPage: React.FC = () => {
                     })}
                   </svg>
                 </Box>
-              </VStack>
             </TabPanel>
 
-            {/* LAP TIMES / PIT STOPS */}
+          
             <TabPanel>
               <VStack align="stretch" spacing={4}>
                 <Text fontSize="xl" fontWeight="bold" color="text-primary">Lap Times & Pit Stops</Text>
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                  {/* Lap Times sample */}
                   <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
                     <HStack justify="space-between" mb={2}>
                       <Text fontWeight="bold">Lap Times</Text>
                       <HStack>
-                        {/* keep UI consistent with other tabs */}
+                        keep UI consistent with other tabs
                         <Checkbox
                           isChecked={driverFilter.length === 0}
                           onChange={(e) => setDriverFilter(e.target.checked ? [] : driversInRace)}
