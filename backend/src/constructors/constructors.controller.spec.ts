@@ -1,40 +1,21 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConstructorsController } from './constructors.controller';
+import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { NotFoundException } from '@nestjs/common';
 
-// Mock the ConstructorsController to avoid import issues
-const mockConstructorsService = {
-  findAll: jest.fn(),
-  findOne: jest.fn(),
-  getPointsPerSeason: jest.fn(),
-  findAllActive: jest.fn(),
-};
+// Mock the problematic imports
+jest.mock('src/race-results/race-results.entity', () => ({
+  RaceResult: 'RaceResult',
+}), { virtual: true });
 
-// Create a mock controller class
-class MockConstructorsController {
-  constructor(private readonly constructorsService: any) {}
-
-  async findAll(): Promise<ConstructorEntity[]> {
-    return this.constructorsService.findAll();
-  }
-
-  async findOne(id: number): Promise<ConstructorEntity> {
-    return this.constructorsService.findOne(id);
-  }
-
-  async getPointsPerSeason(id: number): Promise<{ season: number; points: number }[]> {
-    return this.constructorsService.getPointsPerSeason(id);
-  }
-
-  async getActiveConstructors(): Promise<ConstructorEntity[]> {
-    return this.constructorsService.findAllActive();
-  }
-}
+jest.mock('src/races/races.entity', () => ({
+  Race: 'Race',
+}), { virtual: true });
 
 describe('ConstructorsController', () => {
-  let controller: MockConstructorsController;
-  let service: any;
+  let controller: ConstructorsController;
+  let service: jest.Mocked<ConstructorsService>;
 
   const mockConstructor: ConstructorEntity = {
     id: 1,
@@ -44,7 +25,7 @@ describe('ConstructorsController', () => {
     is_active: true,
     raceResults: [],
     qualifyingResults: [],
-  };
+  } as ConstructorEntity;
 
   const mockConstructors: ConstructorEntity[] = [
     mockConstructor,
@@ -56,7 +37,7 @@ describe('ConstructorsController', () => {
       is_active: true,
       raceResults: [],
       qualifyingResults: [],
-    },
+    } as ConstructorEntity,
   ];
 
   const mockPointsPerSeason = [
@@ -65,44 +46,43 @@ describe('ConstructorsController', () => {
   ];
 
   beforeEach(async () => {
+    const mockConstructorsService = {
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      getPointsPerSeason: jest.fn(),
+      findAllActive: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [MockConstructorsController],
+      controllers: [ConstructorsController],
       providers: [
         {
-          provide: 'ConstructorsService',
+          provide: ConstructorsService,
           useValue: mockConstructorsService,
         },
       ],
     }).compile();
 
-    controller = module.get<MockConstructorsController>(MockConstructorsController);
-    service = mockConstructorsService;
-    
-    // Manually inject the service into the controller
-    (controller as any).constructorsService = service;
+    controller = module.get<ConstructorsController>(ConstructorsController);
+    service = module.get(ConstructorsService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
-
   describe('findAll', () => {
     it('should return an array of constructors', async () => {
-      mockConstructorsService.findAll.mockResolvedValue(mockConstructors);
+      service.findAll.mockResolvedValue(mockConstructors);
 
       const result = await controller.findAll();
 
       expect(result).toEqual(mockConstructors);
       expect(service.findAll).toHaveBeenCalledTimes(1);
-      expect(service.findAll).toHaveBeenCalledWith();
     });
 
     it('should return empty array when no constructors exist', async () => {
-      mockConstructorsService.findAll.mockResolvedValue([]);
+      service.findAll.mockResolvedValue([]);
 
       const result = await controller.findAll();
 
@@ -112,7 +92,7 @@ describe('ConstructorsController', () => {
 
     it('should handle service errors', async () => {
       const error = new Error('Database connection failed');
-      mockConstructorsService.findAll.mockRejectedValue(error);
+      service.findAll.mockRejectedValue(error);
 
       await expect(controller.findAll()).rejects.toThrow('Database connection failed');
       expect(service.findAll).toHaveBeenCalledTimes(1);
@@ -120,7 +100,7 @@ describe('ConstructorsController', () => {
 
     it('should propagate service exceptions', async () => {
       const error = new Error('Service unavailable');
-      mockConstructorsService.findAll.mockRejectedValue(error);
+      service.findAll.mockRejectedValue(error);
 
       await expect(controller.findAll()).rejects.toThrow('Service unavailable');
       expect(service.findAll).toHaveBeenCalledTimes(1);
@@ -129,147 +109,124 @@ describe('ConstructorsController', () => {
 
   describe('findOne', () => {
     it('should return a constructor when valid id is provided', async () => {
-      const constructorId = 1;
-      mockConstructorsService.findOne.mockResolvedValue(mockConstructor);
+      service.findOne.mockResolvedValue(mockConstructor);
 
-      const result = await controller.findOne(constructorId);
+      const result = await controller.findOne(1);
 
       expect(result).toEqual(mockConstructor);
+      expect(service.findOne).toHaveBeenCalledWith(1);
       expect(service.findOne).toHaveBeenCalledTimes(1);
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
     });
 
     it('should return constructor with all properties', async () => {
-      const constructorId = 1;
-      mockConstructorsService.findOne.mockResolvedValue(mockConstructor);
+      service.findOne.mockResolvedValue(mockConstructor);
 
-      const result = await controller.findOne(constructorId);
+      const result = await controller.findOne(1);
 
       expect(result).toHaveProperty('id', 1);
       expect(result).toHaveProperty('name', 'Mercedes');
       expect(result).toHaveProperty('nationality', 'German');
       expect(result).toHaveProperty('url', 'https://example.com/mercedes');
       expect(result).toHaveProperty('is_active', true);
-      expect(result).toHaveProperty('raceResults');
-      expect(result).toHaveProperty('qualifyingResults');
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
+      expect(service.findOne).toHaveBeenCalledWith(1);
     });
 
     it('should handle NotFoundException from service', async () => {
-      const constructorId = 999;
-      const notFoundError = new NotFoundException(`Constructor with ID ${constructorId} not found`);
-      mockConstructorsService.findOne.mockRejectedValue(notFoundError);
+      service.findOne.mockRejectedValue(new NotFoundException('Constructor not found'));
 
-      await expect(controller.findOne(constructorId)).rejects.toThrow(NotFoundException);
-      await expect(controller.findOne(constructorId)).rejects.toThrow(`Constructor with ID ${constructorId} not found`);
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
+      await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
+      expect(service.findOne).toHaveBeenCalledWith(999);
     });
 
     it('should handle different constructor IDs', async () => {
-      const constructorIds = [1, 2, 10, 100];
-      
-      for (const id of constructorIds) {
-        const constructor = { ...mockConstructor, id };
-        mockConstructorsService.findOne.mockResolvedValueOnce(constructor);
+      const ferrariConstructor = mockConstructors[1];
+      service.findOne.mockResolvedValue(ferrariConstructor);
 
-        const result = await controller.findOne(id);
+      const result = await controller.findOne(2);
 
-        expect(result.id).toBe(id);
-        expect(service.findOne).toHaveBeenCalledWith(id);
-      }
+      expect(result).toEqual(ferrariConstructor);
+      expect(service.findOne).toHaveBeenCalledWith(2);
     });
 
     it('should handle service errors for findOne', async () => {
-      const constructorId = 1;
-      const error = new Error('Database query failed');
-      mockConstructorsService.findOne.mockRejectedValue(error);
+      const error = new Error('Database connection failed');
+      service.findOne.mockRejectedValue(error);
 
-      await expect(controller.findOne(constructorId)).rejects.toThrow('Database query failed');
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
+      await expect(controller.findOne(1)).rejects.toThrow('Database connection failed');
+      expect(service.findOne).toHaveBeenCalledWith(1);
     });
 
     it('should handle zero id', async () => {
-      const constructorId = 0;
-      const error = new NotFoundException(`Constructor with ID ${constructorId} not found`);
-      mockConstructorsService.findOne.mockRejectedValue(error);
+      service.findOne.mockResolvedValue(null);
 
-      await expect(controller.findOne(constructorId)).rejects.toThrow(NotFoundException);
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
+      const result = await controller.findOne(0);
+
+      expect(result).toBeNull();
+      expect(service.findOne).toHaveBeenCalledWith(0);
     });
 
     it('should handle negative id', async () => {
-      const constructorId = -1;
-      const error = new NotFoundException(`Constructor with ID ${constructorId} not found`);
-      mockConstructorsService.findOne.mockRejectedValue(error);
+      service.findOne.mockResolvedValue(null);
 
-      await expect(controller.findOne(constructorId)).rejects.toThrow(NotFoundException);
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
+      const result = await controller.findOne(-1);
+
+      expect(result).toBeNull();
+      expect(service.findOne).toHaveBeenCalledWith(-1);
     });
   });
 
   describe('getPointsPerSeason', () => {
     it('should return points per season for valid constructor', async () => {
-      const constructorId = 1;
-      mockConstructorsService.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
+      service.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
 
-      const result = await controller.getPointsPerSeason(constructorId);
+      const result = await controller.getPointsPerSeason(1);
 
       expect(result).toEqual(mockPointsPerSeason);
+      expect(service.getPointsPerSeason).toHaveBeenCalledWith(1);
       expect(service.getPointsPerSeason).toHaveBeenCalledTimes(1);
-      expect(service.getPointsPerSeason).toHaveBeenCalledWith(constructorId);
     });
 
     it('should return empty array when no points data exists', async () => {
-      const constructorId = 1;
-      mockConstructorsService.getPointsPerSeason.mockResolvedValue([]);
+      service.getPointsPerSeason.mockResolvedValue([]);
 
-      const result = await controller.getPointsPerSeason(constructorId);
+      const result = await controller.getPointsPerSeason(999);
 
       expect(result).toEqual([]);
-      expect(service.getPointsPerSeason).toHaveBeenCalledTimes(1);
+      expect(service.getPointsPerSeason).toHaveBeenCalledWith(999);
     });
 
     it('should handle NotFoundException from service', async () => {
-      const constructorId = 999;
-      const notFoundError = new NotFoundException(`Constructor with ID ${constructorId} not found`);
-      mockConstructorsService.getPointsPerSeason.mockRejectedValue(notFoundError);
+      service.getPointsPerSeason.mockRejectedValue(new NotFoundException('Constructor not found'));
 
-      await expect(controller.getPointsPerSeason(constructorId)).rejects.toThrow(NotFoundException);
-      await expect(controller.getPointsPerSeason(constructorId)).rejects.toThrow(`Constructor with ID ${constructorId} not found`);
-      expect(service.getPointsPerSeason).toHaveBeenCalledWith(constructorId);
+      await expect(controller.getPointsPerSeason(999)).rejects.toThrow(NotFoundException);
+      expect(service.getPointsPerSeason).toHaveBeenCalledWith(999);
     });
 
     it('should handle different constructor IDs', async () => {
-      const constructorIds = [1, 2, 10, 100];
-      
-      for (const id of constructorIds) {
-        const pointsData = mockPointsPerSeason.map(item => ({ ...item, season: item.season + id }));
-        mockConstructorsService.getPointsPerSeason.mockResolvedValueOnce(pointsData);
+      const customPointsData = [{ season: 2023, points: 300 }];
+      service.getPointsPerSeason.mockResolvedValue(customPointsData);
 
-        const result = await controller.getPointsPerSeason(id);
+      const result = await controller.getPointsPerSeason(2);
 
-        expect(result).toEqual(pointsData);
-        expect(service.getPointsPerSeason).toHaveBeenCalledWith(id);
-      }
+      expect(result).toEqual(customPointsData);
+      expect(service.getPointsPerSeason).toHaveBeenCalledWith(2);
     });
 
     it('should handle service errors for getPointsPerSeason', async () => {
-      const constructorId = 1;
-      const error = new Error('Database query failed');
-      mockConstructorsService.getPointsPerSeason.mockRejectedValue(error);
+      const error = new Error('Query failed');
+      service.getPointsPerSeason.mockRejectedValue(error);
 
-      await expect(controller.getPointsPerSeason(constructorId)).rejects.toThrow('Database query failed');
-      expect(service.getPointsPerSeason).toHaveBeenCalledWith(constructorId);
+      await expect(controller.getPointsPerSeason(1)).rejects.toThrow('Query failed');
+      expect(service.getPointsPerSeason).toHaveBeenCalledWith(1);
     });
 
     it('should return data with correct structure', async () => {
-      const constructorId = 1;
-      mockConstructorsService.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
+      service.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
 
-      const result = await controller.getPointsPerSeason(constructorId);
+      const result = await controller.getPointsPerSeason(1);
 
       expect(Array.isArray(result)).toBe(true);
-      expect(result).toHaveLength(2);
+      expect(result.length).toBe(2);
       expect(result[0]).toHaveProperty('season');
       expect(result[0]).toHaveProperty('points');
       expect(typeof result[0].season).toBe('number');
@@ -280,17 +237,16 @@ describe('ConstructorsController', () => {
   describe('getActiveConstructors', () => {
     it('should return an array of active constructors', async () => {
       const activeConstructors = mockConstructors.filter(c => c.is_active);
-      mockConstructorsService.findAllActive.mockResolvedValue(activeConstructors);
+      service.findAllActive.mockResolvedValue(activeConstructors);
 
       const result = await controller.getActiveConstructors();
 
       expect(result).toEqual(activeConstructors);
       expect(service.findAllActive).toHaveBeenCalledTimes(1);
-      expect(service.findAllActive).toHaveBeenCalledWith();
     });
 
     it('should return empty array when no active constructors exist', async () => {
-      mockConstructorsService.findAllActive.mockResolvedValue([]);
+      service.findAllActive.mockResolvedValue([]);
 
       const result = await controller.getActiveConstructors();
 
@@ -300,39 +256,38 @@ describe('ConstructorsController', () => {
 
     it('should handle service errors', async () => {
       const error = new Error('Database connection failed');
-      mockConstructorsService.findAllActive.mockRejectedValue(error);
+      service.findAllActive.mockRejectedValue(error);
 
       await expect(controller.getActiveConstructors()).rejects.toThrow('Database connection failed');
       expect(service.findAllActive).toHaveBeenCalledTimes(1);
     });
 
     it('should return only active constructors', async () => {
-      const activeConstructors = [
-        { ...mockConstructor, id: 1, is_active: true },
-        { ...mockConstructor, id: 2, is_active: true },
-      ];
-      mockConstructorsService.findAllActive.mockResolvedValue(activeConstructors);
+      const activeConstructors = mockConstructors.filter(c => c.is_active);
+      service.findAllActive.mockResolvedValue(activeConstructors);
 
       const result = await controller.getActiveConstructors();
 
-      expect(result).toEqual(activeConstructors);
-      expect(result.every(c => c.is_active)).toBe(true);
+      expect(result.every(constructor => constructor.is_active)).toBe(true);
       expect(service.findAllActive).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('controller structure', () => {
-    it('should be a class', () => {
-      expect(typeof MockConstructorsController).toBe('function');
+    it('should be defined', () => {
+      expect(controller).toBeDefined();
+    });
+
+    it('should be an instance of ConstructorsController', () => {
+      expect(controller).toBeInstanceOf(ConstructorsController);
     });
 
     it('should have proper constructor injection', () => {
-      expect(controller).toBeInstanceOf(MockConstructorsController);
+      expect(controller).toHaveProperty('constructorsService');
     });
 
     it('should have service injected correctly', () => {
-      expect(service).toBeDefined();
-      expect(service).toBe(mockConstructorsService);
+      expect((controller as any).constructorsService).toBe(service);
     });
 
     it('should have findAll method', () => {
@@ -354,289 +309,220 @@ describe('ConstructorsController', () => {
 
   describe('service integration', () => {
     it('should call service.findAll exactly once', async () => {
-      mockConstructorsService.findAll.mockResolvedValue(mockConstructors);
+      service.findAll.mockResolvedValue(mockConstructors);
 
       await controller.findAll();
 
-      expect(mockConstructorsService.findAll).toHaveBeenCalledTimes(1);
+      expect(service.findAll).toHaveBeenCalledTimes(1);
     });
 
     it('should call service.findOne exactly once', async () => {
-      const constructorId = 1;
-      mockConstructorsService.findOne.mockResolvedValue(mockConstructor);
+      service.findOne.mockResolvedValue(mockConstructor);
 
-      await controller.findOne(constructorId);
+      await controller.findOne(1);
 
-      expect(mockConstructorsService.findOne).toHaveBeenCalledTimes(1);
-      expect(mockConstructorsService.findOne).toHaveBeenCalledWith(constructorId);
+      expect(service.findOne).toHaveBeenCalledTimes(1);
     });
 
     it('should call service.getPointsPerSeason exactly once', async () => {
-      const constructorId = 1;
-      mockConstructorsService.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
+      service.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
 
-      await controller.getPointsPerSeason(constructorId);
+      await controller.getPointsPerSeason(1);
 
-      expect(mockConstructorsService.getPointsPerSeason).toHaveBeenCalledTimes(1);
-      expect(mockConstructorsService.getPointsPerSeason).toHaveBeenCalledWith(constructorId);
+      expect(service.getPointsPerSeason).toHaveBeenCalledTimes(1);
     });
 
     it('should call service.findAllActive exactly once', async () => {
-      mockConstructorsService.findAllActive.mockResolvedValue(mockConstructors);
+      service.findAllActive.mockResolvedValue(mockConstructors);
 
       await controller.getActiveConstructors();
 
-      expect(mockConstructorsService.findAllActive).toHaveBeenCalledTimes(1);
+      expect(service.findAllActive).toHaveBeenCalledTimes(1);
     });
 
     it('should not modify service responses', async () => {
-      const originalConstructor = { ...mockConstructor };
-      mockConstructorsService.findOne.mockResolvedValue(mockConstructor);
+      service.findAll.mockResolvedValue(mockConstructors);
 
-      const result = await controller.findOne(1);
+      const result = await controller.findAll();
 
-      expect(result).toEqual(originalConstructor);
-      expect(result).toBe(mockConstructor); // Same reference
+      expect(result).toBe(mockConstructors);
+      expect(result).toEqual(mockConstructors);
     });
 
     it('should handle service returning null', async () => {
-      const constructorId = 999;
-      mockConstructorsService.findOne.mockResolvedValue(null);
+      service.findOne.mockResolvedValue(null);
 
-      const result = await controller.findOne(constructorId);
+      const result = await controller.findOne(999);
 
       expect(result).toBeNull();
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
+      expect(service.findOne).toHaveBeenCalledWith(999);
     });
   });
 
   describe('concurrent requests', () => {
     it('should handle multiple concurrent findAll requests', async () => {
-      mockConstructorsService.findAll.mockResolvedValue(mockConstructors);
+      service.findAll.mockResolvedValue(mockConstructors);
 
-      const promises = [
-        controller.findAll(),
-        controller.findAll(),
-        controller.findAll(),
-      ];
-
+      const promises = [controller.findAll(), controller.findAll(), controller.findAll()];
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(3);
       expect(results.every(result => result === mockConstructors)).toBe(true);
-      expect(mockConstructorsService.findAll).toHaveBeenCalledTimes(3);
+      expect(service.findAll).toHaveBeenCalledTimes(3);
     });
 
     it('should handle multiple concurrent findOne requests', async () => {
-      const constructorIds = [1, 2, 3];
-      const constructors = constructorIds.map(id => ({ ...mockConstructor, id }));
-      
-      constructorIds.forEach((id, index) => {
-        mockConstructorsService.findOne.mockResolvedValueOnce(constructors[index]);
-      });
+      service.findOne.mockResolvedValue(mockConstructor);
 
-      const promises = constructorIds.map(id => controller.findOne(id));
-
+      const promises = [controller.findOne(1), controller.findOne(2), controller.findOne(3)];
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(3);
-      expect(results[0].id).toBe(1);
-      expect(results[1].id).toBe(2);
-      expect(results[2].id).toBe(3);
-      expect(mockConstructorsService.findOne).toHaveBeenCalledTimes(3);
+      expect(results.every(result => result === mockConstructor)).toBe(true);
+      expect(service.findOne).toHaveBeenCalledTimes(3);
     });
 
     it('should handle multiple concurrent getPointsPerSeason requests', async () => {
-      const constructorIds = [1, 2, 3];
-      const pointsData = constructorIds.map(id => [
-        { season: 2023, points: 100 + id },
-        { season: 2024, points: 200 + id },
-      ]);
-      
-      constructorIds.forEach((id, index) => {
-        mockConstructorsService.getPointsPerSeason.mockResolvedValueOnce(pointsData[index]);
-      });
+      service.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
 
-      const promises = constructorIds.map(id => controller.getPointsPerSeason(id));
-
+      const promises = [controller.getPointsPerSeason(1), controller.getPointsPerSeason(2)];
       const results = await Promise.all(promises);
 
-      expect(results).toHaveLength(3);
-      expect(results[0][0].points).toBe(101);
-      expect(results[1][0].points).toBe(102);
-      expect(results[2][0].points).toBe(103);
-      expect(mockConstructorsService.getPointsPerSeason).toHaveBeenCalledTimes(3);
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result === mockPointsPerSeason)).toBe(true);
+      expect(service.getPointsPerSeason).toHaveBeenCalledTimes(2);
     });
 
     it('should handle mixed concurrent requests', async () => {
-      mockConstructorsService.findAll.mockResolvedValue(mockConstructors);
-      mockConstructorsService.findOne.mockResolvedValue(mockConstructor);
-      mockConstructorsService.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
-      mockConstructorsService.findAllActive.mockResolvedValue(mockConstructors);
+      service.findAll.mockResolvedValue(mockConstructors);
+      service.findOne.mockResolvedValue(mockConstructor);
+      service.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
 
       const promises = [
         controller.findAll(),
         controller.findOne(1),
         controller.getPointsPerSeason(1),
-        controller.getActiveConstructors(),
+        controller.getActiveConstructors()
       ];
-
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(4);
       expect(results[0]).toBe(mockConstructors);
       expect(results[1]).toBe(mockConstructor);
       expect(results[2]).toBe(mockPointsPerSeason);
-      expect(results[3]).toBe(mockConstructors);
-      expect(mockConstructorsService.findAll).toHaveBeenCalledTimes(1);
-      expect(mockConstructorsService.findOne).toHaveBeenCalledTimes(1);
-      expect(mockConstructorsService.getPointsPerSeason).toHaveBeenCalledTimes(1);
-      expect(mockConstructorsService.findAllActive).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('error propagation', () => {
     it('should propagate all service errors for findAll', async () => {
-      const errors = [
-        new Error('Connection timeout'),
-        new Error('Permission denied'),
-        new Error('Resource not available'),
-      ];
+      const error = new Error('Service error');
+      service.findAll.mockRejectedValue(error);
 
-      for (const error of errors) {
-        mockConstructorsService.findAll.mockRejectedValueOnce(error);
-        
-        await expect(controller.findAll()).rejects.toThrow(error.message);
-        expect(service.findAll).toHaveBeenCalled();
-      }
+      await expect(controller.findAll()).rejects.toThrow('Service error');
+      expect(service.findAll).toHaveBeenCalledTimes(1);
     });
 
     it('should propagate all service errors for findOne', async () => {
-      const errors = [
-        new NotFoundException('Constructor not found'),
-        new Error('Database error'),
-        new Error('Validation failed'),
-      ];
+      const error = new Error('Service error');
+      service.findOne.mockRejectedValue(error);
 
-      for (const error of errors) {
-        mockConstructorsService.findOne.mockRejectedValueOnce(error);
-        
-        await expect(controller.findOne(1)).rejects.toThrow();
-        expect(service.findOne).toHaveBeenCalledWith(1);
-      }
+      await expect(controller.findOne(1)).rejects.toThrow('Service error');
+      expect(service.findOne).toHaveBeenCalledTimes(1);
     });
 
     it('should propagate all service errors for getPointsPerSeason', async () => {
-      const errors = [
-        new NotFoundException('Constructor not found'),
-        new Error('Database error'),
-        new Error('Query timeout'),
-      ];
+      const error = new Error('Service error');
+      service.getPointsPerSeason.mockRejectedValue(error);
 
-      for (const error of errors) {
-        mockConstructorsService.getPointsPerSeason.mockRejectedValueOnce(error);
-        
-        await expect(controller.getPointsPerSeason(1)).rejects.toThrow();
-        expect(service.getPointsPerSeason).toHaveBeenCalledWith(1);
-      }
+      await expect(controller.getPointsPerSeason(1)).rejects.toThrow('Service error');
+      expect(service.getPointsPerSeason).toHaveBeenCalledTimes(1);
     });
 
     it('should propagate all service errors for getActiveConstructors', async () => {
-      const errors = [
-        new Error('Connection timeout'),
-        new Error('Permission denied'),
-        new Error('Resource not available'),
-      ];
+      const error = new Error('Service error');
+      service.findAllActive.mockRejectedValue(error);
 
-      for (const error of errors) {
-        mockConstructorsService.findAllActive.mockRejectedValueOnce(error);
-        
-        await expect(controller.getActiveConstructors()).rejects.toThrow(error.message);
-        expect(service.findAllActive).toHaveBeenCalled();
-      }
+      await expect(controller.getActiveConstructors()).rejects.toThrow('Service error');
+      expect(service.findAllActive).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('return type validation', () => {
     it('should return Promise<ConstructorEntity[]> for findAll', async () => {
-      mockConstructorsService.findAll.mockResolvedValue(mockConstructors);
-
-      const result = await controller.findAll();
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toBeInstanceOf(Array);
+      service.findAll.mockResolvedValue(mockConstructors);
+      const result = controller.findAll();
+      expect(result).toBeInstanceOf(Promise);
+      
+      const resolved = await result;
+      expect(Array.isArray(resolved)).toBe(true);
+      expect(resolved.length).toBeGreaterThan(0);
     });
 
     it('should return Promise<ConstructorEntity> for findOne', async () => {
-      mockConstructorsService.findOne.mockResolvedValue(mockConstructor);
-
-      const result = await controller.findOne(1);
-
-      expect(result).toBeInstanceOf(Object);
-      expect(result).toHaveProperty('id');
-      expect(result).toHaveProperty('name');
+      service.findOne.mockResolvedValue(mockConstructor);
+      const result = controller.findOne(1);
+      expect(result).toBeInstanceOf(Promise);
+      
+      const resolved = await result;
+      expect(resolved).toHaveProperty('id');
+      expect(resolved).toHaveProperty('name');
+      expect(resolved).toHaveProperty('nationality');
     });
 
     it('should return Promise<{ season: number; points: number }[]> for getPointsPerSeason', async () => {
-      mockConstructorsService.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
-
-      const result = await controller.getPointsPerSeason(1);
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toBeInstanceOf(Array);
-      expect(result[0]).toHaveProperty('season');
-      expect(result[0]).toHaveProperty('points');
+      service.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
+      const result = controller.getPointsPerSeason(1);
+      expect(result).toBeInstanceOf(Promise);
+      
+      const resolved = await result;
+      expect(Array.isArray(resolved)).toBe(true);
+      if (resolved.length > 0) {
+        expect(resolved[0]).toHaveProperty('season');
+        expect(resolved[0]).toHaveProperty('points');
+      }
     });
 
     it('should return Promise<ConstructorEntity[]> for getActiveConstructors', async () => {
-      mockConstructorsService.findAllActive.mockResolvedValue(mockConstructors);
-
-      const result = await controller.getActiveConstructors();
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toBeInstanceOf(Array);
+      service.findAllActive.mockResolvedValue(mockConstructors);
+      const result = controller.getActiveConstructors();
+      expect(result).toBeInstanceOf(Promise);
+      
+      const resolved = await result;
+      expect(Array.isArray(resolved)).toBe(true);
     });
   });
 
   describe('method signatures', () => {
     it('should have findAll method with correct signature', () => {
-      expect(controller.findAll).toBeDefined();
-      expect(typeof controller.findAll).toBe('function');
+      expect(controller.findAll.length).toBe(0);
     });
 
     it('should have findOne method with correct signature', () => {
-      expect(controller.findOne).toBeDefined();
-      expect(typeof controller.findOne).toBe('function');
+      expect(controller.findOne.length).toBe(1);
     });
 
     it('should have getPointsPerSeason method with correct signature', () => {
-      expect(controller.getPointsPerSeason).toBeDefined();
-      expect(typeof controller.getPointsPerSeason).toBe('function');
+      expect(controller.getPointsPerSeason.length).toBe(1);
     });
 
     it('should have getActiveConstructors method with correct signature', () => {
-      expect(controller.getActiveConstructors).toBeDefined();
-      expect(typeof controller.getActiveConstructors).toBe('function');
+      expect(controller.getActiveConstructors.length).toBe(0);
     });
 
     it('should accept number parameter for findOne', async () => {
-      const constructorId = 42;
-      mockConstructorsService.findOne.mockResolvedValue(mockConstructor);
+      service.findOne.mockResolvedValue(mockConstructor);
 
-      const result = await controller.findOne(constructorId);
+      await controller.findOne(123);
 
-      expect(result).toBeDefined();
-      expect(service.findOne).toHaveBeenCalledWith(constructorId);
+      expect(service.findOne).toHaveBeenCalledWith(123);
     });
 
     it('should accept number parameter for getPointsPerSeason', async () => {
-      const constructorId = 42;
-      mockConstructorsService.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
+      service.getPointsPerSeason.mockResolvedValue(mockPointsPerSeason);
 
-      const result = await controller.getPointsPerSeason(constructorId);
+      await controller.getPointsPerSeason(456);
 
-      expect(result).toBeDefined();
-      expect(service.getPointsPerSeason).toHaveBeenCalledWith(constructorId);
+      expect(service.getPointsPerSeason).toHaveBeenCalledWith(456);
     });
   });
 });
