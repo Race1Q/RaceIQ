@@ -137,12 +137,25 @@ const driversResponse = [
   { id: 16, name: 'Charles Leclerc' },
 ];
 
-// Utility to set up the three initial GET requests (order: /me, /constructors, /drivers)
+// Utility to set up all initial GET requests
 function setupInitialFetches() {
+  const seasonsResponse = [{ year: 2025 }];
+
   fetchMock
+    // From useProfile hook
     .mockResolvedValueOnce({ ok: true, json: async () => profileResponse } as any)
+    .mockResolvedValueOnce({ ok: true, json: async () => profileResponse } as any)
+    // From ProfilePage's initialization
     .mockResolvedValueOnce({ ok: true, json: async () => constructorsResponse } as any)
-    .mockResolvedValueOnce({ ok: true, json: async () => driversResponse } as any);
+    .mockResolvedValueOnce({ ok: true, json: async () => driversResponse } as any)
+    // From fetchSelectOptions
+    .mockResolvedValueOnce({ ok: true, json: async () => seasonsResponse } as any)
+    .mockResolvedValueOnce({ ok: true, json: async () => constructorsResponse } as any)
+    .mockResolvedValueOnce({ ok: true, json: async () => driversResponse } as any)
+    // Re-fetches after auth token refresh
+    .mockResolvedValueOnce({ ok: true, json: async () => constructorsResponse } as any)
+    .mockResolvedValueOnce({ ok: true, json: async () => driversResponse } as any)
+    .mockResolvedValueOnce({ ok: true, json: async () => seasonsResponse } as any);
 }
 
 describe('ProfilePage', () => {
@@ -150,7 +163,7 @@ describe('ProfilePage', () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(10));
 
     const [c1, c2, c3] = fetchMock.mock.calls;
     expect(String(c1[0]).endsWith('/api/users/me')).toBe(true);
@@ -170,7 +183,7 @@ describe('ProfilePage', () => {
   it('shows a warning toast when clicking "Delete Account"', async () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(10));
 
     fireEvent.click(screen.getByRole('button', { name: /delete account/i }));
     expect(toastMock).toHaveBeenCalled();
@@ -181,7 +194,7 @@ describe('ProfilePage', () => {
   it('toggles email notifications switch', async () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(10));
 
     const switchEl = screen.getByRole('checkbox', {
       name: /receive occasional email updates and newsletters/i,

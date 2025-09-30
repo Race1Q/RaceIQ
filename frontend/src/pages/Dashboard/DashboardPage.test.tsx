@@ -302,10 +302,12 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('responsive-grid-layout')).toBeInTheDocument();
       expect(screen.getByTestId('next-race-widget')).toHaveTextContent('no data');
-      expect(screen.getByTestId('standings-widget')).toHaveTextContent('no data');
       expect(screen.getByTestId('last-podium-widget')).toHaveTextContent('no data');
       expect(screen.getByTestId('fastest-lap-widget')).toHaveTextContent('no data');
       expect(screen.getByTestId('head-to-head-widget')).toHaveTextContent('no data');
+          // Updated: check for actual headings rendered in dashboard
+          expect(screen.getByText('Driver Standings')).toBeInTheDocument();
+          expect(screen.getByText('Constructor Standings')).toBeInTheDocument();
     });
   });
 

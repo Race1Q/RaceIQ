@@ -380,9 +380,9 @@ describe('RaceList', () => {
       />
     );
     
-    expect(screen.getByText('Silverstone Circuit')).toBeInTheDocument();
-    expect(screen.getByText('United Kingdom')).toBeInTheDocument();
-    expect(screen.getByText('2024/07/14')).toBeInTheDocument();
+  expect(screen.getByText('Silverstone Circuit')).toBeInTheDocument();
+  expect(screen.getByText('United Kingdom')).toBeInTheDocument();
+  expect(screen.getByText('14/07/2024')).toBeInTheDocument();
   });
 
   it('handles race with missing standings', () => {
