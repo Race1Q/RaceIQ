@@ -83,15 +83,14 @@ function DashboardPage() {
   // Layout state management
   const [layouts, setLayouts] = useState<Layouts>(initialLayouts);
 
-  if (loading) {
-    return <F1LoadingSpinner text="Loading Dashboard..." />;
-  }
-
   // Only show a full-page error if the API fails AND we have no fallback data
   if (error && !dashboardData) {
     return (
-      <Box p="lg">
-        <Text color="brand.red">Error loading dashboard: {error}</Text>
+      <Box>
+        <DashboardHeader onCustomizeClick={onOpen} />
+        <Box p="lg">
+          <Text color="brand.red">Error loading dashboard: {error}</Text>
+        </Box>
       </Box>
     );
   }
@@ -128,29 +127,34 @@ function DashboardPage() {
       <DashboardHeader onCustomizeClick={onOpen} />
       <Box p="lg">
         {isFallback && <FallbackBanner />} {/* Render banner when using fallback data */}
-        <ResponsiveGridLayout
-          layouts={layouts}
-          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 4, md: 4, sm: 2, xs: 2, xxs: 1 }}
-          rowHeight={120}
-          onLayoutChange={handleLayoutChange}
-          isDraggable={true}
-          isResizable={false}
-          preventCollision={false}
-          isBounded={true}
-          compactType={null}
-          margin={[16, 16]}
-          containerPadding={[0, 0]}
-        >
-          {Object.keys(widgetVisibility)
-            .filter(key => widgetVisibility[key as keyof WidgetVisibility])
-            .map(widgetKey => (
-              <Box key={widgetKey}>
-                {widgetComponents[widgetKey]}
-              </Box>
-            ))
-          }
-        </ResponsiveGridLayout>
+        
+        {loading ? (
+          <F1LoadingSpinner text="Loading Dashboard..." />
+        ) : (
+          <ResponsiveGridLayout
+            layouts={layouts}
+            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+            cols={{ lg: 4, md: 4, sm: 2, xs: 2, xxs: 1 }}
+            rowHeight={120}
+            onLayoutChange={handleLayoutChange}
+            isDraggable={true}
+            isResizable={false}
+            preventCollision={false}
+            isBounded={true}
+            compactType={null}
+            margin={[16, 16]}
+            containerPadding={[0, 0]}
+          >
+            {Object.keys(widgetVisibility)
+              .filter(key => widgetVisibility[key as keyof WidgetVisibility])
+              .map(widgetKey => (
+                <Box key={widgetKey}>
+                  {widgetComponents[widgetKey]}
+                </Box>
+              ))
+            }
+          </ResponsiveGridLayout>
+        )}
       </Box>
       
       <CustomizeDashboardModal

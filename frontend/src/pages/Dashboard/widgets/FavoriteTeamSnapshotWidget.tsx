@@ -1,5 +1,5 @@
-import { Heading, Text, VStack, HStack, Box, Image, Spinner, Button, IconButton } from '@chakra-ui/react';
-import { Building2, RefreshCw } from 'lucide-react';
+import { Heading, Text, VStack, HStack, Box, Image, Spinner, Button } from '@chakra-ui/react';
+import { Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import WidgetCard from './WidgetCard';
 import { useUserProfile } from '../../../hooks/useUserProfile';
@@ -7,7 +7,10 @@ import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
 
 function FavoriteTeamSnapshotWidget() {
-  const { favoriteConstructor, loading, error, refetch } = useUserProfile();
+  const { favoriteConstructor, loading, error } = useUserProfile();
+  
+  // Debug logging
+  console.log('🏎️ [FavoriteTeamWidget] State:', { favoriteConstructor, loading, error });
 
   if (loading) {
     return (
@@ -29,21 +32,9 @@ function FavoriteTeamSnapshotWidget() {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <HStack justify="space-between" align="center" w="full">
-            <Heading color="brand.red" size="md" fontFamily="heading">
-              Favorite Team
-            </Heading>
-            <IconButton
-              aria-label="Refresh favorite team"
-              icon={<RefreshCw size={16} />}
-              size="sm"
-              variant="ghost"
-              color="text-muted"
-              _hover={{ color: 'brand.red' }}
-              onClick={refetch}
-              isLoading={loading}
-            />
-          </HStack>
+          <Heading color="brand.red" size="md" fontFamily="heading">
+            Favorite Team
+          </Heading>
           
           <VStack align="center" spacing="md" w="full" py="lg">
             <Box
@@ -62,16 +53,8 @@ function FavoriteTeamSnapshotWidget() {
               <Text color="text-muted" fontSize="sm" textAlign="center">
                 No favorite team set
               </Text>
-              <Button
-                as={Link}
-                to="/profile"
-                size="sm"
-                variant="outline"
-                borderColor="brand.red"
-                color="brand.red"
-                _hover={{ bg: 'brand.red', color: 'white' }}
-              >
-                Set Favorite
+              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+                Select Constructor
               </Button>
             </VStack>
           </VStack>
@@ -87,21 +70,9 @@ function FavoriteTeamSnapshotWidget() {
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <HStack justify="space-between" align="center" w="full">
-          <Heading color="brand.red" size="md" fontFamily="heading">
-            Favorite Team
-          </Heading>
-          <IconButton
-            aria-label="Refresh favorite team"
-            icon={<RefreshCw size={16} />}
-            size="sm"
-            variant="ghost"
-            color="text-muted"
-            _hover={{ color: 'brand.red' }}
-            onClick={refetch}
-            isLoading={loading}
-          />
-        </HStack>
+        <Heading color="brand.red" size="md" fontFamily="heading">
+          Favorite Team
+        </Heading>
         
         <VStack align="start" spacing="md" w="full">
           <HStack spacing="md" align="center" w="full">
@@ -133,6 +104,9 @@ function FavoriteTeamSnapshotWidget() {
               <Text color="text-secondary" fontSize="sm">
                 Constructor's Championship
               </Text>
+            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+              Select Constructor
+            </Button>
             </VStack>
           </HStack>
           
