@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import {
   Container,
@@ -49,7 +49,8 @@ const ProfilePage: React.FC = () => {
     emailNotifications: false,
   });
 
-  const [driverOptions, setDriverOptions] = useState<{ id: number; name: string }[]>([]);
+  interface DriverOpt { id: number; name?: string; full_name?: string; first_name?: string; last_name?: string }
+  const [driverOptions, setDriverOptions] = useState<DriverOpt[]>([]);
   const [constructorOptions, setConstructorOptions] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [sending, setSending] = useState<boolean>(false);
@@ -57,6 +58,7 @@ const ProfilePage: React.FC = () => {
   const [pendingTheme, setPendingTheme] = useState<'light' | 'dark' | null>(null);
   const [deleting, setDeleting] = useState<boolean>(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
 
   const authedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = await getAccessTokenSilently({
@@ -151,10 +153,12 @@ const ProfilePage: React.FC = () => {
   // Get the favorite driver's headshot for profile picture
   const profilePictureSrc = useMemo(() => {
     if (profile?.favorite_driver_id && driverOptions.length > 0) {
-      const favoriteDriver = driverOptions.find((driver: any) => driver.id === profile.favorite_driver_id);
+      const favoriteDriver = driverOptions.find((driver) => driver.id === profile.favorite_driver_id);
       if (favoriteDriver) {
-        const driverName = favoriteDriver.full_name || [favoriteDriver.first_name, favoriteDriver.last_name].filter(Boolean).join(' ');
-        return driverHeadshots[driverName] || user?.picture;
+        const driverName = favoriteDriver.full_name || favoriteDriver.name || [favoriteDriver.first_name, favoriteDriver.last_name].filter(Boolean).join(' ');
+        if (driverName) {
+          return driverHeadshots[driverName] || user?.picture;
+        }
       }
     }
     return user?.picture;
@@ -251,19 +255,17 @@ const ProfilePage: React.FC = () => {
   const handleSendRaceInfo = async () => {
     try {
       setSending(true);
-      if (!user?.email) throw new Error('No email associated with the authenticated user');
-
       const races = await authedFetch(buildApiUrl('/api/races'));
       const now = new Date();
-      const upcoming = (races || []).filter((r: any) => {
-        const date = new Date(r.date);
-        return date.getFullYear() === 2025 && date >= now;
-      });
+      const upcoming = (races || [])
+        .filter((r: any) => new Date(r.date) >= now)
+        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(0, 3);
 
       if (!upcoming.length) {
         toast({
-          title: 'No upcoming 2025 races',
-          description: 'There are no upcoming races remaining for 2025.',
+          title: 'No upcoming races',
+          description: 'There are no future races available.',
           status: 'info',
           duration: 4000,
           isClosable: true,
@@ -276,16 +278,24 @@ const ProfilePage: React.FC = () => {
         const dateStr = date.toISOString().slice(0, 10);
         return `• Round ${r.round}: ${r.name} on ${dateStr}`;
       });
-      const message = `Upcoming 2025 Races:\n\n${lines.join('\n')}`;
+      const message = `Next ${upcoming.length} Upcoming Race${upcoming.length > 1 ? 's' : ''}:\n\n${lines.join('\n')}`;
 
-      await sendRaceUpdate({
-        recipientEmail: user.email,
-        raceDetails: message,
+      // Acquire token for protected notifications endpoint
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          scope: 'read:drivers read:constructors read:standings update:users',
+        },
       });
+      
+      console.log('Auth0 audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
+      console.log('Token (first 50 chars):', token.substring(0, 50) + '...');
+      
+      await sendRaceUpdate({ raceDetails: message }, token);
 
       toast({
         title: 'Email sent',
-        description: 'We emailed you the list of upcoming 2025 races.',
+        description: `We emailed you the next ${upcoming.length} race${upcoming.length > 1 ? 's' : ''}.`,
         status: 'success',
         duration: 4000,
         isClosable: true,
@@ -436,7 +446,7 @@ const ProfilePage: React.FC = () => {
       </Container>
 
       {/* Delete Account Confirmation Dialog */}
-      <AlertDialog isOpen={isOpen} onClose={onClose} isCentered>
+  <AlertDialog isOpen={isOpen} onClose={onClose} isCentered leastDestructiveRef={cancelRef}>
         <AlertDialogOverlay bg="blackAlpha.600" backdropFilter="blur(4px)">
           <AlertDialogContent bg="var(--color-surface-gray)" border="1px solid var(--color-border-gray)" boxShadow="2xl">
             <AlertDialogHeader fontSize="lg" fontWeight="bold" color="var(--color-text-light)">
@@ -453,9 +463,10 @@ const ProfilePage: React.FC = () => {
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button 
-                onClick={onClose} 
-                colorScheme="gray" 
+              <Button
+                ref={cancelRef}
+                onClick={onClose}
+                colorScheme="gray"
                 variant="outline"
                 mr={3}
                 _hover={{ transform: 'translateY(-1px)' }}
