@@ -379,8 +379,7 @@ describe('RaceDetailPage', () => {
     });
   });
 
-  it.skip('displays pit stops in lap times tab', async () => {
-    // This test is skipped because the Lap Times / Pit Stops tab is currently commented out in the component
+  it('displays pit stops in lap times tab', async () => {
     renderWithProviders(<RaceDetailPage />);
     
     await waitFor(() => {
@@ -403,18 +402,17 @@ describe('RaceDetailPage', () => {
       expect(screen.getByText('Bahrain Grand Prix')).toBeInTheDocument();
     }, { timeout: 10000 });
     
-    // Click on Race tab to access driver filters
-    const raceTab = screen.getByRole('tab', { name: 'Race' });
-    fireEvent.click(raceTab);
+    // Click on Analysis tab to access filters
+    const analysisTab = screen.getByRole('tab', { name: 'Analysis' });
+    fireEvent.click(analysisTab);
     
     await waitFor(() => {
-      const allDriversButtons = screen.getAllByText('All Drivers');
-      expect(allDriversButtons.length).toBeGreaterThan(0);
+      expect(screen.getByText('Select all')).toBeInTheDocument();
     });
     
-    // Test driver filter button - use the first one found
-    const allDriversButtons = screen.getAllByText('All Drivers');
-    expect(allDriversButtons[0]).toBeInTheDocument();
+    // Test driver filter checkbox
+    const selectAllCheckbox = screen.getByText('Select all');
+    expect(selectAllCheckbox).toBeInTheDocument();
   });
 
   it('displays 3D circuit track', async () => {
@@ -551,18 +549,16 @@ describe('RaceDetailPage', () => {
       expect(screen.getByText('Bahrain Grand Prix')).toBeInTheDocument();
     }, { timeout: 10000 });
     
-    // Click on Race tab
-    const raceTab = screen.getByRole('tab', { name: 'Race' });
-    fireEvent.click(raceTab);
+    // Click on Analysis tab
+    const analysisTab = screen.getByRole('tab', { name: 'Analysis' });
+    fireEvent.click(analysisTab);
     
     await waitFor(() => {
-      const allDriversButtons = screen.getAllByText('All Drivers');
-      expect(allDriversButtons.length).toBeGreaterThan(0);
+      expect(screen.getByText('Select all')).toBeInTheDocument();
     });
     
-    // Test that driver filter is present - use the first one found
-    const allDriversButtons = screen.getAllByText('All Drivers');
-    expect(allDriversButtons[0]).toBeInTheDocument();
+    // Test that filters are present
+    expect(screen.getByText('Select all')).toBeInTheDocument();
   });
 
   it('displays qualifying phase filter', async () => {
