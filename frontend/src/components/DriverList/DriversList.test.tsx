@@ -9,7 +9,7 @@ import { MemoryRouter } from 'react-router-dom';
 import DriversList from './DriverList';
 
 // CSS module safety
-vi.mock('./DriversList.module.css', () => ({
+vi.mock('./DriverList.module.css', () => ({
   default: new Proxy({}, { get: (_t, k) => String(k) }),
 }));
 

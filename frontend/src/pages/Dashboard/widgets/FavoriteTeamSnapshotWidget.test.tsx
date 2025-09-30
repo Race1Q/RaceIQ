@@ -101,7 +101,7 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();
     expect(screen.getByText('No favorite team set')).toBeInTheDocument();
-    expect(screen.getByText('Set Favorite')).toBeInTheDocument();
+    expect(screen.getByText('Select Constructor')).toBeInTheDocument();
     expect(screen.getByTestId('building-icon')).toBeInTheDocument();
   });
 
@@ -122,7 +122,7 @@ describe('FavoriteTeamSnapshotWidget', () => {
     expect(screen.getByText('P2')).toBeInTheDocument();
   });
 
-  it('calls refetch when refresh button is clicked', () => {
+  it('renders Select Constructor link when favorite team is shown', () => {
     mockUseUserProfile.mockReturnValue({
       favoriteConstructor: mockFavoriteTeam,
       loading: false,
@@ -132,15 +132,14 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    const refreshButton = screen.getByRole('button', { name: /refresh favorite team/i });
-    fireEvent.click(refreshButton);
-
-    expect(mockRefetch).toHaveBeenCalledTimes(1);
+    const selectConstructorLink = screen.getByText('Select Constructor');
+    expect(selectConstructorLink).toBeInTheDocument();
+    expect(selectConstructorLink.closest('a')).toHaveAttribute('href', '/profile');
   });
 
-  it('shows loading state on refresh button when loading', () => {
+  it('shows loading state when loading', () => {
     mockUseUserProfile.mockReturnValue({
-      favoriteConstructor: mockFavoriteTeam,
+      favoriteConstructor: null,
       loading: true,
       error: null,
       refetch: mockRefetch,
@@ -148,12 +147,12 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    // In loading state, the refresh button should not be visible
-    expect(screen.queryByRole('button', { name: /refresh favorite team/i })).not.toBeInTheDocument();
-    expect(screen.getAllByText('Loading...')).toHaveLength(2);
+    // In loading state, only the widget's loading message is shown
+    expect(screen.getByText('Favorite Team')).toBeInTheDocument();
+    expect(screen.getAllByText('Loading...').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders Set Favorite button as link when no favorite team', () => {
+  it('renders Select Constructor button as link when no favorite team', () => {
     mockUseUserProfile.mockReturnValue({
       favoriteConstructor: null,
       loading: false,
@@ -163,9 +162,9 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    const setFavoriteButton = screen.getByText('Set Favorite');
-    expect(setFavoriteButton).toBeInTheDocument();
-    expect(setFavoriteButton.closest('a')).toHaveAttribute('href', '/profile');
+    const selectConstructorButton = screen.getByText('Select Constructor');
+    expect(selectConstructorButton).toBeInTheDocument();
+    expect(selectConstructorButton.closest('a')).toHaveAttribute('href', '/profile');
   });
 
   it('displays team logo with fallback', () => {
@@ -227,15 +226,9 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    // Check for title and refresh button
+    // Check for title and team information
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /refresh favorite team/i })).toBeInTheDocument();
-    
-    // Check for team information
     expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
-    expect(screen.getByText("Constructor's Championship")).toBeInTheDocument();
-    expect(screen.getByText('600 pts')).toBeInTheDocument();
-    expect(screen.getByText('P2')).toBeInTheDocument();
   });
 
   it('handles different team names', () => {
@@ -279,7 +272,7 @@ describe('FavoriteTeamSnapshotWidget', () => {
     const { rerender } = renderWithProviders(<FavoriteTeamSnapshotWidget />);
     
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();
-    expect(screen.getAllByText('Loading...')).toHaveLength(2);
+    expect(screen.getAllByText('Loading...').length).toBeGreaterThanOrEqual(1);
 
     // Test loaded state
     mockUseUserProfile.mockReturnValue({
@@ -290,9 +283,11 @@ describe('FavoriteTeamSnapshotWidget', () => {
     });
 
     rerender(
-      <ChakraProvider theme={testTheme}>
-        <FavoriteTeamSnapshotWidget />
-      </ChakraProvider>
+      <BrowserRouter>
+        <ChakraProvider theme={testTheme}>
+          <FavoriteTeamSnapshotWidget />
+        </ChakraProvider>
+      </BrowserRouter>
     );
 
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();

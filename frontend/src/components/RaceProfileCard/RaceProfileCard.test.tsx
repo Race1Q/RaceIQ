@@ -207,13 +207,15 @@ describe('RaceProfileCard', () => {
     renderWithProviders(<RaceProfileCard race={mockRace} />);
     
     expect(screen.getByText('British')).toBeInTheDocument();
-    expect(screen.getByText('British Grand Prix')).toBeInTheDocument();
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
   });
 
-  it('displays race name correctly', () => {
+  it('displays race name components correctly', () => {
     renderWithProviders(<RaceProfileCard race={mockRace} />);
     
-    expect(screen.getByText('British Grand Prix')).toBeInTheDocument();
+    // The component displays shortName and "Grand Prix" separately
+    expect(screen.getByText('British')).toBeInTheDocument();
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
   });
 
   it('displays short name correctly (removes Grand Prix)', () => {
@@ -252,17 +254,19 @@ describe('RaceProfileCard', () => {
   it('handles race with unknown country code', () => {
     renderWithProviders(<RaceProfileCard race={mockRaceWithUnknownCountry} />);
     
-    // Should show fallback "?" when country code is unknown
-    expect(screen.getByText('?')).toBeInTheDocument();
+    // Should not render flag when country code is unknown
     expect(screen.queryByTestId('country-flag')).not.toBeInTheDocument();
+    // Component should still render other content
+    expect(screen.getByText('British')).toBeInTheDocument();
   });
 
   it('handles race without circuit data', () => {
     renderWithProviders(<RaceProfileCard race={mockRace} />);
     
-    // Should show fallback "?" when no circuit data
-    expect(screen.getByText('?')).toBeInTheDocument();
+    // Should not render flag when no circuit data
     expect(screen.queryByTestId('country-flag')).not.toBeInTheDocument();
+    // Component should still render other content
+    expect(screen.getByText('British')).toBeInTheDocument();
   });
 
   it('handles different round numbers for gradient calculation', () => {
@@ -300,8 +304,9 @@ describe('RaceProfileCard', () => {
     const raceWithSpecialChars = { ...mockRace, name: 'São Paulo Grand Prix' };
     
     renderWithProviders(<RaceProfileCard race={raceWithSpecialChars} />);
-    expect(screen.getByText('São Paulo Grand Prix')).toBeInTheDocument();
+    // Component displays shortName (with Grand Prix removed) and "Grand Prix" separately
     expect(screen.getByText('São Paulo')).toBeInTheDocument();
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
   });
 
   it('handles very long race names', () => {
@@ -311,16 +316,18 @@ describe('RaceProfileCard', () => {
     };
     
     renderWithProviders(<RaceProfileCard race={raceWithLongName} />);
-    expect(screen.getByText('Very Long Race Name That Should Be Displayed Properly Without Breaking The Layout Grand Prix')).toBeInTheDocument();
+    // Component displays shortName and "Grand Prix" separately
     expect(screen.getByText('Very Long Race Name That Should Be Displayed Properly Without Breaking The Layout')).toBeInTheDocument();
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
   });
 
   it('handles race names with multiple GP references', () => {
     const raceWithMultipleGP = { ...mockRace, name: 'Monaco Grand Prix GP' };
     
     renderWithProviders(<RaceProfileCard race={raceWithMultipleGP} />);
-    expect(screen.getByText('Monaco Grand Prix GP')).toBeInTheDocument();
+    // After removing "Grand Prix" and "GP", the short name is "Monaco"
     expect(screen.getByText('Monaco')).toBeInTheDocument();
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
   });
 
   it('handles invalid date strings gracefully', () => {
@@ -328,32 +335,36 @@ describe('RaceProfileCard', () => {
     
     renderWithProviders(<RaceProfileCard race={raceWithInvalidDate} />);
     // Should still render the component even with invalid date
-    expect(screen.getByText('British Grand Prix')).toBeInTheDocument();
+    expect(screen.getByText('British')).toBeInTheDocument();
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
   });
 
   it('handles empty race name', () => {
     const raceWithEmptyName = { ...mockRace, name: '' };
     
     renderWithProviders(<RaceProfileCard race={raceWithEmptyName} />);
-    // Empty name should still render the component structure
+    // Empty name should still render the component structure and "Grand Prix" label
     expect(screen.getByText('Round 10')).toBeInTheDocument();
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
   });
 
   it('handles race name with only Grand Prix', () => {
     const raceWithOnlyGP = { ...mockRace, name: 'Grand Prix' };
     
     renderWithProviders(<RaceProfileCard race={raceWithOnlyGP} />);
+    // "Grand Prix" is always displayed in the component
     expect(screen.getByText('Grand Prix')).toBeInTheDocument();
-    // After removing "Grand Prix", the short name should be empty, but we can't easily test for empty text
-    // The component will render an empty span, which is not easily testable
+    // After removing "Grand Prix" from the name, shortName is empty, which is fine
+    expect(screen.getByText('Round 10')).toBeInTheDocument();
   });
 
   it('handles race name with only GP abbreviation', () => {
     const raceWithOnlyGPAbbr = { ...mockRace, name: 'GP' };
     
     renderWithProviders(<RaceProfileCard race={raceWithOnlyGPAbbr} />);
-    expect(screen.getByText('GP')).toBeInTheDocument();
-    // After removing "GP", the short name should be empty, but we can't easily test for empty text
-    // The component will render an empty span, which is not easily testable
+    // "Grand Prix" is always displayed in the component
+    expect(screen.getByText('Grand Prix')).toBeInTheDocument();
+    // After removing "GP" from the name, shortName is empty, which is fine
+    expect(screen.getByText('Round 10')).toBeInTheDocument();
   });
 });

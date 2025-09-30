@@ -7,13 +7,12 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { useDriverComparison } from './useDriverComparison';
 
-// Mock window.__API_BASE__
-const mockAPIBase = '/api';
-(global as any).__API_BASE__ = mockAPIBase;
-
-// Mock fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+// Mock apiFetch from lib/api
+const mockApiFetch = vi.fn();
+vi.mock('../lib/api', () => ({
+  apiFetch: (path: string) => mockApiFetch(path),
+  buildApiUrl: (path: string) => path,
+}));
 
 // Chakra wrapper
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -109,36 +108,20 @@ describe('useDriverComparison', () => {
     vi.clearAllMocks();
     
     // Default mock implementations with proper typing
-    mockFetch.mockImplementation((url: string) => {
+    mockApiFetch.mockImplementation((url: string) => {
       if (url === '/api/drivers') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriversList,
-        });
+        return Promise.resolve(mockDriversList);
       }
       if (url === '/api/races/years') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockYears,
-        });
+        return Promise.resolve(mockYears);
       }
       if (url.includes('/stats')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriverStats,
-        });
+        return Promise.resolve(mockDriverStats);
       }
       if (url.includes('/career-stats')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockLegacyStats,
-        });
+        return Promise.resolve(mockLegacyStats);
       }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+      return Promise.reject(new Error('Not Found'));
     });
   });
 
@@ -159,7 +142,7 @@ describe('useDriverComparison', () => {
   });
 
   it('should handle initial data loading failure', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+    mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });
 
@@ -170,20 +153,14 @@ describe('useDriverComparison', () => {
   });
 
   it('should handle years API failure and use fallback years', async () => {
-    mockFetch.mockImplementation((url: string) => {
+    mockApiFetch.mockImplementation((url: string) => {
       if (url === '/api/drivers') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriversList,
-        });
+        return Promise.resolve(mockDriversList);
       }
       if (url === '/api/races/years') {
         return Promise.reject(new Error('Failed to fetch years'));
       }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-      });
+      return Promise.reject(new Error('Not Found'));
     });
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });
@@ -232,29 +209,17 @@ describe('useDriverComparison', () => {
   });
 
   it('should select driver using new selectDriver with career', async () => {
-    mockFetch.mockImplementation((url: string) => {
+    mockApiFetch.mockImplementation((url: string) => {
       if (url === '/api/drivers') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriversList,
-        });
+        return Promise.resolve(mockDriversList);
       }
       if (url === '/api/races/years') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockYears,
-        });
+        return Promise.resolve(mockYears);
       }
       if (url.includes('/stats') && !url.includes('year=')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockCareerStats,
-        });
+        return Promise.resolve(mockCareerStats);
       }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-      });
+      return Promise.reject(new Error('Not Found'));
     });
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });
@@ -272,26 +237,17 @@ describe('useDriverComparison', () => {
   });
 
   it('should handle driver selection failure', async () => {
-    mockFetch.mockImplementation((url: string) => {
+    mockApiFetch.mockImplementation((url: string) => {
       if (url === '/api/drivers') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriversList,
-        });
+        return Promise.resolve(mockDriversList);
       }
       if (url === '/api/races/years') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockYears,
-        });
+        return Promise.resolve(mockYears);
       }
       if (url.includes('/stats') || url.includes('/career-stats')) {
         return Promise.reject(new Error('Failed to load driver stats'));
       }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-      });
+      return Promise.reject(new Error('Not Found'));
     });
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });
@@ -322,12 +278,12 @@ describe('useDriverComparison', () => {
       yearStats: { wins: 3, podiums: 8, fastestLaps: 1, points: 180, dnfs: 2, sprintWins: 0, sprintPodiums: 1, poles: 1 },
     };
 
-    mockFetch.mockImplementation((url: string) => {
-      if (url === '/api/drivers') return Promise.resolve({ ok: true, json: async () => mockDriversList });
-      if (url === '/api/races/years') return Promise.resolve({ ok: true, json: async () => mockYears });
-      if (url.includes('/drivers/1/stats')) return Promise.resolve({ ok: true, json: async () => mockStats1 });
-      if (url.includes('/drivers/2/stats')) return Promise.resolve({ ok: true, json: async () => mockStats2 });
-      return Promise.resolve({ ok: false, status: 404 });
+    mockApiFetch.mockImplementation((url: string) => {
+      if (url === '/api/drivers') return Promise.resolve(mockDriversList);
+      if (url === '/api/races/years') return Promise.resolve(mockYears);
+      if (url.includes('/drivers/1/stats')) return Promise.resolve(mockStats1);
+      if (url.includes('/drivers/2/stats')) return Promise.resolve(mockStats2);
+      return Promise.reject(new Error('Not Found'));
     });
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });
@@ -390,29 +346,17 @@ describe('useDriverComparison', () => {
       yearStats: null,
     };
 
-    mockFetch.mockImplementation((url: string) => {
+    mockApiFetch.mockImplementation((url: string) => {
       if (url === '/api/drivers') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [...mockDriversList, minimalDriver],
-        });
+        return Promise.resolve([...mockDriversList, minimalDriver]);
       }
       if (url === '/api/races/years') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockYears,
-        });
+        return Promise.resolve(mockYears);
       }
       if (url.includes('/drivers/99/stats')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => minimalStats,
-        });
+        return Promise.resolve(minimalStats);
       }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-      });
+      return Promise.reject(new Error('Not Found'));
     });
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });
@@ -432,32 +376,20 @@ describe('useDriverComparison', () => {
   });
 
   it('should handle legacy stats fallback', async () => {
-    mockFetch.mockImplementation((url: string) => {
+    mockApiFetch.mockImplementation((url: string) => {
       if (url === '/api/drivers') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriversList,
-        });
+        return Promise.resolve(mockDriversList);
       }
       if (url === '/api/races/years') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockYears,
-        });
+        return Promise.resolve(mockYears);
       }
       if (url.includes('/career-stats')) {
         return Promise.reject(new Error('Career stats failed'));
       }
       if (url.includes('/stats')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockLegacyStats,
-        });
+        return Promise.resolve(mockLegacyStats);
       }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-      });
+      return Promise.reject(new Error('Not Found'));
     });
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });
@@ -510,12 +442,12 @@ describe('useDriverComparison', () => {
       yearStats: { wins: 3, podiums: 8, fastestLaps: 1, points: 180, dnfs: 2, sprintWins: 0, sprintPodiums: 1, poles: 1 },
     };
 
-    mockFetch.mockImplementation((url: string) => {
-      if (url === '/api/drivers') return Promise.resolve({ ok: true, json: async () => mockDriversList });
-      if (url === '/api/races/years') return Promise.resolve({ ok: true, json: async () => mockYears });
-      if (url.includes('/drivers/1/stats')) return Promise.resolve({ ok: true, json: async () => mockStats1 });
-      if (url.includes('/drivers/2/stats')) return Promise.resolve({ ok: true, json: async () => mockStats2 });
-      return Promise.resolve({ ok: false, status: 404 });
+    mockApiFetch.mockImplementation((url: string) => {
+      if (url === '/api/drivers') return Promise.resolve(mockDriversList);
+      if (url === '/api/races/years') return Promise.resolve(mockYears);
+      if (url.includes('/drivers/1/stats')) return Promise.resolve(mockStats1);
+      if (url.includes('/drivers/2/stats')) return Promise.resolve(mockStats2);
+      return Promise.reject(new Error('Not Found'));
     });
 
     const { result } = renderHook(() => useDriverComparison(), { wrapper });

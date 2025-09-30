@@ -179,25 +179,40 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2024/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/drivers/1/stats')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockDriverStats,
+          text: async () => JSON.stringify(mockDriverStats),
         });
       }
       if (url.includes('/api/drivers/1/recent-form')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRecentForm,
+          text: async () => JSON.stringify(mockRecentForm),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -241,7 +256,11 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2022/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/standings/2022/1')) {
@@ -253,19 +272,30 @@ describe('useHomePageData', () => {
       if (url.includes('/api/drivers/1/stats')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockDriverStats,
+          text: async () => JSON.stringify(mockDriverStats),
         });
       }
       if (url.includes('/api/drivers/1/recent-form')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRecentForm,
+          text: async () => JSON.stringify(mockRecentForm),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -298,12 +328,18 @@ describe('useHomePageData', () => {
           ok: false,
           status: 500,
           statusText: 'Internal Server Error',
+          headers: new Headers(),
+          text: async () => 'Internal Server Error',
+          json: async () => ({ error: 'Internal Server Error' }),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -355,7 +391,7 @@ describe('useHomePageData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.featuredDriver).not.toBeNull(); // Should use fallback
-    expect(result.current.error).toBe('Supabase Query Error: Supabase connection failed');
+    expect(result.current.error).toBe('Failed to fetch featured driver');
   });
 
   it('should handle historical standings API failure', async () => {
@@ -365,7 +401,11 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2022/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/standings/2022/1')) {
@@ -373,12 +413,18 @@ describe('useHomePageData', () => {
           ok: false,
           status: 500,
           statusText: 'Internal Server Error',
+          headers: new Headers(),
+          text: async () => 'Internal Server Error',
+          json: async () => ({ error: 'Internal Server Error' }),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -387,7 +433,7 @@ describe('useHomePageData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.featuredDriver).not.toBeNull(); // Should use fallback
-    expect(result.current.error).toBe('Failed to fetch historical standings');
+    expect(result.current.error).toBe('Failed to fetch featured driver');
   });
 
   it('should handle driver stats API failure', async () => {
@@ -395,7 +441,11 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2024/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/drivers/1/stats')) {
@@ -409,6 +459,9 @@ describe('useHomePageData', () => {
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -417,7 +470,7 @@ describe('useHomePageData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.featuredDriver).not.toBeNull(); // Should use fallback
-    expect(result.current.error).toBe('Failed to fetch driver stats: Not Found');
+    expect(result.current.error).toBe('Failed to fetch featured driver');
   });
 
   it('should handle recent form API failure gracefully', async () => {
@@ -425,13 +478,21 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2024/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/drivers/1/stats')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockDriverStats,
+          text: async () => JSON.stringify(mockDriverStats),
         });
       }
       if (url.includes('/api/drivers/1/recent-form')) {
@@ -445,6 +506,9 @@ describe('useHomePageData', () => {
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -471,7 +535,7 @@ describe('useHomePageData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.featuredDriver).not.toBeNull(); // Should use fallback
-    expect(result.current.error).toBe('No driver standings found');
+    expect(result.current.error).toBe('Failed to fetch featured driver');
   });
 
   it('should handle malformed driver standings data', async () => {
@@ -489,7 +553,7 @@ describe('useHomePageData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.featuredDriver).not.toBeNull(); // Should use fallback
-    expect(result.current.error).toBe('Driver standings data is missing or not an array');
+    expect(result.current.error).toBe('Failed to fetch featured driver');
   });
 
   it('should handle network errors', async () => {
@@ -512,7 +576,7 @@ describe('useHomePageData', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.featuredDriver).not.toBeNull(); // Should use fallback
-    expect(result.current.error).toBe('Failed to fetch home page data');
+    expect(result.current.error).toBe('An unexpected error occurred.');
   });
 
   it('should handle empty races response', async () => {
@@ -527,6 +591,9 @@ describe('useHomePageData', () => {
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -537,8 +604,8 @@ describe('useHomePageData', () => {
     expect(result.current.seasonSchedule).toEqual([]);
     // When races are empty, it should fall back to default driver since no standings can be fetched
     expect(result.current.featuredDriver?.fullName).toBe('Max Verstappen');
-    expect(result.current.featuredDriver?.seasonPoints).toBe(310); // Default fallback value
-    expect(result.current.error).toBe('Failed to fetch driver stats: Not Found'); // Should have error due to failed stats fetch
+    expect(result.current.featuredDriver?.seasonPoints).toBe(400); // Default fallback value
+    expect(result.current.error).toBe('Failed to fetch featured driver'); // Error will be set when featured driver fails
   });
 
   it('should handle races with null podium data', async () => {
@@ -568,19 +635,30 @@ describe('useHomePageData', () => {
       if (url.includes('/api/drivers/1/stats')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockDriverStats,
+          text: async () => JSON.stringify(mockDriverStats),
         });
       }
       if (url.includes('/api/drivers/1/recent-form')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRecentForm,
+          text: async () => JSON.stringify(mockRecentForm),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -612,7 +690,11 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2024/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/drivers/1/stats')) {
@@ -624,13 +706,20 @@ describe('useHomePageData', () => {
       if (url.includes('/api/drivers/1/recent-form')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRecentForm,
+          text: async () => JSON.stringify(mockRecentForm),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -701,25 +790,40 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2024/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/drivers/1/stats')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockDriverStats,
+          text: async () => JSON.stringify(mockDriverStats),
         });
       }
       if (url.includes('/api/drivers/1/recent-form')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRecentForm,
+          text: async () => JSON.stringify(mockRecentForm),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 
@@ -752,25 +856,40 @@ describe('useHomePageData', () => {
       if (url.includes('/api/seasons/2025/races')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRaces,
+          text: async () => JSON.stringify(mockRaces),
         });
       }
       if (url.includes('/api/drivers/1/stats')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockDriverStats,
+          text: async () => JSON.stringify(mockDriverStats),
         });
       }
       if (url.includes('/api/drivers/1/recent-form')) {
         return Promise.resolve({
           ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
           json: async () => mockRecentForm,
+          text: async () => JSON.stringify(mockRecentForm),
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: new Headers(),
+        text: async () => 'Not Found',
+        json: async () => ({ error: 'Not Found' }),
       });
     });
 

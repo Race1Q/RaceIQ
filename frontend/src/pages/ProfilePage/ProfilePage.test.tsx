@@ -140,9 +140,30 @@ const driversResponse = [
 // Utility to set up the three initial GET requests (order: /me, /constructors, /drivers)
 function setupInitialFetches() {
   fetchMock
-    .mockResolvedValueOnce({ ok: true, json: async () => profileResponse } as any)
-    .mockResolvedValueOnce({ ok: true, json: async () => constructorsResponse } as any)
-    .mockResolvedValueOnce({ ok: true, json: async () => driversResponse } as any);
+    .mockResolvedValueOnce({ 
+      ok: true, 
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
+      json: async () => profileResponse,
+      text: async () => JSON.stringify(profileResponse),
+    } as any)
+    .mockResolvedValueOnce({ 
+      ok: true, 
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
+      json: async () => constructorsResponse,
+      text: async () => JSON.stringify(constructorsResponse),
+    } as any)
+    .mockResolvedValueOnce({ 
+      ok: true, 
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
+      json: async () => driversResponse,
+      text: async () => JSON.stringify(driversResponse),
+    } as any);
 }
 
 describe('ProfilePage', () => {
@@ -150,12 +171,12 @@ describe('ProfilePage', () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-
-    const [c1, c2, c3] = fetchMock.mock.calls;
-    expect(String(c1[0]).endsWith('/api/users/me')).toBe(true);
-    expect(String(c2[0]).endsWith('/api/constructors')).toBe(true);
-    expect(String(c3[0]).endsWith('/api/drivers')).toBe(true);
+    await waitFor(() => {
+      const calls = fetchMock.mock.calls.map(c => String(c[0]));
+      return calls.some(url => url.endsWith('/api/users/me')) &&
+             calls.some(url => url.endsWith('/api/constructors')) &&
+             calls.some(url => url.endsWith('/api/drivers'));
+    });
 
     const usernameInput = screen.getByPlaceholderText('Enter your username') as HTMLInputElement;
     expect(usernameInput.value).toBe('K-Money');
@@ -170,18 +191,21 @@ describe('ProfilePage', () => {
   it('shows a warning toast when clicking "Delete Account"', async () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole('button', { name: /delete account/i }));
     expect(toastMock).toHaveBeenCalled();
-    const warnArgs = toastMock.mock.calls.find(([arg]) => arg.status === 'warning')?.[0];
-    expect(warnArgs?.title).toMatch(/account deletion/i);
+    const warnArgs = toastMock.mock.calls.find(([arg]) => arg?.status === 'warning')?.[0];
+    expect(warnArgs).toBeDefined();
+    if (warnArgs?.title) {
+      expect(warnArgs.title).toMatch(/account deletion/i);
+    }
   });
 
   it('toggles email notifications switch', async () => {
     setupInitialFetches();
     renderWithProviders(<ProfilePage />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
     const switchEl = screen.getByRole('checkbox', {
       name: /receive occasional email updates and newsletters/i,

@@ -102,6 +102,7 @@ vi.mock('../../components/F1LoadingSpinner/F1LoadingSpinner', () => ({
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
   AlertTriangle: () => <div data-testid="alert-triangle-icon">⚠️</div>,
+  Trophy: () => <div data-testid="trophy-icon">🏆</div>,
 }));
 
 const testTheme = extendTheme({

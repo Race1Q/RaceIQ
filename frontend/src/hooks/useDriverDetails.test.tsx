@@ -7,6 +7,9 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { useDriverDetails } from './useDriverDetails';
 import { fallbackDriverDetails } from '../lib/fallbackData/driverDetails';
 
+// Mock apiFetch
+vi.mock('../lib/api');
+
 // Mock dependencies
 const mockGetAccessTokenSilently = vi.fn();
 vi.mock('@auth0/auth0-react', () => ({
@@ -37,6 +40,10 @@ vi.mock('@chakra-ui/react', async () => {
   };
 });
 
+// Import and get mocked function
+import { apiFetch } from '../lib/api';
+const mockApiFetch = vi.mocked(apiFetch);
+
 // Chakra wrapper
 function wrapper({ children }: { children: React.ReactNode }) {
   return <ChakraProvider>{children}</ChakraProvider>;
@@ -52,7 +59,7 @@ describe('useDriverDetails', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns error when no driverId is provided', async () => {
@@ -95,10 +102,7 @@ describe('useDriverDetails', () => {
       },
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockDriverData,
-    });
+    mockApiFetch.mockResolvedValue(mockDriverData);
 
     const { result } = renderHook(() => useDriverDetails('44'), { wrapper });
 
@@ -119,14 +123,12 @@ describe('useDriverDetails', () => {
       imageUrl: 'hamilton.png', // Should use mapped headshot
     });
     
-    // Verify API was called with correct endpoint and auth
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/drivers/44/career-stats',
-      expect.objectContaining({
-        headers: { Authorization: 'Bearer mock-token' },
-        credentials: 'include',
-      })
-    );
+    // Verify API was called with correct endpoint
+    expect(mockApiFetch).toHaveBeenCalledWith('/api/drivers/44/career-stats', {
+      headers: {
+        Authorization: 'Bearer mock-token',
+      },
+    });
   });
 
   it('falls back to basic driver endpoint when career stats fails', async () => {
@@ -140,12 +142,9 @@ describe('useDriverDetails', () => {
     };
 
     // Career stats fails, basic driver succeeds
-    global.fetch = vi.fn()
+    mockApiFetch
       .mockRejectedValueOnce(new Error('Network error'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockBasicDriverData,
-      });
+      .mockResolvedValueOnce(mockBasicDriverData);
 
     const { result } = renderHook(() => useDriverDetails('33'), { wrapper });
 
@@ -164,7 +163,7 @@ describe('useDriverDetails', () => {
 
   it('uses fallback data when both endpoints fail', async () => {
     // Both endpoints fail - the error should be from the last caught error
-    global.fetch = vi.fn()
+    mockApiFetch
       .mockRejectedValueOnce(new Error('Career stats failed'))
       .mockRejectedValueOnce(new Error('Basic driver failed'));
 
@@ -196,11 +195,7 @@ describe('useDriverDetails', () => {
       currentSeasonStats: { wins: 2 },
     };
 
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDriverData,
-      });
+    mockApiFetch.mockResolvedValueOnce(mockDriverData);
 
     const { result } = renderHook(() => useDriverDetails('999'), { wrapper });
 
@@ -218,15 +213,9 @@ describe('useDriverDetails', () => {
       invalid: 'data'
     };
 
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDriverData,
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ invalid: 'data' }), // Basic driver also fails type guard
-      });
+    mockApiFetch
+      .mockResolvedValueOnce(mockDriverData)
+      .mockResolvedValueOnce({ invalid: 'data' }); // Basic driver also fails type guard
 
     const { result } = renderHook(() => useDriverDetails('invalid'), { wrapper });
 
@@ -248,11 +237,7 @@ describe('useDriverDetails', () => {
       currentSeasonStats: { wins: 2 },
     };
 
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDriverData,
-      });
+    mockApiFetch.mockResolvedValueOnce(mockDriverData);
 
     const { result } = renderHook(() => useDriverDetails('16'), { wrapper });
 
@@ -275,11 +260,7 @@ describe('useDriverDetails', () => {
       currentSeasonStats: { wins: 0 },
     };
 
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDriverData,
-      });
+    mockApiFetch.mockResolvedValueOnce(mockDriverData);
 
     const { result } = renderHook(() => useDriverDetails('33'), { wrapper });
 
@@ -301,11 +282,7 @@ describe('useDriverDetails', () => {
       currentSeasonStats: {}, // Empty stats
     };
 
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDriverData,
-      });
+    mockApiFetch.mockResolvedValueOnce(mockDriverData);
 
     const { result } = renderHook(() => useDriverDetails('4'), { wrapper });
 
@@ -336,11 +313,7 @@ describe('useDriverDetails', () => {
       currentSeasonStats: { wins: 0 },
     };
 
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDriverData,
-      });
+    mockApiFetch.mockResolvedValueOnce(mockDriverData);
 
     const { result } = renderHook(() => useDriverDetails('test'), { wrapper });
 

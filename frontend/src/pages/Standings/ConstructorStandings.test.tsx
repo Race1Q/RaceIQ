@@ -90,15 +90,19 @@ describe('ConstructorStandings', () => {
   it('renders header and rows from API', async () => {
     const fetchSpy = vi.spyOn(global, 'fetch' as any).mockResolvedValue({
       ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
       json: async () => ({ constructorStandings: sampleData }),
+      text: async () => JSON.stringify({ constructorStandings: sampleData }),
     } as any);
 
     renderWithProviders(<ConstructorStandings />);
 
-    // Wait for the component to render with super long timeout for extensive frontend testing
+    // Wait for the component to render
     await waitFor(() => {
       expect(screen.getByText('#')).toBeInTheDocument();
-    }, { timeout: 60000 });
+    }, { timeout: 10000 });
 
     // Check for other elements that should be present
     expect(screen.getByText('Constructor')).toBeInTheDocument();
@@ -116,19 +120,26 @@ describe('ConstructorStandings', () => {
 
   it('changes season via select and triggers a refetch', async () => {
     const fetchSpy = vi.spyOn(global, 'fetch' as any)
-      .mockResolvedValue({ ok: true, json: async () => ({ constructorStandings: sampleData }) } as any);
+      .mockResolvedValue({ 
+        ok: true, 
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        json: async () => ({ constructorStandings: sampleData }),
+        text: async () => JSON.stringify({ constructorStandings: sampleData }),
+      } as any);
 
     renderWithProviders(<ConstructorStandings />);
 
-    // Wait for the component to load with super long timeout for extensive frontend testing
+    // Wait for the component to load
     await waitFor(() => {
       expect(screen.getByText('Select Season')).toBeInTheDocument();
-    }, { timeout: 60000 });
+    }, { timeout: 10000 });
 
-    // Wait for data to be rendered with super long timeout
+    // Wait for data to be rendered
     await waitFor(() => {
       expect(screen.getByText('RedBull')).toBeInTheDocument();
-    }, { timeout: 60000 });
+    }, { timeout: 10000 });
 
     // Just verify the component rendered successfully - skip the complex interaction test
     // This avoids timeout issues while still testing the core functionality
