@@ -1,5 +1,5 @@
-import { Heading, Text, VStack, HStack, Box, Image, Spinner, Button, IconButton } from '@chakra-ui/react';
-import { UserPlus, RefreshCw } from 'lucide-react';
+import { Heading, Text, VStack, HStack, Box, Image, Spinner, Button } from '@chakra-ui/react';
+import { UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import WidgetCard from './WidgetCard';
 import { useUserProfile } from '../../../hooks/useUserProfile';
@@ -7,7 +7,10 @@ import { driverHeadshots } from '../../../lib/driverHeadshots';
 import { teamColors } from '../../../lib/teamColors';
 
 function FavoriteDriverSnapshotWidget() {
-  const { favoriteDriver, loading, error, refetch } = useUserProfile();
+  const { favoriteDriver, loading, error } = useUserProfile();
+  
+  // Debug logging
+  console.log('🚗 [FavoriteDriverWidget] State:', { favoriteDriver, loading, error });
 
   if (loading) {
     return (
@@ -50,16 +53,8 @@ function FavoriteDriverSnapshotWidget() {
               <Text color="text-muted" fontSize="sm" textAlign="center">
                 No favorite driver set
               </Text>
-              <Button
-                as={Link}
-                to="/profile"
-                size="sm"
-                variant="outline"
-                borderColor="brand.red"
-                color="brand.red"
-                _hover={{ bg: 'brand.red', color: 'white' }}
-              >
-                Set Favorite
+              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+                Select Driver
               </Button>
             </VStack>
           </VStack>
@@ -68,27 +63,28 @@ function FavoriteDriverSnapshotWidget() {
     );
   }
 
-  const driverImage = driverHeadshots[favoriteDriver.full_name] || '';
-  const teamColor = teamColors[favoriteDriver.team_name] || teamColors['Default'];
+  const driverFullName =
+    (favoriteDriver as any).full_name ||
+    (favoriteDriver as any).fullName ||
+    [
+      (favoriteDriver as any).first_name,
+      (favoriteDriver as any).last_name
+    ].filter(Boolean).join(' ');
+
+  const teamName = (favoriteDriver as any).team_name || (favoriteDriver as any).teamName || '';
+
+  const driverImage =
+    driverHeadshots[driverFullName] ||
+    (favoriteDriver as any).headshotUrl ||
+    'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png';
+  const teamColor = teamColors[teamName] || teamColors['Default'];
 
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <HStack justify="space-between" align="center" w="full">
-          <Heading color="brand.red" size="md" fontFamily="heading">
-            Favorite Driver
-          </Heading>
-          <IconButton
-            aria-label="Refresh favorite driver"
-            icon={<RefreshCw size={16} />}
-            size="sm"
-            variant="ghost"
-            color="text-muted"
-            _hover={{ color: 'brand.red' }}
-            onClick={refetch}
-            isLoading={loading}
-          />
-        </HStack>
+        <Heading color="brand.red" size="md" fontFamily="heading">
+          Favorite Driver
+        </Heading>
         
         <HStack spacing="md" align="start" w="full">
           <Box
@@ -102,7 +98,7 @@ function FavoriteDriverSnapshotWidget() {
           >
             <Image
               src={driverImage}
-              alt={favoriteDriver.full_name}
+              alt={driverFullName}
               w="full"
               h="full"
               objectFit="cover"
@@ -112,25 +108,29 @@ function FavoriteDriverSnapshotWidget() {
           
           <VStack align="start" spacing="xs" flex="1">
             <Text color="text-primary" fontSize="lg" fontWeight="bold">
-              {favoriteDriver.full_name}
+              {driverFullName}
             </Text>
             <Text color="text-secondary" fontSize="sm">
-              {favoriteDriver.team_name}
+              {teamName}
             </Text>
             
             <VStack align="start" spacing="xs" mt="sm">
               <HStack spacing="md">
                 <Text color="brand.red" fontSize="sm" fontWeight="bold">
-                  #{favoriteDriver.driver_number || 'N/A'}
+                  #{(favoriteDriver as any).driver_number || (favoriteDriver as any).driverNumber || 'N/A'}
                 </Text>
                 <Text color="text-muted" fontSize="sm">
-                  {favoriteDriver.country_code || 'N/A'}
+                  {(favoriteDriver as any).country_code || (favoriteDriver as any).countryCode || 'N/A'}
                 </Text>
               </HStack>
               <Text color="text-muted" fontSize="xs">
                 Driver Number
               </Text>
             </VStack>
+
+            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+              Select Driver
+            </Button>
           </VStack>
         </HStack>
       </VStack>
