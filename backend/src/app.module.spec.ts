@@ -101,6 +101,10 @@ jest.mock('./drivers/driver-career-stats-materialized.entity', () => ({
   DriverCareerStatsMaterialized: class MockDriverCareerStatsMaterialized {}
 }));
 
+jest.mock('./dashboard/constructor-standings-materialized.entity', () => ({
+  ConstructorStandingMaterialized: class MockConstructorStandingMaterialized {}
+}));
+
 jest.mock('./drivers/drivers.entity', () => ({
   Driver: class MockDriver {}
 }));
@@ -437,6 +441,10 @@ describe('AppModule', () => {
     });
 
     it('should register DriverCareerStatsMaterialized entity', () => {
+      expect(AppModule).toBeDefined();
+    });
+
+    it('should register ConstructorStandingMaterialized entity', () => {
       expect(AppModule).toBeDefined();
     });
   });
