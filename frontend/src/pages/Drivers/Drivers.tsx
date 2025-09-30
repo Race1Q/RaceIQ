@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text, Container, SimpleGrid, VStack, HStack, Button, Icon, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
-import { ChevronRight, AlertTriangle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
@@ -29,6 +29,7 @@ const Drivers = () => {
   const { loading, error, isFallback, orderedTeamNames, groupedDrivers } = useDriversData(2025);
   const [selectedTeam, setSelectedTeam] = useState<string>('All');
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const teamsToRender = selectedTeam === 'All' ? orderedTeamNames : [selectedTeam];
@@ -37,14 +38,20 @@ const Drivers = () => {
   const checkScrollability = useCallback(() => {
     if (scrollContainerRef.current) {
       const { scrollWidth, clientWidth, scrollLeft } = scrollContainerRef.current;
-      // Show arrow if there's more content to the right
+      // Show arrows if there is overflow content
       setCanScrollRight(scrollWidth > clientWidth && scrollLeft < scrollWidth - clientWidth - 1);
+      setCanScrollLeft(scrollLeft > 1);
     }
   }, []);
 
   const scrollRight = useCallback(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  }, []);
+  const scrollLeft = useCallback(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   }, []);
   
@@ -75,33 +82,80 @@ const Drivers = () => {
         )}
         {!loading && (!error || isFallback) && (
           <>
-            <Box position="relative" borderBottom="1px solid" borderColor="border-primary" mb="xl" pb={2}>
+            <Box position="relative" mb="xl">
               <Box ref={scrollContainerRef} overflowX="auto" sx={{ '&::-webkit-scrollbar': { display: 'none' }, 'scrollbarWidth': 'none' }}>
-                <HStack spacing="4" minW="max-content" w="max-content">
-                  {filterTabs.map(team => (
-                    <Button
-                      key={team}
-                      variant="ghost"
-                      onClick={() => setSelectedTeam(team)}
-                      isActive={selectedTeam === team}
-                      fontFamily="heading"
-                      fontWeight="bold"
-                      color="text-muted"
-                      px="4"
-                      py="sm"
-                      borderRadius={0}
-                      borderBottom="3px solid"
-                      borderColor={selectedTeam === team ? 'brand.red' : 'transparent'}
-                      _active={{ color: 'text-primary' }}
-                      _hover={{ color: 'text-primary', bg: 'transparent' }}
-                      sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-                      isDisabled={isFallback}
-                    >
-                      {team}
-                    </Button>
-                  ))}
-                </HStack>
+                <Box minW="max-content" w="max-content">
+                  <HStack
+                    role="tablist"
+                    aria-label="Team filter"
+                    bg="bg-surface"
+                    border="1px solid"
+                    borderColor="border-primary"
+                    borderRadius="full"
+                    p="6px"
+                    gap={2}
+                    boxShadow="shadow-md"
+                  >
+                    {filterTabs.map(team => {
+                      const isActive = selectedTeam === team;
+                      return (
+                        <Button
+                          key={team}
+                          role="tab"
+                          aria-selected={isActive}
+                          variant="ghost"
+                          onClick={() => setSelectedTeam(team)}
+                          px={6}
+                          h="44px"
+                          fontWeight={600}
+                          fontFamily="heading"
+                          position="relative"
+                          color={isActive ? 'text-on-accent' : 'text-secondary'}
+                          _hover={{ color: isActive ? 'text-on-accent' : 'text-primary' }}
+                          _active={{}}
+                          transition="color .25s ease"
+                          bg={isActive ? 'brand.red' : 'transparent'}
+                          borderRadius="full"
+                          boxShadow={isActive ? '0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset' : 'none'}
+                          sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                          isDisabled={isFallback}
+                        >
+                          <Text>{team}</Text>
+                        </Button>
+                      );
+                    })}
+                  </HStack>
+                </Box>
               </Box>
+              {canScrollLeft && !isFallback && (
+                <Box
+                  position="absolute"
+                  left="-16px"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  w="50px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="flex-start"
+                  pointerEvents="none"
+                >
+                  <Button
+                    pointerEvents="auto"
+                    minW="auto"
+                    h="auto"
+                    p="1"
+                    borderRadius="full"
+                    bg="bg-primary"
+                    border="1px solid"
+                    borderColor="border-primary"
+                    boxShadow="md"
+                    onClick={scrollLeft}
+                    _hover={{ transform: 'scale(1.1)' }}
+                  >
+                    <Icon as={ChevronLeft} boxSize={5} color="text-muted" />
+                  </Button>
+                </Box>
+              )}
               
               {canScrollRight && !isFallback && (
                  <Box

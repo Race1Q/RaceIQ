@@ -45,8 +45,6 @@ const DriverStandingsPage: React.FC = () => {
   // Determine active tab based on current path (deep link support)
   // no internal tab state; we navigate to constructors page for second view
 
-  if (loading) return <F1LoadingSpinner text="Loading Driver Standings..." />;
-
   return (
     <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
       <Heading mb={6} color="white" textAlign="left">
@@ -67,7 +65,9 @@ const DriverStandingsPage: React.FC = () => {
         </Box>
       </Flex>
 
-      {standings.length > 0 && (
+      {loading && <F1LoadingSpinner text="Loading Driver Standings..." />}
+
+      {!loading && standings.length > 0 && (
         <Flex flexDirection="column" gap={3} overflowX="auto">
           {standings
             .sort((a, b) => a.position - b.position)

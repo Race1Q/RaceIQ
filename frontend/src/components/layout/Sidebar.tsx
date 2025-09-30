@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, Settings
+  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut
 } from 'lucide-react';
 import {
   Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image
@@ -25,8 +25,7 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
     { path: '/compare', label: 'Compare', icon: GitCompareArrows },
     { path: '/races', label: 'Races', icon: Flag },
     { path: '/about', label: 'About', icon: Info },
-    // Add admin link for any authenticated user
-    ...(isAuthenticated ? [{ path: '/admin', label: 'Admin', icon: Settings }] : []),
+    // Admin link removed from sidebar
   ];
 
   return (
@@ -108,17 +107,17 @@ function Sidebar({ onWidthChange }: SidebarProps) {
   }, []);
 
   const handleLogout = () => {
-    // Custom toast logic remains the same, but with semantic tokens
+    // Custom toast logic with semantic tokens
     toast({
       position: 'top',
       render: ({ onClose }) => (
         <Box
-          bg="bg-surface-raised" // Token
+          bg="bg-modal"
           backdropFilter="blur(10px)"
           border="1px solid"
-          borderColor="brand.red" // Token
-          borderRadius="lg" p="4" color="text-primary" // Token
-          boxShadow="0 8px 32px rgba(220, 38, 38, 0.3)"
+          borderColor="border-accent"
+          borderRadius="lg" p="4" color="text-primary"
+          boxShadow="0 8px 32px var(--chakra-colors-shadow-color-lg)"
         >
           <HStack spacing="3" align="start">
             <Icon as={LogOut} boxSize={5} color="brand.red" />
@@ -147,12 +146,10 @@ function Sidebar({ onWidthChange }: SidebarProps) {
     <Box
       as="aside"
       w={`${currentWidth}px`}
-      // Use semi-transparent version of semantic token for glassmorphism
-      bg={{ base: 'rgba(15, 15, 15, 0.7)', lg: 'rgba(15, 15, 15, 0.7)' }}
-      _light={{ bg: { base: 'rgba(255, 255, 255, 0.7)', lg: 'rgba(255, 255, 255, 0.7)' } }}
+      bg="bg-glassmorphism"
       backdropFilter="blur(10px)"
       borderRight="1px solid"
-      borderColor="border-primary" // Token
+      borderColor="border-subtle"
       h="100vh"
       position="fixed"
       left="0" top="0"

@@ -8,17 +8,18 @@ interface WidgetCardProps {
 function WidgetCard({ children }: WidgetCardProps) {
   return (
     <Box
-      bg="blackAlpha.600"
+      bg="bg-card"
       backdropFilter="blur(8px)"
       p="md"
       borderRadius="lg"
       border="1px solid"
-      borderColor="whiteAlpha.200"
+      borderColor="border-subtle"
       position="relative"
       overflow="hidden"
       h="100%"
       display="flex"
       flexDirection="column"
+      boxShadow="0 2px 8px var(--chakra-colors-shadow-color)"
       _before={{
         content: '""',
         position: 'absolute',
@@ -30,10 +31,10 @@ function WidgetCard({ children }: WidgetCardProps) {
         zIndex: 1,
       }}
       _hover={{
-        bg: 'blackAlpha.700',
-        borderColor: 'brand.red',
+        bg: 'bg-card-hover',
+        borderColor: 'border-accent',
         transform: 'translateY(-2px)',
-        boxShadow: '0 8px 25px rgba(220, 38, 38, 0.15)',
+        boxShadow: '0 8px 25px var(--chakra-colors-shadow-color-lg)',
       }}
       transition="all 0.3s ease"
     >

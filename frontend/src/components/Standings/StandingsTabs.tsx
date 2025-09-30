@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Box, Flex, Text } from '@chakra-ui/react';
+import { Button, Flex, Text } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 
 interface StandingsTabsProps {
@@ -9,25 +9,25 @@ interface StandingsTabsProps {
 // A pill-style toggle bar for switching standings views
 const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
   const navigate = useNavigate();
-  const tabs: { key: 'drivers' | 'constructors'; label: string; path: string; accent: string }[] = [
-    { key: 'drivers', label: 'Drivers', path: '/standings', accent: 'red.500' },
-    { key: 'constructors', label: 'Constructors', path: '/standings/constructors', accent: 'blue.500' },
+  const tabs: { key: 'drivers' | 'constructors'; label: string; path: string }[] = [
+    { key: 'drivers', label: 'Drivers', path: '/standings' },
+    { key: 'constructors', label: 'Constructors', path: '/standings/constructors' },
   ];
 
   return (
     <Flex
       role="tablist"
       aria-label="Standings selector"
-      bg="blackAlpha.400"
-      backdropFilter="blur(12px)"
+      bg="bg-surface"
       border="1px solid"
-      borderColor="whiteAlpha.300"
+      borderColor="border-primary"
       borderRadius="full"
-      p="4px"
+      p="6px"
       w="fit-content"
-      boxShadow="0 4px 16px rgba(0,0,0,0.4)"
+      boxShadow="shadow-md"
       mb={8}
       position="relative"
+      gap={2}
     >
       {tabs.map((t) => {
         const isActive = active === t.key;
@@ -43,24 +43,15 @@ const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
             fontWeight={600}
             fontFamily="heading"
             position="relative"
-            color={isActive ? 'white' : 'whiteAlpha.700'}
-            _hover={{ color: 'white' }}
+            color={isActive ? 'text-on-accent' : 'text-secondary'}
+            _hover={{ color: isActive ? 'text-on-accent' : 'text-primary' }}
             _active={{}} // prevent chakra focus ring color shift
             transition="color .25s ease"
+            bg={isActive ? 'brand.red' : 'transparent'}
+            borderRadius="full"
+            boxShadow={isActive ? '0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset' : 'none'}
           >
-            {isActive && (
-              <Box
-                position="absolute"
-                inset={0}
-                borderRadius="full"
-                bgGradient={`linear(to-r, ${t.accent}, ${t.accent})`}
-                filter="auto"
-                boxShadow={`0 0 0 1px rgba(255,255,255,0.08), 0 4px 14px -2px var(--chakra-colors-${t.accent.replace('.', '-')})`}
-                opacity={0.95}
-                zIndex={0}
-              />
-            )}
-            <Text position="relative" zIndex={1}>{t.label}</Text>
+            <Text>{t.label}</Text>
           </Button>
         );
       })}

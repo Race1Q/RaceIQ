@@ -135,6 +135,27 @@ const RacesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Partition races into upcoming and past based on today's date (date-only)
+  const { upcomingRaces, pastRaces } = useMemo(() => {
+    const today = new Date();
+    // Normalize to date-only comparison
+    today.setHours(0, 0, 0, 0);
+
+    const upcoming: Race[] = [];
+    const past: Race[] = [];
+    for (const r of races) {
+      const d = new Date(r.date);
+      d.setHours(0, 0, 0, 0);
+      if (d >= today) upcoming.push(r); else past.push(r);
+    }
+
+    // Sort: upcoming ascending, past descending
+    upcoming.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+    past.sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+
+    return { upcomingRaces: upcoming, pastRaces: past };
+  }, [races]);
+
   useEffect(() => {
     let alive = true;
     fetchAvailableYears().then((ys) => { if (alive) setYears(ys); });
@@ -165,13 +186,33 @@ const RacesPage: React.FC = () => {
       );
     }
     return (
-      <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
-        {races.map((race) => (
-          <Link key={race.id} to={`/races/${race.id}`}>
-            <RaceProfileCard race={race} />
-          </Link>
-        ))}
-      </SimpleGrid>
+      <VStack align="stretch" spacing={10}>
+        {upcomingRaces.length > 0 && (
+          <Box>
+            <Heading size="md" fontFamily="heading" mb={4}>Upcoming races</Heading>
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+              {upcomingRaces.map((race) => (
+                <Link key={race.id} to={`/races/${race.id}`}>
+                  <RaceProfileCard race={race} />
+                </Link>
+              ))}
+            </SimpleGrid>
+          </Box>
+        )}
+
+        {pastRaces.length > 0 && (
+          <Box>
+            <Heading size="md" fontFamily="heading" mb={4}>Past Races</Heading>
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+              {pastRaces.map((race) => (
+                <Link key={race.id} to={`/races/${race.id}`}>
+                  <RaceProfileCard race={race} />
+                </Link>
+              ))}
+            </SimpleGrid>
+          </Box>
+        )}
+      </VStack>
     );
   };
 
