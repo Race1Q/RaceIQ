@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { NotFoundException } from '@nestjs/common';
+import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 
 // Mock the problematic imports
 jest.mock('src/race-results/race-results.entity', () => ({
@@ -19,6 +20,7 @@ describe('ConstructorsService', () => {
   let constructorRepository: jest.Mocked<Repository<ConstructorEntity>>;
   let raceResultRepository: jest.Mocked<Repository<any>>;
   let raceRepository: jest.Mocked<Repository<any>>;
+  let standingsViewRepository: jest.Mocked<Repository<DriverStandingMaterialized>>;
 
   const mockConstructor: ConstructorEntity = {
     id: 1,
@@ -57,6 +59,11 @@ describe('ConstructorsService', () => {
       createQueryBuilder: jest.fn(),
     };
 
+    const mockStandingsViewRepo = {
+      find: jest.fn(),
+      createQueryBuilder: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConstructorsService,
@@ -72,6 +79,10 @@ describe('ConstructorsService', () => {
           provide: getRepositoryToken('Race'),
           useValue: mockRaceRepo,
         },
+        {
+          provide: getRepositoryToken(DriverStandingMaterialized),
+          useValue: mockStandingsViewRepo,
+        },
       ],
     }).compile();
 
@@ -79,6 +90,7 @@ describe('ConstructorsService', () => {
     constructorRepository = module.get(getRepositoryToken(ConstructorEntity));
     raceResultRepository = module.get(getRepositoryToken('RaceResult'));
     raceRepository = module.get(getRepositoryToken('Race'));
+    standingsViewRepository = module.get(getRepositoryToken(DriverStandingMaterialized));
   });
 
   afterEach(() => {
@@ -86,30 +98,109 @@ describe('ConstructorsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of constructors', async () => {
+    it('should return an array of constructors when no year provided', async () => {
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      standingsViewRepository.find.mockResolvedValue([
+        { constructorName: 'Mercedes' },
+        { constructorName: 'Ferrari' },
+      ]);
+      
+      // Mock constructor repository
       constructorRepository.find.mockResolvedValue(mockConstructors);
 
       const result = await service.findAll();
 
       expect(result).toEqual(mockConstructors);
-      expect(constructorRepository.find).toHaveBeenCalledTimes(1);
+      expect(standingsViewRepository.createQueryBuilder).toHaveBeenCalledWith('ds');
+      expect(standingsViewRepository.find).toHaveBeenCalledWith({ 
+        where: { seasonYear: 2024 }, 
+        select: ['constructorName'] 
+      });
+      expect(constructorRepository.find).toHaveBeenCalledWith({ 
+        where: { name: expect.any(Object) }, 
+        order: { name: 'ASC' } 
+      });
     });
 
-    it('should return empty array when no constructors exist', async () => {
-      constructorRepository.find.mockResolvedValue([]);
+    it('should return constructors for specific year', async () => {
+      // Mock standings data for specific year
+      standingsViewRepository.find.mockResolvedValue([
+        { constructorName: 'Mercedes' },
+        { constructorName: 'Ferrari' },
+      ]);
+      
+      // Mock constructor repository
+      constructorRepository.find.mockResolvedValue(mockConstructors);
+
+      const result = await service.findAll(2024);
+
+      expect(result).toEqual(mockConstructors);
+      expect(standingsViewRepository.find).toHaveBeenCalledWith({ 
+        where: { seasonYear: 2024 }, 
+        select: ['constructorName'] 
+      });
+      expect(constructorRepository.find).toHaveBeenCalledWith({ 
+        where: { name: expect.any(Object) }, 
+        order: { name: 'ASC' } 
+      });
+    });
+
+    it('should fallback to latest year when no standings found for specific year', async () => {
+      // Mock no standings for requested year
+      standingsViewRepository.find.mockResolvedValueOnce([]);
+      
+      // Mock fallback query
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2023 }),
+      };
+      standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings for fallback year
+      standingsViewRepository.find.mockResolvedValueOnce([
+        { constructorName: 'Mercedes' },
+      ]);
+      
+      // Mock constructor repository
+      constructorRepository.find.mockResolvedValue([mockConstructor]);
+
+      const result = await service.findAll(2025);
+
+      expect(result).toEqual([mockConstructor]);
+      expect(standingsViewRepository.find).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return all constructors when no standings data available', async () => {
+      // Mock no latest year found
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: null }),
+      };
+      standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock constructor repository fallback
+      constructorRepository.find.mockResolvedValue(mockConstructors);
 
       const result = await service.findAll();
 
-      expect(result).toEqual([]);
-      expect(constructorRepository.find).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockConstructors);
+      expect(constructorRepository.find).toHaveBeenCalledWith({ order: { name: 'ASC' } });
     });
 
     it('should handle repository errors', async () => {
       const error = new Error('Database connection failed');
-      constructorRepository.find.mockRejectedValue(error);
+      standingsViewRepository.createQueryBuilder.mockImplementation(() => {
+        throw error;
+      });
 
       await expect(service.findAll()).rejects.toThrow('Database connection failed');
-      expect(constructorRepository.find).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -353,7 +444,7 @@ describe('ConstructorsService', () => {
 
   describe('method signatures', () => {
     it('should have findAll method with correct signature', () => {
-      expect(service.findAll.length).toBe(0);
+      expect(service.findAll.length).toBe(1);
     });
 
     it('should have findOne method with correct signature', () => {
@@ -371,7 +462,22 @@ describe('ConstructorsService', () => {
 
   describe('return type validation', () => {
     it('should return Promise<ConstructorEntity[]> for findAll', async () => {
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      standingsViewRepository.find.mockResolvedValue([
+        { constructorName: 'Mercedes' },
+        { constructorName: 'Ferrari' },
+      ]);
+      
+      // Mock constructor repository
       constructorRepository.find.mockResolvedValue(mockConstructors);
+      
       const result = service.findAll();
       expect(result).toBeInstanceOf(Promise);
       

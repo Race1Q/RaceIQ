@@ -6,6 +6,7 @@ import { Race } from '../races/races.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { RaceFastestLapMaterialized } from './race-fastest-laps-materialized.entity';
+import { ConstructorStandingMaterialized } from './constructor-standings-materialized.entity';
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -13,6 +14,7 @@ describe('DashboardService', () => {
   let raceResultRepository: jest.Mocked<Repository<RaceResult>>;
   let standingsViewRepository: jest.Mocked<Repository<DriverStandingMaterialized>>;
   let fastestLapViewRepository: jest.Mocked<Repository<RaceFastestLapMaterialized>>;
+  let constructorStandingsViewRepo: jest.Mocked<Repository<ConstructorStandingMaterialized>>;
 
   const mockRace = {
     id: 1,
@@ -71,10 +73,19 @@ describe('DashboardService', () => {
     const mockStandingsRepo = {
       find: jest.fn(),
       findOne: jest.fn(),
-      createQueryBuilder: jest.fn(),
+      createQueryBuilder: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ latestYear: 2024 }),
+      })),
     };
 
     const mockFastestLapRepo = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      createQueryBuilder: jest.fn(),
+    };
+
+    const mockConstructorStandingsRepo = {
       find: jest.fn(),
       findOne: jest.fn(),
       createQueryBuilder: jest.fn(),
@@ -99,6 +110,10 @@ describe('DashboardService', () => {
           provide: getRepositoryToken(RaceFastestLapMaterialized),
           useValue: mockFastestLapRepo,
         },
+        {
+          provide: getRepositoryToken(ConstructorStandingMaterialized),
+          useValue: mockConstructorStandingsRepo,
+        },
       ],
     }).compile();
 
@@ -107,6 +122,19 @@ describe('DashboardService', () => {
     raceResultRepository = module.get(getRepositoryToken(RaceResult));
     standingsViewRepository = module.get(getRepositoryToken(DriverStandingMaterialized));
     fastestLapViewRepository = module.get(getRepositoryToken(RaceFastestLapMaterialized));
+    constructorStandingsViewRepo = module.get(getRepositoryToken(ConstructorStandingMaterialized));
+  });
+
+  beforeEach(() => {
+    // Set up default mocks that are needed by most tests
+    constructorStandingsViewRepo.find.mockResolvedValue([
+      {
+        position: 1,
+        constructorName: 'Red Bull Racing',
+        seasonPoints: 500,
+        seasonYear: 2024,
+      } as any,
+    ]);
   });
 
   afterEach(() => {
@@ -280,10 +308,15 @@ describe('DashboardService', () => {
       expect(result).toBeDefined();
     });
 
-    it('should throw error when no fastest lap found', async () => {
+    it('should return placeholder when no fastest lap found', async () => {
       fastestLapViewRepository.findOne.mockResolvedValue(null);
 
-      await expect((service as any).getLastRaceFastestLap(1)).rejects.toThrow('Fastest lap not found for the last race.');
+      const result = await (service as any).getLastRaceFastestLap(1);
+
+      expect(result).toEqual({
+        driverFullName: 'Data Pending',
+        lapTime: '--:--.---',
+      });
     });
   });
 
@@ -298,10 +331,29 @@ describe('DashboardService', () => {
       expect(result).toHaveProperty('driver2');
     });
 
-    it('should throw error when not enough drivers', async () => {
+    it('should return placeholder when not enough drivers', async () => {
       standingsViewRepository.find.mockResolvedValue([mockStanding]);
 
-      await expect((service as any).getHeadToHead(2024)).rejects.toThrow('Not enough drivers for head-to-head.');
+      const result = await (service as any).getHeadToHead(2024);
+
+      expect(result).toEqual({
+        driver1: {
+          fullName: 'Data Pending',
+          headshotUrl: '',
+          teamName: 'N/A',
+          wins: 0,
+          podiums: 0,
+          points: 0,
+        },
+        driver2: {
+          fullName: 'Data Pending',
+          headshotUrl: '',
+          teamName: 'N/A',
+          wins: 0,
+          podiums: 0,
+          points: 0,
+        },
+      });
     });
   });
 

@@ -9,6 +9,8 @@ import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
+import { DriverCareerStatsMaterialized } from '../drivers/driver-career-stats-materialized.entity';
+import { DriversService } from '../drivers/drivers.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('StandingsService', () => {
@@ -98,6 +100,17 @@ describe('StandingsService', () => {
       findOne: jest.fn(),
     };
 
+    const mockCareerStatsRepo = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+    };
+
+    const mockDriversService = {
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      getDriverCareerStats: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StandingsService,
@@ -128,6 +141,14 @@ describe('StandingsService', () => {
         {
           provide: getRepositoryToken(ConstructorEntity),
           useValue: mockConstructorRepo,
+        },
+        {
+          provide: getRepositoryToken(DriverCareerStatsMaterialized),
+          useValue: mockCareerStatsRepo,
+        },
+        {
+          provide: DriversService,
+          useValue: mockDriversService,
         },
       ],
     }).compile();

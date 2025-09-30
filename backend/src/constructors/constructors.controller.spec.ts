@@ -494,7 +494,7 @@ describe('ConstructorsController', () => {
 
   describe('method signatures', () => {
     it('should have findAll method with correct signature', () => {
-      expect(controller.findAll.length).toBe(0);
+      expect(controller.findAll.length).toBe(1); // Accepts optional year parameter
     });
 
     it('should have findOne method with correct signature', () => {
