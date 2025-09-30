@@ -7,14 +7,11 @@ import { createClient } from '@supabase/supabase-js';
 // // @ts-ignore
 // import fetch from 'node-fetch';
 
-/* ---------- Load .env (supports .env and .env.back in common spots) ---------- */
+/* ---------- Load .env (supports .env in common spots) ---------- */
 const ENV_CANDIDATES = [
   path.resolve(process.cwd(), '.env'),           // backend/.env (preferred)
-  path.resolve(process.cwd(), '.env.back'),      // backend/.env.back (your file)
   path.resolve(__dirname, '../.env'),            // repoRoot/.env
-  path.resolve(__dirname, '../.env.back'),       // repoRoot/.env.back
   path.resolve(process.cwd(), '../.env'),        // parent/.env
-  path.resolve(process.cwd(), '../.env.back'),   // parent/.env.back
 ];
 
 const ENV_PATH = ENV_CANDIDATES.find((p) => fs.existsSync(p));

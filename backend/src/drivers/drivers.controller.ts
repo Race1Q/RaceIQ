@@ -6,7 +6,7 @@ import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkRespons
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
 import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
-import { Public } from '../auth/decorators/public.decorator';
+import { Public } from '../auth/public.decorator';
 import { ErrorResponse } from '../common/dto/error-response.dto';
 
 @ApiTags('Drivers')
