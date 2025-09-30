@@ -1,23 +1,24 @@
 /* backend/src/drivers/drivers.controller.ts */
 
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
 import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
-import { Public } from '../auth/public.decorator';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { DriverListDto } from './dto/driver-list.dto';
+import { Public } from '../auth/decorators/public.decorator';
 import { ErrorResponse } from '../common/dto/error-response.dto';
 
 @ApiTags('Drivers')
+@ApiBearerAuth() // Apply bearer auth to all endpoints in the controller by default
 @Controller('drivers')
 export class DriversController {
   constructor(private readonly driversService: DriversService) {}
 
-  @Public()
+  @Public() // This decorator overrides the controller-level auth for this specific endpoint
   @ApiOperation({ 
-    summary: 'List drivers',
-    description: 'Returns a list of all drivers. Can be optionally filtered by a specific season year.'
+    summary: 'List all drivers',
+    description: 'Returns a list of all drivers. Can be optionally filtered by a specific season year to get that season\'s roster.'
   })
   @ApiQuery({ 
     name: 'year', 
@@ -25,28 +26,29 @@ export class DriversController {
     type: Number, 
     description: 'Filter drivers by a specific season year' 
   })
-  @ApiOkResponse({ type: Driver, isArray: true }) // Assuming Driver is the response type
-  @ApiBadRequestResponse({ description: 'Bad Request' })
+  @ApiOkResponse({ type: [Driver] })
+  @ApiBadRequestResponse({ type: ErrorResponse })
+  @Get()
   async findAll(@Query('year') year?: string): Promise<Driver[]> {
     const yearNumber = year ? parseInt(year, 10) : undefined;
-
-    // The service method needs to handle an options object that may or may not have a year
     return this.driversService.findAll({ year: yearNumber });
   }
 
-  @Get(':id')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get driver by id' })
-  @ApiOkResponse({ type: DriverListDto })
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Get a single driver by ID' })
+  @ApiOkResponse({ type: Driver })
   @ApiNotFoundResponse({ type: ErrorResponse })
+  @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<Driver> {
     return this.driversService.findOne(id);
   }
 
-  // NEW: Driver comparison stats endpoint
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Get driver comparison stats by ID for a specific year' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Optional year for season-specific stats' })
+  @ApiOkResponse({ type: DriverComparisonStatsResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/stats')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get driver stats (optionally filtered by year)' })
   async getDriverStats(
     @Param('id', ParseIntPipe) id: number,
     @Query('year') year?: string,
@@ -55,34 +57,36 @@ export class DriversController {
     return this.driversService.getDriverStats(id, yearNumber);
   }
 
-  // EXISTING: Driver career stats endpoint (keep for backward compatibility)
-  @Get(':id/career-stats')
-  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Get driver aggregated career stats' })
+  @ApiOkResponse({ type: DriverStatsResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponse })
+  @Get(':id/career-stats')
   async getDriverCareerStats(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<DriverStatsResponseDto> {
     return this.driversService.getDriverCareerStats(id);
   }
 
-
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: "Get a driver's recent race form (last 5 races)" })
+  @ApiOkResponse({ description: 'An array of recent race results.' })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/recent-form')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Recent finishing positions for the driver' })
   async getDriverRecentForm(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ position: number; raceName: string; countryCode: string }[]> {
     return this.driversService.getDriverRecentForm(id);
   }
 
+  @Public()
+  @ApiOperation({ summary: 'Get driver standings for a specific season' })
+  @ApiOkResponse({ description: 'An array of driver standings for the season.' })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get('standings/:season')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Driver championship standings for a season' })
   async getDriverStandings(
     @Param('season', ParseIntPipe) season: number,
   ) {
     return this.driversService.getDriverStandings(season);
   }
 }
-
-
