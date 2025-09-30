@@ -4,13 +4,55 @@ import { Link } from 'react-router-dom';
 import WidgetCard from './WidgetCard';
 import { useUserProfile } from '../../../hooks/useUserProfile';
 import { driverHeadshots } from '../../../lib/driverHeadshots';
-import { teamColors } from '../../../lib/teamColors';
+ import { getTeamColor } from '../../../lib/teamColors';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useEffect, useState } from 'react';
+import { buildApiUrl } from '../../../lib/api';
 
 function FavoriteDriverSnapshotWidget() {
   const { favoriteDriver, loading, error } = useUserProfile();
+  const { getAccessTokenSilently } = useAuth0();
+  const [points, setPoints] = useState<number | null>(null);
+  const [position, setPosition] = useState<number | null>(null);
   
   // Debug logging
   console.log('🚗 [FavoriteDriverWidget] State:', { favoriteDriver, loading, error });
+
+  // Fetch current season points for the favorite driver (hook must be unconditional)
+  useEffect(() => {
+    const fetchPoints = async () => {
+      try {
+        if (!favoriteDriver) return;
+        const season = new Date().getFullYear();
+        const token = await getAccessTokenSilently();
+        const res = await fetch(buildApiUrl(`/api/drivers/standings/${season}`), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const favId = Number((favoriteDriver as any).id);
+        const fullName =
+          (favoriteDriver as any).full_name ||
+          (favoriteDriver as any).fullName ||
+          [
+            (favoriteDriver as any).first_name,
+            (favoriteDriver as any).last_name
+          ].filter(Boolean).join(' ');
+        const row = (data as any[]).find((d: any) =>
+          Number(d.id ?? d.driverId) === favId ||
+          (d.fullname || d.fullName) === fullName
+        );
+        if (row) {
+          setPoints(Number(row.points ?? 0));
+          setPosition(Number(row.position ?? 0));
+        }
+      } catch {
+        // non-critical
+      }
+    };
+
+    fetchPoints();
+  }, [favoriteDriver, getAccessTokenSilently]);
 
   if (loading) {
     return (
@@ -77,7 +119,9 @@ function FavoriteDriverSnapshotWidget() {
     driverHeadshots[driverFullName] ||
     (favoriteDriver as any).headshotUrl ||
     'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png';
-  const teamColor = teamColors[teamName] || teamColors['Default'];
+  const teamColorHex = getTeamColor(teamName, { hash: true });
+
+  
 
   return (
     <WidgetCard>
@@ -93,7 +137,7 @@ function FavoriteDriverSnapshotWidget() {
             borderRadius="full"
             overflow="hidden"
             border="2px solid"
-            borderColor={`#${teamColor}`}
+            borderColor={teamColorHex}
             flexShrink={0}
           >
             <Image
@@ -133,6 +177,32 @@ function FavoriteDriverSnapshotWidget() {
             </Button>
           </VStack>
         </HStack>
+        
+        {/* Points summary (mirrors Favorite Team styling) */}
+        <VStack align="start" spacing="xs" mt="sm" w="full">
+          <HStack spacing="md" justify="space-between" w="full">
+            <Text color="brand.red" fontSize="lg" fontWeight="bold" fontFamily="mono">
+              {points !== null ? `${points} pts` : '—'}
+            </Text>
+            <Text color="text-muted" fontSize="sm">
+              {position ? `P${position}` : ''}
+            </Text>
+          </HStack>
+          <Box
+            w="full"
+            h="4px"
+            bg="whiteAlpha.200"
+            borderRadius="full"
+            overflow="hidden"
+          >
+            <Box
+              w="75%"
+              h="full"
+              bg={teamColorHex}
+              borderRadius="full"
+            />
+          </Box>
+        </VStack>
       </VStack>
     </WidgetCard>
   );

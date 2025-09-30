@@ -37,7 +37,14 @@ function WidgetCard({ children }: WidgetCardProps) {
       }}
       transition="all 0.3s ease"
     >
-      <Box position="relative" zIndex={2} h="100%" display="flex" flexDirection="column">
+      <Box
+        position="relative"
+        zIndex={2}
+        h="100%"
+        display="flex"
+        flexDirection="column"
+        overflowY="auto"
+      >
         {children}
       </Box>
     </Box>
