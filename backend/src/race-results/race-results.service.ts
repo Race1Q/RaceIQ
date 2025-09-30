@@ -5,7 +5,7 @@ import { RaceResult } from './race-results.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
-import { Season } from 'src/seasons/seasons.entity';
+import { Season } from '../seasons/seasons.entity';
 import { DataSource } from 'typeorm';
 
 @Injectable()
