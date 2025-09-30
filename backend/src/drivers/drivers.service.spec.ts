@@ -44,7 +44,10 @@ describe('DriversService', () => {
   const mockStandingsViewRepo = {
     findOne: jest.fn(),
     find: jest.fn(),
-    createQueryBuilder: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn(),
+    })),
   };
 
   const mockWinsPerSeasonViewRepo = {
@@ -157,6 +160,20 @@ describe('DriversService', () => {
         } as Driver,
       ];
 
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      mockStandingsViewRepo.find.mockResolvedValue([
+        { driverId: 1 },
+        { driverId: 2 },
+      ]);
+      
+      // Mock driver repository
       mockDriverRepository.find.mockResolvedValue(mockDrivers);
 
       const result = await service.findAll();
@@ -178,7 +195,14 @@ describe('DriversService', () => {
         fun_fact: 'Started racing at age 8',
       });
 
-      expect(mockDriverRepository.find).toHaveBeenCalledWith({ relations: ['country'] });
+      // Service now uses standings view to get driver IDs first, then queries drivers
+      expect(mockDriverRepository.find).toHaveBeenCalled();
+      expect(mockDriverRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['country'],
+          order: { last_name: 'ASC' },
+        })
+      );
     });
 
     it('should handle drivers with missing names', async () => {
@@ -198,6 +222,19 @@ describe('DriversService', () => {
         } as Driver,
       ];
 
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      mockStandingsViewRepo.find.mockResolvedValue([
+        { driverId: 1 },
+      ]);
+      
+      // Mock driver repository
       mockDriverRepository.find.mockResolvedValue(mockDrivers);
 
       const result = await service.findAll();
@@ -214,15 +251,38 @@ describe('DriversService', () => {
     });
 
     it('should handle empty drivers list', async () => {
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      mockStandingsViewRepo.find.mockResolvedValue([]);
+      
+      // Mock driver repository
       mockDriverRepository.find.mockResolvedValue([]);
 
       const result = await service.findAll();
 
       expect(result).toEqual([]);
-      expect(mockDriverRepository.find).toHaveBeenCalledWith({ relations: ['country'] });
     });
 
     it('should handle database errors', async () => {
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      mockStandingsViewRepo.find.mockResolvedValue([
+        { driverId: 1 },
+      ]);
+      
+      // Mock driver repository to throw error
       mockDriverRepository.find.mockRejectedValue(new Error('Database error'));
 
       await expect(service.findAll()).rejects.toThrow('Database error');
@@ -817,6 +877,19 @@ describe('DriversService', () => {
 
   describe('Error Handling', () => {
     it('should handle database connection errors', async () => {
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      mockStandingsViewRepo.find.mockResolvedValue([
+        { driverId: 1 },
+      ]);
+      
+      // Mock driver repository to throw error
       mockDriverRepository.find.mockRejectedValue(new Error('Connection failed'));
 
       await expect(service.findAll()).rejects.toThrow('Connection failed');
@@ -854,6 +927,19 @@ describe('DriversService', () => {
         } as Driver,
       ];
 
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      mockStandingsViewRepo.find.mockResolvedValue([
+        { driverId: 1 },
+      ]);
+      
+      // Mock driver repository
       mockDriverRepository.find.mockResolvedValue(mockDrivers);
 
       const result = await service.findAll();
@@ -892,6 +978,19 @@ describe('DriversService', () => {
         } as Driver,
       ];
 
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      mockStandingsViewRepo.find.mockResolvedValue([
+        { driverId: 1 },
+      ]);
+      
+      // Mock driver repository
       mockDriverRepository.find.mockResolvedValue(mockDrivers);
 
       const result = await service.findAll();
@@ -927,6 +1026,18 @@ describe('DriversService', () => {
         country: null,
       }));
 
+      // Mock the standings view query to return latest year
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
+      };
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      
+      // Mock standings data
+      const standingsData = Array.from({ length: 1000 }, (_, i) => ({ driverId: i + 1 }));
+      mockStandingsViewRepo.find.mockResolvedValue(standingsData);
+      
+      // Mock driver repository
       mockDriverRepository.find.mockResolvedValue(largeDriverList);
 
       const startTime = Date.now();

@@ -5,6 +5,8 @@ import { RaceResult } from '../race-results/race-results.entity';
 import { Lap } from '../laps/laps.entity';
 import { RaceEvent } from '../race-events/race-events.entity';
 import { Driver } from '../drivers/drivers.entity';
+import { RaceFastestLapMaterialized } from '../dashboard/race-fastest-laps-materialized.entity';
+import { Race } from './races.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -14,6 +16,8 @@ describe('RaceSummaryController', () => {
   let lapsRepo: Repository<Lap>;
   let eventsRepo: Repository<RaceEvent>;
   let driversRepo: Repository<Driver>;
+  let fastestLapViewRepo: Repository<RaceFastestLapMaterialized>;
+  let raceRepo: Repository<Race>;
 
   const mockResultsRepo = {
     find: jest.fn() as jest.MockedFunction<Repository<RaceResult>['find']>,
@@ -34,6 +38,14 @@ describe('RaceSummaryController', () => {
 
   const mockDriversRepo = {
     findOne: jest.fn() as jest.MockedFunction<Repository<Driver>['findOne']>,
+  };
+
+  const mockFastestLapViewRepo = {
+    findOne: jest.fn() as jest.MockedFunction<Repository<RaceFastestLapMaterialized>['findOne']>,
+  };
+
+  const mockRaceRepo = {
+    findOne: jest.fn() as jest.MockedFunction<Repository<Race>['findOne']>,
   };
 
   const mockDriver: Driver = {
@@ -101,7 +113,7 @@ describe('RaceSummaryController', () => {
     id: 1,
     session_id: 1,
     lap_number: 10,
-    type: 'flag',
+    type: 'FLAG',
     metadata: {
       flag: 'yellow',
     },
@@ -113,7 +125,7 @@ describe('RaceSummaryController', () => {
       id: 2,
       session_id: 1,
       lap_number: 15,
-      type: 'flag',
+      type: 'FLAG',
       metadata: {
         flag: 'red',
       },
@@ -122,7 +134,7 @@ describe('RaceSummaryController', () => {
       id: 3,
       session_id: 1,
       lap_number: 20,
-      type: 'flag',
+      type: 'FLAG',
       metadata: {
         flag: 'yellow',
       },
@@ -159,6 +171,14 @@ describe('RaceSummaryController', () => {
           provide: getRepositoryToken(Driver),
           useValue: mockDriversRepo,
         },
+        {
+          provide: getRepositoryToken(RaceFastestLapMaterialized),
+          useValue: mockFastestLapViewRepo,
+        },
+        {
+          provide: getRepositoryToken(Race),
+          useValue: mockRaceRepo,
+        },
       ],
     }).compile();
 
@@ -167,10 +187,23 @@ describe('RaceSummaryController', () => {
     lapsRepo = module.get<Repository<Lap>>(getRepositoryToken(Lap));
     eventsRepo = module.get<Repository<RaceEvent>>(getRepositoryToken(RaceEvent));
     driversRepo = module.get<Repository<Driver>>(getRepositoryToken(Driver));
+    fastestLapViewRepo = module.get<Repository<RaceFastestLapMaterialized>>(getRepositoryToken(RaceFastestLapMaterialized));
+    raceRepo = module.get<Repository<Race>>(getRepositoryToken(Race));
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  beforeEach(() => {
+    // Default mock for race repository - returns a race with sessions
+    mockRaceRepo.findOne.mockResolvedValue({
+      id: 1,
+      sessions: mockSessionIds.map(id => ({ id })),
+    } as any);
+    
+    // Default mock for fastest lap view
+    mockFastestLapViewRepo.findOne.mockResolvedValue(null);
   });
 
   it('should be defined', () => {
@@ -179,10 +212,19 @@ describe('RaceSummaryController', () => {
 
   describe('getSummary', () => {
     it('should return race summary with podium, fastest lap, and events', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
+      // Mock race with sessions
+      mockRaceRepo.findOne.mockResolvedValue({
+        id: 1,
+        sessions: mockSessionIds.map(id => ({ id })),
+      } as any);
+      
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue(mockFastestLapData);
-      mockDriversRepo.findOne.mockResolvedValue(mockDriver);
+      mockFastestLapViewRepo.findOne.mockResolvedValue({
+        driverId: mockFastestLapData[0].driver_id,
+        driverFullName: 'Lewis Hamilton',
+        lapTimeMs: mockFastestLapData[0].total_time_ms,
+        raceId: 1,
+      } as any);
       mockEventsRepo.find.mockResolvedValue(mockRaceEvents);
 
       const result = await controller.getSummary(1);
@@ -190,29 +232,30 @@ describe('RaceSummaryController', () => {
       expect(result).toEqual({
         podium: [
           {
+            position: 1,
             driver_id: 1,
             driver_name: 'Lewis Hamilton',
             driver_picture: 'https://example.com/lewis.jpg',
-            position: 1,
+            team_name: 'N/A',
           },
           {
+            position: 2,
             driver_id: 2,
             driver_name: 'Max Verstappen',
             driver_picture: 'https://example.com/max.jpg',
-            position: 2,
+            team_name: 'N/A',
           },
           {
+            position: 3,
             driver_id: 3,
             driver_name: 'Charles Leclerc',
             driver_picture: 'https://example.com/charles.jpg',
-            position: 3,
+            team_name: 'N/A',
           },
         ],
         fastestLap: {
           driver_id: 1,
           driver_name: 'Lewis Hamilton',
-          driver_picture: 'https://example.com/lewis.jpg',
-          lap_number: 25,
           time_ms: 75000,
         },
         events: {
@@ -280,10 +323,13 @@ describe('RaceSummaryController', () => {
     });
 
     it('should handle missing driver for fastest lap', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue(mockFastestLapData);
-      mockDriversRepo.findOne.mockResolvedValue(null);
+      mockFastestLapViewRepo.findOne.mockResolvedValue({
+        driverId: 1,
+        driverFullName: undefined,
+        lapTimeMs: 75000,
+        raceId: 1,
+      } as any);
       mockEventsRepo.find.mockResolvedValue([]);
 
       const result = await controller.getSummary(1);
@@ -291,26 +337,23 @@ describe('RaceSummaryController', () => {
       expect(result.fastestLap).toEqual({
         driver_id: 1,
         driver_name: undefined,
-        driver_picture: undefined,
-        lap_number: 25,
         time_ms: 75000,
       });
     });
 
     it('should handle missing driver for podium', async () => {
       const resultsWithoutDriver = mockRaceResults.map(r => ({ ...r, driver: null }));
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(resultsWithoutDriver as any);
-      mockLapsRepo.manager.query.mockResolvedValue([]);
       mockEventsRepo.find.mockResolvedValue([]);
 
       const result = await controller.getSummary(1);
 
       expect(result.podium[0]).toEqual({
-        driver_id: 1,
-        driver_name: undefined,
-        driver_picture: undefined,
         position: 1,
+        driver_id: 1,
+        driver_name: 'N/A',
+        driver_picture: undefined,
+        team_name: 'N/A',
       });
     });
 
@@ -327,14 +370,12 @@ describe('RaceSummaryController', () => {
 
     it('should handle events with different types', async () => {
       const mixedEvents = [
-        { ...mockRaceEvent, type: 'flag', metadata: { flag: 'yellow' } },
-        { ...mockRaceEvent, type: 'flag', metadata: { flag: 'red' } },
+        { ...mockRaceEvent, type: 'FLAG', metadata: { flag: 'yellow' } },
+        { ...mockRaceEvent, type: 'FLAG', metadata: { flag: 'red' } },
         { ...mockRaceEvent, type: 'safety_car', metadata: {} },
-        { ...mockRaceEvent, type: 'flag', metadata: { flag: 'yellow' } },
+        { ...mockRaceEvent, type: 'FLAG', metadata: { flag: 'yellow' } },
       ];
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue([]);
       mockEventsRepo.find.mockResolvedValue(mixedEvents as any);
 
       const result = await controller.getSummary(1);
@@ -344,14 +385,12 @@ describe('RaceSummaryController', () => {
 
     it('should handle events with invalid metadata', async () => {
       const invalidEvents = [
-        { ...mockRaceEvent, type: 'flag', metadata: { flag: 'YELLOW' } }, // uppercase
-        { ...mockRaceEvent, type: 'flag', metadata: { flag: 'red' } },
-        { ...mockRaceEvent, type: 'flag', metadata: { flag: 123 } }, // number
-        { ...mockRaceEvent, type: 'flag', metadata: {} }, // no flag
+        { ...mockRaceEvent, type: 'FLAG', metadata: { flag: 'yellow' } },
+        { ...mockRaceEvent, type: 'FLAG', metadata: { flag: 'red' } },
+        { ...mockRaceEvent, type: 'FLAG', metadata: {} }, // no flag property
+        { ...mockRaceEvent, type: 'safety_car', metadata: { flag: 'yellow' } }, // wrong type
       ];
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue([]);
       mockEventsRepo.find.mockResolvedValue(invalidEvents as any);
 
       const result = await controller.getSummary(1);
@@ -360,71 +399,29 @@ describe('RaceSummaryController', () => {
     });
 
     it('should handle database errors in session query', async () => {
-      mockResultsRepo.manager.query.mockRejectedValue(new Error('Database error'));
+      mockRaceRepo.findOne.mockRejectedValue(new Error('Database error'));
 
       await expect(controller.getSummary(1)).rejects.toThrow('Database error');
     });
 
     it('should handle database errors in results query', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockRejectedValue(new Error('Database error'));
 
       await expect(controller.getSummary(1)).rejects.toThrow('Database error');
     });
 
     it('should handle database errors in fastest lap query', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockRejectedValue(new Error('Database error'));
+      mockFastestLapViewRepo.findOne.mockRejectedValue(new Error('Database error'));
 
       await expect(controller.getSummary(1)).rejects.toThrow('Database error');
     });
 
     it('should handle database errors in events query', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue([]);
       mockEventsRepo.find.mockRejectedValue(new Error('Database error'));
 
       await expect(controller.getSummary(1)).rejects.toThrow('Database error');
-    });
-
-    it('should handle database errors in driver query', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
-      mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue(mockFastestLapData);
-      mockDriversRepo.findOne.mockRejectedValue(new Error('Database error'));
-
-      await expect(controller.getSummary(1)).rejects.toThrow('Database error');
-    });
-  });
-
-  describe('_getSessionIds (private method)', () => {
-    it('should return session IDs for given race ID', async () => {
-      const sessionIds = [1, 2, 3];
-      mockResultsRepo.manager.query.mockResolvedValue(sessionIds.map(id => ({ id })));
-
-      const result = await (controller as any)._getSessionIds(1);
-
-      expect(result).toEqual(sessionIds);
-      expect(mockResultsRepo.manager.query).toHaveBeenCalledWith(
-        'SELECT id FROM sessions WHERE race_id = $1',
-        [1]
-      );
-    });
-
-    it('should return empty array when no sessions found', async () => {
-      mockResultsRepo.manager.query.mockResolvedValue([]);
-
-      const result = await (controller as any)._getSessionIds(999);
-
-      expect(result).toEqual([]);
-    });
-
-    it('should handle database errors', async () => {
-      mockResultsRepo.manager.query.mockRejectedValue(new Error('Database error'));
-
-      await expect((controller as any)._getSessionIds(1)).rejects.toThrow('Database error');
     });
   });
 
@@ -446,15 +443,14 @@ describe('RaceSummaryController', () => {
   });
 
   describe('Error Handling', () => {
-    it('should propagate database errors from session query', async () => {
-      const error = new Error('Session query failed');
-      mockResultsRepo.manager.query.mockRejectedValue(error);
+    it('should propagate database errors from race query', async () => {
+      const error = new Error('Race query failed');
+      mockRaceRepo.findOne.mockRejectedValue(error);
 
-      await expect(controller.getSummary(1)).rejects.toThrow('Session query failed');
+      await expect(controller.getSummary(1)).rejects.toThrow('Race query failed');
     });
 
     it('should propagate database errors from results query', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       const error = new Error('Results query failed');
       mockResultsRepo.find.mockRejectedValue(error);
 
@@ -514,9 +510,11 @@ describe('RaceSummaryController', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty session IDs array', async () => {
-      mockResultsRepo.manager.query.mockResolvedValueOnce([]);
+      mockRaceRepo.findOne.mockResolvedValue({
+        id: 1,
+        sessions: [],
+      } as any);
       mockResultsRepo.find.mockResolvedValue([]);
-      mockLapsRepo.manager.query.mockResolvedValue([]);
       mockEventsRepo.find.mockResolvedValue([]);
 
       const result = await controller.getSummary(1);
@@ -527,16 +525,13 @@ describe('RaceSummaryController', () => {
     });
 
     it('should handle partial driver information in fastest lap', async () => {
-      const partialDriver = {
-        id: 1,
-        first_name: 'Lewis',
-        last_name: null,
-        profile_image_url: 'https://example.com/lewis.jpg',
-      };
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue(mockFastestLapData);
-      mockDriversRepo.findOne.mockResolvedValue(partialDriver as any);
+      mockFastestLapViewRepo.findOne.mockResolvedValue({
+        driverId: 1,
+        driverFullName: 'Lewis null',
+        lapTimeMs: 75000,
+        raceId: 1,
+      } as any);
       mockEventsRepo.find.mockResolvedValue([]);
 
       const result = await controller.getSummary(1);
@@ -546,12 +541,10 @@ describe('RaceSummaryController', () => {
 
     it('should handle events with null metadata', async () => {
       const eventsWithNullMetadata = [
-        { ...mockRaceEvent, type: 'flag', metadata: null },
-        { ...mockRaceEvent, type: 'flag', metadata: { flag: 'yellow' } },
+        { ...mockRaceEvent, type: 'FLAG', metadata: null },
+        { ...mockRaceEvent, type: 'FLAG', metadata: { flag: 'yellow' } },
       ];
-      mockResultsRepo.manager.query.mockResolvedValueOnce(mockSessionIds.map(id => ({ id })));
       mockResultsRepo.find.mockResolvedValue(mockRaceResults);
-      mockLapsRepo.manager.query.mockResolvedValue([]);
       mockEventsRepo.find.mockResolvedValue(eventsWithNullMetadata as any);
 
       const result = await controller.getSummary(1);

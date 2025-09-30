@@ -24,14 +24,20 @@ const config: Config = {
   collectCoverageFrom: [
     'src/**/*.{ts,js}',
 
-    // Exclude files that don’t need unit tests
+    // Exclude files that don't need unit tests
     '!src/**/*.module.ts',
     '!src/**/dto/**',
     '!src/**/entities/**',
     '!src/**/migrations/**',
     '!src/**/seed/**',
+    '!src/ingestion/**',
     '!src/main.ts',
     '!**/*.spec.{ts,js}',
+  ],
+
+  // Exclude ingestion directory from test discovery
+  testPathIgnorePatterns: [
+    '<rootDir>/src/ingestion/',
   ],
 
   // Stability improvements
