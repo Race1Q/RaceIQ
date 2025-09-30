@@ -43,8 +43,9 @@ export class DriversController {
     return this.driversService.findOne(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get driver comparison stats by ID for a specific year' })
+  // Made public: comparison stats are now accessible without authentication
+  @Public()
+  @ApiOperation({ summary: 'Get driver comparison stats by ID for a specific year (public)' })
   @ApiQuery({ name: 'year', required: false, type: Number, description: 'Optional year for season-specific stats' })
   @ApiOkResponse({ type: DriverComparisonStatsResponseDto })
   @ApiNotFoundResponse({ type: ErrorResponse })
