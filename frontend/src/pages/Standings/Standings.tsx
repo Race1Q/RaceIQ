@@ -12,9 +12,11 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { teamColors } from '../../lib/teamColors';
+import { buildApiUrl } from '../../lib/api';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// Normalize backend URL to guarantee a trailing slash
+// Removed bespoke BACKEND_URL logic; using buildApiUrl for all requests.
 
 interface ProgressionEntry {
   round: number;
@@ -45,8 +47,8 @@ const Standings: React.FC = () => {
     const fetchProgressions = async () => {
       try {
         const [constructorsRes, driversRes] = await Promise.all([
-          fetch(`${BACKEND_URL}api/race-results/constructors/26/progression`),
-          fetch(`${BACKEND_URL}api/race-results/drivers/progression`),
+          fetch(buildApiUrl(`/api/race-results/constructors/26/progression`)),
+          fetch(buildApiUrl(`/api/race-results/drivers/progression`)),
         ]);
         if (!constructorsRes.ok || !driversRes.ok) throw new Error('Failed to fetch progressions');
 

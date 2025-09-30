@@ -1,0 +1,61 @@
+import React from 'react';
+import { Avatar, Flex, Heading, HStack, Icon, Text, VStack } from '@chakra-ui/react';
+import type { StandingsItem } from '../../../types';
+import WidgetCard from './WidgetCard';
+import { teamColors } from '../../../lib/teamColors';
+import { Trophy } from 'lucide-react';
+import { driverHeadshots } from '../../../lib/driverHeadshots';
+
+const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; year?: number }) => {
+  return (
+    <WidgetCard>
+      <VStack align="start" spacing="md">
+        <HStack justify="space-between" align="center" w="full">
+          <Heading color="brand.red" size="md" fontFamily="heading">
+            Driver Standings
+          </Heading>
+          {year !== undefined && (
+            <Text color="text-muted" fontSize="sm">{year}</Text>
+          )}
+        </HStack>
+      <VStack align="stretch" w="100%" spacing={2}>
+        {data && data.length > 0 ? (
+          data.map((item) => {
+            const isLeader = item.position === 1;
+            const teamColor = teamColors[item.constructorName] || teamColors['Default'];
+            const headshot = driverHeadshots[item.driverFullName] || item.driverHeadshotUrl || '';
+
+            return (
+              <Flex
+                key={item.position}
+                align="center"
+                bg={isLeader ? teamColor : 'transparent'}
+                p={isLeader ? 4 : 2}
+                borderRadius="md"
+                transition="all 0.2s ease-in-out"
+              >
+                <Flex align="center" flex={1}>
+                  <Text w="2em" color={isLeader ? 'white' : 'brand.red'} fontWeight="bold">{item.position}.</Text>
+                  <Avatar size="sm" src={headshot} mr={3} />
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="bold" color={isLeader ? 'white' : 'text-primary'}>{item.driverFullName}</Text>
+                    <Text fontSize="sm" color={isLeader ? 'whiteAlpha.800' : 'text-muted'}>{item.constructorName}</Text>
+                  </VStack>
+                </Flex>
+                {isLeader && <Icon as={Trophy} color="white" mr={3} />}
+                <Text fontWeight="bold" color={isLeader ? 'white' : 'brand.red'}>{item.points} pts</Text>
+              </Flex>
+            );
+          })
+        ) : (
+          <Text color="text-muted">Loading standings...</Text>
+        )}
+      </VStack>
+      </VStack>
+    </WidgetCard>
+  );
+};
+
+export default ChampionshipStandingsWidget;
+
+

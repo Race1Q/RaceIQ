@@ -6,7 +6,8 @@ import { Race } from '../races/races.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { RaceFastestLapMaterialized } from './race-fastest-laps-materialized.entity';
-import { DashboardResponseDto, HeadToHeadDriverDto } from './dto/dashboard.dto';
+import { DashboardResponseDto, HeadToHeadDriverDto, ConstructorStandingsItemDto } from './dto/dashboard.dto';
+import { ConstructorStandingMaterialized } from './constructor-standings-materialized.entity';
 
 @Injectable()
 export class DashboardService {
@@ -15,6 +16,7 @@ export class DashboardService {
     @InjectRepository(RaceResult) private readonly raceResultRepository: Repository<RaceResult>,
     @InjectRepository(DriverStandingMaterialized) private readonly standingsViewRepository: Repository<DriverStandingMaterialized>,
     @InjectRepository(RaceFastestLapMaterialized) private readonly fastestLapViewRepository: Repository<RaceFastestLapMaterialized>,
+    @InjectRepository(ConstructorStandingMaterialized) private readonly constructorStandingsViewRepo: Repository<ConstructorStandingMaterialized>,
   ) {}
 
   // Utility function to format lap time from milliseconds to M:SS.mmm
@@ -28,16 +30,23 @@ export class DashboardService {
   }
 
   async getDashboardData(): Promise<DashboardResponseDto> {
-    const currentYear = new Date().getFullYear();
+    // Determine latest season year with standings data
+    const latestYearResult = await this.standingsViewRepository
+      .createQueryBuilder('ds')
+      .select('MAX(ds.seasonYear)', 'latestYear')
+      .getRawOne();
+    const latestYear: number = latestYearResult?.latestYear || new Date().getFullYear();
 
     const [
       nextRace,
       lastRace,
       championshipStandings,
+      constructorStandings,
     ] = await Promise.all([
       this.getNextRace(),
       this.getLastRace(),
-      this.getChampionshipStandings(currentYear),
+      this.getChampionshipStandings(latestYear),
+      this.getConstructorStandings(latestYear),
     ]);
 
     if (!lastRace) {
@@ -51,16 +60,31 @@ export class DashboardService {
     ] = await Promise.all([
       this.getLastRacePodium(lastRace.id, lastRace.name),
       this.getLastRaceFastestLap(lastRace.id),
-      this.getHeadToHead(currentYear),
+      this.getHeadToHead(latestYear),
     ]);
 
     return {
+      standingsYear: latestYear,
       nextRace,
       championshipStandings,
+      constructorStandings,
       lastRacePodium,
       lastRaceFastestLap,
       headToHead,
     };
+  }
+
+  private async getConstructorStandings(year: number): Promise<ConstructorStandingsItemDto[]> {
+    const standings = await this.constructorStandingsViewRepo.find({
+      where: { seasonYear: year },
+      order: { position: 'ASC' },
+      take: 5,
+    });
+    return standings.map(s => ({
+      position: s.position,
+      constructorName: s.constructorName,
+      points: Number(s.seasonPoints),
+    }));
   }
 
   private async getNextRace() {
@@ -97,6 +121,7 @@ export class DashboardService {
     return standings.map((s, index) => ({
       position: index + 1,
       driverFullName: s.driverFullName,
+      driverHeadshotUrl: s.profileImageUrl || null,
       constructorName: s.constructorName,
       points: Number(s.seasonPoints),
     }));
@@ -126,7 +151,13 @@ export class DashboardService {
     const fastestLap = await this.fastestLapViewRepository.findOne({
       where: { raceId },
     });
-    if (!fastestLap) throw new NotFoundException('Fastest lap not found for the last race.');
+     // If no fastest lap is found (because data is not ingested yet),
+    if (!fastestLap) {
+      return {
+        driverFullName: 'Data Pending',
+        lapTime: '--:--.---',
+      };
+    }
     return {
       driverFullName: fastestLap.driverFullName,
       lapTime: this.formatLapTime(fastestLap.lapTimeMs),
@@ -139,10 +170,25 @@ export class DashboardService {
       order: { seasonPoints: 'DESC' },
       take: 2,
     });
-    if (topTwo.length < 2) throw new NotFoundException('Not enough drivers for head-to-head.');
-
+  
+    // If we don't have enough data yet, return a placeholder object
+    if (topTwo.length < 2) {
+      const placeholderDriver: HeadToHeadDriverDto = {
+        fullName: 'Data Pending',
+        headshotUrl: '',
+        teamName: 'N/A',
+        wins: 0,
+        podiums: 0,
+        points: 0,
+      };
+      return {
+        driver1: placeholderDriver,
+        driver2: placeholderDriver,
+      };
+    }
+  
     const [driver1, driver2] = topTwo;
-
+  
     const mapToDto = (driver: DriverStandingMaterialized): HeadToHeadDriverDto => ({
       fullName: driver.driverFullName,
       headshotUrl: driver.profileImageUrl || '',
@@ -151,7 +197,7 @@ export class DashboardService {
       podiums: driver.seasonPodiums,
       points: Number(driver.seasonPoints),
     });
-
+  
     return {
       driver1: mapToDto(driver1),
       driver2: mapToDto(driver2),

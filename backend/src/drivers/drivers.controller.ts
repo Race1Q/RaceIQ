@@ -1,25 +1,54 @@
 /* backend/src/drivers/drivers.controller.ts */
 
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
 import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
+import { Public } from '../auth/public.decorator';
+import { ErrorResponse } from '../common/dto/error-response.dto';
 
+@ApiTags('Drivers')
+@ApiBearerAuth() // Apply bearer auth to all endpoints in the controller by default
 @Controller('drivers')
 export class DriversController {
   constructor(private readonly driversService: DriversService) {}
 
+  @Public() // This decorator overrides the controller-level auth for this specific endpoint
+  @ApiOperation({ 
+    summary: 'List all drivers',
+    description: 'Returns a list of all drivers. Can be optionally filtered by a specific season year to get that season\'s roster.'
+  })
+  @ApiQuery({ 
+    name: 'year', 
+    required: false, 
+    type: Number, 
+    description: 'Filter drivers by a specific season year' 
+  })
+  @ApiOkResponse({ type: [Driver] })
+  @ApiBadRequestResponse({ type: ErrorResponse })
   @Get()
-  async findAll(): Promise<Driver[]> {
-    return this.driversService.findAll();
+  async findAll(@Query('year') year?: string): Promise<Driver[]> {
+    const yearNumber = year ? parseInt(year, 10) : undefined;
+    return this.driversService.findAll({ year: yearNumber });
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Get a single driver by ID' })
+  @ApiOkResponse({ type: Driver })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<Driver> {
     return this.driversService.findOne(id);
   }
 
-  // NEW: Driver comparison stats endpoint
+  // Made public: comparison stats are now accessible without authentication
+  @Public()
+  @ApiOperation({ summary: 'Get driver comparison stats by ID for a specific year (public)' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Optional year for season-specific stats' })
+  @ApiOkResponse({ type: DriverComparisonStatsResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/stats')
   async getDriverStats(
     @Param('id', ParseIntPipe) id: number,
@@ -29,7 +58,10 @@ export class DriversController {
     return this.driversService.getDriverStats(id, yearNumber);
   }
 
-  // EXISTING: Driver career stats endpoint (keep for backward compatibility)
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Get driver aggregated career stats' })
+  @ApiOkResponse({ type: DriverStatsResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/career-stats')
   async getDriverCareerStats(
     @Param('id', ParseIntPipe) id: number,
@@ -37,7 +69,10 @@ export class DriversController {
     return this.driversService.getDriverCareerStats(id);
   }
 
-
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: "Get a driver's recent race form (last 5 races)" })
+  @ApiOkResponse({ description: 'An array of recent race results.' })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/recent-form')
   async getDriverRecentForm(
     @Param('id', ParseIntPipe) id: number,
@@ -45,6 +80,10 @@ export class DriversController {
     return this.driversService.getDriverRecentForm(id);
   }
 
+  @Public()
+  @ApiOperation({ summary: 'Get driver standings for a specific season' })
+  @ApiOkResponse({ description: 'An array of driver standings for the season.' })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   @Get('standings/:season')
   async getDriverStandings(
     @Param('season', ParseIntPipe) season: number,
@@ -52,5 +91,3 @@ export class DriversController {
     return this.driversService.getDriverStandings(season);
   }
 }
-
-

@@ -1,6 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { RaceResult } from '../race-results/race-results.entity';
 import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
+import { ConstructorDriver } from './constructor-drivers.entity';
 
 @Entity({ name: 'constructors' })
 export class ConstructorEntity {
@@ -24,6 +25,9 @@ export class ConstructorEntity {
 
   @OneToMany(() => QualifyingResult, 'team')
   qualifyingResults: QualifyingResult[];
+
+  @OneToMany(() => ConstructorDriver, (cd) => cd.team)
+  constructorDriverEntries: ConstructorDriver[];
 }
 
 

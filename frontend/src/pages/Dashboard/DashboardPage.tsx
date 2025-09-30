@@ -9,13 +9,14 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
 import NextRaceWidget from './widgets/NextRaceWidget';
-import StandingsWidget from './widgets/StandingsWidget';
+import ChampionshipStandingsWidget from '@/pages/Dashboard/widgets/ChampionshipStandingsWidget';
 import LastPodiumWidget from './widgets/LastPodiumWidget';
 import FastestLapWidget from './widgets/FastestLapWidget';
 import FavoriteDriverSnapshotWidget from './widgets/FavoriteDriverSnapshotWidget';
 import FavoriteTeamSnapshotWidget from './widgets/FavoriteTeamSnapshotWidget';
 import HeadToHeadQuickCompareWidget from './widgets/HeadToHeadQuickCompareWidget';
 import LatestF1NewsWidget from './widgets/LatestF1NewsWidget';
+import ConstructorStandingsWidget from './widgets/ConstructorStandingsWidget';
 import { AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom'; 
 
@@ -35,7 +36,8 @@ const initialLayouts = {
   lg: [
     // Row 1: Two horizontal rectangles
     { i: 'nextRace', x: 0, y: 0, w: 2, h: 2, isResizable: false },
-    { i: 'standings', x: 2, y: 0, w: 2, h: 2, isResizable: false },
+    { i: 'standings', x: 2, y: 0, w: 1, h: 2, isResizable: false },
+    { i: 'constructorStandings', x: 3, y: 0, w: 1, h: 2, isResizable: false },
 
     // Row 2: Four squares
     { i: 'lastPodium', x: 0, y: 2, w: 1, h: 2, isResizable: false },
@@ -52,6 +54,7 @@ const initialLayouts = {
 interface WidgetVisibility {
   nextRace: boolean;
   standings: boolean;
+  constructorStandings: boolean;
   lastPodium: boolean;
   fastestLap: boolean;
   favoriteDriver: boolean;
@@ -68,6 +71,7 @@ function DashboardPage() {
   const [widgetVisibility, setWidgetVisibility] = useState<WidgetVisibility>({
     nextRace: true,
     standings: true,
+    constructorStandings: true,
     lastPodium: true,
     fastestLap: true,
     favoriteDriver: true,
@@ -97,7 +101,12 @@ function DashboardPage() {
     nextRace: <NextRaceWidget data={dashboardData?.nextRace} />,
     standings: (
       <Link to="/standings/drivers">
-        <StandingsWidget data={dashboardData?.championshipStandings} />
+        <ChampionshipStandingsWidget data={dashboardData?.championshipStandings || []} year={dashboardData?.standingsYear as number} />
+      </Link>
+    ),
+    constructorStandings: (
+      <Link to="/standings/constructors">
+        <ConstructorStandingsWidget data={dashboardData?.constructorStandings} year={dashboardData?.standingsYear} />
       </Link>
     ),
     lastPodium: <LastPodiumWidget data={dashboardData?.lastRacePodium} />,

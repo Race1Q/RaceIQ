@@ -77,3 +77,10 @@ export class DriverComparisonStatsResponseDto {
     poles: number; // from qualifying results
   };
 }
+
+// Shared small DTO used by multiple modules
+export interface RecentFormItem {
+  position: number;
+  raceName: string;
+  countryCode: string;
+}

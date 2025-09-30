@@ -9,6 +9,7 @@ export class NextRaceDto {
 export class StandingsItemDto {
   position: number;
   driverFullName: string;
+  driverHeadshotUrl: string | null;
   constructorName: string;
   points: number;
 }
@@ -43,10 +44,18 @@ export class HeadToHeadDto {
   driver2: HeadToHeadDriverDto;
 }
 
+export class ConstructorStandingsItemDto {
+  position: number;
+  constructorName: string;
+  points: number;
+}
+
 export class DashboardResponseDto {
+  standingsYear: number;
   nextRace: NextRaceDto;
   championshipStandings: StandingsItemDto[];
   lastRacePodium: LastRacePodiumDto;
   lastRaceFastestLap: FastestLapDto;
   headToHead: HeadToHeadDto;
+  constructorStandings: ConstructorStandingsItemDto[];
 }

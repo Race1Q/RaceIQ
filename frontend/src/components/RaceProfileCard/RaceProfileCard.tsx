@@ -73,8 +73,9 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
           <Text as="span" display="block" opacity={0.9}
             fontFamily="heading" fontWeight="bold" textTransform="uppercase"
             fontSize={{ base: 'clamp(1rem, 3vw, 1.2rem)', md: 'clamp(1.2rem, 4vw, 1.5rem)' }}
+            mt="sm"
           >
-            {race.name}
+            Grand Prix
           </Text>
         </Heading>
         <Text
@@ -84,29 +85,16 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
           Round {race.round}
         </Text>
         
-        {/* Flag Wrapper */}
-        <Box
-          position="absolute"
-          top={{ base: 'md', md: 'lg' }}
-          right={{ base: 'md', md: 'lg' }}
-          w={{ base: '50px', md: '30px' }}
-          h={{ base: '35px', md: '30px' }}
-          borderRadius="sm"
-          overflow="hidden"
-          boxShadow="0 2px 8px rgba(0, 0, 0, 0.3)"
-          border="1px solid rgba(255, 255, 255, 0.15)"
-        >
+        {/* Flag - no wrapper box; render directly */}
+        <Box position="absolute" top={{ base: 'md', md: 'lg' }} right={{ base: 'md', md: 'lg' }}>
           {twoLetter ? (
             <ReactCountryFlag
               countryCode={twoLetter.toLowerCase()}
               svg
-              style={{ width: '100%', height: '100%' }}
-              title={(race as any)?.circuit?.country_code}
+              style={{ width: '32px', height: '24px' }}
+              title={(race as any)?.circuit?.country || (race as any)?.circuit?.country_code}
             />
-          ) : (
-            <Flex w="100%" h="100%" bg="#666" align="center" justify="center" fontSize="xl" fontWeight="bold">?
-            </Flex>
-          )}
+          ) : null}
         </Box>
       </VStack>
 

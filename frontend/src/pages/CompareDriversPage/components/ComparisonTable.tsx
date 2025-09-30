@@ -1,6 +1,6 @@
 // frontend/src/pages/CompareDriversPage/components/ComparisonTable.tsx
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, TableContainer, HStack, Text, VStack, Grid, Button } from '@chakra-ui/react';
-import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey } from '../../../hooks/useDriverComparison';
+import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey, CompositeScore } from '../../../hooks/useDriverComparison';
 
 interface Props {
   driver1: DriverDetails;
@@ -11,6 +11,7 @@ interface Props {
   enabledMetrics?: EnabledMetrics;
   selection1?: DriverSelection | null;
   selection2?: DriverSelection | null;
+  score?: CompositeScore;
   // NEW: Handlers for filter interactions
   onYearChange?: (driverIndex: 1 | 2, year: number | 'career') => void;
   onMetricToggle?: (metric: MetricKey) => void;
@@ -45,6 +46,7 @@ export const ComparisonTable: React.FC<Props> = ({
   enabledMetrics, 
   selection1, 
   selection2,
+  score,
   onYearChange,
   onMetricToggle,
   availableYears = [2024, 2023, 2022, 2021, 2020]
@@ -244,6 +246,32 @@ export const ComparisonTable: React.FC<Props> = ({
                   </Box>
                 );
               })}
+            </HStack>
+          </Box>
+        )}
+        
+        {/* Composite Score Display - Below Statistics to Compare */}
+        {score && score.d1 !== null && score.d2 !== null && (
+          <Box bg="bg-surface" p="lg" borderRadius="md" textAlign="center">
+            <Heading size="lg" mb="md" fontFamily="heading">Composite Score</Heading>
+            <HStack justify="center" spacing="xl">
+              <Box>
+                <Text fontSize="sm" color="text-secondary">
+                  {selection1 ? `Driver 1 ${selection1.year === 'career' ? '(Career)' : `(${selection1.year})`}` : 'Driver 1'}
+                </Text>
+                <Text fontSize="3xl" fontWeight="bold" color="brand.red">
+                  {score.d1}/100
+                </Text>
+              </Box>
+              <Text fontSize="2xl" color="text-secondary">VS</Text>
+              <Box>
+                <Text fontSize="sm" color="text-secondary">
+                  {selection2 ? `Driver 2 ${selection2.year === 'career' ? '(Career)' : `(${selection2.year})`}` : 'Driver 2'}
+                </Text>
+                <Text fontSize="3xl" fontWeight="bold" color="brand.red">
+                  {score.d2}/100
+                </Text>
+              </Box>
             </HStack>
           </Box>
         )}

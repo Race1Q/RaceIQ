@@ -50,3 +50,45 @@ npm run test:e2e
 # Test coverage
 npm run test:cov
 ```
+
+## 📘 API Documentation
+Interactive Swagger UI:
+Local: `http://localhost:3000/docs`
+Deployed: `https://raceiq-api.azurewebsites.net/docs`
+
+Raw OpenAPI JSON: `http://localhost:3000/docs-json`
+
+### Public Endpoints (no auth required)
+
+
+These GET endpoints are publicly accessible:
+
+- `GET /api/races` – list races (supports `season`, `season_id`, `year`)
+- `GET /api/races/years` – list available seasons/years
+- `GET /api/drivers` – list drivers
+
+All other endpoints require a valid `Authorization: Bearer <token>` header.
+
+### Standard Error Response
+
+All errors are normalized to a consistent shape:
+
+```json
+{
+	"statusCode": 400,
+	"error": "Bad Request",
+	"message": "Validation failed",
+	"details": [
+		{ "message": "season must be a 4-digit year" }
+	]
+}
+```
+
+Fields:
+
+- `statusCode` – HTTP status
+- `error` – standard error phrase
+- `message` – human readable summary
+- `code` (optional) – app/database specific code
+- `details` (optional) – validation or contextual info
+

@@ -2,6 +2,7 @@ import { Heading, Text, VStack, HStack, Box, Image } from '@chakra-ui/react';
 import type { HeadToHead } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
+import { driverHeadshots } from '../../../lib/driverHeadshots';
 import WidgetCard from './WidgetCard';
 
 interface HeadToHeadQuickCompareWidgetProps {
@@ -27,7 +28,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
     team: data.driver1.teamName,
     teamColor: teamColors[data.driver1.teamName] || teamColors['Default'],
     teamLogo: getTeamLogo(data.driver1.teamName),
-    image: data.driver1.headshotUrl,
+    image: driverHeadshots[data.driver1.fullName] || data.driver1.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
     wins: data.driver1.wins,
     podiums: data.driver1.podiums,
     points: data.driver1.points
@@ -38,7 +39,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
     team: data.driver2.teamName,
     teamColor: teamColors[data.driver2.teamName] || teamColors['Default'],
     teamLogo: getTeamLogo(data.driver2.teamName),
-    image: data.driver2.headshotUrl,
+    image: driverHeadshots[data.driver2.fullName] || data.driver2.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
     wins: data.driver2.wins,
     podiums: data.driver2.podiums,
     points: data.driver2.points

@@ -2,7 +2,7 @@
 
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, HStack, Button, Text, Container } from '@chakra-ui/react';
+import { Box, Flex, HStack, Button, Text, Container, Spinner } from '@chakra-ui/react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
@@ -27,7 +27,6 @@ import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
-import Standings from '../pages/Standings/Standings';
 import DriverStandings from '../pages/Standings/DriverStandings';
 
 
@@ -127,10 +126,22 @@ function Navbar() {
 function AppContent() {
   useScrollToTop();
   const location = useLocation();
-  const { isAuthenticated } = useAuth0();
+  const { isAuthenticated, isLoading } = useAuth0();
   
   // Don't show navbar on driver detail pages (they have their own custom header)
   const showNavbar = !location.pathname.startsWith('/drivers/') || location.pathname === '/drivers';
+
+  // Gate route rendering until Auth0 finishes loading to avoid route mismatch races
+  if (isLoading) {
+    return (
+      <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
+        {showNavbar && <Navbar />}
+        <Flex flex="1" align="center" justify="center">
+          <Spinner thickness="3px" speed="0.65s" emptyColor="whiteAlpha.200" color="brand.red" size="lg" />
+        </Flex>
+      </Box>
+    );
+  }
 
   if (isAuthenticated) {
     return (
@@ -145,9 +156,9 @@ function AppContent() {
             <Route path="/drivers" element={<Drivers />} />
             <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
             <Route path="/constructors" element={<Constructors />} />
-            <Route path="/standings" element={<Standings />} />
+            {/* Standings: default to drivers; constructors available via tab/deep link */}
+            <Route path="/standings" element={<DriverStandings />} />
             <Route path="/standings/constructors" element={<ConstructorsStandings />} />
-            <Route path="/standings/drivers" element={<DriverStandings />} />
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />

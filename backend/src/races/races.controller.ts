@@ -4,27 +4,46 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
+import { Public } from '../auth/public.decorator';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { RaceDto } from './dto/race.dto';
+import { ErrorResponse } from '../common/dto/error-response.dto';
 
+@ApiTags('Races')
 @Controller('races')
 export class RacesController {
   constructor(private readonly racesService: RacesService) {}
 
   @Get()
+  @Public()
+  @ApiOperation({ summary: 'List races' })
+  @ApiOkResponse({ type: RaceDto, isArray: true })
+  @ApiBadRequestResponse({ type: ErrorResponse })
   findAll(@Query() query: any) {
     return this.racesService.findAll(query); // accepts season | season_id | year
   }
 
   @Get('years')
+  @Public()
+  @ApiOperation({ summary: 'List seasons/years with race data' })
+  @ApiOkResponse({ type: Number, isArray: true })
   years() {
     return this.racesService.listYears(); // e.g., [2025, 2024, ...]
   }
 
   @Get(':id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a single race by id' })
+  @ApiOkResponse({ type: RaceDto })
+  @ApiNotFoundResponse({ type: ErrorResponse })
   findOne(@Param('id') id: string) {
     return this.racesService.findOne(id);
   }
 
   @Get('constructor/:constructorId/poles')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Total pole positions for a constructor' })
+  @ApiOkResponse({ schema: { properties: { constructorId: { type: 'number' }, poles: { type: 'number' } } } })
 async getConstructorPoles(
   @Param('constructorId', ParseIntPipe) constructorId: number,
 ): Promise<{ constructorId: number; poles: number }> {
@@ -33,6 +52,8 @@ async getConstructorPoles(
 }
 
 @Get('constructor/:constructorId/poles-by-season')
+@ApiBearerAuth()
+@ApiOperation({ summary: 'Constructor pole positions broken down by season' })
 async getConstructorPolesBySeason(
   @Param('constructorId', ParseIntPipe) constructorId: number,
 ): Promise<any[]> {
@@ -40,6 +61,8 @@ async getConstructorPolesBySeason(
 }
 
 @Get('constructor/:constructorId/points-by-circuit')
+@ApiBearerAuth()
+@ApiOperation({ summary: 'Constructor points aggregated by circuit' })
   async getConstructorPointsByCircuit(
     @Param('constructorId', ParseIntPipe) constructorId: number,
   ) {
