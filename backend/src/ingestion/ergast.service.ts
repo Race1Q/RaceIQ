@@ -328,6 +328,31 @@ export class ErgastService {
     // 2. Loop through each season to fetch its races
     for (let year = this.startYear; year <= this.endYear; year++) {
       this.logger.log(`Fetching races for season ${year}...`);
+      // =================================================================
+      // === THE FIX: Delete existing races/sessions for this season ======
+      // =================================================================
+      const { data: season } = await this.supabaseService.client
+        .from('seasons')
+        .select('id')
+        .eq('year', year)
+        .single();
+
+      if (season) {
+        this.logger.log(`Deleting existing races and sessions for ${year} before re-inserting...`);
+        const { error: deleteError } = await this.supabaseService.client
+          .from('races')
+          .delete()
+          .eq('season_id', season.id);
+        if (deleteError) {
+          this.logger.error(`Failed to delete races for ${year}:`, deleteError);
+          // Continue to next season if we cannot cleanly delete
+          continue;
+        }
+      }
+      // =================================================================
+      // === End of fix ==================================================
+      // =================================================================
+
       const apiRaces = await this.fetchAllErgastPages<ApiRace>(`/${year}/races`);
       
       const seasonId = seasonsMap.get(year);
@@ -614,6 +639,13 @@ export class ErgastService {
     const finalRaceIdMap = new Map<number, number>();
     const latestRoundForYear = new Map<number, number>();
 
+    const sortedRaces = (races ?? []).sort((a, b) => {
+      if (a.season_id !== b.season_id) {
+          return a.season_id - b.season_id;
+      }
+      return a.round - b.round;
+    });
+
     for (const race of (races ?? [])) {
       const year = seasonIdToYearMap.get(race.season_id);
       if (!year || year < this.startYear || year > this.endYear) continue;
@@ -624,6 +656,22 @@ export class ErgastService {
         finalRaceIdMap.set(year, race.id);
       }
     }
+
+    // ==========================================================
+    // === DEBUG ========================
+    // ==========================================================
+    this.logger.log('--- INSPECTING FINAL RACE ID MAP ---');
+    this.logger.log(`The finalRaceIdMap contains ${finalRaceIdMap.size} entries.`);
+    // Log the first few entries to see what they look like
+    const sampleEntries = Array.from(finalRaceIdMap.entries()).slice(0, 3);
+    if (sampleEntries.length > 0) {
+      this.logger.log('Sample entries (Year -> Race ID):', JSON.stringify(sampleEntries));
+    } else {
+      this.logger.error('The finalRaceIdMap is EMPTY! This is the root cause of the problem.');
+    }
+    // ==========================================================
+    // === END OF DEBUG =================================
+    // ==========================================================
     
     const allDriverStandings: any[] = [];
     const allConstructorStandings: any[] = [];
