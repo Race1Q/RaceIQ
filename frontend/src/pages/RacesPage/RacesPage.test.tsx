@@ -47,9 +47,18 @@ vi.mock('../../components/HeroSection/HeroSection', () => ({
   ),
 }));
 
-// Mock fetch globally
+// Mock fetch globally with header-aware helper
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+global.fetch = mockFetch as any;
+
+const jsonResponse = (body: any, init: Partial<Response> = {}) => ({
+  ok: init.ok ?? true,
+  status: (init as any).status || 200,
+  statusText: (init as any).statusText || 'OK',
+  headers: new Headers({ 'content-type': 'application/json', ...(init as any).headers }),
+  json: () => Promise.resolve(body),
+  text: () => Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)),
+}) as unknown as Response;
 
 // Test theme with required colors
 const testTheme = extendTheme({
@@ -125,14 +134,8 @@ describe('RacesPage', () => {
   it('renders without crashing', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -144,14 +147,8 @@ describe('RacesPage', () => {
   it('displays hero section with correct title and subtitle', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     

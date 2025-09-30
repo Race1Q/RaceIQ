@@ -5,6 +5,16 @@ import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import RaceDetailPage from './RaceDetailPage';
 
+// Helper to build a mock fetch Response-like object with headers
+const jsonResponse = (data: any, init: Partial<Response> = {}) => ({
+  ok: init.ok !== undefined ? init.ok : true,
+  status: init.status ?? (init.ok === false ? 500 : 200),
+  statusText: init.statusText ?? '',
+  headers: new Headers({ 'content-type': 'application/json', ...(init as any).headers }),
+  json: () => Promise.resolve(data),
+  text: () => Promise.resolve(typeof data === 'string' ? data : JSON.stringify(data)),
+});
+
 // Mock react-router-dom
 const mockNavigate = vi.fn();
 const mockUseParams = vi.fn();
@@ -252,59 +262,19 @@ describe('RaceDetailPage', () => {
     
     // Setup default fetch mocks
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/races/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockRace),
-        });
+      try {
+        if (url.includes('/races/1')) return Promise.resolve(jsonResponse(mockRace));
+        if (url.includes('/circuits/1')) return Promise.resolve(jsonResponse({ id: 1, name: 'Bahrain International Circuit' }));
+        if (url.includes('/race-results')) return Promise.resolve(jsonResponse(mockRaceResults));
+        if (url.includes('/qualifying-results')) return Promise.resolve(jsonResponse(mockQualiResults));
+        if (url.includes('/pit-stops')) return Promise.resolve(jsonResponse(mockPitStops));
+        if (url.includes('/laps')) return Promise.resolve(jsonResponse(mockLaps));
+        if (url.includes('/race-events')) return Promise.resolve(jsonResponse(mockEvents));
+        if (url.includes('/race-summary')) return Promise.resolve(jsonResponse(mockSummary));
+        return Promise.resolve(jsonResponse([]));
+      } catch (e) {
+        return Promise.reject(e);
       }
-      if (url.includes('/circuits/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, name: 'Bahrain International Circuit' }),
-        });
-      }
-      if (url.includes('/race-results')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockRaceResults),
-        });
-      }
-      if (url.includes('/qualifying-results')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockQualiResults),
-        });
-      }
-      if (url.includes('/pit-stops')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockPitStops),
-        });
-      }
-      if (url.includes('/laps')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockLaps),
-        });
-      }
-      if (url.includes('/race-events')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockEvents),
-        });
-      }
-      if (url.includes('/race-summary')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockSummary),
-        });
-      }
-      // Default fallback for any other endpoints - ensure arrays are returned
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([]),
-      });
     });
   });
 
@@ -340,20 +310,11 @@ describe('RaceDetailPage', () => {
 
   it('displays error state when race fetch fails', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/races/1')) {
-        return Promise.reject(new Error('Failed to fetch race'));
-      }
-      // Provide proper fallbacks for all endpoints to prevent map errors
-      if (url.includes('/race-results')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
-      }
-      if (url.includes('/qualifying-results')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
-      }
-      if (url.includes('/circuits/1')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 1, name: 'Test Circuit' }) });
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      if (url.includes('/races/1')) return Promise.reject(new Error('Failed to fetch race'));
+      if (url.includes('/race-results')) return Promise.resolve(jsonResponse([]));
+      if (url.includes('/qualifying-results')) return Promise.resolve(jsonResponse([]));
+      if (url.includes('/circuits/1')) return Promise.resolve(jsonResponse({ id: 1, name: 'Test Circuit' }));
+      return Promise.resolve(jsonResponse([]));
     });
 
     renderWithProviders(<RaceDetailPage />);
@@ -496,32 +457,11 @@ describe('RaceDetailPage', () => {
 
   it('handles empty race results gracefully', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/races/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockRace),
-        });
-      }
-      if (url.includes('/race-results')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve([]),
-        });
-      }
-      if (url.includes('/qualifying-results')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve([]),
-        });
-      }
-      if (url.includes('/circuits/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, name: 'Bahrain International Circuit' }),
-        });
-      }
-      // Default fallback for any other endpoints - ensure arrays are returned
-      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      if (url.includes('/races/1')) return Promise.resolve(jsonResponse(mockRace));
+      if (url.includes('/race-results')) return Promise.resolve(jsonResponse([]));
+      if (url.includes('/qualifying-results')) return Promise.resolve(jsonResponse([]));
+      if (url.includes('/circuits/1')) return Promise.resolve(jsonResponse({ id: 1, name: 'Bahrain International Circuit' }));
+      return Promise.resolve(jsonResponse([]));
     });
 
     renderWithProviders(<RaceDetailPage />);
@@ -536,14 +476,8 @@ describe('RaceDetailPage', () => {
 
   it('handles API errors gracefully', async () => {
     mockFetch.mockImplementation((url: string) => {
-      // Only reject for race endpoint, provide fallbacks for others
-      if (url.includes('/races/1')) {
-        return Promise.reject(new Error('Network error'));
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([]),
-      });
+      if (url.includes('/races/1')) return Promise.reject(new Error('Network error'));
+      return Promise.resolve(jsonResponse([]));
     });
 
     renderWithProviders(<RaceDetailPage />);
@@ -586,27 +520,16 @@ describe('RaceDetailPage', () => {
 
   it('handles missing race data gracefully', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/races/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            id: 1,
-            name: 'Test Race',
-            round: 1,
-            date: null,
-            circuit_id: 1,
-            season_id: 2024,
-          }),
-        });
-      }
-      if (url.includes('/circuits/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, name: 'Test Circuit' }),
-        });
-      }
-      // Default fallback for any other endpoints - ensure arrays are returned
-      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      if (url.includes('/races/1')) return Promise.resolve(jsonResponse({
+        id: 1,
+        name: 'Test Race',
+        round: 1,
+        date: null,
+        circuit_id: 1,
+        season_id: 2024,
+      }));
+      if (url.includes('/circuits/1')) return Promise.resolve(jsonResponse({ id: 1, name: 'Test Circuit' }));
+      return Promise.resolve(jsonResponse([]));
     });
 
     renderWithProviders(<RaceDetailPage />);
@@ -661,24 +584,13 @@ describe('RaceDetailPage', () => {
 
   it('handles circuit loading state', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/races/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockRace),
-        });
-      }
+      if (url.includes('/races/1')) return Promise.resolve(jsonResponse(mockRace));
       if (url.includes('/circuits/1')) {
-        // Simulate slow circuit loading
         return new Promise(resolve => {
-          setTimeout(() => {
-            resolve({
-              ok: true,
-              json: () => Promise.resolve({ id: 1, name: 'Bahrain International Circuit' }),
-            });
-          }, 100);
+          setTimeout(() => resolve(jsonResponse({ id: 1, name: 'Bahrain International Circuit' })), 100);
         });
       }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      return Promise.resolve(jsonResponse([]));
     });
 
     renderWithProviders(<RaceDetailPage />);
