@@ -1,23 +1,8 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import HeadToHeadQuickCompareWidget from './HeadToHeadQuickCompareWidget';
-
-// Mock Auth0
-const mockGetAccessTokenSilently = vi.fn();
-vi.mock('@auth0/auth0-react', () => ({
-  useAuth0: () => ({
-    getAccessTokenSilently: mockGetAccessTokenSilently,
-    isAuthenticated: true,
-    user: { sub: 'test-user' },
-  }),
-}));
-
-// Mock buildApiUrl
-vi.mock('../../../lib/api', () => ({
-  buildApiUrl: (path: string) => path,
-}));
 
 // Mock teamColors
 vi.mock('../../../lib/teamColors', () => ({
@@ -33,20 +18,6 @@ vi.mock('../../../lib/teamColors', () => ({
 vi.mock('../../../lib/teamAssets', () => ({
   getTeamLogo: vi.fn((teamName: string) => `/images/teams/${teamName.toLowerCase().replace(/\s+/g, '-')}-logo.png`),
 }));
-
-// Mock driverHeadshots
-vi.mock('../../../lib/driverHeadshots', () => ({
-  driverHeadshots: {
-    'Max Verstappen': '/images/verstappen.jpg',
-    'Lewis Hamilton': '/images/hamilton.jpg',
-    'Charles Leclerc': '/images/leclerc.jpg',
-    'Carlos Sainz': '/images/sainz.jpg',
-  },
-}));
-
-// Mock fetch globally
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 const testTheme = extendTheme({
   colors: {
@@ -80,7 +51,6 @@ const renderWithProviders = (ui: React.ReactElement) => {
 
 const mockHeadToHeadData = {
   driver1: {
-    id: 1,
     fullName: 'Max Verstappen',
     teamName: 'Red Bull Racing',
     headshotUrl: '/images/verstappen.jpg',
@@ -89,7 +59,6 @@ const mockHeadToHeadData = {
     points: 150,
   },
   driver2: {
-    id: 2,
     fullName: 'Lewis Hamilton',
     teamName: 'Mercedes',
     headshotUrl: '/images/hamilton.jpg',
@@ -99,54 +68,7 @@ const mockHeadToHeadData = {
   },
 };
 
-const mockApiResponse = [
-  {
-    id: 1,
-    fullname: 'Max Verstappen',
-    constructor: 'Red Bull Racing',
-    wins: 3,
-    podiums: 5,
-    points: 150,
-    profileimageurl: '/images/verstappen.jpg',
-  },
-  {
-    id: 2,
-    fullname: 'Lewis Hamilton',
-    constructor: 'Mercedes',
-    wins: 1,
-    podiums: 3,
-    points: 120,
-    profileimageurl: '/images/hamilton.jpg',
-  },
-  {
-    id: 3,
-    fullname: 'Charles Leclerc',
-    constructor: 'Ferrari',
-    wins: 0,
-    podiums: 2,
-    points: 75,
-    profileimageurl: '/images/leclerc.jpg',
-  },
-  {
-    id: 4,
-    fullname: 'Carlos Sainz',
-    constructor: 'Ferrari',
-    wins: 1,
-    podiums: 1,
-    points: 50,
-    profileimageurl: '/images/sainz.jpg',
-  },
-];
-
 describe('HeadToHeadQuickCompareWidget', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockGetAccessTokenSilently.mockResolvedValue('mock-token');
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => mockApiResponse,
-    });
-  });
   it('renders loading state when no data provided', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget />);
 
@@ -154,50 +76,33 @@ describe('HeadToHeadQuickCompareWidget', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
-  it('renders head-to-head comparison when data is provided', async () => {
+  it('renders head-to-head comparison when data is provided', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
     expect(screen.getByText('Head to Head')).toBeInTheDocument();
-    
-    await waitFor(() => {
-      const verstappenElements = screen.getAllByText('Max Verstappen');
-      expect(verstappenElements.length).toBeGreaterThan(0);
-    });
-    
-    const hamiltonElements = screen.getAllByText('Lewis Hamilton');
-    expect(hamiltonElements.length).toBeGreaterThan(0);
+    expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+    expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
   });
 
-  it('displays driver names correctly', async () => {
+  it('displays driver names correctly', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
-    await waitFor(() => {
-      const verstappenElements = screen.getAllByText('Max Verstappen');
-      expect(verstappenElements.length).toBeGreaterThan(0);
-    });
-    
-    const hamiltonElements = screen.getAllByText('Lewis Hamilton');
-    expect(hamiltonElements.length).toBeGreaterThan(0);
+    expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+    expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
   });
 
-  it('displays team names correctly', async () => {
+  it('displays team names correctly', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
-    });
-    
+    expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
     expect(screen.getByText('Mercedes')).toBeInTheDocument();
   });
 
-  it('displays driver statistics correctly', async () => {
+  it('displays driver statistics correctly', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Wins: 3')).toBeInTheDocument();
-    });
-
     // Driver 1 stats
+    expect(screen.getByText('Wins: 3')).toBeInTheDocument();
     expect(screen.getByText('Podiums: 5')).toBeInTheDocument();
     expect(screen.getByText('Points: 150')).toBeInTheDocument();
 
@@ -207,32 +112,37 @@ describe('HeadToHeadQuickCompareWidget', () => {
     expect(screen.getByText('Points: 120')).toBeInTheDocument();
   });
 
-  it('displays VS indicator', async () => {
+  it('displays VS indicator', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('VS')).toBeInTheDocument();
-    });
+    expect(screen.getByText('VS')).toBeInTheDocument();
   });
 
-  it('renders driver images with fallback', async () => {
+  it('renders driver images with fallback', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
-    await waitFor(() => {
-      const images = screen.getAllByRole('img');
-      const verstappenImage = images.find(img => img.getAttribute('alt') === 'Max Verstappen');
-      expect(verstappenImage).toBeDefined();
-    });
+    const verstappenImage = screen.getByAltText('Max Verstappen');
+    const hamiltonImage = screen.getByAltText('Lewis Hamilton');
+
+    expect(verstappenImage).toBeInTheDocument();
+    // In test environment, local images don't exist so fallback is used
+    expect(verstappenImage).toHaveAttribute('src', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face');
+    
+    expect(hamiltonImage).toBeInTheDocument();
+    expect(hamiltonImage).toHaveAttribute('src', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face');
   });
 
-  it('renders team logos', async () => {
+  it('renders team logos', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
-    await waitFor(() => {
-      const images = screen.getAllByRole('img');
-      const redBullLogo = images.find(img => img.getAttribute('alt') === 'Red Bull Racing Logo');
-      expect(redBullLogo).toBeDefined();
-    });
+    const redBullLogo = screen.getByAltText('Red Bull Racing Logo');
+    const mercedesLogo = screen.getByAltText('Mercedes Logo');
+
+    expect(redBullLogo).toBeInTheDocument();
+    expect(redBullLogo).toHaveAttribute('src', '/images/teams/red-bull-racing-logo.png');
+    
+    expect(mercedesLogo).toBeInTheDocument();
+    expect(mercedesLogo).toHaveAttribute('src', '/images/teams/mercedes-logo.png');
   });
 
   it('handles null data gracefully', () => {
@@ -249,10 +159,9 @@ describe('HeadToHeadQuickCompareWidget', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
-  it('handles incomplete driver data', async () => {
+  it('handles incomplete driver data', () => {
     const incompleteData = {
       driver1: {
-        id: 1,
         fullName: 'Max Verstappen',
         teamName: 'Red Bull Racing',
         headshotUrl: '/images/verstappen.jpg',
@@ -261,7 +170,6 @@ describe('HeadToHeadQuickCompareWidget', () => {
         points: 150,
       },
       driver2: {
-        id: 2,
         fullName: '',
         teamName: 'Mercedes',
         headshotUrl: '',
@@ -273,16 +181,12 @@ describe('HeadToHeadQuickCompareWidget', () => {
 
     renderWithProviders(<HeadToHeadQuickCompareWidget data={incompleteData} />);
 
-    await waitFor(() => {
-      const verstappenElements = screen.getAllByText('Max Verstappen');
-      expect(verstappenElements.length).toBeGreaterThan(0);
-    });
-    
+    expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
     expect(screen.getByText('Wins: 3')).toBeInTheDocument();
-    expect(screen.getByText('Wins: 1')).toBeInTheDocument(); // From API data (Lewis Hamilton)
+    expect(screen.getByText('Wins: 0')).toBeInTheDocument();
   });
 
-  it('handles unknown teams', async () => {
+  it('handles unknown teams', () => {
     const dataWithUnknownTeams = {
       ...mockHeadToHeadData,
       driver1: {
@@ -297,37 +201,31 @@ describe('HeadToHeadQuickCompareWidget', () => {
 
     renderWithProviders(<HeadToHeadQuickCompareWidget data={dataWithUnknownTeams} />);
 
-    // Component fetches from API so it will show the actual team names from API
-    await waitFor(() => {
-      expect(screen.getAllByText('Red Bull Racing').length).toBeGreaterThan(0);
-    });
+    expect(screen.getByText('Unknown Team')).toBeInTheDocument();
+    expect(screen.getByText('Another Unknown Team')).toBeInTheDocument();
   });
 
-  it('renders with correct layout structure', async () => {
+  it('renders with correct layout structure', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
     // Check for title
     expect(screen.getByText('Head to Head')).toBeInTheDocument();
     
-    await waitFor(() => {
-      expect(screen.getByText('VS')).toBeInTheDocument();
-    });
+    // Check for VS indicator
+    expect(screen.getByText('VS')).toBeInTheDocument();
     
     // Check for both drivers
-    const verstappenElements = screen.getAllByText('Max Verstappen');
-    expect(verstappenElements.length).toBeGreaterThan(0);
-    const hamiltonElements = screen.getAllByText('Lewis Hamilton');
-    expect(hamiltonElements.length).toBeGreaterThan(0);
+    expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+    expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
     
     // Check for stats
     expect(screen.getByText('Wins: 3')).toBeInTheDocument();
     expect(screen.getByText('Wins: 1')).toBeInTheDocument();
   });
 
-  it('handles different driver statistics', async () => {
+  it('handles different driver statistics', () => {
     const differentStatsData = {
       driver1: {
-        id: 3,
         fullName: 'Charles Leclerc',
         teamName: 'Ferrari',
         headshotUrl: '/images/leclerc.jpg',
@@ -336,7 +234,6 @@ describe('HeadToHeadQuickCompareWidget', () => {
         points: 75,
       },
       driver2: {
-        id: 4,
         fullName: 'Carlos Sainz',
         teamName: 'Ferrari',
         headshotUrl: '/images/sainz.jpg',
@@ -348,13 +245,8 @@ describe('HeadToHeadQuickCompareWidget', () => {
 
     renderWithProviders(<HeadToHeadQuickCompareWidget data={differentStatsData} />);
 
-    await waitFor(() => {
-      const leclercElements = screen.getAllByText('Charles Leclerc');
-      expect(leclercElements.length).toBeGreaterThan(0);
-    });
-    
-    const sainzElements = screen.getAllByText('Carlos Sainz');
-    expect(sainzElements.length).toBeGreaterThan(0);
+    expect(screen.getByText('Charles Leclerc')).toBeInTheDocument();
+    expect(screen.getByText('Carlos Sainz')).toBeInTheDocument();
     expect(screen.getByText('Wins: 0')).toBeInTheDocument();
     expect(screen.getByText('Wins: 1')).toBeInTheDocument();
     expect(screen.getByText('Podiums: 2')).toBeInTheDocument();
@@ -367,7 +259,7 @@ describe('HeadToHeadQuickCompareWidget', () => {
     expect(() => renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />)).not.toThrow();
   });
 
-  it('maintains consistent structure between loading and loaded states', async () => {
+  it('maintains consistent structure between loading and loaded states', () => {
     // Test loading state
     const { rerender } = renderWithProviders(<HeadToHeadQuickCompareWidget />);
     
@@ -381,30 +273,22 @@ describe('HeadToHeadQuickCompareWidget', () => {
       </ChakraProvider>
     );
 
-    await waitFor(() => {
-      const verstappenElements = screen.queryAllByText('Max Verstappen');
-      expect(verstappenElements.length).toBeGreaterThan(0);
-    }, { timeout: 3000 });
-    
     expect(screen.getByText('Head to Head')).toBeInTheDocument();
-    const hamiltonElements = screen.getAllByText('Lewis Hamilton');
-    expect(hamiltonElements.length).toBeGreaterThan(0);
+    expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+    expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
     expect(screen.getByText('VS')).toBeInTheDocument();
   });
 
-  it('displays all statistics in correct format', async () => {
+  it('displays all statistics in correct format', () => {
     renderWithProviders(<HeadToHeadQuickCompareWidget data={mockHeadToHeadData} />);
 
-    await waitFor(() => {
-      const winsElements = screen.queryAllByText(/Wins: \d+/);
-      expect(winsElements.length).toBeGreaterThanOrEqual(2);
-    }, { timeout: 3000 });
-    
     // Check that all stats are displayed with proper formatting
+    const winsElements = screen.getAllByText(/Wins: \d+/);
     const podiumsElements = screen.getAllByText(/Podiums: \d+/);
     const pointsElements = screen.getAllByText(/Points: \d+/);
 
-    expect(podiumsElements.length).toBeGreaterThanOrEqual(2);
-    expect(pointsElements.length).toBeGreaterThanOrEqual(2);
+    expect(winsElements).toHaveLength(2);
+    expect(podiumsElements).toHaveLength(2);
+    expect(pointsElements).toHaveLength(2);
   });
 });

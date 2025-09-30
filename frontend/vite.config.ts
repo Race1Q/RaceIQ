@@ -48,38 +48,25 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reportsDirectory: 'coverage',
-      reporter: ['text', 'text-summary', 'lcov', 'html', 'json-summary'],
-      
-      // Show coverage for all files, not just tested ones
-      all: true,
-      
-      // Coverage thresholds (optional - uncomment to enforce)
-      // thresholds: {
-      //   lines: 80,
-      //   functions: 80,
-      //   branches: 80,
-      //   statements: 80,
-      // },
-      
+      reporter: ['text', 'lcov', 'html'],
       include: ['src/**/*.{ts,tsx,js,jsx}'],
       exclude: [
         'src/**/__tests__/**',
         'src/**/*.test.*',
         'src/**/*.spec.*',
         'src/vite-env.d.ts',
-        'src/main.tsx',
-        'src/test-utils.tsx',
-        'src/setupTests.ts',
+        // Files that don't need testing (low value for coverage)
         'src/theme.ts',
         'src/data/**',
         'src/types/**',
         'src/lib/assets.ts',
         'src/lib/teamAssets.ts',
         'src/lib/teamCars.ts',
-        'src/lib/driverHeadshots.ts',
         'src/services/f1Api.ts',
         'src/hooks/useApi.ts',
         'src/context/ThemeContext.tsx',
+        // 'src/**/*.stories.*',
+        // 'src/**/mocks/**',
       ],
     },
   },

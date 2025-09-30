@@ -88,18 +88,18 @@ describe('Sidebar', () => {
     
     // Check for main navigation icons (when collapsed, only icons are visible)
     expect(screen.getByTestId('layout-dashboard-icon')).toBeInTheDocument();
-    expect(screen.getAllByTestId('users-icon')).toHaveLength(2); // Drivers and Standings
-    expect(screen.getByTestId('wrench-icon')).toBeInTheDocument(); // Constructors
+    expect(screen.getAllByTestId('users-icon')).toHaveLength(2); // Drivers and Driver Standings
+    expect(screen.getAllByTestId('wrench-icon')).toHaveLength(2); // Constructors and Constructor Standings
     expect(screen.getByTestId('compare-icon')).toBeInTheDocument();
     expect(screen.getByTestId('flag-icon')).toBeInTheDocument();
     expect(screen.getByTestId('info-icon')).toBeInTheDocument();
   });
 
-  it('does not render admin link in sidebar (admin removed)', () => {
+  it('renders admin link when authenticated', () => {
     renderWithProviders(<Sidebar />);
     
-    // Admin link has been removed from the sidebar
-    expect(screen.queryByTestId('settings-icon')).not.toBeInTheDocument();
+    // When collapsed, only the settings icon is visible for admin
+    expect(screen.getByTestId('settings-icon')).toBeInTheDocument();
   });
 
   it('renders user controls', () => {
@@ -247,8 +247,8 @@ describe('Sidebar', () => {
     renderWithProviders(<Sidebar />);
     
     // When collapsed, only icons are visible, not text
+    expect(screen.getByTestId('settings-icon')).toBeInTheDocument();
     expect(screen.getByTestId('user-circle-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('logout-icon')).toBeInTheDocument();
   });
 
   it('renders all navigation icons', () => {
@@ -256,11 +256,12 @@ describe('Sidebar', () => {
     
     expect(screen.getByTestId('layout-dashboard-icon')).toBeInTheDocument();
     // Use getAllByTestId for duplicate testids
-    expect(screen.getAllByTestId('users-icon')).toHaveLength(2); // Drivers and Standings
-    expect(screen.getByTestId('wrench-icon')).toBeInTheDocument(); // Constructors only
+    expect(screen.getAllByTestId('users-icon')).toHaveLength(2);
+    expect(screen.getAllByTestId('wrench-icon')).toHaveLength(2);
     expect(screen.getByTestId('compare-icon')).toBeInTheDocument();
     expect(screen.getByTestId('flag-icon')).toBeInTheDocument();
     expect(screen.getByTestId('info-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('settings-icon')).toBeInTheDocument();
   });
 
   it('renders control icons', () => {
