@@ -22,9 +22,16 @@ export const driverHeadshots: { [key: string]: string } = {
   "Zhou Guanyu": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Z/ZHOGUA01_Zhou_Guanyu/zhogua01.png.transform/2col-retina/image.png",
   "Daniel Ricciardo": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/D/DANRIC01_Daniel_Ricciardo/danric01.png.transform/2col-retina/image.png",
   "Yuki Tsunoda": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/2col-retina/image.png",
+  "Andrea Kimi Antonelli": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ANDANT01_Andrea_Kimi_Antonelli/andant01.png.transform/2col-retina/image.png",
+  "Isack Hadjar": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/I/ISAHAD01_Isack_Hadjar/isahad01.png.transform/2col-retina/image.png",
+  "Nico Hülkenberg": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/2col-retina/image.png",
+  "Gabriel Bortoleto": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/2col-retina/image.png",
+  "Oliver Bearman": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OLLBEA01_Oliver_Bearman/ollbea01.png.transform/2col-retina/image.png",
+  "Franco Colapinto": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/2col-retina/image.png",
+  "Jack Doohan": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/J/JACDOO01_Jack_Doohan/jacdoo01.png.transform/2col-retina/image.png",
   
   // Reserve/Test Drivers (commonly referenced)
-  "Liam Lawson": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LIAMLAW01_Liam_Lawson/liamlaw01.png.transform/2col-retina/image.png",
+  "Liam Lawson": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/2col-retina/image.png",
   "Ollie Bearman": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OLLBEA01_Ollie_Bearman/ollbea01.png.transform/2col-retina/image.png",
   "Frederik Vesti": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FREVES01_Frederik_Vesti/freves01.png.transform/2col-retina/image.png",
   "Theo Pourchaire": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/T/THEPOU01_Theo_Pourchaire/thepou01.png.transform/2col-retina/image.png",

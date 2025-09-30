@@ -14,6 +14,7 @@ import RaceDetailPage from '../pages/RaceDetailPage/RaceDetailPage';
 import Admin from '../pages/Admin/Admin';
 import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
+import ProtectedDetailRoute from '../components/ProtectedDetailRoute/ProtectedDetailRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import HomePage from '../pages/HomePage/HomePage';
 import { RoleProvider } from '../context/RoleContext';
@@ -129,7 +130,8 @@ function AppContent() {
   const { isAuthenticated, isLoading } = useAuth0();
   
   // Don't show navbar on driver detail pages (they have their own custom header)
-  const showNavbar = !location.pathname.startsWith('/drivers/') || location.pathname === '/drivers';
+  // But show navbar when login prompt is displayed (user not authenticated)
+  const showNavbar = !location.pathname.startsWith('/drivers/') || location.pathname === '/drivers' || !isAuthenticated;
 
   // Gate route rendering until Auth0 finishes loading to avoid route mismatch races
   if (isLoading) {
@@ -209,11 +211,31 @@ function AppContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/drivers" element={<Drivers />} />
-        <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
+        <Route 
+          path="/drivers/:driverId" 
+          element={
+            <ProtectedDetailRoute 
+              title="Unlock Driver Insights"
+              message="Get access to comprehensive driver statistics, career analysis, performance trends, and detailed race history."
+            >
+              <DriverDetailPage />
+            </ProtectedDetailRoute>
+          } 
+        />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/races/:raceId" element={<RaceDetailPage />} />
         <Route path="/constructors" element={<Constructors />} />
-        <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
+        <Route 
+          path="/constructors/:constructorId" 
+          element={
+            <ProtectedDetailRoute 
+              title="Unlock Team Analytics"
+              message="Access detailed constructor performance data, team statistics, championship history, and technical insights."
+            >
+              <ConstructorDetails />
+            </ProtectedDetailRoute>
+          } 
+        />
         <Route path="/compare" element={<CompareDriversPage />} />
       </Routes>
 
