@@ -172,14 +172,8 @@ describe('RacesPage', () => {
   it('displays races when loaded successfully', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -193,14 +187,8 @@ describe('RacesPage', () => {
   it('displays race cards with correct information', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -219,14 +207,8 @@ describe('RacesPage', () => {
   it('displays season selector', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -239,14 +221,8 @@ describe('RacesPage', () => {
   it('allows season selection', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -261,18 +237,9 @@ describe('RacesPage', () => {
   it('fetches races when season changes', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -293,14 +260,8 @@ describe('RacesPage', () => {
   it('displays empty state when no races found', async () => {
     // Mock empty races response
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([]),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse([]));
 
     renderWithProviders(<RacesPage />);
     
@@ -314,10 +275,7 @@ describe('RacesPage', () => {
     vi.clearAllMocks();
     
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
       .mockImplementationOnce(() => {
         throw new Error('Failed to fetch races');
       });
@@ -326,22 +284,16 @@ describe('RacesPage', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Could not load races')).toBeInTheDocument();
-      expect(screen.getByText('Cannot read properties of undefined (reading \'ok\')')).toBeInTheDocument();
+      expect(screen.getByText('Cannot read properties of undefined (reading \'headers\')')).toBeInTheDocument();
     });
   });
 
   it('handles multiple API endpoint attempts for fetching races', async () => {
     // Mock first endpoint failure, second success
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
       .mockRejectedValueOnce(new Error('First endpoint failed'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -358,14 +310,8 @@ describe('RacesPage', () => {
     ];
 
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(unsortedRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(unsortedRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -383,14 +329,8 @@ describe('RacesPage', () => {
     ];
 
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(racesWithMissingData),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(racesWithMissingData));
 
     renderWithProviders(<RacesPage />);
     
@@ -429,14 +369,8 @@ describe('RacesPage', () => {
     // Mock seasons failure, races/years success
     mockFetch
       .mockRejectedValueOnce(new Error('Seasons endpoint failed'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([currentYear, 2024, 2023, 2022]),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([]), // Return empty array to avoid rendering issues
-      });
+      .mockResolvedValueOnce(jsonResponse([currentYear, 2024, 2023, 2022]))
+      .mockResolvedValueOnce(jsonResponse([])); // Return empty array to avoid rendering issues
 
     renderWithProviders(<RacesPage />);
     
@@ -453,10 +387,7 @@ describe('RacesPage', () => {
     mockFetch
       .mockRejectedValueOnce(new Error('Seasons endpoint failed'))
       .mockRejectedValueOnce(new Error('Races/years endpoint failed'))
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([]), // Return empty array to avoid rendering issues
-      });
+      .mockResolvedValueOnce(jsonResponse([])); // Return empty array to avoid rendering issues
 
     renderWithProviders(<RacesPage />);
     
@@ -480,14 +411,8 @@ describe('RacesPage', () => {
     ];
 
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(racesWithStringIds),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(racesWithStringIds));
 
     renderWithProviders(<RacesPage />);
     
@@ -511,14 +436,8 @@ describe('RacesPage', () => {
     vi.clearAllMocks();
     
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(largeRacesList),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(largeRacesList));
 
     const startTime = performance.now();
     renderWithProviders(<RacesPage />);
@@ -540,10 +459,7 @@ describe('RacesPage', () => {
     
     // Mock network error for races endpoint only
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
       .mockImplementationOnce(() => {
         throw new Error('Network error');
       });
@@ -552,21 +468,15 @@ describe('RacesPage', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Could not load races')).toBeInTheDocument();
-      expect(screen.getByText('Cannot read properties of undefined (reading \'ok\')')).toBeInTheDocument();
+      expect(screen.getByText('Cannot read properties of undefined (reading \'headers\')')).toBeInTheDocument();
     }, { timeout: 10000 });
   });
 
   it('handles malformed API responses gracefully', async () => {
     // Mock malformed response
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve('invalid response'),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse('invalid response'));
 
     renderWithProviders(<RacesPage />);
     
@@ -579,14 +489,8 @@ describe('RacesPage', () => {
   it('displays responsive grid layout', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -599,18 +503,9 @@ describe('RacesPage', () => {
   it('updates hero section subtitle when season changes', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
@@ -627,26 +522,11 @@ describe('RacesPage', () => {
   it('handles rapid season changes without race conditions', async () => {
     // Setup successful fetch responses
     mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSeasons),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockRaces),
-      });
+      .mockResolvedValueOnce(jsonResponse(mockSeasons))
+      .mockResolvedValueOnce(jsonResponse(mockRaces))
+      .mockResolvedValueOnce(jsonResponse(mockRaces))
+      .mockResolvedValueOnce(jsonResponse(mockRaces))
+      .mockResolvedValueOnce(jsonResponse(mockRaces));
 
     renderWithProviders(<RacesPage />);
     
