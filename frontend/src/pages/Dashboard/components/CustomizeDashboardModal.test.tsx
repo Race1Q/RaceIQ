@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import CustomizeDashboardModal from './CustomizeDashboardModal';
@@ -37,6 +37,7 @@ const renderWithProviders = (ui: React.ReactElement) => {
 const mockWidgetVisibility = {
   nextRace: true,
   standings: true,
+  constructorStandings: true,
   lastPodium: true,
   fastestLap: true,
   favoriteDriver: true,
@@ -92,7 +93,8 @@ describe('CustomizeDashboardModal', () => {
 
     expect(screen.getByText('Next Race')).toBeInTheDocument();
     expect(screen.getByText('Championship Standings')).toBeInTheDocument();
-    expect(screen.getByText('Last Race Podium')).toBeInTheDocument();
+  expect(screen.getByText('Last Race Podium')).toBeInTheDocument();
+  expect(screen.getByText('Constructor Standings')).toBeInTheDocument();
     expect(screen.getByText('Fastest Lap')).toBeInTheDocument();
     expect(screen.getByText('Favorite Driver')).toBeInTheDocument();
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();
@@ -131,8 +133,8 @@ describe('CustomizeDashboardModal', () => {
     );
 
     // All switches should be checked since all widgets are visible
-    const switches = screen.getAllByRole('checkbox');
-    expect(switches).toHaveLength(8);
+  const switches = screen.getAllByRole('checkbox');
+  expect(switches).toHaveLength(9);
     
     switches.forEach(switchElement => {
       expect(switchElement).toBeChecked();
@@ -149,7 +151,7 @@ describe('CustomizeDashboardModal', () => {
       />
     );
 
-    const switches = screen.getAllByRole('checkbox');
+  const switches = screen.getAllByRole('checkbox');
     const firstSwitch = switches[0];
     
     fireEvent.click(firstSwitch);
@@ -201,6 +203,7 @@ describe('CustomizeDashboardModal', () => {
     const partialVisibility = {
       nextRace: true,
       standings: false,
+      constructorStandings: true,
       lastPodium: true,
       fastestLap: false,
       favoriteDriver: true,
@@ -218,17 +221,17 @@ describe('CustomizeDashboardModal', () => {
       />
     );
 
-    const switches = screen.getAllByRole('checkbox');
-    
-    // Check that switches reflect the partial visibility state
-    expect(switches[0]).toBeChecked(); // nextRace: true
-    expect(switches[1]).not.toBeChecked(); // standings: false
-    expect(switches[2]).toBeChecked(); // lastPodium: true
-    expect(switches[3]).not.toBeChecked(); // fastestLap: false
-    expect(switches[4]).toBeChecked(); // favoriteDriver: true
-    expect(switches[5]).not.toBeChecked(); // favoriteTeam: false
-    expect(switches[6]).toBeChecked(); // headToHead: true
-    expect(switches[7]).not.toBeChecked(); // f1News: false
+  const switches = screen.getAllByRole('checkbox');
+  // Order per component widgets array
+  expect(switches[0]).toBeChecked(); // nextRace
+  expect(switches[1]).not.toBeChecked(); // standings
+  expect(switches[2]).toBeChecked(); // constructorStandings
+  expect(switches[3]).toBeChecked(); // lastPodium
+  expect(switches[4]).not.toBeChecked(); // fastestLap
+  expect(switches[5]).toBeChecked(); // favoriteDriver
+  expect(switches[6]).not.toBeChecked(); // favoriteTeam
+  expect(switches[7]).toBeChecked(); // headToHead
+  expect(switches[8]).not.toBeChecked(); // f1News
   });
 
   it('renders modal with correct styling and backdrop', () => {
@@ -279,8 +282,8 @@ describe('CustomizeDashboardModal', () => {
     );
 
     // Check that we have the expected number of widgets
-    const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes).toHaveLength(8);
+  const checkboxes = screen.getAllByRole('checkbox');
+  expect(checkboxes).toHaveLength(9);
     
     // Just verify that all checkboxes are present and functional
     checkboxes.forEach(checkbox => {
