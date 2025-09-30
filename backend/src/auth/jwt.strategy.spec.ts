@@ -28,7 +28,7 @@ describe('JwtStrategy', () => {
     jest.clearAllMocks();
 
     // Set up default mock config values
-    mockConfigService.get.mockImplementation((key: string) => {
+    mockConfigService.get.mockImplementation((key: unknown) => {
       if (key === 'AUTH0_ISSUER_URL') return 'https://test.auth0.com/';
       if (key === 'AUTH0_AUDIENCE') return 'https://api.test.com';
       return undefined;
@@ -49,9 +49,9 @@ describe('JwtStrategy', () => {
   });
 
   describe('Class Structure', () => {
-    it('should be defined', () => {
-      expect(JwtStrategy).toBeDefined();
-    });
+  it('should be defined', () => {
+    expect(JwtStrategy).toBeDefined();
+  });
 
     it('should be a class', () => {
       expect(typeof JwtStrategy).toBe('function');
@@ -72,7 +72,7 @@ describe('JwtStrategy', () => {
 
   describe('Constructor', () => {
     it('should initialize with valid config', () => {
-      mockConfigService.get.mockImplementation((key: string) => {
+      mockConfigService.get.mockImplementation((key: unknown) => {
         if (key === 'AUTH0_ISSUER_URL') return 'https://test.auth0.com/';
         if (key === 'AUTH0_AUDIENCE') return 'https://api.test.com';
         return undefined;
@@ -84,7 +84,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should throw error when AUTH0_ISSUER_URL is missing', () => {
-      mockConfigService.get.mockImplementation((key: string) => {
+      mockConfigService.get.mockImplementation((key: unknown) => {
         if (key === 'AUTH0_ISSUER_URL') return undefined;
         if (key === 'AUTH0_AUDIENCE') return 'https://api.test.com';
         return undefined;
@@ -96,7 +96,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should throw error when AUTH0_AUDIENCE is missing', () => {
-      mockConfigService.get.mockImplementation((key: string) => {
+      mockConfigService.get.mockImplementation((key: unknown) => {
         if (key === 'AUTH0_ISSUER_URL') return 'https://test.auth0.com/';
         if (key === 'AUTH0_AUDIENCE') return undefined;
         return undefined;
@@ -116,7 +116,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should call config.get with correct keys', () => {
-      mockConfigService.get.mockImplementation((key: string) => {
+      mockConfigService.get.mockImplementation((key: unknown) => {
         if (key === 'AUTH0_ISSUER_URL') return 'https://test.auth0.com/';
         if (key === 'AUTH0_AUDIENCE') return 'https://api.test.com';
         return undefined;
@@ -130,12 +130,13 @@ describe('JwtStrategy', () => {
   });
 
   describe('validate method', () => {
+    let logSpy: any;
+    let errorSpy: any;
+
     beforeEach(() => {
       // Mock the logger methods
-      strategy['logger'] = {
-        log: jest.fn(),
-        error: jest.fn()
-      } as any;
+      logSpy = jest.spyOn(strategy['logger'], 'log').mockImplementation(() => {});
+      errorSpy = jest.spyOn(strategy['logger'], 'error').mockImplementation(() => {});
     });
 
     it('should validate JWT payload successfully', async () => {
@@ -151,13 +152,13 @@ describe('JwtStrategy', () => {
       const result = await strategy.validate(mockPayload);
 
       expect(result).toEqual(mockPayload);
-      expect(strategy['logger'].log).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         `Validating JWT for auth0_sub: ${mockPayload.sub}, email: ${mockPayload.email}`
       );
-      expect(strategy['logger'].log).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         `JWT payload: ${JSON.stringify(mockPayload, null, 2)}`
       );
-      expect(strategy['logger'].log).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         `JWT validation successful for auth0_sub: ${mockPayload.sub}`
       );
     });
@@ -223,7 +224,7 @@ describe('JwtStrategy', () => {
       const result = await strategy.validate(mockPayload);
 
       expect(result).toEqual(mockPayload);
-      expect(strategy['logger'].log).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         `Validating JWT for auth0_sub: ${mockPayload.sub}, email: ${undefined}`
       );
     });
@@ -261,7 +262,7 @@ describe('JwtStrategy', () => {
         'No sub claim found in JWT payload'
       );
 
-      expect(strategy['logger'].error).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Error in JWT validation: No sub claim found in JWT payload'),
         expect.any(String)
       );
@@ -309,11 +310,12 @@ describe('JwtStrategy', () => {
   });
 
   describe('Error Handling', () => {
+    let logSpy: any;
+    let errorSpy: any;
+
     beforeEach(() => {
-      strategy['logger'] = {
-        log: jest.fn(),
-        error: jest.fn()
-      } as any;
+      logSpy = jest.spyOn(strategy['logger'], 'log').mockImplementation(() => {});
+      errorSpy = jest.spyOn(strategy['logger'], 'error').mockImplementation(() => {});
     });
 
     it('should handle validation errors gracefully', async () => {
@@ -321,7 +323,7 @@ describe('JwtStrategy', () => {
 
       await expect(strategy.validate(mockPayload)).rejects.toThrow();
 
-      expect(strategy['logger'].error).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Error in JWT validation:'),
         expect.any(String)
       );
@@ -339,11 +341,12 @@ describe('JwtStrategy', () => {
   });
 
   describe('Logging', () => {
+    let logSpy: any;
+    let errorSpy: any;
+
     beforeEach(() => {
-      strategy['logger'] = {
-        log: jest.fn(),
-        error: jest.fn()
-      } as any;
+      logSpy = jest.spyOn(strategy['logger'], 'log').mockImplementation(() => {});
+      errorSpy = jest.spyOn(strategy['logger'], 'error').mockImplementation(() => {});
     });
 
     it('should log validation start', async () => {
@@ -354,7 +357,7 @@ describe('JwtStrategy', () => {
 
       await strategy.validate(mockPayload);
 
-      expect(strategy['logger'].log).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         `Validating JWT for auth0_sub: ${mockPayload.sub}, email: ${mockPayload.email}`
       );
     });
@@ -367,7 +370,7 @@ describe('JwtStrategy', () => {
 
       await strategy.validate(mockPayload);
 
-      expect(strategy['logger'].log).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         `JWT payload: ${JSON.stringify(mockPayload, null, 2)}`
       );
     });
@@ -380,7 +383,7 @@ describe('JwtStrategy', () => {
 
       await strategy.validate(mockPayload);
 
-      expect(strategy['logger'].log).toHaveBeenCalledWith(
+      expect(logSpy).toHaveBeenCalledWith(
         `JWT validation successful for auth0_sub: ${mockPayload.sub}`
       );
     });
@@ -390,7 +393,7 @@ describe('JwtStrategy', () => {
 
       await expect(strategy.validate(mockPayload)).rejects.toThrow();
 
-      expect(strategy['logger'].error).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Error in JWT validation:'),
         expect.any(String)
       );

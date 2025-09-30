@@ -1,970 +1,1046 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
 import { SupabaseService } from '../supabase/supabase.service';
-
-// Mock interfaces based on the service
-interface DbSession {
-  id: number;
-  type: string;
-  start_time: string;
-  race_id: number;
-}
-
-interface OpenF1Session {
-  session_key: number;
-  session_name: string;
-  country_name: string;
-  meeting_key: number;
-  date_start: string;
-  year: number;
-}
-
-interface OpenF1Meeting {
-  meeting_key: number;
-  meeting_name: string;
-}
-
-interface OpenF1Weather {
-  air_temperature: number;
-  track_temperature: number;
-  rainfall: number;
-  humidity: number;
-  wind_speed: number;
-}
-
-interface OpenF1Stint {
-  stint_number: number;
-  lap_start: number;
-  lap_end: number;
-  driver_number: number;
-  compound: string | null;
-  tyre_age_at_start: number | null;
-}
-
-interface OpenF1RaceControl {
-  date: string;
-  category: string;
-  flag?: string;
-  message: string;
-}
-
-interface OpenF1Driver {
-  driver_number: number;
-  full_name: string;
-  name_acronym: string;
-  team_name: string;
-  q1: string | null;
-  q2: string | null;
-  q3: string | null;
-}
-
-interface OpenF1Position {
-  session_key: number;
-  driver_number: number;
-  position: number;
-}
-
-interface OpenF1RaceResult {
-  session_key: number;
-  driver_number: number;
-  position: number;
-  points: number;
-  grid_position: number;
-  laps: number;
-  time: string;
-  status: string;
-}
-
-interface OpenF1Lap {
-  session_key: number;
-  driver_number: number;
-  lap_number: number;
-  position: number;
-  lap_duration: number;
-  is_pit_out_lap: boolean;
-  duration_sector_1: number | null;
-  duration_sector_2: number | null;
-  duration_sector_3: number | null;
-}
-
-interface OpenF1PitStop {
-  session_key: number;
-  driver_number: number;
-  lap_number: number;
-  pit_duration: number;
-  duration: number;
-}
-
-// Mock the OpenF1Service to avoid import issues
-const mockOpenF1Service = {
-  ingestSessionsAndWeather: jest.fn(),
-  ingestGranularData: jest.fn(),
-  ingestModernResultsAndLaps: jest.fn(),
-  ingestTrackLayouts: jest.fn(),
-  fetchOpenF1Data: jest.fn(),
-  timeStringToMs: jest.fn(),
-  mapSessionType: jest.fn(),
-};
+import { OpenF1Service } from './openf1.service';
+import { of, throwError } from 'rxjs';
 
 describe('OpenF1Service', () => {
-  const mockOpenF1Session: OpenF1Session = {
-    session_key: 12345,
-    session_name: 'Race',
-    country_name: 'Monaco',
-    meeting_key: 67890,
-    date_start: '2023-05-28T15:00:00Z',
-    year: 2023,
-  };
+  let service: OpenF1Service;
+  let httpService: jest.Mocked<HttpService>;
+  let supabaseService: jest.Mocked<SupabaseService>;
 
-  const mockOpenF1Meeting: OpenF1Meeting = {
-    meeting_key: 67890,
-    meeting_name: 'Monaco Grand Prix',
-  };
+  beforeEach(async () => {
+    const mockHttpService = {
+      get: jest.fn(),
+    };
 
-  const mockOpenF1Weather: OpenF1Weather = {
-    air_temperature: 25.5,
-    track_temperature: 35.2,
-    rainfall: 0,
-    humidity: 60,
-    wind_speed: 5.5,
-  };
+    const mockSupabaseService = {
+      client: {
+        from: jest.fn(),
+      },
+    };
 
-  const mockOpenF1Stint: OpenF1Stint = {
-    stint_number: 1,
-    lap_start: 1,
-    lap_end: 20,
-    driver_number: 44,
-    compound: 'MEDIUM',
-    tyre_age_at_start: 0,
-  };
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OpenF1Service,
+        {
+          provide: HttpService,
+          useValue: mockHttpService,
+        },
+        {
+          provide: SupabaseService,
+          useValue: mockSupabaseService,
+        },
+      ],
+    }).compile();
 
-  const mockOpenF1RaceControl: OpenF1RaceControl = {
-    date: '2023-05-28T15:30:00Z',
-    category: 'Flag',
-    flag: 'YELLOW',
-    message: 'Yellow flag in sector 2',
-  };
-
-  const mockOpenF1Driver: OpenF1Driver = {
-    driver_number: 44,
-    full_name: 'Lewis Hamilton',
-    name_acronym: 'HAM',
-    team_name: 'Mercedes',
-    q1: '1:20.123',
-    q2: '1:19.456',
-    q3: '1:18.789',
-  };
-
-  const mockOpenF1Position: OpenF1Position = {
-    session_key: 12345,
-    driver_number: 44,
-    position: 1,
-  };
-
-  const mockOpenF1RaceResult: OpenF1RaceResult = {
-    session_key: 12345,
-    driver_number: 44,
-    position: 1,
-    points: 25,
-    grid_position: 1,
-    laps: 78,
-    time: '1:30:45.123',
-    status: 'Finished',
-  };
-
-  const mockOpenF1Lap: OpenF1Lap = {
-    session_key: 12345,
-    driver_number: 44,
-    lap_number: 1,
-    position: 1,
-    lap_duration: 90.123,
-    is_pit_out_lap: false,
-    duration_sector_1: 30.456,
-    duration_sector_2: 29.789,
-    duration_sector_3: 29.878,
-  };
-
-  const mockOpenF1PitStop: OpenF1PitStop = {
-    session_key: 12345,
-    driver_number: 44,
-    lap_number: 20,
-    pit_duration: 2.5,
-    duration: 25.0,
-  };
-
-  const mockDbSession: DbSession = {
-    id: 1,
-    type: 'RACE',
-    start_time: '2023-05-28T15:00:00Z',
-    race_id: 1,
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
+    service = module.get<OpenF1Service>(OpenF1Service);
+    httpService = module.get(HttpService);
+    supabaseService = module.get(SupabaseService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(mockOpenF1Service).toBeDefined();
-  });
-
-  describe('ingestSessionsAndWeather', () => {
-    it('should ingest sessions and weather successfully', async () => {
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-
-      await mockOpenF1Service.ingestSessionsAndWeather(2023);
-
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledTimes(1);
+  describe('service initialization', () => {
+    it('should be defined', () => {
+      expect(service).toBeDefined();
     });
 
-    it('should handle session and weather ingestion errors', async () => {
-      const error = new Error('Session and weather ingestion failed');
-      mockOpenF1Service.ingestSessionsAndWeather.mockRejectedValue(error);
-
-      await expect(mockOpenF1Service.ingestSessionsAndWeather(2023)).rejects.toThrow('Session and weather ingestion failed');
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledWith(2023);
+    it('should be an instance of OpenF1Service', () => {
+      expect(service).toBeInstanceOf(OpenF1Service);
     });
 
-    it('should handle different years', async () => {
-      const years = [2021, 2022, 2023, 2024];
-      
-      for (const year of years) {
-        mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValueOnce(undefined);
-        await mockOpenF1Service.ingestSessionsAndWeather(year);
-        expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledWith(year);
-      }
-    });
-
-    it('should complete without errors', async () => {
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-
-      await expect(mockOpenF1Service.ingestSessionsAndWeather(2023)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('ingestGranularData', () => {
-    it('should ingest granular data successfully', async () => {
-      mockOpenF1Service.ingestGranularData.mockResolvedValue(undefined);
-
-      await mockOpenF1Service.ingestGranularData(2023);
-
-      expect(mockOpenF1Service.ingestGranularData).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestGranularData).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle granular data ingestion errors', async () => {
-      const error = new Error('Granular data ingestion failed');
-      mockOpenF1Service.ingestGranularData.mockRejectedValue(error);
-
-      await expect(mockOpenF1Service.ingestGranularData(2023)).rejects.toThrow('Granular data ingestion failed');
-      expect(mockOpenF1Service.ingestGranularData).toHaveBeenCalledWith(2023);
-    });
-
-    it('should handle different years', async () => {
-      const years = [2021, 2022, 2023, 2024];
-      
-      for (const year of years) {
-        mockOpenF1Service.ingestGranularData.mockResolvedValueOnce(undefined);
-        await mockOpenF1Service.ingestGranularData(year);
-        expect(mockOpenF1Service.ingestGranularData).toHaveBeenCalledWith(year);
-      }
-    });
-
-    it('should complete without errors', async () => {
-      mockOpenF1Service.ingestGranularData.mockResolvedValue(undefined);
-
-      await expect(mockOpenF1Service.ingestGranularData(2023)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('ingestModernResultsAndLaps', () => {
-    it('should ingest modern results and laps successfully', async () => {
-      mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValue(undefined);
-
-      await mockOpenF1Service.ingestModernResultsAndLaps(2023);
-
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle modern results and laps ingestion errors', async () => {
-      const error = new Error('Modern results and laps ingestion failed');
-      mockOpenF1Service.ingestModernResultsAndLaps.mockRejectedValue(error);
-
-      await expect(mockOpenF1Service.ingestModernResultsAndLaps(2023)).rejects.toThrow('Modern results and laps ingestion failed');
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toHaveBeenCalledWith(2023);
-    });
-
-    it('should handle different years', async () => {
-      const years = [2021, 2022, 2023, 2024];
-      
-      for (const year of years) {
-        mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValueOnce(undefined);
-        await mockOpenF1Service.ingestModernResultsAndLaps(year);
-        expect(mockOpenF1Service.ingestModernResultsAndLaps).toHaveBeenCalledWith(year);
-      }
-    });
-
-    it('should complete without errors', async () => {
-      mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValue(undefined);
-
-      await expect(mockOpenF1Service.ingestModernResultsAndLaps(2023)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('ingestTrackLayouts', () => {
-    it('should ingest track layouts successfully', async () => {
-      mockOpenF1Service.ingestTrackLayouts.mockResolvedValue(undefined);
-
-      await mockOpenF1Service.ingestTrackLayouts();
-
-      expect(mockOpenF1Service.ingestTrackLayouts).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle track layouts ingestion errors', async () => {
-      const error = new Error('Track layouts ingestion failed');
-      mockOpenF1Service.ingestTrackLayouts.mockRejectedValue(error);
-
-      await expect(mockOpenF1Service.ingestTrackLayouts()).rejects.toThrow('Track layouts ingestion failed');
-      expect(mockOpenF1Service.ingestTrackLayouts).toHaveBeenCalledTimes(1);
-    });
-
-    it('should complete without errors', async () => {
-      mockOpenF1Service.ingestTrackLayouts.mockResolvedValue(undefined);
-
-      await expect(mockOpenF1Service.ingestTrackLayouts()).resolves.toBeUndefined();
+    it('should have all required methods', () => {
+      expect(typeof service.ingestSessionsAndWeather).toBe('function');
+      expect(typeof service.ingestGranularData).toBe('function');
+      expect(typeof service.ingestModernResultsAndLaps).toBe('function');
+      expect(typeof service.ingestTrackLayouts).toBe('function');
     });
   });
 
   describe('fetchOpenF1Data', () => {
-    it('should fetch OpenF1 data successfully', async () => {
-      const mockData = [mockOpenF1Session, mockOpenF1Meeting];
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue(mockData);
+    it('should fetch data successfully', async () => {
+      const mockData = [{ session_key: 12345 }];
+      httpService.get.mockReturnValue(of({ data: mockData } as any));
 
-      const result = await mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023');
+      const result = await service['fetchOpenF1Data']('/sessions?year=2023');
 
       expect(result).toEqual(mockData);
-      expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledWith('/sessions?year=2023');
+      expect(httpService.get).toHaveBeenCalledWith('https://api.openf1.org/v1/sessions?year=2023');
     });
 
-    it('should handle empty results', async () => {
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue([]);
+    it('should return empty array on error', async () => {
+      httpService.get.mockReturnValue(throwError(() => new Error('API Error')));
 
-      const result = await mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023');
+      const result = await service['fetchOpenF1Data']('/sessions?year=2023');
 
       expect(result).toEqual([]);
-      expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledWith('/sessions?year=2023');
     });
 
-    it('should handle API errors', async () => {
-      const error = new Error('API request failed');
-      mockOpenF1Service.fetchOpenF1Data.mockRejectedValue(error);
-
-      await expect(mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023')).rejects.toThrow('API request failed');
-      expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledWith('/sessions?year=2023');
-    });
-
-    it('should handle rate limiting', async () => {
-      const error = new Error('Rate limited');
-      error.response = { status: 429 };
-      mockOpenF1Service.fetchOpenF1Data.mockRejectedValue(error);
-
-      await expect(mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023')).rejects.toThrow('Rate limited');
-      expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledWith('/sessions?year=2023');
-    });
-
-    it('should handle different endpoint types', async () => {
-      const endpoints = [
-        '/sessions?year=2023',
-        '/meetings?year=2023',
-        '/weather?session_key=12345',
-        '/stints?session_key=12345',
-        '/race_control?session_key=12345',
-        '/drivers?session_key=12345',
-        '/laps?session_key=12345',
-        '/pit?session_key=12345',
-        '/location?session_key=12345&lap_number=5',
-      ];
+    it('should handle rate limiting with retry', async () => {
+      const error = { response: { status: 429 } };
+      const mockData = [{ session_key: 12345 }];
       
-      for (const endpoint of endpoints) {
-        mockOpenF1Service.fetchOpenF1Data.mockResolvedValueOnce([]);
-        await mockOpenF1Service.fetchOpenF1Data(endpoint);
-        expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledWith(endpoint);
-      }
+      httpService.get
+        .mockReturnValueOnce(throwError(() => error))
+        .mockReturnValueOnce(of({ data: mockData } as any));
+
+      const result = await service['fetchOpenF1Data']('/sessions?year=2023', 0);
+
+      expect(result).toEqual(mockData);
+      expect(httpService.get).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('timeStringToMs', () => {
-    it('should convert time string to milliseconds correctly', () => {
-      mockOpenF1Service.timeStringToMs.mockReturnValue(90123);
-
-      const result = mockOpenF1Service.timeStringToMs('1:30.123');
-
-      expect(result).toBe(90123);
-      expect(mockOpenF1Service.timeStringToMs).toHaveBeenCalledWith('1:30.123');
+    it('should convert minutes:seconds format', () => {
+      expect(service['timeStringToMs']('1:30.123')).toBe(90123);
     });
 
-    it('should handle different time formats', () => {
-      const timeFormats = [
-        { input: '1:30:45.123', expected: 5445123 },
-        { input: '1:30.123', expected: 90123 },
-        { input: '30.123', expected: 30123 },
-      ];
-
-      timeFormats.forEach(({ input, expected }) => {
-        mockOpenF1Service.timeStringToMs.mockReturnValueOnce(expected);
-        const result = mockOpenF1Service.timeStringToMs(input);
-        expect(result).toBe(expected);
-      });
+    it('should convert seconds only format', () => {
+      expect(service['timeStringToMs']('30.123')).toBe(30123);
     });
 
-    it('should return null for invalid time formats', () => {
-      mockOpenF1Service.timeStringToMs.mockReturnValue(null);
-
-      const result = mockOpenF1Service.timeStringToMs('invalid');
-
-      expect(result).toBeNull();
-      expect(mockOpenF1Service.timeStringToMs).toHaveBeenCalledWith('invalid');
+    it('should handle null input', () => {
+      expect(service['timeStringToMs'](null)).toBeNull();
     });
 
-    it('should return null for null input', () => {
-      mockOpenF1Service.timeStringToMs.mockReturnValue(null);
-
-      const result = mockOpenF1Service.timeStringToMs(null);
-
-      expect(result).toBeNull();
-      expect(mockOpenF1Service.timeStringToMs).toHaveBeenCalledWith(null);
+    it('should return null for invalid format', () => {
+      expect(service['timeStringToMs']('invalid:format:string')).toBeNull();
     });
   });
 
   describe('mapSessionType', () => {
     it('should map session types correctly', () => {
-      const sessionTypes = [
-        { input: 'Practice 1', expected: 'PRACTICE' },
-        { input: 'Practice 2', expected: 'PRACTICE' },
-        { input: 'Practice 3', expected: 'PRACTICE' },
-        { input: 'Qualifying', expected: 'QUALIFYING' },
-        { input: 'Sprint Qualifying', expected: 'SPRINT' },
-        { input: 'Sprint Race', expected: 'SPRINT' },
-        { input: 'Race', expected: 'RACE' },
-        { input: 'Unknown Session', expected: 'UNKNOWN' },
-      ];
+      expect(service['mapSessionType']('Practice 1')).toBe('PRACTICE');
+      expect(service['mapSessionType']('Qualifying')).toBe('QUALIFYING');
+      expect(service['mapSessionType']('Sprint')).toBe('SPRINT');
+      expect(service['mapSessionType']('Race')).toBe('RACE');
+      expect(service['mapSessionType']('Unknown')).toBe('UNKNOWN');
+    });
 
-      sessionTypes.forEach(({ input, expected }) => {
-        mockOpenF1Service.mapSessionType.mockReturnValueOnce(expected);
-        const result = mockOpenF1Service.mapSessionType(input);
-        expect(result).toBe(expected);
+    it('should handle case insensitivity', () => {
+      expect(service['mapSessionType']('practice 1')).toBe('PRACTICE');
+      expect(service['mapSessionType']('QUALIFYING')).toBe('QUALIFYING');
+    });
+  });
+
+  describe('ingestSessionsAndWeather', () => {
+    it('should return early if season not found', async () => {
+      (supabaseService.client.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
       });
+
+      await service.ingestSessionsAndWeather(2023);
+
+      expect(supabaseService.client.from).toHaveBeenCalledWith('seasons');
     });
 
-    it('should handle case insensitive mapping', () => {
-      const sessionTypes = [
-        { input: 'practice 1', expected: 'PRACTICE' },
-        { input: 'PRACTICE 2', expected: 'PRACTICE' },
-        { input: 'qualifying', expected: 'QUALIFYING' },
-        { input: 'QUALIFYING', expected: 'QUALIFYING' },
-        { input: 'race', expected: 'RACE' },
-        { input: 'RACE', expected: 'RACE' },
-      ];
-
-      sessionTypes.forEach(({ input, expected }) => {
-        mockOpenF1Service.mapSessionType.mockReturnValueOnce(expected);
-        const result = mockOpenF1Service.mapSessionType(input);
-        expect(result).toBe(expected);
-      });
-    });
-
-    it('should return UNKNOWN for unrecognized session types', () => {
-      mockOpenF1Service.mapSessionType.mockReturnValue('UNKNOWN');
-
-      const result = mockOpenF1Service.mapSessionType('Unknown Session Type');
-
-      expect(result).toBe('UNKNOWN');
-      expect(mockOpenF1Service.mapSessionType).toHaveBeenCalledWith('Unknown Session Type');
-    });
-  });
-
-  describe('service structure', () => {
-    it('should be a service object', () => {
-      expect(typeof mockOpenF1Service).toBe('object');
-    });
-
-    it('should have proper service methods', () => {
-      expect(mockOpenF1Service).toHaveProperty('ingestSessionsAndWeather');
-      expect(mockOpenF1Service).toHaveProperty('ingestGranularData');
-      expect(mockOpenF1Service).toHaveProperty('ingestModernResultsAndLaps');
-      expect(mockOpenF1Service).toHaveProperty('ingestTrackLayouts');
-      expect(mockOpenF1Service).toHaveProperty('fetchOpenF1Data');
-      expect(mockOpenF1Service).toHaveProperty('timeStringToMs');
-      expect(mockOpenF1Service).toHaveProperty('mapSessionType');
-    });
-
-    it('should have all required methods as functions', () => {
-      const requiredMethods = [
-        'ingestSessionsAndWeather',
-        'ingestGranularData',
-        'ingestModernResultsAndLaps',
-        'ingestTrackLayouts',
-        'fetchOpenF1Data',
-        'timeStringToMs',
-        'mapSessionType',
-      ];
-
-      requiredMethods.forEach(method => {
-        expect(typeof mockOpenF1Service[method]).toBe('function');
-      });
-    });
-  });
-
-  describe('service integration', () => {
-    it('should call all ingestion methods in sequence', async () => {
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestGranularData.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestTrackLayouts.mockResolvedValue(undefined);
-
-      // Simulate the orchestration
-      await mockOpenF1Service.ingestSessionsAndWeather(2023);
-      await mockOpenF1Service.ingestGranularData(2023);
-      await mockOpenF1Service.ingestModernResultsAndLaps(2023);
-      await mockOpenF1Service.ingestTrackLayouts();
-
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestGranularData).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestTrackLayouts).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle partial failures gracefully', async () => {
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestGranularData.mockRejectedValue(new Error('Granular data ingestion failed'));
-      mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValue(undefined);
-
-      await expect(mockOpenF1Service.ingestSessionsAndWeather(2023)).resolves.toBeUndefined();
-      await expect(mockOpenF1Service.ingestGranularData(2023)).rejects.toThrow('Granular data ingestion failed');
-      await expect(mockOpenF1Service.ingestModernResultsAndLaps(2023)).resolves.toBeUndefined();
-    });
-
-    it('should not modify service responses', async () => {
-      const originalData = [mockOpenF1Session];
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue(originalData);
-
-      const result = await mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023');
-
-      expect(result).toBe(originalData);
-    });
-  });
-
-  describe('concurrent requests', () => {
-    it('should handle multiple concurrent fetchOpenF1Data requests', async () => {
-      const mockData = [mockOpenF1Session];
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue(mockData);
-
-      const promises = [
-        mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023'),
-        mockOpenF1Service.fetchOpenF1Data('/meetings?year=2023'),
-        mockOpenF1Service.fetchOpenF1Data('/weather?session_key=12345'),
-      ];
-
-      const results = await Promise.all(promises);
-
-      expect(results).toHaveLength(3);
-      expect(results.every(result => result === mockData)).toBe(true);
-      expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledTimes(3);
-    });
-
-    it('should handle multiple concurrent ingestion requests', async () => {
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestGranularData.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValue(undefined);
-
-      const promises = [
-        mockOpenF1Service.ingestSessionsAndWeather(2023),
-        mockOpenF1Service.ingestGranularData(2023),
-        mockOpenF1Service.ingestModernResultsAndLaps(2023),
-      ];
-
-      const results = await Promise.all(promises);
-
-      expect(results).toHaveLength(3);
-      expect(results.every(result => result === undefined)).toBe(true);
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestGranularData).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toHaveBeenCalledWith(2023);
-    });
-
-    it('should handle mixed concurrent requests', async () => {
-      const mockData = [mockOpenF1Session];
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue(mockData);
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-      mockOpenF1Service.timeStringToMs.mockReturnValue(90123);
-
-      const promises = [
-        mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023'),
-        mockOpenF1Service.ingestSessionsAndWeather(2023),
-        mockOpenF1Service.timeStringToMs('1:30.123'),
-      ];
-
-      const results = await Promise.all(promises);
-
-      expect(results).toHaveLength(3);
-      expect(results[0]).toBe(mockData);
-      expect(results[1]).toBeUndefined();
-      expect(results[2]).toBe(90123);
-    });
-  });
-
-  describe('error propagation', () => {
-    it('should propagate all service errors for ingestion methods', async () => {
-      const errors = [
-        new Error('Sessions and weather ingestion failed'),
-        new Error('Granular data ingestion failed'),
-        new Error('Modern results and laps ingestion failed'),
-        new Error('Track layouts ingestion failed'),
-      ];
-
-      const methods = [
-        mockOpenF1Service.ingestSessionsAndWeather,
-        mockOpenF1Service.ingestGranularData,
-        mockOpenF1Service.ingestModernResultsAndLaps,
-        mockOpenF1Service.ingestTrackLayouts,
-      ];
-
-      for (let i = 0; i < methods.length; i++) {
-        methods[i].mockRejectedValueOnce(errors[i]);
-        if (i < 3) {
-          await expect(methods[i](2023)).rejects.toThrow(errors[i].message);
-        } else {
-          await expect(methods[i]()).rejects.toThrow(errors[i].message);
+    it('should return early if no races found', async () => {
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
         }
-      }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ data: [] }),
+          }),
+        };
+      });
+
+      await service.ingestSessionsAndWeather(2023);
+      expect(supabaseService.client.from).toHaveBeenCalledWith('races');
     });
 
-    it('should propagate all service errors for fetchOpenF1Data', async () => {
-      const errors = [
-        new Error('API timeout'),
-        new Error('Network error'),
-        new Error('Invalid response'),
-        new Error('Rate limited'),
+    it('should return early if no OpenF1 sessions found', async () => {
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: [{ id: 1, name: 'Test GP' }] }),
+            }),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: [] } as any);
+        if (url.includes('/sessions')) return of({ data: [] } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestSessionsAndWeather(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should skip session if meeting not found', async () => {
+      const mockRaces = [{ id: 1, name: 'Bahrain Grand Prix' }];
+      const mockMeetings = [{ meeting_key: 9999, meeting_name: 'Different GP' }];
+      const mockSessions = [{
+        session_key: 5678,
+        session_name: 'Race',
+        meeting_key: 1234,
+        date_start: '2023-03-05T15:00:00',
+      }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: mockRaces }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({}),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestSessionsAndWeather(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should skip session if race not found in map', async () => {
+      const mockRaces = [{ id: 1, name: 'Bahrain Grand Prix' }];
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Monaco Grand Prix' }];
+      const mockSessions = [{
+        session_key: 5678,
+        session_name: 'Race',
+        meeting_key: 1234,
+        date_start: '2023-05-28T15:00:00',
+      }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: mockRaces }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({}),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestSessionsAndWeather(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should handle Sao Paulo name mismatch', async () => {
+      const mockRaces = [{ id: 1, name: 'São Paulo Grand Prix' }];
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Sao Paulo Grand Prix' }];
+      const mockSessions = [{
+        session_key: 5678,
+        session_name: 'Race',
+        meeting_key: 1234,
+        date_start: '2023-11-05T18:00:00',
+      }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: mockRaces }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({}),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        if (url.includes('/weather')) return of({ data: [] } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestSessionsAndWeather(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should successfully ingest sessions with weather data', async () => {
+      const mockRaces = [{ id: 1, name: 'Bahrain Grand Prix' }];
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Bahrain Grand Prix' }];
+      const mockSessions = [{
+        session_key: 5678,
+        session_name: 'Race',
+        meeting_key: 1234,
+        date_start: '2023-03-05T15:00:00',
+      }];
+      const mockWeather = [{ air_temperature: 25, track_temperature: 35 }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: mockRaces }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({}),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        if (url.includes('/weather')) return of({ data: mockWeather } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestSessionsAndWeather(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should handle insert error gracefully', async () => {
+      const mockRaces = [{ id: 1, name: 'Bahrain Grand Prix' }];
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Bahrain Grand Prix' }];
+      const mockSessions = [{
+        session_key: 5678,
+        session_name: 'Race',
+        meeting_key: 1234,
+        date_start: '2023-03-05T15:00:00',
+      }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: mockRaces }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({ error: 'Insert failed' }),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        if (url.includes('/weather')) return of({ data: [] } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestSessionsAndWeather(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+  });
+
+  describe('ingestGranularData', () => {
+    it('should return early if no OpenF1 sessions', async () => {
+      httpService.get.mockReturnValue(of({ data: [] } as any));
+      await service.ingestGranularData(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should return early if season not found', async () => {
+      httpService.get.mockReturnValue(of({ data: [{ session_key: 1 }] } as any));
+      (supabaseService.client.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      });
+
+      await service.ingestGranularData(2023);
+      expect(supabaseService.client.from).toHaveBeenCalledWith('seasons');
+    });
+
+    it('should return early if no race session for driver mapping', async () => {
+      const mockSessions = [{ session_key: 1, session_name: 'Practice 1', meeting_key: 100 }];
+      const mockMeetings = [{ meeting_key: 100, meeting_name: 'Test Grand Prix' }];
+      
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/sessions?')) return of({ data: mockSessions } as any);
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        return of({ data: [] } as any);
+      });
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: [{ id: 1, name: 'Test GP' }] }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({ data: [] }),
+            }),
+          };
+        }
+      });
+
+      await service.ingestGranularData(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should successfully ingest tire stints and race events', async () => {
+      const mockSessions = [{ 
+        session_key: 5678, 
+        session_name: 'Race', 
+        meeting_key: 1234, 
+        year: 2023 
+      }];
+      const mockDbSessions = [{ id: 1, type: 'RACE', race_id: 1 }];
+      const mockStints = [{
+        stint_number: 1,
+        lap_start: 1,
+        lap_end: 20,
+        driver_number: 44,
+        compound: 'SOFT',
+        tyre_age_at_start: 0,
+      }];
+      const mockEvents = [{
+        date: '2023-03-05T15:30:00',
+        category: 'Flag',
+        flag: 'YELLOW',
+        message: 'Yellow flag',
+      }];
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/sessions?')) return of({ data: mockSessions } as any);
+        if (url.includes('/meetings')) return of({ data: [{ meeting_key: 1234, meeting_name: 'Test' }] } as any);
+        if (url.includes('/drivers?')) return of({ data: [{ driver_number: 44, name_acronym: 'HAM' }] } as any);
+        if (url.includes('/stints')) return of({ data: mockStints } as any);
+        if (url.includes('/race_control')) return of({ data: mockEvents } as any);
+        return of({ data: [] } as any);
+      });
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: [{ id: 1, name: 'Test GP' }] }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({ data: mockDbSessions }),
+            }),
+          };
+        }
+        if (table === 'drivers') {
+          return {
+            select: jest.fn().mockResolvedValue({ data: [{ id: 1, name_acronym: 'HAM' }] }),
+          };
+        }
+        if (table === 'tire_stints' || table === 'race_events') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({}),
+          };
+        }
+      });
+
+      await service.ingestGranularData(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+  });
+
+  describe('ingestModernResultsAndLaps', () => {
+    it('should return early if season not found', async () => {
+      (supabaseService.client.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      });
+
+      await service.ingestModernResultsAndLaps(2023);
+      expect(supabaseService.client.from).toHaveBeenCalledWith('seasons');
+    });
+
+    it('should ingest qualifying results successfully', async () => {
+      const mockRaces = [{ id: 1, name: 'Bahrain Grand Prix', round: 1 }];
+      const mockSessions = [
+        { id: 1, type: 'QUALIFYING', race_id: 1, openf1_session_key: 5678 },
+      ];
+      const mockDrivers = [{ id: 1, name_acronym: 'HAM', ergast_driver_ref: 'hamilton' }];
+      const mockConstructors = [{ id: 1, name: 'Mercedes' }];
+      const mockQualiData = {
+        MRData: {
+          RaceTable: {
+            Races: [{
+              QualifyingResults: [{
+                position: '1',
+                Driver: { driverId: 'hamilton' },
+                Constructor: { name: 'Mercedes' },
+                Q1: '1:30.123',
+                Q2: '1:29.456',
+                Q3: '1:28.789',
+              }],
+            }],
+          },
+        },
+      };
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: mockRaces }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({ data: mockSessions }),
+            }),
+          };
+        }
+        if (table === 'drivers') {
+          return {
+            select: jest.fn().mockResolvedValue({ data: mockDrivers }),
+          };
+        }
+        if (table === 'constructors') {
+          return {
+            select: jest.fn().mockResolvedValue({ data: mockConstructors }),
+          };
+        }
+        if (table === 'qualifying_results') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({}),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('qualifying.json')) {
+          return of({ data: mockQualiData } as any);
+        }
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestModernResultsAndLaps(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should ingest race results and laps successfully', async () => {
+      const mockRaces = [{ id: 1, name: 'Bahrain Grand Prix', round: 1 }];
+      const mockSessions = [
+        { id: 2, type: 'RACE', race_id: 1, openf1_session_key: 5679 },
+      ];
+      const mockDrivers = [{ id: 1, name_acronym: 'HAM', ergast_driver_ref: 'hamilton' }];
+      const mockConstructors = [{ id: 1, name: 'Mercedes' }];
+      const mockRaceData = {
+        MRData: {
+          RaceTable: {
+            Races: [{
+              Results: [{
+                position: '1',
+                points: '25',
+                grid: '1',
+                laps: '57',
+                status: 'Finished',
+                Driver: { driverId: 'hamilton' },
+                Constructor: { name: 'Mercedes' },
+                Time: { time: '1:30:45.123' },
+              }],
+            }],
+          },
+        },
+      };
+      const mockLaps = [{
+        driver_number: 44,
+        lap_number: 1,
+        position: 1,
+        lap_duration: 90.5,
+        is_pit_out_lap: false,
+        duration_sector_1: 30.1,
+        duration_sector_2: 30.2,
+        duration_sector_3: 30.2,
+      }];
+      const mockPits = [{
+        driver_number: 44,
+        lap_number: 20,
+        pit_duration: 2.5,
+        duration: 25.0,
+      }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: mockRaces }),
+            }),
+          };
+        }
+        if (table === 'sessions') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({ data: mockSessions }),
+            }),
+          };
+        }
+        if (table === 'drivers') {
+          return {
+            select: jest.fn().mockResolvedValue({ data: mockDrivers }),
+          };
+        }
+        if (table === 'constructors') {
+          return {
+            select: jest.fn().mockResolvedValue({ data: mockConstructors }),
+          };
+        }
+        if (table === 'race_results' || table === 'laps' || table === 'pit_stops') {
+          return {
+            delete: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({}),
+            }),
+            insert: jest.fn().mockResolvedValue({}),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('results.json')) {
+          return of({ data: mockRaceData } as any);
+        }
+        if (url.includes('/laps')) {
+          return of({ data: mockLaps } as any);
+        }
+        if (url.includes('/pit')) {
+          return of({ data: mockPits } as any);
+        }
+        if (url.includes('/drivers')) {
+          return of({ data: [{ driver_number: 44, name_acronym: 'HAM' }] } as any);
+        }
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestModernResultsAndLaps(2023);
+      expect(httpService.get).toHaveBeenCalled();
+    });
+  });
+
+  describe('ingestTrackLayouts', () => {
+    it('should return early if season not found', async () => {
+      (supabaseService.client.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      });
+
+      await service.ingestTrackLayouts();
+      expect(supabaseService.client.from).toHaveBeenCalledWith('seasons');
+    });
+
+    it('should return early if latest race not found', async () => {
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockReturnValue({
+                  limit: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({ data: null, error: 'Not found' }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+      });
+
+      httpService.get.mockReturnValue(of({ data: [] } as any));
+
+      await service.ingestTrackLayouts();
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should return early if OpenF1 meeting not found', async () => {
+      const mockRace = { circuit_id: 1, name: 'Monaco Grand Prix' };
+      const mockMeetings = [{ meeting_key: 9999, meeting_name: 'Different GP' }];
+      const mockSessions = [{ session_key: 5678, meeting_key: 1234 }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockReturnValue({
+                  limit: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({ data: mockRace }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestTrackLayouts();
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should return early if OpenF1 session not found', async () => {
+      const mockRace = { circuit_id: 1, name: 'Monaco Grand Prix' };
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Monaco Grand Prix' }];
+      const mockSessions = [{ session_key: 5678, meeting_key: 9999 }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockReturnValue({
+                  limit: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({ data: mockRace }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestTrackLayouts();
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should return early if no location data', async () => {
+      const mockRace = { circuit_id: 1, name: 'Monaco Grand Prix' };
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Monaco Grand Prix' }];
+      const mockSessions = [{ session_key: 5678, meeting_key: 1234 }];
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockReturnValue({
+                  limit: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({ data: mockRace }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        if (url.includes('/location')) return of({ data: [] } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestTrackLayouts();
+      expect(httpService.get).toHaveBeenCalled();
+    });
+
+    it('should successfully ingest layout', async () => {
+      const mockRace = { circuit_id: 1, name: 'Monaco Grand Prix' };
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Monaco Grand Prix' }];
+      const mockSessions = [{ session_key: 5678, meeting_key: 1234 }];
+      const mockLocation = [
+        { driver_number: 44, x: 100, y: 200, z: 0 },
+        { driver_number: 44, x: 101, y: 201, z: 0 },
+        { driver_number: 44, x: 102, y: 202, z: 0 },
       ];
 
-      for (const error of errors) {
-        mockOpenF1Service.fetchOpenF1Data.mockRejectedValueOnce(error);
-        await expect(mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023')).rejects.toThrow(error.message);
-      }
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockReturnValue({
+                  limit: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({ data: mockRace }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'circuits') {
+          return {
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({}),
+            }),
+          };
+        }
+      });
+
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        if (url.includes('/location')) return of({ data: mockLocation } as any);
+        return of({ data: [] } as any);
+      });
+
+      await service.ingestTrackLayouts();
+      expect(httpService.get).toHaveBeenCalled();
     });
 
-    it('should propagate all service errors for utility methods', async () => {
-      const errors = [
-        new Error('Invalid time format'),
-        new Error('Parsing failed'),
-        new Error('Conversion error'),
+    it('should handle update error gracefully', async () => {
+      const mockRace = { circuit_id: 1, name: 'Monaco Grand Prix' };
+      const mockMeetings = [{ meeting_key: 1234, meeting_name: 'Monaco Grand Prix' }];
+      const mockSessions = [{ session_key: 5678, meeting_key: 1234 }];
+      const mockLocation = [
+        { driver_number: 44, x: 100, y: 200, z: 0 },
+        { driver_number: 44, x: 101, y: 201, z: 0 },
       ];
 
-      for (const error of errors) {
-        mockOpenF1Service.timeStringToMs.mockImplementationOnce(() => {
-          throw error;
-        });
-        expect(() => mockOpenF1Service.timeStringToMs('invalid')).toThrow(error.message);
-      }
-    });
-  });
-
-  describe('return type validation', () => {
-    it('should return Promise<void> for ingestion methods', async () => {
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestGranularData.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestTrackLayouts.mockResolvedValue(undefined);
-
-      const results = await Promise.all([
-        mockOpenF1Service.ingestSessionsAndWeather(2023),
-        mockOpenF1Service.ingestGranularData(2023),
-        mockOpenF1Service.ingestModernResultsAndLaps(2023),
-        mockOpenF1Service.ingestTrackLayouts(),
-      ]);
-
-      results.forEach(result => {
-        expect(result).toBeUndefined();
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'seasons') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { id: 2023 } }),
+              }),
+            }),
+          };
+        }
+        if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockReturnValue({
+                  limit: jest.fn().mockReturnValue({
+                    single: jest.fn().mockResolvedValue({ data: mockRace }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'circuits') {
+          return {
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: 'Update failed' }),
+            }),
+          };
+        }
       });
-    });
 
-    it('should return Promise<any[]> for fetchOpenF1Data', async () => {
-      const mockData = [mockOpenF1Session];
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue(mockData);
-
-      const result = await mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023');
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toBeInstanceOf(Array);
-    });
-
-    it('should return number | null for timeStringToMs', () => {
-      mockOpenF1Service.timeStringToMs.mockReturnValue(90123);
-
-      const result = mockOpenF1Service.timeStringToMs('1:30.123');
-
-      expect(typeof result).toBe('number');
-      expect(result).toBe(90123);
-    });
-
-    it('should return string for mapSessionType', () => {
-      mockOpenF1Service.mapSessionType.mockReturnValue('RACE');
-
-      const result = mockOpenF1Service.mapSessionType('Race');
-
-      expect(typeof result).toBe('string');
-      expect(result).toBe('RACE');
-    });
-  });
-
-  describe('method signatures', () => {
-    it('should have correct method signatures for all methods', () => {
-      const methods = [
-        'ingestSessionsAndWeather',
-        'ingestGranularData',
-        'ingestModernResultsAndLaps',
-        'ingestTrackLayouts',
-        'fetchOpenF1Data',
-        'timeStringToMs',
-        'mapSessionType',
-      ];
-
-      methods.forEach(method => {
-        expect(mockOpenF1Service[method]).toBeDefined();
-        expect(typeof mockOpenF1Service[method]).toBe('function');
+      httpService.get.mockImplementation((url: string) => {
+        if (url.includes('/meetings')) return of({ data: mockMeetings } as any);
+        if (url.includes('/sessions')) return of({ data: mockSessions } as any);
+        if (url.includes('/location')) return of({ data: mockLocation } as any);
+        return of({ data: [] } as any);
       });
-    });
 
-    it('should accept correct parameters for fetchOpenF1Data', async () => {
-      const endpoint = '/sessions?year=2023';
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue([]);
-
-      await mockOpenF1Service.fetchOpenF1Data(endpoint);
-
-      expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledWith(endpoint);
-    });
-
-    it('should accept correct parameters for timeStringToMs', () => {
-      const time = '1:30.123';
-      mockOpenF1Service.timeStringToMs.mockReturnValue(90123);
-
-      mockOpenF1Service.timeStringToMs(time);
-
-      expect(mockOpenF1Service.timeStringToMs).toHaveBeenCalledWith(time);
-    });
-
-    it('should accept correct parameters for mapSessionType', () => {
-      const sessionName = 'Race';
-      mockOpenF1Service.mapSessionType.mockReturnValue('RACE');
-
-      mockOpenF1Service.mapSessionType(sessionName);
-
-      expect(mockOpenF1Service.mapSessionType).toHaveBeenCalledWith(sessionName);
-    });
-  });
-
-  describe('service functionality', () => {
-    it('should support data ingestion operations', () => {
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toBeDefined();
-      expect(mockOpenF1Service.ingestGranularData).toBeDefined();
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toBeDefined();
-      expect(mockOpenF1Service.ingestTrackLayouts).toBeDefined();
-    });
-
-    it('should support API data fetching operations', () => {
-      expect(mockOpenF1Service.fetchOpenF1Data).toBeDefined();
-    });
-
-    it('should support utility operations', () => {
-      expect(mockOpenF1Service.timeStringToMs).toBeDefined();
-      expect(mockOpenF1Service.mapSessionType).toBeDefined();
-    });
-
-    it('should support all required service methods', () => {
-      const requiredMethods = [
-        'ingestSessionsAndWeather',
-        'ingestGranularData',
-        'ingestModernResultsAndLaps',
-        'ingestTrackLayouts',
-        'fetchOpenF1Data',
-        'timeStringToMs',
-        'mapSessionType',
-      ];
-
-      requiredMethods.forEach(method => {
-        expect(mockOpenF1Service[method]).toBeDefined();
-        expect(typeof mockOpenF1Service[method]).toBe('function');
-      });
-    });
-  });
-
-  describe('service validation', () => {
-    it('should have valid service structure', () => {
-      expect(mockOpenF1Service).toBeDefined();
-      expect(typeof mockOpenF1Service).toBe('object');
-    });
-
-    it('should have all required methods', () => {
-      const requiredMethods = [
-        'ingestSessionsAndWeather',
-        'ingestGranularData',
-        'ingestModernResultsAndLaps',
-        'ingestTrackLayouts',
-        'fetchOpenF1Data',
-        'timeStringToMs',
-        'mapSessionType',
-      ];
-
-      requiredMethods.forEach(method => {
-        expect(mockOpenF1Service).toHaveProperty(method);
-      });
-    });
-
-    it('should have consistent method types', () => {
-      Object.values(mockOpenF1Service).forEach(method => {
-        expect(typeof method).toBe('function');
-      });
-    });
-  });
-
-  describe('service completeness', () => {
-    it('should have all required service methods', () => {
-      const requiredMethods = [
-        'ingestSessionsAndWeather',
-        'ingestGranularData',
-        'ingestModernResultsAndLaps',
-        'ingestTrackLayouts',
-        'fetchOpenF1Data',
-        'timeStringToMs',
-        'mapSessionType',
-      ];
-
-      requiredMethods.forEach(method => {
-        expect(mockOpenF1Service).toHaveProperty(method);
-        expect(typeof mockOpenF1Service[method]).toBe('function');
-      });
-    });
-
-    it('should support all data ingestion operations', () => {
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toBeDefined();
-      expect(mockOpenF1Service.ingestGranularData).toBeDefined();
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toBeDefined();
-      expect(mockOpenF1Service.ingestTrackLayouts).toBeDefined();
-    });
-
-    it('should support API data processing', () => {
-      expect(mockOpenF1Service.fetchOpenF1Data).toBeDefined();
-      expect(mockOpenF1Service.timeStringToMs).toBeDefined();
-      expect(mockOpenF1Service.mapSessionType).toBeDefined();
-    });
-  });
-
-  describe('data structure validation', () => {
-    it('should handle OpenF1Session with all required properties', () => {
-      expect(mockOpenF1Session).toHaveProperty('session_key');
-      expect(mockOpenF1Session).toHaveProperty('session_name');
-      expect(mockOpenF1Session).toHaveProperty('country_name');
-      expect(mockOpenF1Session).toHaveProperty('meeting_key');
-      expect(mockOpenF1Session).toHaveProperty('date_start');
-      expect(mockOpenF1Session).toHaveProperty('year');
-    });
-
-    it('should handle OpenF1Meeting with all required properties', () => {
-      expect(mockOpenF1Meeting).toHaveProperty('meeting_key');
-      expect(mockOpenF1Meeting).toHaveProperty('meeting_name');
-    });
-
-    it('should handle OpenF1Weather with all required properties', () => {
-      expect(mockOpenF1Weather).toHaveProperty('air_temperature');
-      expect(mockOpenF1Weather).toHaveProperty('track_temperature');
-      expect(mockOpenF1Weather).toHaveProperty('rainfall');
-      expect(mockOpenF1Weather).toHaveProperty('humidity');
-      expect(mockOpenF1Weather).toHaveProperty('wind_speed');
-    });
-
-    it('should handle OpenF1Stint with all required properties', () => {
-      expect(mockOpenF1Stint).toHaveProperty('stint_number');
-      expect(mockOpenF1Stint).toHaveProperty('lap_start');
-      expect(mockOpenF1Stint).toHaveProperty('lap_end');
-      expect(mockOpenF1Stint).toHaveProperty('driver_number');
-      expect(mockOpenF1Stint).toHaveProperty('compound');
-      expect(mockOpenF1Stint).toHaveProperty('tyre_age_at_start');
-    });
-
-    it('should handle OpenF1Driver with all required properties', () => {
-      expect(mockOpenF1Driver).toHaveProperty('driver_number');
-      expect(mockOpenF1Driver).toHaveProperty('full_name');
-      expect(mockOpenF1Driver).toHaveProperty('name_acronym');
-      expect(mockOpenF1Driver).toHaveProperty('team_name');
-    });
-
-    it('should handle OpenF1Lap with all required properties', () => {
-      expect(mockOpenF1Lap).toHaveProperty('session_key');
-      expect(mockOpenF1Lap).toHaveProperty('driver_number');
-      expect(mockOpenF1Lap).toHaveProperty('lap_number');
-      expect(mockOpenF1Lap).toHaveProperty('position');
-      expect(mockOpenF1Lap).toHaveProperty('lap_duration');
-      expect(mockOpenF1Lap).toHaveProperty('is_pit_out_lap');
-    });
-
-    it('should handle OpenF1PitStop with all required properties', () => {
-      expect(mockOpenF1PitStop).toHaveProperty('session_key');
-      expect(mockOpenF1PitStop).toHaveProperty('driver_number');
-      expect(mockOpenF1PitStop).toHaveProperty('lap_number');
-      expect(mockOpenF1PitStop).toHaveProperty('pit_duration');
-      expect(mockOpenF1PitStop).toHaveProperty('duration');
-    });
-  });
-
-  describe('service integration patterns', () => {
-    it('should support full ingestion workflow', async () => {
-      mockOpenF1Service.ingestSessionsAndWeather.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestGranularData.mockResolvedValue(undefined);
-      mockOpenF1Service.ingestModernResultsAndLaps.mockResolvedValue(undefined);
-
-      await mockOpenF1Service.ingestSessionsAndWeather(2023);
-      await mockOpenF1Service.ingestGranularData(2023);
-      await mockOpenF1Service.ingestModernResultsAndLaps(2023);
-
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestGranularData).toHaveBeenCalledWith(2023);
-      expect(mockOpenF1Service.ingestModernResultsAndLaps).toHaveBeenCalledWith(2023);
-    });
-
-    it('should support individual data fetching', async () => {
-      const mockData = [mockOpenF1Session];
-      mockOpenF1Service.fetchOpenF1Data.mockResolvedValue(mockData);
-
-      const result = await mockOpenF1Service.fetchOpenF1Data('/sessions?year=2023');
-
-      expect(result).toBe(mockData);
-      expect(mockOpenF1Service.fetchOpenF1Data).toHaveBeenCalledWith('/sessions?year=2023');
-    });
-
-    it('should support utility operations', () => {
-      mockOpenF1Service.timeStringToMs.mockReturnValue(90123);
-      mockOpenF1Service.mapSessionType.mockReturnValue('RACE');
-
-      const timeResult = mockOpenF1Service.timeStringToMs('1:30.123');
-      const sessionResult = mockOpenF1Service.mapSessionType('Race');
-
-      expect(timeResult).toBe(90123);
-      expect(sessionResult).toBe('RACE');
-    });
-
-    it('should support error handling in workflow', async () => {
-      const error = new Error('Ingestion failed');
-      mockOpenF1Service.ingestSessionsAndWeather.mockRejectedValue(error);
-
-      await expect(mockOpenF1Service.ingestSessionsAndWeather(2023)).rejects.toThrow('Ingestion failed');
-      expect(mockOpenF1Service.ingestSessionsAndWeather).toHaveBeenCalledWith(2023);
+      await service.ingestTrackLayouts();
+      expect(httpService.get).toHaveBeenCalled();
     });
   });
 });
