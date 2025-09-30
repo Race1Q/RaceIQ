@@ -1,4 +1,9 @@
 import { Heading, Text, VStack, HStack, Box, Image } from '@chakra-ui/react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import SearchableSelect from '../../../components/DropDownSearch/SearchableSelect';
+import type { SelectOption } from '../../../components/DropDownSearch/SearchableSelect';
+import { buildApiUrl } from '../../../lib/api';
 import type { HeadToHead } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
@@ -10,39 +15,114 @@ interface HeadToHeadQuickCompareWidgetProps {
 }
 
 function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProps) {
-  if (!data) {
+  const { getAccessTokenSilently } = useAuth0();
+  const currentSeason = new Date().getFullYear();
+
+  type DriverRow = {
+    id: number;
+    fullName: string;
+    teamName: string;
+    wins: number;
+    podiums: number;
+    points: number;
+    headshotUrl?: string | null;
+  };
+
+  const [drivers, setDrivers] = useState<DriverRow[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [selected1, setSelected1] = useState<number | null>(null);
+  const [selected2, setSelected2] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStandings = useCallback(async () => {
+    try {
+      setLoadingList(true);
+      setError(null);
+      const token = await getAccessTokenSilently();
+      const res = await fetch(buildApiUrl(`/api/drivers/standings/${currentSeason}`), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Failed to fetch standings: ${res.status}`);
+      const payload = await res.json();
+      const rows: DriverRow[] = (payload as any[]).map((d: any) => ({
+        id: Number(d.id ?? d.driverId),
+        fullName: d.fullname || d.fullName || `${d.firstName ?? ''} ${d.lastName ?? ''}`.trim(),
+        teamName: d.constructor || d.teamName || 'Unknown',
+        wins: Number(d.wins ?? 0),
+        podiums: Number(d.podiums ?? 0),
+        points: Number(d.points ?? 0),
+        headshotUrl: d.profileimageurl || d.profileImageUrl || d.headshotUrl || undefined,
+      })).filter(r => !!r.id && !!r.fullName);
+      setDrivers(rows);
+
+      // Preselect initial values: from dashboard data if provided, else top two
+      if (data) {
+        const id1 = Number((data as any).driver1?.id ?? 0) || rows[0]?.id || null;
+        const id2 = Number((data as any).driver2?.id ?? 0) || rows[1]?.id || null;
+        setSelected1(id1);
+        setSelected2(id2);
+      } else {
+        setSelected1(rows[0]?.id ?? null);
+        setSelected2(rows[1]?.id ?? null);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Failed to load drivers');
+    } finally {
+      setLoadingList(false);
+    }
+  }, [getAccessTokenSilently, currentSeason, data]);
+
+  useEffect(() => {
+    fetchStandings();
+  }, [fetchStandings]);
+
+  const options: SelectOption[] = useMemo(() => drivers.map(d => ({ value: d.id, label: d.fullName })), [drivers]);
+
+  const d1 = useMemo(() => drivers.find(d => d.id === selected1) || null, [drivers, selected1]);
+  const d2 = useMemo(() => drivers.find(d => d.id === selected2) || null, [drivers, selected2]);
+
+  if (loadingList) {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
-            Head to Head
-          </Heading>
+          <Heading color="brand.red" size="md" fontFamily="heading">Head to Head</Heading>
           <Text color="text-muted">Loading...</Text>
         </VStack>
       </WidgetCard>
     );
   }
 
+  if (error || !d1 || !d2) {
+    return (
+      <WidgetCard>
+        <VStack align="start" spacing="md">
+          <Heading color="brand.red" size="md" fontFamily="heading">Head to Head</Heading>
+          <Text color="text-muted">{error || 'Unable to load drivers'}</Text>
+        </VStack>
+      </WidgetCard>
+    );
+  }
+
   const driver1 = {
-    name: data.driver1.fullName,
-    team: data.driver1.teamName,
-    teamColor: teamColors[data.driver1.teamName] || teamColors['Default'],
-    teamLogo: getTeamLogo(data.driver1.teamName),
-    image: driverHeadshots[data.driver1.fullName] || data.driver1.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
-    wins: data.driver1.wins,
-    podiums: data.driver1.podiums,
-    points: data.driver1.points
+    name: d1.fullName,
+    team: d1.teamName,
+    teamColor: teamColors[d1.teamName] || teamColors['Default'],
+    teamLogo: getTeamLogo(d1.teamName),
+    image: driverHeadshots[d1.fullName] || d1.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
+    wins: d1.wins,
+    podiums: d1.podiums,
+    points: d1.points,
   };
 
   const driver2 = {
-    name: data.driver2.fullName,
-    team: data.driver2.teamName,
-    teamColor: teamColors[data.driver2.teamName] || teamColors['Default'],
-    teamLogo: getTeamLogo(data.driver2.teamName),
-    image: driverHeadshots[data.driver2.fullName] || data.driver2.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
-    wins: data.driver2.wins,
-    podiums: data.driver2.podiums,
-    points: data.driver2.points
+    name: d2.fullName,
+    team: d2.teamName,
+    teamColor: teamColors[d2.teamName] || teamColors['Default'],
+    teamLogo: getTeamLogo(d2.teamName),
+    image: driverHeadshots[d2.fullName] || d2.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
+    wins: d2.wins,
+    podiums: d2.podiums,
+    points: d2.points,
   };
 
   return (
@@ -55,6 +135,13 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
         <HStack spacing="lg" align="center" w="full" justify="space-between">
           {/* Driver 1 */}
           <VStack spacing="sm" align="center" flex="1">
+            <SearchableSelect
+              label=""
+              options={options}
+              value={selected1 ? { value: selected1, label: driver1.name } : null}
+              onChange={(opt) => setSelected1(opt ? Number((opt as SelectOption).value) : null)}
+              placeholder="Select driver"
+            />
             <Box
               w="60px"
               h="60px"
@@ -122,6 +209,13 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
           
           {/* Driver 2 */}
           <VStack spacing="sm" align="center" flex="1">
+            <SearchableSelect
+              label=""
+              options={options}
+              value={selected2 ? { value: selected2, label: driver2.name } : null}
+              onChange={(opt) => setSelected2(opt ? Number((opt as SelectOption).value) : null)}
+              placeholder="Select driver"
+            />
             <Box
               w="60px"
               h="60px"

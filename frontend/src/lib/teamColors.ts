@@ -217,3 +217,40 @@ export const teamColors: { [key: string]: string } = {
 "Zakspeed": "000000",
 
 };
+
+// Normalize common team naming variants to keys present in teamColors
+function normalizeTeamNameForColor(name: string): string {
+  let n = name.toLowerCase();
+  if (n.includes('visa cash app rb') || n.includes('vcarb') || n.includes('alphatauri') || n.includes('rb f1')) return 'RB F1 Team';
+  if (n.includes('stake') || n.includes('sauber') || n.includes('alfa romeo') || n.includes('kick sauber')) return 'Sauber';
+  if (n.includes('mercedes')) return 'Mercedes';
+  if (n.includes('red bull')) return 'Red Bull';
+  if (n.includes('mclaren')) return 'McLaren';
+  if (n.includes('aston martin')) return 'Aston Martin';
+  if (n.includes('alpine')) return 'Alpine F1 Team';
+  if (n.includes('williams')) return 'Williams';
+  if (n.includes('haas')) return 'Haas F1 Team';
+  if (n.includes('ferrari')) return 'Ferrari';
+  return name;
+}
+
+// Get the hex color (without # by default) for a given team name, with normalization and fallbacks
+export function getTeamColor(teamName: string | undefined | null, opts?: { hash?: boolean }): string {
+  const withHash = !!(opts && opts.hash);
+  if (!teamName || typeof teamName !== 'string') return withHash ? `#${teamColors['Default']}` : teamColors['Default'];
+
+  const normalized = normalizeTeamNameForColor(teamName);
+
+  // Try exact matches: normalized then original
+  let hex = teamColors[normalized] || teamColors[teamName] || '';
+
+  // Fallback: case-insensitive key inclusion match
+  if (!hex) {
+    const normLower = normalized.toLowerCase();
+    const matchKey = Object.keys(teamColors).find(k => k.toLowerCase().includes(normLower) || normLower.includes(k.toLowerCase()));
+    if (matchKey) hex = teamColors[matchKey];
+  }
+
+  if (!hex) hex = teamColors['Default'];
+  return withHash ? `#${hex}` : hex;
+}

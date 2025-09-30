@@ -1,6 +1,6 @@
 // frontend/src/components/layout/Sidebar.tsx
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, Settings
@@ -10,7 +10,6 @@ import {
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
-import { useRole } from '../../context/RoleContext';
 import ThemeToggleButton from '../ThemeToggleButton/ThemeToggleButton';
 
 // --- Sub-component for Navigation Links ---
@@ -42,6 +41,7 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
           fontFamily="heading"
           justifyContent={isExpanded ? "flex-start" : "center"}
           h="48px"
+          minH="48px"
           _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}
           isActive={useActiveRoute(path)}
           _active={{ bg: 'bg-surface-raised', color: 'brand.red' }}
@@ -55,7 +55,7 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
         >
           <HStack spacing="sm">
             <Icon as={IconComponent} boxSize={5} />
-            {isExpanded && <Text>{label}</Text>}
+            {isExpanded && <Text whiteSpace="nowrap">{label}</Text>}
           </HStack>
         </Button>
       ))}
@@ -71,6 +71,7 @@ interface SidebarProps {
 function Sidebar({ onWidthChange }: SidebarProps) {
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const hoverTimerRef = useRef<number | null>(null);
   const { logout } = useAuth0();
   const toast = useToast();
 
@@ -81,8 +82,30 @@ function Sidebar({ onWidthChange }: SidebarProps) {
     onWidthChange?.(currentWidth);
   }, [currentWidth, onWidthChange]);
 
-  const handleMouseEnter = () => !isPinned && setIsHovered(true);
-  const handleMouseLeave = () => !isPinned && setIsHovered(false);
+  const handleMouseEnter = () => {
+    if (isPinned || isHovered) return;
+    if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = window.setTimeout(() => {
+      setIsHovered(true);
+      hoverTimerRef.current = null;
+    }, 200); // slight delay before expanding on hover
+  };
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    if (!isPinned) setIsHovered(false); // collapse immediately on leave
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        window.clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleLogout = () => {
     // Custom toast logic remains the same, but with semantic tokens
@@ -139,14 +162,15 @@ function Sidebar({ onWidthChange }: SidebarProps) {
       zIndex="sticky"
     >
       <Flex direction="column" h="full" p="lg">
-        {/* Logo */}
-        <Box as={Link} to="/dashboard" mb="md" display="flex" justifyContent="center" w="100%">
+        {/* Logo (fixed-height container to avoid reflow) */}
+        <Box as={Link} to="/dashboard" mb="md" display="flex" justifyContent="center" w="100%" h="64px" flexShrink={0}>
           <Image 
             src="/race_IQ_logo.svg" 
             alt="RaceIQ Logo" 
-            w={isExpanded ? "60%" : "70%"}
-            h="auto"
-            // Removed filters to show original colors
+            h="full"
+            w="auto"
+            maxW={isExpanded ? "70%" : "70%"}
+            objectFit="contain"
           />
         </Box>
 

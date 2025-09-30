@@ -144,6 +144,7 @@ function DashboardPage() {
             compactType={null}
             margin={[16, 16]}
             containerPadding={[0, 0]}
+            draggableCancel={"button, a, .chakra-button, .no-drag, input, select, textarea"}
           >
             {Object.keys(widgetVisibility)
               .filter(key => widgetVisibility[key as keyof WidgetVisibility])

@@ -1,7 +1,8 @@
-import { Heading, Text, VStack, HStack, Box } from '@chakra-ui/react';
+import { Heading, Text, VStack, HStack, Box, Avatar, Flex } from '@chakra-ui/react';
 import type { LastRacePodium } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import WidgetCard from './WidgetCard';
+import { driverHeadshots } from '../../../lib/driverHeadshots';
 
 interface LastPodiumWidgetProps {
   data?: LastRacePodium;
@@ -37,28 +38,30 @@ function LastPodiumWidget({ data }: LastPodiumWidgetProps) {
           Last Race: {data.raceName} Podium
         </Heading>
         
-        <VStack align="stretch" spacing="sm" w="full">
-          {data.podium.map((podiumItem) => {
-            const teamColor = teamColors[podiumItem.constructorName] || teamColors['Default'];
+        <VStack align="stretch" w="100%" spacing={2}>
+          {data.podium.map((item) => {
+            const isWinner = item.position === 1;
+            const teamColor = teamColors[item.constructorName] || teamColors['Default'];
+            const headshot = driverHeadshots[item.driverFullName] || '';
             return (
-              <HStack key={podiumItem.position} spacing="md" align="center" p="sm" borderRadius="md" bg="whiteAlpha.50">
-                <Text fontSize="lg">{getMedal(podiumItem.position)}</Text>
-                <Box
-                  w="8px"
-                  h="8px"
-                  borderRadius="full"
-                  bg={`#${teamColor}`}
-                  flexShrink={0}
-                />
-                <VStack align="start" spacing="xs" flex="1">
-                  <Text color="text-primary" fontSize="sm" fontWeight="600">
-                    {podiumItem.driverFullName}
-                  </Text>
-                  <Text color="text-muted" fontSize="xs">
-                    {podiumItem.constructorName}
-                  </Text>
-                </VStack>
-              </HStack>
+              <Flex
+                key={item.position}
+                align="center"
+                bg={isWinner ? teamColor : 'transparent'}
+                p={isWinner ? 4 : 2}
+                borderRadius="md"
+                transition="all 0.2s ease-in-out"
+              >
+                <Flex align="center" flex={1}>
+                  <Text w="2em" color={isWinner ? 'white' : 'brand.red'} fontWeight="bold">{item.position}.</Text>
+                  <Avatar size="sm" src={headshot} mr={3} />
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="bold" color={isWinner ? 'white' : 'text-primary'}>{item.driverFullName}</Text>
+                    <Text fontSize="sm" color={isWinner ? 'whiteAlpha.800' : 'text-muted'}>{item.constructorName}</Text>
+                  </VStack>
+                </Flex>
+                <Text fontWeight="bold" color={isWinner ? 'white' : 'brand.red'}>{getMedal(item.position)}</Text>
+              </Flex>
             );
           })}
         </VStack>
