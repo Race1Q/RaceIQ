@@ -505,12 +505,8 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith({
-      authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "read:drivers read:constructors read:users",
-      },
-    });
+    // Now called without arguments (uses provider defaults)
+    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith();
   });
 
   it('should set proper authorization headers', async () => {
@@ -526,37 +522,20 @@ describe('useUserProfile', () => {
       })
     );
     
-    // Check that getAccessTokenSilently was called with correct parameters
-    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith({
-      authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "read:drivers read:constructors read:users",
-      },
-    });
+    // Check that getAccessTokenSilently was called (uses provider defaults, no args)
+    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith();
   });
 
-  it('should handle console warnings for favorite data fetch failures', async () => {
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
+  it('should handle profile response with null favorites', async () => {
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('/api/profile')) {
         return Promise.resolve({
           ok: true,
-          json: async () => mockProfileData,
-        });
-      }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
+          json: async () => ({
+            ...mockProfileData,
+            favoriteDriver: null,
+            favoriteConstructor: null,
+          }),
         });
       }
       return Promise.resolve({
@@ -570,10 +549,8 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(consoleSpy).toHaveBeenCalledWith('Could not fetch favorite driver:', expect.any(Error));
-    expect(consoleSpy).toHaveBeenCalledWith('Could not fetch favorite constructor:', expect.any(Error));
-
-    consoleSpy.mockRestore();
+    expect(result.current.favoriteDriver).toBeNull();
+    expect(result.current.favoriteConstructor).toBeNull();
   });
 
   it('should handle profile with only favorite driver', async () => {
@@ -684,8 +661,7 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
+    // Only fetches profile now (includes favorites)
     expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/profile', expect.any(Object));
-    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/drivers/2', expect.any(Object));
-    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/constructors/1', expect.any(Object));
   });
 });
