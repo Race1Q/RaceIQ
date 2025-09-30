@@ -3,9 +3,46 @@ import { NotificationsModule } from './notifications.module';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 
-// Mock HttpModule
-jest.mock('@nestjs/axios', () => ({
-  HttpModule: 'mock-http-module'
+// Mock uuid to prevent ES module issues
+jest.mock('uuid', () => ({
+  v4: jest.fn().mockReturnValue('mock-uuid')
+}));
+
+// Mock typeorm to prevent decorator issues
+jest.mock('@nestjs/typeorm', () => ({
+  InjectRepository: jest.fn().mockImplementation(() => (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) => {}),
+  TypeOrmModule: {
+    forFeature: jest.fn()
+  }
+}));
+
+// Mock user entity to prevent import issues
+jest.mock('../users/entities/user.entity', () => ({
+  User: class MockUser {}
+}));
+
+// Mock users service to prevent import issues
+jest.mock('../users/users.service', () => ({
+  UsersService: class MockUsersService {}
+}));
+
+// Mock nodemailer
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockReturnValue({
+    sendMail: jest.fn() as jest.MockedFunction<any>
+  })
+}));
+
+// Mock ConfigService
+jest.mock('@nestjs/config', () => ({
+  ConfigService: class MockConfigService {
+    get() { return undefined; }
+  }
+}));
+
+// Mock auth module to prevent import issues
+jest.mock('../auth/auth.module', () => ({
+  AuthModule: 'mock-auth-module'
 }));
 
 describe('NotificationsModule', () => {

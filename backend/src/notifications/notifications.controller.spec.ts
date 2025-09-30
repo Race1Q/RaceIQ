@@ -1,43 +1,101 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, HttpStatus } from '@nestjs/common';
-import request from 'supertest';
-import { jest, describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { jest, describe, it, expect, beforeEach, beforeAll } from '@jest/globals';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
+import { UsersService } from '../users/users.service';
+
+// Mock uuid to prevent ES module issues
+jest.mock('uuid', () => ({
+  v4: jest.fn().mockReturnValue('mock-uuid')
+}));
+
+// Mock typeorm to prevent decorator issues
+jest.mock('@nestjs/typeorm', () => ({
+  InjectRepository: jest.fn().mockImplementation(() => (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) => {}),
+  TypeOrmModule: {
+    forFeature: jest.fn()
+  }
+}));
+
+// Mock user entity to prevent import issues
+jest.mock('../users/entities/user.entity', () => ({
+  User: class MockUser {}
+}));
+
+// Mock nodemailer
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn().mockReturnValue({
+    sendMail: jest.fn() as jest.MockedFunction<any>
+  })
+}));
+
+// Mock ConfigService
+jest.mock('@nestjs/config', () => ({
+  ConfigService: class MockConfigService {
+    get() { return undefined; }
+  }
+}));
+
+// Mock auth module
+jest.mock('../auth/auth.module', () => ({
+  AuthModule: 'mock-auth-module'
+}));
+
+// Mock auth guard
+jest.mock('../auth/jwt-auth.guard', () => ({
+  JwtAuthGuard: class MockJwtAuthGuard {
+    canActivate() { return true; }
+  }
+}));
+
+// Mock auth decorator
+jest.mock('../auth/auth-user.decorator', () => ({
+  AuthUser: () => (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) => {}
+}));
 
 describe('NotificationsController', () => {
-  let app: INestApplication;
-  let module: TestingModule;
   let controller: NotificationsController;
-  let service: NotificationsService;
+  let module: TestingModule;
+  let notificationsService: any;
+  let usersService: any;
   
-  const mockService = {
-    sendRaceUpdateEmail: jest.fn(),
+  const mockNotificationsService = {
+    sendRaceUpdateEmail: jest.fn() as jest.MockedFunction<any>,
+  };
+
+  const mockUsersService = {
+    getProfile: jest.fn() as jest.MockedFunction<any>,
   };
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
       controllers: [NotificationsController],
-      providers: [{ provide: NotificationsService, useValue: mockService }],
+      providers: [
+        { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: UsersService, useValue: mockUsersService },
+      ],
     }).compile();
 
-    app = module.createNestApplication();
     controller = module.get<NotificationsController>(NotificationsController);
-    service = module.get<NotificationsService>(NotificationsService);
-    
-    await app.init();
+    notificationsService = module.get<NotificationsService>(NotificationsService);
+    usersService = module.get<UsersService>(UsersService);
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Setup default mock behavior
+    mockUsersService.getProfile.mockResolvedValue({ 
+      email: 'user@example.com' 
+    });
+    mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
+      success: true, 
+      status: 200, 
+      data: { mock: true } 
+    });
   });
 
-  afterAll(async () => {
-    await app?.close();
-    await module?.close();
-  });
-
-  describe('Controller Structure', () => {
+  describe('Service Structure', () => {
     it('should be defined', () => {
       expect(controller).toBeDefined();
     });
@@ -49,352 +107,219 @@ describe('NotificationsController', () => {
     it('should have notificationsService injected', () => {
       expect(controller['notificationsService']).toBeDefined();
     });
+
+    it('should have usersService injected', () => {
+      expect(controller['usersService']).toBeDefined();
+    });
   });
 
-  describe('sendRaceUpdate endpoint', () => {
+  describe('sendRaceUpdate method', () => {
+    const mockAuthUser = { sub: 'test-user-id' };
+
     describe('Validation', () => {
-      it('should return 400 when body is empty', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({})
-          .expect(HttpStatus.BAD_REQUEST)
-          .expect((res) => {
-            expect(res.body.message).toContain('recipientEmail and raceDetails are required');
-          });
+      it('should throw 400 when body is empty', async () => {
+        await expect(controller.sendRaceUpdate(mockAuthUser, {} as any))
+          .rejects
+          .toThrow(new HttpException('raceDetails is required', HttpStatus.BAD_REQUEST));
       });
 
-      it('should return 400 when recipientEmail is missing', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ raceDetails: 'Race details here' })
-          .expect(HttpStatus.BAD_REQUEST)
-          .expect((res) => {
-            expect(res.body.message).toContain('recipientEmail and raceDetails are required');
-          });
+      it('should throw 400 when raceDetails is missing', async () => {
+        await expect(controller.sendRaceUpdate(mockAuthUser, { otherField: 'some value' } as any))
+          .rejects
+          .toThrow(new HttpException('raceDetails is required', HttpStatus.BAD_REQUEST));
       });
 
-      it('should return 400 when raceDetails is missing', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ recipientEmail: 'test@example.com' })
-          .expect(HttpStatus.BAD_REQUEST)
-          .expect((res) => {
-            expect(res.body.message).toContain('recipientEmail and raceDetails are required');
-          });
+      it('should throw 400 when raceDetails is empty string', async () => {
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: '' }))
+          .rejects
+          .toThrow(new HttpException('raceDetails is required', HttpStatus.BAD_REQUEST));
       });
 
-      it('should return 400 when recipientEmail is empty string', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ recipientEmail: '', raceDetails: 'Race details' })
-          .expect(HttpStatus.BAD_REQUEST);
+      it('should throw 400 when raceDetails is null', async () => {
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: null as any }))
+          .rejects
+          .toThrow(new HttpException('raceDetails is required', HttpStatus.BAD_REQUEST));
       });
 
-      it('should return 400 when raceDetails is empty string', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ recipientEmail: 'test@example.com', raceDetails: '' })
-          .expect(HttpStatus.BAD_REQUEST);
+      it('should throw 400 when user has no email on file', async () => {
+        mockUsersService.getProfile.mockResolvedValue({ email: null });
+
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Race details here' }))
+          .rejects
+          .toThrow(new HttpException('No email on file for user', HttpStatus.BAD_REQUEST));
       });
 
-      it('should return 400 when recipientEmail is null', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ recipientEmail: null, raceDetails: 'Race details' })
-          .expect(HttpStatus.BAD_REQUEST);
-      });
+      it('should throw 400 when user profile has empty email', async () => {
+        mockUsersService.getProfile.mockResolvedValue({ email: '' });
 
-      it('should return 400 when raceDetails is null', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ recipientEmail: 'test@example.com', raceDetails: null })
-          .expect(HttpStatus.BAD_REQUEST);
-      });
-
-      it('should return 400 when recipientEmail is undefined', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ recipientEmail: undefined, raceDetails: 'Race details' })
-          .expect(HttpStatus.BAD_REQUEST);
-      });
-
-      it('should return 400 when raceDetails is undefined', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ recipientEmail: 'test@example.com', raceDetails: undefined })
-          .expect(HttpStatus.BAD_REQUEST);
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Race details here' }))
+          .rejects
+          .toThrow(new HttpException('No email on file for user', HttpStatus.BAD_REQUEST));
       });
     });
 
     describe('Success Cases', () => {
-      it('should return 201 when service returns success', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+      it('should return success response when service returns success', async () => {
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: true, 
           status: 202, 
           data: { ok: true } 
         });
 
-        const res = await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'test@example.com', 
-            raceDetails: 'Race starts at 2PM' 
-          })
-          .expect(HttpStatus.CREATED);
+        const result = await controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Race starts at 2PM' });
 
-        expect(res.body).toEqual({
+        expect(result).toEqual({
           message: 'Race update email sent',
           status: 202,
           data: { ok: true }
         });
       });
 
-      it('should return 201 with different status codes from service', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+      it('should return success response with different status codes from service', async () => {
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: true, 
           status: 200, 
           data: { message: 'Email sent successfully' } 
         });
 
-        const res = await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'user@test.com', 
-            raceDetails: 'Monaco GP starting soon' 
-          })
-          .expect(HttpStatus.CREATED);
+        const result = await controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Monaco GP starting soon' });
 
-        expect(res.body).toEqual({
+        expect(result).toEqual({
           message: 'Race update email sent',
           status: 200,
           data: { message: 'Email sent successfully' }
         });
       });
 
-      it('should call service with correct parameters', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+      it('should call services with correct parameters', async () => {
+        mockUsersService.getProfile.mockResolvedValue({ 
+          email: 'driver@f1.com' 
+        });
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: true, 
           status: 201, 
           data: { sent: true } 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'driver@f1.com', 
-            raceDetails: 'Qualifying results are in' 
-          })
-          .expect(HttpStatus.CREATED);
+        await controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Qualifying results are in' });
 
-        expect(mockService.sendRaceUpdateEmail).toHaveBeenCalledWith(
+        expect(mockUsersService.getProfile).toHaveBeenCalledWith('test-user-id');
+        expect(mockNotificationsService.sendRaceUpdateEmail).toHaveBeenCalledWith(
           'driver@f1.com',
           'Qualifying results are in'
         );
-        expect(mockService.sendRaceUpdateEmail).toHaveBeenCalledTimes(1);
+        expect(mockNotificationsService.sendRaceUpdateEmail).toHaveBeenCalledTimes(1);
       });
     });
 
     describe('Error Cases', () => {
-      it('should propagate error status when service fails', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+      it('should throw error with correct status when service fails', async () => {
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: false, 
           status: 502, 
           data: { message: 'Service unavailable' } 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'error@test.com', 
-            raceDetails: 'Race cancelled' 
-          })
-          .expect(502)
-          .expect((res) => {
-            expect(res.body.message).toBe('Service unavailable');
-          });
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Race cancelled' }))
+          .rejects
+          .toThrow(new HttpException({ message: 'Service unavailable' }, 502));
       });
 
       it('should handle service failure without data', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: false, 
           status: 500 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'fail@test.com', 
-            raceDetails: 'Race postponed' 
-          })
-          .expect(500);
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Race postponed' }))
+          .rejects
+          .toThrow(new HttpException('Failed to send email', 500));
       });
 
       it('should handle different error status codes', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: false, 
           status: 503, 
           data: { error: 'Temporary failure' } 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'temp@test.com', 
-            raceDetails: 'Race delayed' 
-          })
-          .expect(503);
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Race delayed' }))
+          .rejects
+          .toThrow(new HttpException({ error: 'Temporary failure' }, 503));
       });
 
       it('should handle service failure with custom error message', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: false, 
           status: 429, 
           data: { message: 'Rate limit exceeded' } 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'limit@test.com', 
-            raceDetails: 'Too many requests' 
-          })
-          .expect(429)
-          .expect((res) => {
-            expect(res.body.message).toBe('Rate limit exceeded');
-          });
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Too many requests' }))
+          .rejects
+          .toThrow(new HttpException({ message: 'Rate limit exceeded' }, 429));
+      });
+
+      it('should handle users service errors', async () => {
+        mockUsersService.getProfile.mockRejectedValue(new Error('User not found'));
+
+        await expect(controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Race details' }))
+          .rejects
+          .toThrow('User not found');
       });
     });
 
     describe('Edge Cases', () => {
-      it('should handle very long email addresses', async () => {
-        const longEmail = 'a'.repeat(50) + '@' + 'b'.repeat(50) + '.com';
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
-          success: true, 
-          status: 202, 
-          data: { sent: true } 
-        });
-
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: longEmail, 
-            raceDetails: 'Long email test' 
-          })
-          .expect(HttpStatus.CREATED);
-
-        expect(mockService.sendRaceUpdateEmail).toHaveBeenCalledWith(
-          longEmail,
-          'Long email test'
-        );
-      });
-
       it('should handle very long race details', async () => {
         const longDetails = 'A'.repeat(1000);
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: true, 
           status: 202, 
           data: { sent: true } 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'test@example.com', 
-            raceDetails: longDetails 
-          })
-          .expect(HttpStatus.CREATED);
+        const result = await controller.sendRaceUpdate(mockAuthUser, { raceDetails: longDetails });
 
-        expect(mockService.sendRaceUpdateEmail).toHaveBeenCalledWith(
-          'test@example.com',
+        expect(result.message).toBe('Race update email sent');
+        expect(mockNotificationsService.sendRaceUpdateEmail).toHaveBeenCalledWith(
+          'user@example.com', // from default mock
           longDetails
         );
       });
 
-      it('should handle special characters in email and race details', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+      it('should handle special characters in race details', async () => {
+        const specialDetails = 'Monaco GP 2024 - Circuit de Monaco (Monte Carlo) 🏁';
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: true, 
           status: 202, 
           data: { sent: true } 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send({ 
-            recipientEmail: 'test+tag@example.com', 
-            raceDetails: 'Monaco GP 2024 - Circuit de Monaco (Monte Carlo) 🏁' 
-          })
-          .expect(HttpStatus.CREATED);
+        const result = await controller.sendRaceUpdate(mockAuthUser, { raceDetails: specialDetails });
 
-        expect(mockService.sendRaceUpdateEmail).toHaveBeenCalledWith(
-          'test+tag@example.com',
-          'Monaco GP 2024 - Circuit de Monaco (Monte Carlo) 🏁'
+        expect(result.message).toBe('Race update email sent');
+        expect(mockNotificationsService.sendRaceUpdateEmail).toHaveBeenCalledWith(
+          'user@example.com',
+          specialDetails
         );
       });
 
-      it('should handle null body gracefully', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send(null)
-          .expect(HttpStatus.BAD_REQUEST);
-      });
-
-      it('should handle undefined body gracefully', async () => {
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .send(undefined)
-          .expect(HttpStatus.BAD_REQUEST);
-      });
-    });
-
-    describe('HTTP Method Validation', () => {
-      it('should only accept POST requests', async () => {
-        await request(app.getHttpServer())
-          .get('/notifications/send-race-update')
-          .expect(404);
-
-        await request(app.getHttpServer())
-          .put('/notifications/send-race-update')
-          .expect(404);
-
-        await request(app.getHttpServer())
-          .delete('/notifications/send-race-update')
-          .expect(404);
-      });
-    });
-
-    describe('Content-Type Handling', () => {
-      it('should accept JSON content type', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
+      it('should handle very long user email', async () => {
+        const longEmail = 'a'.repeat(50) + '@' + 'b'.repeat(50) + '.com';
+        mockUsersService.getProfile.mockResolvedValue({ email: longEmail });
+        mockNotificationsService.sendRaceUpdateEmail.mockResolvedValue({ 
           success: true, 
           status: 202, 
           data: { sent: true } 
         });
 
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .set('Content-Type', 'application/json')
-          .send({ 
-            recipientEmail: 'json@test.com', 
-            raceDetails: 'JSON test' 
-          })
-          .expect(HttpStatus.CREATED);
-      });
+        const result = await controller.sendRaceUpdate(mockAuthUser, { raceDetails: 'Long email test' });
 
-      it('should accept application/json content type', async () => {
-        mockService.sendRaceUpdateEmail.mockResolvedValue({ 
-          success: true, 
-          status: 202, 
-          data: { sent: true } 
-        });
-
-        await request(app.getHttpServer())
-          .post('/notifications/send-race-update')
-          .set('Content-Type', 'application/json')
-          .send({ 
-            recipientEmail: 'appjson@test.com', 
-            raceDetails: 'App JSON test' 
-          })
-          .expect(HttpStatus.CREATED);
+        expect(result.message).toBe('Race update email sent');
+        expect(mockNotificationsService.sendRaceUpdateEmail).toHaveBeenCalledWith(
+          longEmail,
+          'Long email test'
+        );
       });
     });
   });

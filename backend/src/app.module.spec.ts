@@ -12,7 +12,13 @@ jest.mock('@nestjs/config', () => ({
 jest.mock('@nestjs/typeorm', () => ({
   TypeOrmModule: {
     forRootAsync: jest.fn().mockReturnValue('mock-typeorm-module')
-  }
+  },
+  InjectRepository: jest.fn().mockImplementation(() => (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) => {})
+}));
+
+// Mock uuid to prevent ES module issues
+jest.mock('uuid', () => ({
+  v4: jest.fn().mockReturnValue('mock-uuid')
 }));
 
 // Mock all the modules
@@ -78,6 +84,14 @@ jest.mock('./standings/standings.module', () => ({
 
 jest.mock('./users/users.module', () => ({
   UsersModule: 'mock-users-module'
+}));
+
+jest.mock('./notifications/notifications.module', () => ({
+  NotificationsModule: 'mock-notifications-module'
+}));
+
+jest.mock('./admin/admin.module', () => ({
+  AdminModule: 'mock-admin-module'
 }));
 
 jest.mock('./dashboard/dashboard.module', () => ({

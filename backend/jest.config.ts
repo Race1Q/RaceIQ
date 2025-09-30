@@ -11,6 +11,11 @@ const config: Config = {
   // File extensions Jest will handle
   moduleFileExtensions: ['ts', 'js', 'json'],
 
+  // Transform configuration to handle ES modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)'
+  ],
+
   // Ensure .env.test is loaded before tests
   setupFiles: ['dotenv/config'],
 
