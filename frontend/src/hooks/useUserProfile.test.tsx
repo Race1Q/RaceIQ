@@ -86,7 +86,6 @@ describe('useUserProfile', () => {
     mockUseAuth0.mockReturnValue({
       user: mockUser,
       getAccessTokenSilently: mockGetAccessTokenSilently,
-      loginWithRedirect: vi.fn(),
       isLoading: false,
     });
 
@@ -98,26 +97,28 @@ describe('useUserProfile', () => {
 
     // Default fetch mock
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...mockProfileData,
-            favoriteDriver: mockDriverData,
-            favoriteConstructor: mockConstructorData,
-          }),
-          text: async () => '',
+          json: async () => mockProfileData,
+        });
+      }
+      if (url.includes('/api/drivers/2')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDriverData,
+        });
+      }
+      if (url.includes('/api/constructors/1')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockConstructorData,
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -140,35 +141,25 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
-    expect(result.current.favoriteDriver).toMatchObject(mockDriverData);
-    expect(result.current.favoriteConstructor).toMatchObject(mockConstructorData);
+    expect(result.current.profile).toEqual(mockProfileData);
+    expect(result.current.favoriteDriver).toEqual(mockDriverData);
+    expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
     expect(result.current.error).toBeNull();
     expect(result.current.refetch).toBeInstanceOf(Function);
   });
 
   it('should handle user profile without favorites', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...mockProfileDataNoFavorites,
-            favoriteDriver: null,
-            favoriteConstructor: null,
-          }),
-          text: async () => '',
+          json: async () => mockProfileDataNoFavorites,
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -176,7 +167,7 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(mockProfileDataNoFavorites);
+    expect(result.current.profile).toEqual(mockProfileDataNoFavorites);
     expect(result.current.favoriteDriver).toBeNull();
     expect(result.current.favoriteConstructor).toBeNull();
     expect(result.current.error).toBeNull();
@@ -186,7 +177,6 @@ describe('useUserProfile', () => {
     mockUseAuth0.mockReturnValue({
       user: null,
       getAccessTokenSilently: mockGetAccessTokenSilently,
-      loginWithRedirect: vi.fn(),
       isLoading: true,
     });
 
@@ -203,7 +193,6 @@ describe('useUserProfile', () => {
     mockUseAuth0.mockReturnValue({
       user: null,
       getAccessTokenSilently: mockGetAccessTokenSilently,
-      loginWithRedirect: vi.fn(),
       isLoading: false,
     });
 
@@ -220,7 +209,6 @@ describe('useUserProfile', () => {
     mockUseAuth0.mockReturnValue({
       user: { ...mockUser, sub: undefined },
       getAccessTokenSilently: mockGetAccessTokenSilently,
-      loginWithRedirect: vi.fn(),
       isLoading: false,
     });
 
@@ -235,21 +223,17 @@ describe('useUserProfile', () => {
 
   it('should handle profile API failure', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: false,
           status: 500,
           statusText: 'Internal Server Error',
-          headers: new Headers(),
-          text: async () => '',
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -260,31 +244,34 @@ describe('useUserProfile', () => {
     expect(result.current.profile).toBeNull();
     expect(result.current.favoriteDriver).toBeNull();
     expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toContain('API Error: 500 Internal Server Error');
+    expect(result.current.error).toBe('API Error: 500 Internal Server Error');
   });
 
   it('should handle favorite driver fetch failure gracefully', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...mockProfileData,
-            favoriteDriver: null,
-            favoriteConstructor: mockConstructorData,
-          }),
-          text: async () => '',
+          json: async () => mockProfileData,
+        });
+      }
+      if (url.includes('/api/drivers/2')) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        });
+      }
+      if (url.includes('/api/constructors/1')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockConstructorData,
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -292,7 +279,7 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
+    expect(result.current.profile).toEqual(mockProfileData);
     expect(result.current.favoriteDriver).toBeNull();
     expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
     expect(result.current.error).toBeNull();
@@ -300,26 +287,29 @@ describe('useUserProfile', () => {
 
   it('should handle favorite constructor fetch failure gracefully', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...mockProfileData,
-            favoriteDriver: mockDriverData,
-            favoriteConstructor: null,
-          }),
-          text: async () => '',
+          json: async () => mockProfileData,
+        });
+      }
+      if (url.includes('/api/drivers/2')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDriverData,
+        });
+      }
+      if (url.includes('/api/constructors/1')) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -327,7 +317,7 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
+    expect(result.current.profile).toEqual(mockProfileData);
     expect(result.current.favoriteDriver).toEqual(mockDriverData);
     expect(result.current.favoriteConstructor).toBeNull();
     expect(result.current.error).toBeNull();
@@ -379,21 +369,20 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
+    expect(result.current.profile).toEqual(mockProfileData);
 
     // Trigger refetch
     await result.current.refetch();
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
-    expect(result.current.favoriteDriver).toMatchObject(mockDriverData);
-    expect(result.current.favoriteConstructor).toMatchObject(mockConstructorData);
+    expect(result.current.profile).toEqual(mockProfileData);
+    expect(result.current.favoriteDriver).toEqual(mockDriverData);
+    expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
   });
 
   it('should handle refetch when user is not authenticated', async () => {
     mockUseAuth0.mockReturnValue({
       user: null,
       getAccessTokenSilently: mockGetAccessTokenSilently,
-      loginWithRedirect: vi.fn(),
       isLoading: false,
     });
 
@@ -408,28 +397,31 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    // Mock profile to return null driver on refetch
+    // Mock driver fetch to fail on refetch
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...mockProfileData,
-            favoriteDriver: null,
-            favoriteConstructor: mockConstructorData,
-          }),
-          text: async () => '',
+          json: async () => mockProfileData,
+        });
+      }
+      if (url.includes('/api/drivers/2')) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        });
+      }
+      if (url.includes('/api/constructors/1')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockConstructorData,
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -437,7 +429,7 @@ describe('useUserProfile', () => {
       await result.current.refetch();
     });
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
+    expect(result.current.profile).toEqual(mockProfileData);
     expect(result.current.favoriteDriver).toBeNull();
     expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
   });
@@ -447,28 +439,31 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    // Mock profile to return null constructor on refetch
+    // Mock constructor fetch to fail on refetch
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...mockProfileData,
-            favoriteDriver: mockDriverData,
-            favoriteConstructor: null,
-          }),
-          text: async () => '',
+          json: async () => mockProfileData,
+        });
+      }
+      if (url.includes('/api/drivers/2')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDriverData,
+        });
+      }
+      if (url.includes('/api/constructors/1')) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -476,7 +471,7 @@ describe('useUserProfile', () => {
       await result.current.refetch();
     });
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
+    expect(result.current.profile).toEqual(mockProfileData);
     expect(result.current.favoriteDriver).toEqual(mockDriverData);
     expect(result.current.favoriteConstructor).toBeNull();
   });
@@ -486,7 +481,7 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(mockProfileData);
+    expect(result.current.profile).toEqual(mockProfileData);
 
     // Update refresh trigger
     mockUseProfileUpdate.mockReturnValue({
@@ -497,7 +492,7 @@ describe('useUserProfile', () => {
     rerender();
 
     // Should refetch data due to refresh trigger change
-    await waitFor(() => expect(result.current.profile).toMatchObject(mockProfileData));
+    await waitFor(() => expect(result.current.profile).toEqual(mockProfileData));
   });
 
   it('should handle Auth0 audience and scope configuration', async () => {
@@ -505,8 +500,12 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    // Now called without arguments (uses provider defaults)
-    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith();
+    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith({
+      authorizationParams: {
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        scope: "read:drivers read:constructors read:users",
+      },
+    });
   });
 
   it('should set proper authorization headers', async () => {
@@ -516,26 +515,43 @@ describe('useUserProfile', () => {
 
     // Check that fetch was called with authorization headers
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/mock-api/api/profile'),
+      expect.stringContaining('/mock-api/api/users/profile'),
       expect.objectContaining({
         headers: expect.any(Headers),
       })
     );
     
-    // Check that getAccessTokenSilently was called (uses provider defaults, no args)
-    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith();
+    // Check that getAccessTokenSilently was called with correct parameters
+    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith({
+      authorizationParams: {
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        scope: "read:drivers read:constructors read:users",
+      },
+    });
   });
 
-  it('should handle profile response with null favorites', async () => {
+  it('should handle console warnings for favorite data fetch failures', async () => {
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          json: async () => ({
-            ...mockProfileData,
-            favoriteDriver: null,
-            favoriteConstructor: null,
-          }),
+          json: async () => mockProfileData,
+        });
+      }
+      if (url.includes('/api/drivers/2')) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        });
+      }
+      if (url.includes('/api/constructors/1')) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
         });
       }
       return Promise.resolve({
@@ -549,8 +565,10 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
+    expect(consoleSpy).toHaveBeenCalledWith('Could not fetch favorite driver:', expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith('Could not fetch favorite constructor:', expect.any(Error));
+
+    consoleSpy.mockRestore();
   });
 
   it('should handle profile with only favorite driver', async () => {
@@ -560,26 +578,22 @@ describe('useUserProfile', () => {
     };
 
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...profileWithOnlyDriver,
-            favoriteDriver: mockDriverData,
-            favoriteConstructor: null,
-          }),
-          text: async () => '',
+          json: async () => profileWithOnlyDriver,
+        });
+      }
+      if (url.includes('/api/drivers/2')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockDriverData,
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -587,7 +601,7 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(profileWithOnlyDriver);
+    expect(result.current.profile).toEqual(profileWithOnlyDriver);
     expect(result.current.favoriteDriver).toEqual(mockDriverData);
     expect(result.current.favoriteConstructor).toBeNull();
     expect(result.current.error).toBeNull();
@@ -600,26 +614,22 @@ describe('useUserProfile', () => {
     };
 
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/profile')) {
+      if (url.includes('/api/users/profile')) {
         return Promise.resolve({
           ok: true,
-          status: 200,
-          statusText: 'OK',
-          headers: new Headers(),
-          json: async () => ({
-            ...profileWithOnlyConstructor,
-            favoriteDriver: null,
-            favoriteConstructor: mockConstructorData,
-          }),
-          text: async () => '',
+          json: async () => profileWithOnlyConstructor,
+        });
+      }
+      if (url.includes('/api/constructors/1')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockConstructorData,
         });
       }
       return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        headers: new Headers(),
-        text: async () => 'Not Found',
       });
     });
 
@@ -627,7 +637,7 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.profile).toMatchObject(profileWithOnlyConstructor);
+    expect(result.current.profile).toEqual(profileWithOnlyConstructor);
     expect(result.current.favoriteDriver).toBeNull();
     expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
     expect(result.current.error).toBeNull();
@@ -661,7 +671,8 @@ describe('useUserProfile', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    // Only fetches profile now (includes favorites)
-    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/profile', expect.any(Object));
+    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/users/profile', expect.any(Object));
+    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/drivers/2', expect.any(Object));
+    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/constructors/1', expect.any(Object));
   });
 });
