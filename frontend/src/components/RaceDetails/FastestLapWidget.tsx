@@ -73,9 +73,10 @@ const FastestLapWidget = ({ data }: { data: FastestLap | null | undefined }) => 
         bottom="-10%"
         h="120%"
         objectFit="contain"
-        opacity={0.25}
-        filter="grayscale(100%) contrast(1.5) brightness(1.2)"
+        opacity={0.8}
+        filter="contrast(1.1) brightness(1.1)"
         transform="scaleX(-1)"
+        zIndex={3}
         onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
       />
       <VStack align="flex-start" w="100%" h="100%" zIndex={2} position="relative" justify="space-between">

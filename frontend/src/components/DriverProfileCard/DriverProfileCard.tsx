@@ -48,10 +48,10 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
         <Box
           position="relative"
           flexGrow={1}
-          p={{ base: 'md', md: 'lg' }}
+          p={{ base: 'sm', md: 'lg' }}
           // UPDATED: Changed 25% to 45% for a softer gradient
           bgGradient={`radial(at 70% 30%, ${lightenColor(teamColor, 20)} 0%, ${teamColor} 45%, ${darkenColor(teamColor, 80)} 90%)`}
-          minH="300px"
+          minH={{ base: '200px', md: '300px' }}
           overflow="hidden"
         >
           {/* Driver Text Info */}
@@ -67,7 +67,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             <Heading
               as="h2"
               fontFamily="signature"
-              fontSize={{ base: '3xl', md: '4xl' }}
+              fontSize={{ base: '2xl', md: '4xl' }}
               fontWeight="normal"
               lineHeight="1"
               textTransform="none"
@@ -78,7 +78,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             <Heading
               as="span"
               fontFamily="heading"
-              fontSize={{ base: '2xl', md: '3xl' }}
+              fontSize={{ base: 'xl', md: '3xl' }}
               fontWeight="bold"
               lineHeight="1.1"
               textTransform="uppercase"
@@ -89,7 +89,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             {isNumberAvailable && (
               <Text
                 fontFamily="heading"
-                fontSize={{ base: '2xl', md: '3xl' }}
+                fontSize={{ base: 'xl', md: '3xl' }}
                 fontWeight="bold"
                 pt="sm"
               >
@@ -101,8 +101,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           {/* Driver Nationality Flag */}
           <Flex
             position="absolute"
-            left={{ base: 'md', md: 'lg' }}
-            bottom={{ base: 'md', md: 'lg' }}
+            left={{ base: 'sm', md: 'lg' }}
+            bottom={{ base: 'sm', md: 'lg' }}
             zIndex={2}
             align="center"
           >
@@ -115,8 +115,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
                 countryCode={countryCode.toLowerCase()}
                 svg
                 style={{
-                  width: '40px',
-                  height: '30px',
+                  width: '32px',
+                  height: '24px',
                 }}
                 title={driver.nationality}
               />
@@ -145,10 +145,10 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
         <Box
           bg="bg-surface"
           textAlign="center"
-          p="md"
+          p={{ base: 'sm', md: 'md' }}
           fontFamily="heading"
           color="text-muted"
-          fontSize="sm"
+          fontSize={{ base: 'xs', md: 'sm' }}
           transition="all 0.2s ease"
           borderTop="1px solid"
           borderColor="border-primary"

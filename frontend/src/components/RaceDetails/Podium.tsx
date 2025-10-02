@@ -2,7 +2,6 @@
 import React from 'react';
 import { Box, Flex, Heading, Text, VStack, Image } from '@chakra-ui/react';
 import { driverHeadshots } from '../../lib/driverHeadshots';
-import { getTeamColor } from '../../lib/teamColors';
 import userIcon from '../../assets/UserIcon.png';
 
 // Define the shape of the podium data prop
@@ -26,8 +25,37 @@ const PodiumStep = ({ driver, height }: { driver: PodiumDriver; height: string }
   const teamName = driver.team_name || driver.constructor_name || 'Unknown Team';
   const headshot = driverHeadshots[driverName] || driver.driver_picture || userIcon;
   
-  // Get team color for the podium bar
-  const teamColor = getTeamColor(teamName, { hash: true });
+  // Get podium gradient and effects based on position
+  const getPodiumEffects = (position: number) => {
+    switch (position) {
+      case 1: return {
+        gradient: 'linear(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
+        glow: '0 0 20px #FFD700, 0 0 40px #FFA500, 0 0 60px #FFD700',
+        shadow: '0 8px 32px rgba(255, 215, 0, 0.4)',
+        border: '2px solid #FFD700'
+      };
+      case 2: return {
+        gradient: 'linear(135deg, #E8E8E8 0%, #C0C0C0 50%, #A8A8A8 100%)',
+        glow: '0 0 20px #C0C0C0, 0 0 40px #A8A8A8',
+        shadow: '0 8px 32px rgba(192, 192, 192, 0.4)',
+        border: '2px solid #C0C0C0'
+      };
+      case 3: return {
+        gradient: 'linear(135deg, #CD7F32 0%, #B8860B 50%, #8B4513 100%)',
+        glow: '0 0 20px #CD7F32, 0 0 40px #B8860B',
+        shadow: '0 8px 32px rgba(205, 127, 50, 0.4)',
+        border: '2px solid #CD7F32'
+      };
+      default: return {
+        gradient: 'linear(135deg, #8B5CF6 0%, #7C3AED 100%)',
+        glow: '0 0 20px #8B5CF6',
+        shadow: '0 8px 32px rgba(139, 92, 246, 0.4)',
+        border: '2px solid #8B5CF6'
+      };
+    }
+  };
+  
+  const effects = getPodiumEffects(driver.position);
 
   // The main VStack no longer needs padding-top
   return (
@@ -46,20 +74,49 @@ const PodiumStep = ({ driver, height }: { driver: PodiumDriver; height: string }
       <Box position="relative" w="100%" pt={2}>
         <Box
           h={height}
-          bg={teamColor}
+          bgGradient={effects.gradient}
           borderRadius="md"
-          boxShadow="md"
+          boxShadow={effects.shadow}
           display="flex"
           alignItems="center"
           justifyContent="center"
           position="relative"
+          border={effects.border}
+          _before={{
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius: 'inherit',
+            background: effects.gradient,
+            filter: 'blur(8px)',
+            opacity: 0.6,
+            zIndex: -1,
+          }}
+          _after={{
+            content: '""',
+            position: 'absolute',
+            top: '2px',
+            left: '2px',
+            right: '2px',
+            bottom: '2px',
+            borderRadius: 'inherit',
+            background: 'rgba(255, 255, 255, 0.1)',
+            zIndex: 1,
+          }}
+          transition="all 0.3s ease"
         >
           <Text
             fontFamily="heading"
             fontSize={{ base: '5xl', md: '7xl' }}
             fontWeight="black"
             color="white"
-            textShadow="2px 2px 4px rgba(0,0,0,0.8)"
+            textShadow="2px 2px 8px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.3)"
+            filter="drop-shadow(0 0 10px rgba(255,255,255,0.5))"
+            zIndex={2}
+            position="relative"
           >
             {driver.position}
           </Text>
