@@ -18,6 +18,7 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 import { buildApiUrl } from '../../lib/api';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
+import PageHeader from '../../components/layout/PageHeader';
 
 // Interfaces
 interface ApiConstructor {
@@ -105,94 +106,92 @@ const Constructors = () => {
   }, [constructors, searchTerm, statusFilter]);
 
   return (
-    <Box bg="bg-primary" color="text-primary" minH="100vh" py="lg">
-      <Container maxW="1600px">
-        {loading && <F1LoadingSpinner text="Loading Constructors..." />}
-        {error && (
-          <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">
-            {error}
-          </Text>
-        )}
+    <Box>
+      <PageHeader 
+        title="Constructors" 
+        subtitle="Explore F1 teams and constructors"
+      />
+      
+      {/* Filters Section - Moved outside PageHeader */}
+      <Box bg="bg-primary" color="text-primary" py={{ base: 4, md: 6 }}>
+        <Container maxW="1600px" px={{ base: 4, md: 6 }}>
+          <Flex gap={4} direction={{ base: 'column', md: 'row' }} w="full" align={{ base: 'stretch', md: 'center' }}>
 
-        {!loading && !error && (
-          <>
-            {/* Header with Search, Title, Filters */}
-            <Flex justify="space-between" align="center" mb="xl" wrap="wrap" gap={4}>
-
-              {/* Center: Title */}
-              <Text fontSize="2xl" fontWeight="bold" fontFamily="heading">
-                Constructors
-              </Text>
-              
-
-
-              {/* Right: Filters */}
-              <Flex gap={4}>
-
-                {/* Left: Search - Show for All Teams and Inactive Teams */}
-                {(statusFilter === 'all' || statusFilter === 'inactive') && (
-                  <Box maxW="260px" w="100%">
-                    <InputGroup>
-                      <Input
-                        placeholder="Search by name"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        bg="gray.700"
-                        color="white"
-                      />
-                      {searchTerm && (
-                        <InputRightElement>
-                          <IconButton
-                            aria-label="Clear search"
-                            icon={<CloseIcon />}
-                            size="sm"
-                            onClick={() => setSearchTerm('')}
-                            bg="gray.600"
-                            _hover={{ bg: 'gray.500' }}
-                          />
-                        </InputRightElement>
-                      )}
-                    </InputGroup>
-                  </Box>
-                )}
-              
-
-                {/* Status Filter */}
-                <Box maxW="220px" w="220px">
-                  <Select
-                    options={statusOptions}
-                    value={statusOptions.find((o) => o.value === statusFilter) || null}
-                    onChange={(option) => {
-                      const newStatus = (option as Option).value as 'active' | 'inactive' | 'all';
-                      setStatusFilter(newStatus);
-                      // Clear search when switching to 'active' (only active teams don't show search)
-                      if (newStatus === 'active') {
-                        setSearchTerm('');
-                      }
-                    }}
-                    placeholder="Filter by Status"
-                    isClearable={false}
-                    chakraStyles={{
-                      control: (provided) => ({
-                        ...provided,
-                        bg: 'gray.700',
-                        color: 'white',
-                        borderColor: 'gray.600',
-                      }),
-                      menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
-                      option: (provided, state) => ({
-                        ...provided,
-                        bg: state.isFocused ? 'gray.600' : 'gray.700',
-                        color: 'white',
-                      }),
-                      singleValue: (provided) => ({ ...provided, color: 'white' }),
-                    }}
+            {/* Left: Search - Show for All Teams and Inactive Teams */}
+            {(statusFilter === 'all' || statusFilter === 'inactive') && (
+              <Box maxW={{ base: 'full', md: '260px' }} w="100%">
+                <InputGroup>
+                  <Input
+                    placeholder="Search by name"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    bg="gray.700"
+                    color="white"
                   />
-                </Box>
-              </Flex>
-            </Flex>
+                  {searchTerm && (
+                    <InputRightElement>
+                      <IconButton
+                        aria-label="Clear search"
+                        icon={<CloseIcon />}
+                        size="sm"
+                        onClick={() => setSearchTerm('')}
+                        bg="gray.600"
+                        _hover={{ bg: 'gray.500' }}
+                      />
+                    </InputRightElement>
+                  )}
+                </InputGroup>
+              </Box>
+            )}
+            
 
-            {/* Constructors Grid */}
+            {/* Status Filter */}
+            <Box maxW={{ base: 'full', md: '220px' }} w={{ base: 'full', md: '220px' }}>
+              <Select
+                options={statusOptions}
+                value={statusOptions.find((o) => o.value === statusFilter) || null}
+                onChange={(option) => {
+                  const newStatus = (option as Option).value as 'active' | 'inactive' | 'all';
+                  setStatusFilter(newStatus);
+                  // Clear search when switching to 'active' (only active teams don't show search)
+                  if (newStatus === 'active') {
+                    setSearchTerm('');
+                  }
+                }}
+                placeholder="Filter by Status"
+                isClearable={false}
+                chakraStyles={{
+                  control: (provided) => ({
+                    ...provided,
+                    bg: 'gray.700',
+                    color: 'white',
+                    borderColor: 'gray.600',
+                  }),
+                  menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
+                  option: (provided, state) => ({
+                    ...provided,
+                    bg: state.isFocused ? 'gray.600' : 'gray.700',
+                    color: 'white',
+                  }),
+                  singleValue: (provided) => ({ ...provided, color: 'white' }),
+                }}
+              />
+            </Box>
+          </Flex>
+        </Container>
+      </Box>
+      <Box bg="bg-primary" color="text-primary" minH="100vh" py={{ base: 'md', md: 'lg' }}>
+        <Container maxW="1600px" px={{ base: 4, md: 6 }}>
+          {loading && <F1LoadingSpinner text="Loading Constructors..." />}
+          {error && (
+            <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">
+              {error}
+            </Text>
+          )}
+
+          {!loading && !error && (
+            <>
+              {/* Constructors Grid */}
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
               {filteredConstructors.map((constructor) => {
                 const teamColor = teamColors[constructor.name] || 'FF1801';
@@ -233,10 +232,14 @@ const Constructors = () => {
                         <Image
                           src={carImage}
                           alt={`${constructor.name} car`}
-                          maxH="80px"
+                          maxH={{ base: '60px', md: '80px' }}
+                          maxW={{ base: '120px', md: '150px' }}
+                          w="auto"
+                          h="auto"
                           objectFit="contain"
                           borderRadius="md"
-                          ml={4}
+                          ml={{ base: 2, md: 4 }}
+                          flexShrink={0}
                         />
                       )}
                     </Flex>
@@ -244,9 +247,10 @@ const Constructors = () => {
                 );
               })}
             </SimpleGrid>
-          </>
-        )}
-      </Container>
+            </>
+          )}
+        </Container>
+      </Box>
     </Box>
   );
 };

@@ -6,6 +6,8 @@ import {
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, SimpleGrid, Table,
   Thead, Tbody, Tr, Th, Td,
 } from '@chakra-ui/react';
+import LayoutContainer from '../../components/layout/LayoutContainer';
+import ResponsiveTable from '../../components/layout/ResponsiveTable';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import type { Race } from '../../types/races';
@@ -108,14 +110,6 @@ type Lap = {
   sector_3_ms?: number | null;
   is_pit_out_lap?: boolean | null;
 };
-type RaceEvent = {
-  id?: number;
-  session_id?: number;
-  lap_number?: number;
-  type?: string;              // e.g., yellow_flag, overtake
-  message?: string | null;
-  metadata?: any;             // include x/y for overlays if backend provides
-};
 
 // Flexible endpoints for by-race lookups
 function candidates(base: string, raceId: string | number) {
@@ -144,8 +138,6 @@ const fetchPitStopsByRaceId = (raceId: string | number) =>
   tryGet<PitStop[]>(candidates('pit-stops', raceId));
 const fetchLapsByRaceId = (raceId: string | number) =>
   tryGet<Lap[]>(candidates('laps', raceId));
-const fetchRaceEventsByRaceId = (raceId: string | number) =>
-  tryGet<RaceEvent[]>(candidates('race-events', raceId));
 
 // ---------- utils ----------
 const fmtMs = (ms?: number | null) => (ms == null ? '-' : `${(ms / 1000).toFixed(3)}s`);
@@ -208,13 +200,11 @@ const RaceDetailPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const [circuitName, setCircuitName] = useState<string>('');
-  const [circuitLoading, setCircuitLoading] = useState<boolean>(false);
 
   const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
   const [qualiResults, setQualiResults] = useState<QualiResult[]>([]);
   const [pitStops, setPitStops] = useState<PitStop[]>([]);
   const [laps, setLaps] = useState<Lap[]>([]);
-  const [events, setEvents] = useState<RaceEvent[]>([]); // kept for future use (events tab)
 
   // summary state
   const [summary, setSummary] = useState<RaceSummary | null>(null);
@@ -250,10 +240,8 @@ const RaceDetailPage: React.FC = () => {
   useEffect(() => {
     if (!race) return;
     let alive = true;
-    setCircuitLoading(true);
     fetchCircuitName(race.circuit_id)
-      .then((name) => { if (alive) setCircuitName(name); })
-      .finally(() => { if (alive) setCircuitLoading(false); });
+      .then((name) => { if (alive) setCircuitName(name); });
     return () => { alive = false; };
   }, [race]);
 
@@ -265,7 +253,6 @@ const RaceDetailPage: React.FC = () => {
     fetchQualifyingResultsByRaceId(raceId).then(d => { if (alive) setQualiResults(d); });
     fetchPitStopsByRaceId(raceId).then(d => { if (alive) setPitStops(d); });
     fetchLapsByRaceId(raceId).then(d => { if (alive) setLaps(d); });
-  fetchRaceEventsByRaceId(raceId).then(d => { if (alive) setEvents(d); });
     // Fetch summary
     setSummaryLoading(true);
     setSummaryError(null);
@@ -357,19 +344,31 @@ const RaceDetailPage: React.FC = () => {
   }
 
   return (
-    <Box bg="bg-primary" minH="100vh">
-      <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
-        {/* Header (unchanged look) */}
-        <Flex align="center" gap={4} mb={8}>
+    <LayoutContainer maxW="1400px">
+        {/* Header - Mobile Responsive */}
+        <Flex align="center" gap={{ base: 2, md: 4 }} mb={{ base: 4, md: 8 }} flexWrap="wrap">
           <IconButton
             aria-label="Go back"
             icon={<ArrowLeft size={18} />}
             onClick={() => navigate('/races')}
             variant="ghost"
+            size={{ base: 'sm', md: 'md' }}
           />
-          <VStack align="flex-start" spacing={1}>
-            <Text fontSize="2xl" fontWeight="bold" color="text-primary" fontFamily="heading">{race.name}</Text>
-            <Text fontSize="md" color="text-secondary">
+          <VStack align="flex-start" spacing={1} flex={1} minW={0}>
+            <Text 
+              fontSize={{ base: 'lg', md: '2xl' }} 
+              fontWeight="bold" 
+              color="text-primary" 
+              fontFamily="heading"
+              noOfLines={{ base: 2, md: 1 }}
+            >
+              {race.name}
+            </Text>
+            <Text 
+              fontSize={{ base: 'sm', md: 'md' }} 
+              color="text-secondary"
+              noOfLines={1}
+            >
               Round {race.round} • {new Date(race.date).toLocaleDateString()}
             </Text>
           </VStack>
@@ -420,23 +419,26 @@ const RaceDetailPage: React.FC = () => {
           </Box>
         </MotionBox>
 
-        {/* Tabs */}
-        <Tabs colorScheme="red" variant="unstyled" mb={8}>
-          <TabList
-            bg="bg-surface"
-            border="1px solid"
-            borderColor="border-primary"
-            borderRadius="full"
-            p="6px"
-            w="fit-content"
-            gap={2}
-          >
+        {/* Tabs - Mobile Responsive */}
+        <Tabs colorScheme="red" variant="unstyled" mb={{ base: 4, md: 8 }}>
+          <Box overflowX="auto" pb={2}>
+            <TabList
+              bg="bg-surface"
+              border="1px solid"
+              borderColor="border-primary"
+              borderRadius="full"
+              p="6px"
+              w="fit-content"
+              gap={2}
+              minW="max-content"
+            >
             <Tab
-              px={6}
-              h="44px"
+              px={{ base: 3, md: 6 }}
+              h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
               color="text-secondary"
+              fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
@@ -445,15 +447,17 @@ const RaceDetailPage: React.FC = () => {
                 boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
               }}
               transition="all 0.25s ease"
+              whiteSpace="nowrap"
             >
               Summary
             </Tab>
             <Tab
-              px={6}
-              h="44px"
+              px={{ base: 3, md: 6 }}
+              h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
               color="text-secondary"
+              fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
@@ -462,15 +466,17 @@ const RaceDetailPage: React.FC = () => {
                 boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
               }}
               transition="all 0.25s ease"
+              whiteSpace="nowrap"
             >
               Race
             </Tab>
             <Tab
-              px={6}
-              h="44px"
+              px={{ base: 3, md: 6 }}
+              h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
               color="text-secondary"
+              fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
@@ -479,15 +485,18 @@ const RaceDetailPage: React.FC = () => {
                 boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
               }}
               transition="all 0.25s ease"
+              whiteSpace="nowrap"
             >
-              Qualifying
+              <Text display={{ base: "none", sm: "inline" }}>Qualifying</Text>
+              <Text display={{ base: "inline", sm: "none" }}>Quali</Text>
             </Tab>
             <Tab
-              px={6}
-              h="44px"
+              px={{ base: 3, md: 6 }}
+              h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
               color="text-secondary"
+              fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
@@ -496,8 +505,10 @@ const RaceDetailPage: React.FC = () => {
                 boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
               }}
               transition="all 0.25s ease"
+              whiteSpace="nowrap"
             >
-              Qualifying → Race
+              <Text display={{ base: "none", sm: "inline" }}>Qualifying → Race</Text>
+              <Text display={{ base: "inline", sm: "none" }}>Q→R</Text>
             </Tab>
             {/* <Tab
               px={6}
@@ -534,24 +545,25 @@ const RaceDetailPage: React.FC = () => {
               Lap Times / Pit Stops
             </Tab> */}
           </TabList>
+          </Box>
 
           <TabPanels>
             {/* SUMMARY */}
-            <TabPanel>
-              <VStack align="stretch" spacing={4}>
-                <Text fontSize="xl" fontWeight="bold" color="text-primary">Summary</Text>
+            <TabPanel p={{ base: 2, md: 4 }}>
+              <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
+                <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="text-primary">Summary</Text>
 
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 3, md: 4 }}>
                   {/* Full-width Podium */}
                   <Box 
-                    p={4} 
+                    p={{ base: 3, md: 4 }} 
                     border="1px solid" 
                     borderColor="border-subtle" 
                     borderRadius="lg" 
                     bg="bg-elevated" 
                     gridColumn={{ md: 'span 2' }}
                   >
-                    <Text fontWeight="bold" mb={4} fontSize="lg">Podium</Text>
+                    <Text fontWeight="bold" mb={{ base: 3, md: 4 }} fontSize={{ base: 'md', md: 'lg' }}>Podium</Text>
                     {summaryLoading ? (
                       <Spinner size="md" />
                     ) : summaryError ? (
@@ -564,9 +576,9 @@ const RaceDetailPage: React.FC = () => {
                   {/* Fastest Lap Widget */}
                   <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
                     {summaryLoading ? (
-                      <Box p={4}><Spinner size="md" /></Box>
+                      <Box p={{ base: 3, md: 4 }}><Spinner size="md" /></Box>
                     ) : summaryError ? (
-                      <Box p={4}><Text color="red.500">{summaryError}</Text></Box>
+                      <Box p={{ base: 3, md: 4 }}><Text color="red.500" fontSize={{ base: 'sm', md: 'md' }}>{summaryError}</Text></Box>
                     ) : (
                       <FastestLapWidget data={summary?.fastestLap} />
                     )}
@@ -575,9 +587,9 @@ const RaceDetailPage: React.FC = () => {
                   {/* Events Widget */}
                   <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
                     {summaryLoading ? (
-                      <Box p={4}><Spinner size="md" /></Box>
+                      <Box p={{ base: 3, md: 4 }}><Spinner size="md" /></Box>
                     ) : summaryError ? (
-                      <Box p={4}><Text color="red.500">{summaryError}</Text></Box>
+                      <Box p={{ base: 3, md: 4 }}><Text color="red.500" fontSize={{ base: 'sm', md: 'md' }}>{summaryError}</Text></Box>
                     ) : (
                       <RaceEventsWidget
                         data={summary?.events
@@ -598,7 +610,8 @@ const RaceDetailPage: React.FC = () => {
                   <HStack wrap="wrap" gap={2}>
                     <Box
                       as="button"
-                      px={3} py={1}
+                      px={3}
+                      py={1}
                       borderRadius="md"
                       borderWidth={2}
                       borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
@@ -620,7 +633,8 @@ const RaceDetailPage: React.FC = () => {
                         <Box
                           as="button"
                           key={d}
-                          px={3} py={1}
+                          px={3}
+                          py={1}
                           borderRadius="md"
                           borderWidth={2}
                           borderColor={selected ? 'brand.red' : 'border-subtle'}
@@ -642,7 +656,7 @@ const RaceDetailPage: React.FC = () => {
                   </HStack>
                 </HStack>
 
-                <Table size="sm" variant="simple">
+                <ResponsiveTable size="sm" variant="simple">
                   <Thead>
                     <Tr>
                       <Th>Pos</Th><Th>Driver</Th><Th>Constructor</Th><Th>Grid</Th><Th>Status</Th><Th isNumeric>Time</Th>
@@ -660,99 +674,99 @@ const RaceDetailPage: React.FC = () => {
                       </Tr>
                     ))}
                   </Tbody>
-                </Table>
+                </ResponsiveTable>
               </VStack>
             </TabPanel>
 
             {/* QUALIFYING */}
-            <TabPanel>
-              <VStack align="stretch" spacing={4}>
-                <HStack justify="space-between" wrap="wrap" gap={3}>
-                  <Text fontSize="xl" fontWeight="bold" color="text-primary">Qualifying</Text>
-                  <HStack wrap="wrap" gap={2}>
-                    {/* Phase filter above driver filter, blue color for distinction */}
-                    <Box mb={2}>
-                      <Text fontWeight="bold" mb={1}>Phase:</Text>
-                      <HStack wrap="wrap" gap={2}>
-                        {['all', 'q1', 'q2', 'q3'].map(phase => {
-                          const label = phase === 'all' ? 'All' : phase.toUpperCase();
-                          const selected = qualiPhase === phase;
-                          return (
-                            <Box
-                              as="button"
-                              key={phase}
-                              px={3} py={1}
-                              borderRadius="md"
-                              borderWidth={2}
-                              borderColor={selected ? 'blue.400' : 'border-subtle'}
-                              boxShadow={selected ? '0 0 8px 2px #4299E1' : undefined}
-                              bg={selected ? 'bg-elevated' : 'bg-surface'}
-                              fontWeight="bold"
-                              color={selected ? 'blue.400' : 'text-primary'}
-                              cursor="pointer"
-                              m={1}
-                              transition="all 0.2s"
-                              onClick={() => setQualiPhase(phase as typeof qualiPhase)}
-                            >
-                              {label}
-                            </Box>
-                          );
-                        })}
-                      </HStack>
-                    </Box>
-                    {/* Driver filter below phase filter, separated by VStack */}
-                    <Box mb={2}>
-                      <Text fontWeight="bold" mb={1}>Drivers:</Text>
-                      <HStack wrap="wrap" gap={2}>
-                        <Box
-                          as="button"
-                          px={3} py={1}
-                          borderRadius="md"
-                          borderWidth={2}
-                          borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
-                          boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
-                          bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
-                          fontWeight="bold"
-                          color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
-                          onClick={() => setDriverFilter([])}
-                          transition="all 0.2s"
-                        >
-                          All Drivers
-                        </Box>
-                        {driversInRace.map(d => {
-                          const qualiResult = qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d);
-                          const label = qualiResult?.driver_name || '';
-                          if (!label) return null;
-                          const selected = driverFilter.includes(d);
-                          return (
-                            <Box
-                              as="button"
-                              key={d}
-                              px={3} py={1}
-                              borderRadius="md"
-                              borderWidth={2}
-                              borderColor={selected ? 'brand.red' : 'border-subtle'}
-                              boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
-                              bg={selected ? 'bg-elevated' : 'bg-surface'}
-                              fontWeight="bold"
-                              color={selected ? 'brand.red' : 'text-primary'}
-                              cursor="pointer"
-                              m={1}
-                              transition="all 0.2s"
-                              onClick={() => {
-                                setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
-                              }}
-                            >
-                              {label}
-                            </Box>
-                          );
-                        })}
-                      </HStack>
-                    </Box>
-                  </HStack>
-                </HStack>
+            <TabPanel p={{ base: 2, md: 4 }}>
+              <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
+                <VStack align="stretch" spacing={4}>
+                  <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="text-primary">Qualifying</Text>
+                  
+                  {/* Phase filter */}
+                  <Box>
+                    <Text fontWeight="bold" mb={2}>Phase:</Text>
+                    <HStack wrap="wrap" gap={2}>
+                      {['all', 'q1', 'q2', 'q3'].map(phase => {
+                        const label = phase === 'all' ? 'All' : phase.toUpperCase();
+                        const selected = qualiPhase === phase;
+                        return (
+                          <Box
+                            as="button"
+                            key={phase}
+                            px={3} py={1}
+                            borderRadius="md"
+                            borderWidth={2}
+                            borderColor={selected ? 'blue.400' : 'border-subtle'}
+                            boxShadow={selected ? '0 0 8px 2px #4299E1' : undefined}
+                            bg={selected ? 'bg-elevated' : 'bg-surface'}
+                            fontWeight="bold"
+                            color={selected ? 'blue.400' : 'text-primary'}
+                            cursor="pointer"
+                            m={1}
+                            transition="all 0.2s"
+                            onClick={() => setQualiPhase(phase as typeof qualiPhase)}
+                          >
+                            {label}
+                          </Box>
+                        );
+                      })}
+                    </HStack>
+                  </Box>
+                  
+                  {/* Driver filter */}
+                  <Box>
+                    <Text fontWeight="bold" mb={2}>Drivers:</Text>
+                    <HStack wrap="wrap" gap={2}>
+                      <Box
+                        as="button"
+                        px={3} py={1}
+                        borderRadius="md"
+                        borderWidth={2}
+                        borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
+                        boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                        bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                        fontWeight="bold"
+                        color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                        onClick={() => setDriverFilter([])}
+                        transition="all 0.2s"
+                      >
+                        All Drivers
+                      </Box>
+                      {driversInRace.map(d => {
+                        const qualiResult = qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === d);
+                        const label = qualiResult?.driver_name || '';
+                        if (!label) return null;
+                        const selected = driverFilter.includes(d);
+                        return (
+                          <Box
+                            as="button"
+                            key={d}
+                            px={3} py={1}
+                            borderRadius="md"
+                            borderWidth={2}
+                            borderColor={selected ? 'brand.red' : 'border-subtle'}
+                            boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                            bg={selected ? 'bg-elevated' : 'bg-surface'}
+                            fontWeight="bold"
+                            color={selected ? 'brand.red' : 'text-primary'}
+                            cursor="pointer"
+                            m={1}
+                            transition="all 0.2s"
+                            onClick={() => {
+                              setDriverFilter(selected ? driverFilter.filter(x => x !== d) : [...driverFilter, d]);
+                            }}
+                          >
+                            {label}
+                          </Box>
+                        );
+                      })}
+                    </HStack>
+                  </Box>
+                </VStack>
 
-                <Table size="sm" variant="simple">
+                <ResponsiveTable size="sm" variant="simple">
                   <Thead>
                     <Tr>
                       <Th>Pos</Th><Th>Driver</Th><Th>Constructor</Th>
@@ -771,14 +785,14 @@ const RaceDetailPage: React.FC = () => {
                       </Tr>
                     ))}
                   </Tbody>
-                </Table>
+                </ResponsiveTable>
               </VStack>
             </TabPanel>
 
 {/* QUALI → RACE (improved SVG) */}
-<TabPanel>
-  <VStack align="stretch" spacing={4}>
-    <Text fontSize="xl" fontWeight="bold" color="text-primary">Grid to Finish</Text>
+<TabPanel p={{ base: 2, md: 4 }}>
+  <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
+    <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="text-primary">Grid to Finish</Text>
 
     <Box
       overflow="hidden"
@@ -786,7 +800,9 @@ const RaceDetailPage: React.FC = () => {
       borderColor="border-subtle"
       borderRadius="lg"
       bg="bg-elevated"
-      p={3}
+      p={{ base: 1, md: 3 }}
+      minH={{ base: '500px', md: '400px' }}
+      w="full"
     >
       {(() => {
         const rowHeight = 32;
@@ -845,18 +861,20 @@ const RaceDetailPage: React.FC = () => {
         const height = lastY + bottomPad;
 
         return (
-          <svg
-            viewBox={`0 0 ${W + 100} ${height}`}
-            width="100%"
-            height={height}
-            preserveAspectRatio="xMidYMid meet"
-          >
+          <Box overflowX="auto" w="full" h="full">
+            <svg
+              viewBox={`0 0 ${W + 100} ${height}`}
+              width="100%"
+              height="450px"
+              preserveAspectRatio="xMidYMid meet"
+              style={{ minHeight: '450px', minWidth: '100%' }}
+            >
             {/* Vertical rails end exactly at lastY */}
             <line x1={LEFT_X}  y1={TOP} x2={LEFT_X}  y2={lastY} stroke="currentColor" strokeWidth={3} />
             <line x1={RIGHT_X} y1={TOP} x2={RIGHT_X} y2={lastY} stroke="currentColor" strokeWidth={3} />
 
-            <text x={NAME_LEFT_X - 100} y={45} fontSize="26" fontWeight="bold">Grid</text>
-            <text x={RIGHT_X + 20} y={45} fontSize="26" fontWeight="bold">Finish</text>
+            <text x={NAME_LEFT_X - 100} y={45} fontSize="32" fontWeight="bold" fill="currentColor">Grid</text>
+            <text x={RIGHT_X + 20} y={45} fontSize="32" fontWeight="bold" fill="currentColor">Finish</text>
 
             {items.map((it, i) => (
               <g key={i}>
@@ -864,33 +882,34 @@ const RaceDetailPage: React.FC = () => {
                 <text
                   x={NAME_LEFT_X}
                   y={it.y1 + 8}
-                  fontSize={18}
+                  fontSize="22"
                   fontWeight="bold"
                   fill={it.color}
                   textAnchor="end"
                 >
-                  {it.driverLabel}
+                  {typeof it.driverLabel === 'string' && it.driverLabel.length > 12 ? it.driverLabel.split(' ')[0] : it.driverLabel}
                 </text>
-                <circle cx={LEFT_X} cy={it.y1} r={10} fill={it.color} />
+                <circle cx={LEFT_X} cy={it.y1} r={12} fill={it.color} />
 
                 {/* Right node & name */}
-                <circle cx={RIGHT_X} cy={it.y2} r={10} fill={it.color} />
+                <circle cx={RIGHT_X} cy={it.y2} r={12} fill={it.color} />
                 <text
                   x={NAME_RIGHT_X}
                   y={it.y2 + 8}
-                  fontSize={18}
+                  fontSize="22"
                   fontWeight="bold"
                   fill={it.color}
                   textAnchor="start"
                 >
-                  {it.driverLabel}
+                  {typeof it.driverLabel === 'string' && it.driverLabel.length > 12 ? it.driverLabel.split(' ')[0] : it.driverLabel}
                 </text>
 
                 {/* Connecting line */}
-                <line x1={LEFT_X} y1={it.y1} x2={RIGHT_X} y2={it.y2} stroke={it.color} strokeWidth={6} />
+                <line x1={LEFT_X} y1={it.y1} x2={RIGHT_X} y2={it.y2} stroke={it.color} strokeWidth={8} />
               </g>
             ))}
           </svg>
+          </Box>
         );
       })()}
     </Box>
@@ -1026,8 +1045,7 @@ const RaceDetailPage: React.FC = () => {
             </TabPanel>
           </TabPanels>
         </Tabs>
-      </Container>
-    </Box>
+      </LayoutContainer>
   );
 };
 
@@ -1048,7 +1066,7 @@ const Footer = () => (
     <Container maxW="1200px">
       <Flex justify="space-between" align="center" wrap="wrap" gap="md">
         <HStack spacing="lg">
-          <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+          <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
           <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
           <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
         </HStack>

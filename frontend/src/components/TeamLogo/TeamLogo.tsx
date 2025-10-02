@@ -12,6 +12,7 @@ import RbF1TeamLogo from '../../assets/team_logos/RB_F1_Team.svg?react';
 import SauberLogo from '../../assets/team_logos/Kick_Sauber.svg?react';
 import HaasLogo from '../../assets/team_logos/Haas_F1_Team.svg?react';
 import AlpineLogo from '../../assets/team_logos/Alpine_F1_Team.svg?react';
+import AstonMartinLogo from '../../assets/team_logos/Aston_Martin.svg?react';
 
 interface TeamLogoProps {
   teamName: string;
@@ -22,13 +23,18 @@ const TeamLogo: React.FC<TeamLogoProps> = ({ teamName }) => {
     'McLaren': MclarenLogo,
     'Mercedes': MercedesLogo,
     'Williams': WilliamsLogo,
+    'Williams Racing': WilliamsLogo, // Alternative name
     'RB F1 Team': RbF1TeamLogo,
     'Sauber': SauberLogo,
     'Haas F1 Team': HaasLogo,
     'Alpine': AlpineLogo,
+    'Alpine F1 Team': AlpineLogo, // Alternative name
+    'Aston Martin': AstonMartinLogo,
+    'Aston Martin F1 Team': AstonMartinLogo, // Alternative name
     // Exceptions
     'Ferrari': FerrariLogo,
     'Red Bull Racing': RedBullLogo,
+    'Red Bull': RedBullLogo, // Alternative name
   };
 
   const LogoComponent = logoMap[teamName];
@@ -36,8 +42,10 @@ const TeamLogo: React.FC<TeamLogoProps> = ({ teamName }) => {
 
   const isThemed = !['Ferrari', 'Red Bull Racing'].includes(teamName);
 
+  const isWilliams = teamName === "Williams" || teamName === "Williams Racing";
+  
   return (
-    <div className={styles.logoContainer}>
+    <div className={isWilliams ? styles.williamsLogo : styles.logoContainer}>
       <LogoComponent className={isThemed ? styles.themedLogo : styles.untouchedLogo} />
     </div>
   );

@@ -22,12 +22,12 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
   const subtleBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
   // Create soft gradient tints using hex with alpha (#RRGGBBAA)
   const baseGradient = useColorModeValue(
-    `linear(to-r, ${teamColor}26, ${teamColor}0D)`, // light mode
-    `linear(to-r, ${teamColor}40, ${teamColor}14)`  // dark mode
+    `linear(to-r, ${teamColor}15, ${teamColor}08)`, // light mode - much more subtle
+    `linear(to-r, ${teamColor}20, ${teamColor}0A)`  // dark mode - much more subtle
   );
   const hoverGradient = useColorModeValue(
-    `linear(to-r, ${teamColor}33, ${teamColor}12)`,
-    `linear(to-r, ${teamColor}55, ${teamColor}20)`
+    `linear(to-r, ${teamColor}20, ${teamColor}0F)`,
+    `linear(to-r, ${teamColor}30, ${teamColor}15)`
   );
 
   return (
@@ -36,44 +36,77 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
       aria-label={`Driver ${fullName} position ${position} with ${points} points`}
       onClick={() => navigate(`/drivers/${id}`)}
       cursor="pointer"
-      minW="660px"
-      px={4}
-      py={3}
+      minW={{ base: "100%", md: "660px" }}
+      w="full"
+      px={{ base: 3, md: 4 }}
+      py={{ base: 2, md: 3 }}
       align="center"
-      gap={4}
+      gap={{ base: 2, md: 4 }}
       position="relative"
       bgGradient={baseGradient}
-      _hover={{ bgGradient: hoverGradient, transform: 'translateY(-4px)', boxShadow: `0 6px 18px -4px ${teamColor}80, 0 2px 4px -1px rgba(0,0,0,0.4)` }}
+      _hover={{ 
+        bgGradient: hoverGradient, 
+        transform: 'translateY(-4px)', 
+        boxShadow: position === 1 
+          ? `0 0 20px ${teamColor}80, 0 0 40px ${teamColor}40, 0 0 60px ${teamColor}20, 0 6px 18px -4px ${teamColor}80, 0 2px 4px -1px rgba(0,0,0,0.4)`
+          : `0 6px 18px -4px ${teamColor}80, 0 2px 4px -1px rgba(0,0,0,0.4)`
+      }}
       transition="all .25s ease"
       borderRadius="lg"
       border="1px solid"
-      borderColor={subtleBorder}
-      boxShadow={`0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`}
+      borderColor={position === 1 ? teamColor : subtleBorder}
+      boxShadow={position === 1 
+        ? `0 0 20px ${teamColor}80, 0 0 40px ${teamColor}40, 0 0 60px ${teamColor}20, 0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+        : `0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+      }
       overflow="hidden"
+      flexWrap={{ base: "wrap", md: "nowrap" }}
+      _before={position === 1 ? {
+        content: '""',
+        position: 'absolute',
+        top: '-2px',
+        left: '-2px',
+        right: '-2px',
+        bottom: '-2px',
+        background: `linear-gradient(45deg, ${teamColor}, ${teamColor}80, ${teamColor})`,
+        borderRadius: 'lg',
+        zIndex: -1,
+        animation: 'glow 2s ease-in-out infinite alternate'
+      } : undefined}
+      sx={position === 1 ? {
+        '@keyframes glow': {
+          '0%': {
+            boxShadow: `0 0 20px ${teamColor}80, 0 0 40px ${teamColor}40, 0 0 60px ${teamColor}20, 0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+          },
+          '100%': {
+            boxShadow: `0 0 30px ${teamColor}, 0 0 60px ${teamColor}60, 0 0 90px ${teamColor}40, 0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+          }
+        }
+      } : undefined}
     >
       {/* Accent Bar */}
       <Box position="absolute" left={0} top={0} bottom={0} w="6px" bg={teamColor} boxShadow={`0 0 0 1px ${teamColor}AA, 0 0 12px ${teamColor}80 inset`} />
 
-      <Text fontWeight="bold" w="40px" textAlign="center" fontSize="lg">{position}</Text>
+      <Text fontWeight="bold" w={{ base: "30px", md: "40px" }} textAlign="center" fontSize={{ base: "md", md: "lg" }}>{position}</Text>
       <Avatar
         name={fullName}
         src={profileImageUrl || undefined}
-        size="sm"
+        size={{ base: "xs", md: "sm" }}
         borderWidth="2px"
         borderColor={teamColor}
         boxShadow={`0 0 0 1px ${teamColor}AA, 0 0 10px -2px ${teamColor}`}
         bg={`${teamColor}22`}
       />
       <Flex direction="column" flex={1} minW={0}>
-        <Text fontWeight={700} noOfLines={1} letterSpacing="wide">{fullName}</Text>
+        <Text fontWeight={700} noOfLines={1} letterSpacing="wide" fontSize={{ base: "sm", md: "md" }}>{fullName}</Text>
         <HStack spacing={2} mt={1}>
           <Badge
             bg={teamColor}
             color="white"
             borderRadius="full"
-            px={3}
+            px={{ base: 2, md: 3 }}
             py={0.5}
-            fontSize="0.65rem"
+            fontSize={{ base: "0.6rem", md: "0.65rem" }}
             fontWeight="500"
             textTransform="none"
             letterSpacing="wide"
@@ -82,23 +115,23 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
         </HStack>
       </Flex>
 
-      <HStack spacing={6} pr={2}>
+      <HStack spacing={{ base: 3, md: 6 }} pr={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
         <Tooltip label="Championship Points" hasArrow>
-          <Stat textAlign="right" minW="70px">
-            <StatLabel fontSize="xs" textTransform="uppercase" opacity={0.6}>Points</StatLabel>
-            <StatNumber fontSize="lg" fontWeight="700">{points}</StatNumber>
+          <Stat textAlign="right" minW={{ base: "50px", md: "70px" }}>
+            <StatLabel fontSize={{ base: "0.6rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Points</StatLabel>
+            <StatNumber fontSize={{ base: "md", md: "lg" }} fontWeight="700">{points}</StatNumber>
           </Stat>
         </Tooltip>
         <Tooltip label="Race Wins" hasArrow>
-          <Stat textAlign="right" minW="60px">
-            <StatLabel fontSize="xs" textTransform="uppercase" opacity={0.6}>Wins</StatLabel>
-            <StatNumber fontSize="lg" fontWeight="600">{wins}</StatNumber>
+          <Stat textAlign="right" minW={{ base: "45px", md: "60px" }}>
+            <StatLabel fontSize={{ base: "0.6rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Wins</StatLabel>
+            <StatNumber fontSize={{ base: "md", md: "lg" }} fontWeight="600">{wins}</StatNumber>
           </Stat>
         </Tooltip>
         <Tooltip label="Podium Finishes" hasArrow>
-          <Stat textAlign="right" minW="72px">
-            <StatLabel fontSize="xs" textTransform="uppercase" opacity={0.6}>Podiums</StatLabel>
-            <StatNumber fontSize="lg" fontWeight="600">{podiums}</StatNumber>
+          <Stat textAlign="right" minW={{ base: "55px", md: "72px" }}>
+            <StatLabel fontSize={{ base: "0.6rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Podiums</StatLabel>
+            <StatNumber fontSize={{ base: "md", md: "lg" }} fontWeight="600">{podiums}</StatNumber>
           </Stat>
         </Tooltip>
       </HStack>

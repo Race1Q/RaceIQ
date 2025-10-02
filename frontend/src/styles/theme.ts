@@ -57,17 +57,57 @@ const theme = extendTheme({
     signature: `'Damion', cursive`,
   },
 
+  // Custom breakpoints for responsive design
+  breakpoints: {
+    base: '0px',
+    xs: '320px',
+    sm: '480px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+    '2xl': '1536px',
+  },
+
+  // Container sizes for responsive layouts
+  sizes: {
+    container: {
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1400px',
+      '3xl': '1600px',
+    },
+  },
+
   space: {
-    sm: '10px',
-    md: '20px',
-    lg: '30px',
-    xl: '40px',
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    '2xl': '48px',
+    '3xl': '64px',
   },
 
   radii: { // For border-radius
-    sm: '5px',
+    sm: '4px',
     md: '8px',
     lg: '12px',
+    xl: '16px',
+  },
+
+  // Typography scale for responsive text
+  fontSizes: {
+    xs: '0.75rem',
+    sm: '0.875rem',
+    md: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+    '2xl': '1.5rem',
+    '3xl': '1.875rem',
+    '4xl': '2.25rem',
+    '5xl': '3rem',
   },
 
   // 5. GLOBAL STYLES: Now uses the semantic tokens for automatic theme switching.

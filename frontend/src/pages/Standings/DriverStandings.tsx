@@ -1,6 +1,6 @@
 // src/pages/DriverStandings.tsx
 import React, { useState, useMemo } from 'react';
-import { Box, Flex, Heading, Text } from '@chakra-ui/react';
+import { Box, Flex, Text } from '@chakra-ui/react';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
@@ -9,6 +9,8 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 // import { teamColors } from '../../lib/teamColors';
 import DriverStandingCard from '../../components/Standings/DriverStandingCard';
 import { useDriverStandings } from '../../hooks/useDriverStandings';
+import LayoutContainer from '../../components/layout/LayoutContainer';
+import PageHeader from '../../components/layout/PageHeader';
 
 type SeasonOption = SelectOption & { value: number };
 
@@ -46,15 +48,16 @@ const DriverStandingsPage: React.FC = () => {
   // no internal tab state; we navigate to constructors page for second view
 
   return (
-    <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
-      <Heading mb={6} color="white" textAlign="left">
-        Formula 1 Championship Standings
-      </Heading>
+    <Box>
+      <PageHeader 
+        title="Formula 1 Championship Standings" 
+        subtitle="Driver standings and statistics"
+      />
+      <LayoutContainer>
+        <StandingsTabs active="drivers" />
 
-      <StandingsTabs active="drivers" />
-
-      <Flex mb={4} alignItems="center" justifyContent="space-between">
-        <Box maxW="220px">
+      <Flex mb={4} alignItems="center" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
+        <Box maxW={{ base: 'full', md: '220px' }} w="full">
           <SearchableSelect
             label="Select Season"
             options={seasonOptions}
@@ -68,7 +71,7 @@ const DriverStandingsPage: React.FC = () => {
       {loading && <F1LoadingSpinner text="Loading Driver Standings..." />}
 
       {!loading && standings.length > 0 && (
-        <Flex flexDirection="column" gap={3} overflowX="auto">
+        <Flex flexDirection="column" gap={3}>
           {standings
             .sort((a, b) => a.position - b.position)
             .map(driver => (
@@ -109,6 +112,7 @@ const DriverStandingsPage: React.FC = () => {
           {error}
         </Text>
       )}
+      </LayoutContainer>
     </Box>
   );
 };

@@ -10,7 +10,7 @@ function WidgetCard({ children }: WidgetCardProps) {
     <Box
       bg="bg-card"
       backdropFilter="blur(8px)"
-      p="md"
+      p={{ base: 'sm', md: 'md' }}
       borderRadius="lg"
       border="1px solid"
       borderColor="border-subtle"

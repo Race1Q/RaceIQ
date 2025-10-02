@@ -3,17 +3,17 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut
+  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, X
 } from 'lucide-react';
 import {
-  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image
+  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, useDisclosure
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 import ThemeToggleButton from '../ThemeToggleButton/ThemeToggleButton';
 
 // --- Sub-component for Navigation Links ---
-const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
+const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: () => void }) => {
   const { isAuthenticated } = useAuth0();
   
   const navLinks = [
@@ -45,6 +45,7 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
           isActive={useActiveRoute(path)}
           _active={{ bg: 'bg-surface-raised', color: 'brand.red' }}
           position="relative"
+          onClick={onClose}
           _after={{
             content: '""', position: 'absolute',
             width: useActiveRoute(path) ? '3px' : '0',
@@ -65,9 +66,12 @@ const SidebarNav = ({ isExpanded }: { isExpanded: boolean }) => {
 // --- Main Sidebar Component ---
 interface SidebarProps {
   onWidthChange?: (width: number) => void;
+  isMobile?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-function Sidebar({ onWidthChange }: SidebarProps) {
+function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: SidebarProps) {
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimerRef = useRef<number | null>(null);
@@ -142,6 +146,59 @@ function Sidebar({ onWidthChange }: SidebarProps) {
     });
   };
 
+  // Mobile Drawer
+  if (isMobile) {
+    return (
+      <Drawer isOpen={isOpen} onClose={onClose} placement="left" size="xs">
+        <DrawerOverlay />
+        <DrawerContent bg="bg-glassmorphism" backdropFilter="blur(10px)">
+          <DrawerHeader>
+            <HStack justify="space-between" align="center">
+              <Image 
+                src="/race_IQ_logo.svg" 
+                alt="RaceIQ Logo" 
+                h="40px"
+                w="auto"
+                objectFit="contain"
+              />
+              <DrawerCloseButton />
+            </HStack>
+          </DrawerHeader>
+          <DrawerBody p={0}>
+            <Flex direction="column" h="full" p={6}>
+              {/* Navigation Links */}
+              <SidebarNav isExpanded={true} onClose={onClose} />
+              
+              <Spacer />
+
+              {/* User Controls */}
+              <VStack spacing="sm" align="stretch">
+                <Button as={Link} to="/profile" variant="ghost" color="text-primary" fontFamily="heading" justifyContent="flex-start" h="48px" _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }} onClick={onClose}>
+                  <HStack spacing="sm">
+                    <Icon as={UserCircle} boxSize={5} />
+                    <Text>My Profile</Text>
+                  </HStack>
+                </Button>
+                <Button variant="ghost" color="text-muted" fontFamily="heading" justifyContent="flex-start" h="48px" onClick={handleLogout} _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}>
+                  <HStack spacing="sm">
+                    <Icon as={LogOut} boxSize={5} />
+                    <Text>Sign Out</Text>
+                  </HStack>
+                </Button>
+              </VStack>
+
+              {/* Theme Toggle */}
+              <Box mt={6}>
+                <ThemeToggleButton />
+              </Box>
+            </Flex>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop Sidebar
   return (
     <Box
       as="aside"
@@ -172,7 +229,7 @@ function Sidebar({ onWidthChange }: SidebarProps) {
         </Box>
 
         {/* Navigation Links */}
-        <SidebarNav isExpanded={isExpanded} />
+        <SidebarNav isExpanded={isExpanded} onClose={onClose} />
         
         <Spacer />
 

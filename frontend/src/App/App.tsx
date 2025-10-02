@@ -2,7 +2,8 @@
 
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, HStack, Button, Text, Container, Spinner } from '@chakra-ui/react';
+import { Box, Flex, HStack, Button, Text, Container, Spinner, IconButton, useDisclosure, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, VStack } from '@chakra-ui/react';
+import { Menu, X } from 'lucide-react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
@@ -35,6 +36,7 @@ import DriverStandings from '../pages/Standings/DriverStandings';
 function Navbar() {
   const { isAuthenticated } = useAuth0();
   const navigate = useNavigate();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const navLinks = [
     { path: '/', label: isAuthenticated ? 'Dashboard' : 'Home' },
@@ -52,75 +54,147 @@ function Navbar() {
   ];
 
   return (
-    <Box 
-      as="nav" 
-      bg="blackAlpha.700" 
-      backdropFilter="blur(10px)" 
-      borderBottom="1px solid" 
-      borderColor="whiteAlpha.200"
-      position="sticky" 
-      top="0" 
-      zIndex="sticky"
-    >
-      <Flex maxW="1200px" mx="auto" px="md" h="70px" justify="space-between" align="center">
-        <HStack as={Link} to="/" spacing="sm" textDecor="none">
-          <img 
-            src="/race_IQ_logo.svg" 
-            alt="RaceIQ Logo" 
-            style={{ 
-              height: '90px', 
-              width: 'auto'
-              // Removed filter to show original colors
-            }}
-          />
-        </HStack>
-        
-        <HStack spacing="lg" display={{ base: 'none', md: 'flex' }}>
-          {navLinks.map(({ path, label }) => (
-            <Button
-              key={path}
-              as={Link}
-              to={path}
-              variant="link"
-              color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
-              fontFamily="heading"
-              fontWeight="500"
-              _hover={{ color: 'brand.red', textDecor: 'none' }}
-              position="relative"
-              _after={{
-                content: '""',
-                position: 'absolute',
-                width: useActiveRoute(path) ? '100%' : '0',
-                height: '2px',
-                bottom: '-5px',
-                left: 0,
-                bgColor: 'brand.red',
-                transition: 'width 0.3s ease',
+    <>
+      <Box 
+        as="nav" 
+        bg="blackAlpha.700" 
+        backdropFilter="blur(10px)" 
+        borderBottom="1px solid" 
+        borderColor="whiteAlpha.200"
+        position="sticky" 
+        top="0" 
+        zIndex="sticky"
+      >
+        <Flex maxW="1200px" mx="auto" px={{ base: 4, md: 6 }} h={{ base: '60px', md: '70px' }} justify="space-between" align="center">
+          <HStack as={Link} to="/" spacing="sm" textDecor="none">
+            <img 
+              src="/race_IQ_logo.svg" 
+              alt="RaceIQ Logo" 
+              style={{ 
+                height: '60px', 
+                width: 'auto',
+                maxHeight: '100%'
               }}
-            >
-              {label}
-            </Button>
-          ))}
-        </HStack>
+            />
+          </HStack>
+          
+          {/* Desktop Navigation */}
+          <HStack spacing="lg" display={{ base: 'none', md: 'flex' }}>
+            {navLinks.map(({ path, label }) => (
+              <Button
+                key={path}
+                as={Link}
+                to={path}
+                variant="link"
+                color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
+                fontFamily="heading"
+                fontWeight="500"
+                _hover={{ color: 'brand.red', textDecor: 'none' }}
+                position="relative"
+                _after={{
+                  content: '""',
+                  position: 'absolute',
+                  width: useActiveRoute(path) ? '100%' : '0',
+                  height: '2px',
+                  bottom: '-5px',
+                  left: 0,
+                  bgColor: 'brand.red',
+                  transition: 'width 0.3s ease',
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+          </HStack>
 
-        <HStack spacing="sm">
-          <ThemeToggleButton />
-          {isAuthenticated ? <LogoutButton /> : <LoginButton />}
-          {isAuthenticated && (
-            <Button
-              variant="outline"
-              borderColor="brand.red"
-              color="brand.red"
-              _hover={{ bg: 'brand.red', color: 'white' }}
-              onClick={() => navigate('/profile')}
-              isActive={useActiveRoute('/profile')}
-            >
-              My Profile
-            </Button>
-          )}
-        </HStack>
-      </Flex>
-    </Box>
+          {/* Desktop Actions */}
+          <HStack spacing="sm" display={{ base: 'none', md: 'flex' }}>
+            <ThemeToggleButton />
+            {isAuthenticated ? <LogoutButton /> : <LoginButton />}
+            {isAuthenticated && (
+              <Button
+                variant="outline"
+                borderColor="brand.red"
+                color="brand.red"
+                _hover={{ bg: 'brand.red', color: 'white' }}
+                onClick={() => navigate('/profile')}
+                isActive={useActiveRoute('/profile')}
+              >
+                My Profile
+              </Button>
+            )}
+          </HStack>
+
+          {/* Mobile Menu Button */}
+          <HStack spacing={2} display={{ base: 'flex', md: 'none' }}>
+            <ThemeToggleButton />
+            <IconButton
+              aria-label="Open menu"
+              icon={<Menu size={20} />}
+              variant="ghost"
+              color="text-primary"
+              onClick={onOpen}
+            />
+          </HStack>
+        </Flex>
+      </Box>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="xs">
+        <DrawerOverlay />
+        <DrawerContent bg="bg-glassmorphism" backdropFilter="blur(10px)">
+          <DrawerHeader>
+            <HStack justify="space-between" align="center">
+              <Text fontFamily="heading" fontSize="lg">Menu</Text>
+              <DrawerCloseButton />
+            </HStack>
+          </DrawerHeader>
+          <DrawerBody>
+            <VStack spacing={4} align="stretch">
+              {navLinks.map(({ path, label }) => (
+                <Button
+                  key={path}
+                  as={Link}
+                  to={path}
+                  variant="ghost"
+                  color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
+                  fontFamily="heading"
+                  fontWeight="500"
+                  justifyContent="flex-start"
+                  h="48px"
+                  _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}
+                  onClick={onClose}
+                >
+                  {label}
+                </Button>
+              ))}
+              
+              <Box pt={4} borderTop="1px solid" borderColor="border-subtle">
+                {isAuthenticated ? (
+                  <VStack spacing={2} align="stretch">
+                    <Button
+                      variant="outline"
+                      borderColor="brand.red"
+                      color="brand.red"
+                      _hover={{ bg: 'brand.red', color: 'white' }}
+                      onClick={() => {
+                        navigate('/profile');
+                        onClose();
+                      }}
+                    >
+                      My Profile
+                    </Button>
+                    <LogoutButton />
+                  </VStack>
+                ) : (
+                  <LoginButton />
+                )}
+              </Box>
+            </VStack>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }
 
@@ -138,8 +212,11 @@ function AppContent() {
     return (
       <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
         {showNavbar && <Navbar />}
-        <Flex flex="1" align="center" justify="center">
+        <Flex flex="1" align="center" justify="center" direction="column" gap={4}>
           <Spinner thickness="3px" speed="0.65s" emptyColor="whiteAlpha.200" color="brand.red" size="lg" />
+          <Text color="text-secondary" fontSize="sm">
+            {isAuthenticated ? "Preparing your dashboard..." : "Loading RaceIQ..."}
+          </Text>
         </Flex>
       </Box>
     );
@@ -186,7 +263,7 @@ function AppContent() {
           <Container maxW="1200px">
             <Flex justify="space-between" align="center" wrap="wrap" gap="md">
               <HStack spacing="lg">
-                <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+                <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
                 <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
                 <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
               </HStack>
@@ -245,7 +322,7 @@ function AppContent() {
         <Container maxW="1200px">
           <Flex justify="space-between" align="center" wrap="wrap" gap="md">
             <HStack spacing="lg">
-              <Link to="/api-docs"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
+              <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
               <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
               <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
             </HStack>

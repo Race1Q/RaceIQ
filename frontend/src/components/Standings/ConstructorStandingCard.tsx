@@ -1,7 +1,9 @@
 import React from 'react';
-import { Box, Flex, Text, HStack, Stat, StatLabel, StatNumber, Badge, useColorModeValue } from '@chakra-ui/react';
+import { Box, Flex, Text, HStack, Stat, StatLabel, StatNumber, Badge, useColorModeValue, Image } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { teamColors } from '../../lib/teamColors';
+import { teamCarImages } from '../../lib/teamCars';
+import TeamLogo from '../TeamLogo/TeamLogo';
 
 interface ConstructorStandingCardProps {
   constructorId: number;
@@ -9,21 +11,22 @@ interface ConstructorStandingCardProps {
   constructorName: string;
   points: number;
   wins: number;
+  podiums: number;
 }
 
 export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = ({
-  constructorId, position, constructorName, points, wins
+  constructorId, position, constructorName, points, wins, podiums
 }) => {
   const navigate = useNavigate();
   const teamColor = `#${teamColors[constructorName] || teamColors.Default}`;
   const subtleBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
   const baseGradient = useColorModeValue(
-    `linear(to-r, ${teamColor}26, ${teamColor}0D)`,
-    `linear(to-r, ${teamColor}40, ${teamColor}14)`
+    `linear(to-r, ${teamColor}15, ${teamColor}08)`, // much more subtle
+    `linear(to-r, ${teamColor}20, ${teamColor}0A)`  // much more subtle
   );
   const hoverGradient = useColorModeValue(
-    `linear(to-r, ${teamColor}33, ${teamColor}12)`,
-    `linear(to-r, ${teamColor}55, ${teamColor}20)`
+    `linear(to-r, ${teamColor}20, ${teamColor}0F)`,
+    `linear(to-r, ${teamColor}30, ${teamColor}15)`
   );
 
   return (
@@ -32,33 +35,82 @@ export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = (
       aria-label={`Constructor ${constructorName} position ${position} with ${points} points`}
       onClick={() => navigate(`/constructors/${constructorId}`)}
       cursor="pointer"
-      minW="600px"
-      px={4}
-      py={3}
+      minW={{ base: "100%", md: "600px" }}
+      w="full"
+      px={{ base: 3, md: 4 }}
+      py={{ base: 2, md: 3 }}
       align="center"
-      gap={4}
+      gap={{ base: 2, md: 4 }}
       position="relative"
       bgGradient={baseGradient}
-      _hover={{ bgGradient: hoverGradient, transform: 'translateY(-4px)', boxShadow: `0 6px 18px -4px ${teamColor}80, 0 2px 4px -1px rgba(0,0,0,0.4)` }}
+      _hover={{ 
+        bgGradient: hoverGradient, 
+        transform: 'translateY(-4px)', 
+        boxShadow: position === 1 
+          ? `0 0 20px ${teamColor}80, 0 0 40px ${teamColor}40, 0 0 60px ${teamColor}20, 0 6px 18px -4px ${teamColor}80, 0 2px 4px -1px rgba(0,0,0,0.4)`
+          : `0 6px 18px -4px ${teamColor}80, 0 2px 4px -1px rgba(0,0,0,0.4)`
+      }}
       transition="all .25s ease"
       borderRadius="lg"
       border="1px solid"
-      borderColor={subtleBorder}
-      boxShadow={`0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`}
+      borderColor={position === 1 ? teamColor : subtleBorder}
+      boxShadow={position === 1 
+        ? `0 0 20px ${teamColor}80, 0 0 40px ${teamColor}40, 0 0 60px ${teamColor}20, 0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+        : `0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+      }
       overflow="hidden"
+      flexWrap={{ base: "wrap", md: "nowrap" }}
+      _before={position === 1 ? {
+        content: '""',
+        position: 'absolute',
+        top: '-2px',
+        left: '-2px',
+        right: '-2px',
+        bottom: '-2px',
+        background: `linear-gradient(45deg, ${teamColor}, ${teamColor}80, ${teamColor})`,
+        borderRadius: 'lg',
+        zIndex: -1,
+        animation: 'glow 2s ease-in-out infinite alternate'
+      } : undefined}
+      sx={position === 1 ? {
+        '@keyframes glow': {
+          '0%': {
+            boxShadow: `0 0 20px ${teamColor}80, 0 0 40px ${teamColor}40, 0 0 60px ${teamColor}20, 0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+          },
+          '100%': {
+            boxShadow: `0 0 30px ${teamColor}, 0 0 60px ${teamColor}60, 0 0 90px ${teamColor}40, 0 2px 6px -2px rgba(0,0,0,0.45), 0 0 0 1px ${teamColor}22`
+          }
+        }
+      } : undefined}
     >
       <Box position="absolute" left={0} top={0} bottom={0} w="6px" bg={teamColor} boxShadow={`0 0 0 1px ${teamColor}AA, 0 0 12px ${teamColor}80 inset`} />
-      <Text fontWeight="bold" w="40px" textAlign="center" fontSize="lg">{position}</Text>
-      <Flex direction="column" flex={1} minW={0}>
-        <Text fontWeight={700} letterSpacing="wide" noOfLines={1}>{constructorName}</Text>
+      <Text fontWeight="bold" w={{ base: "30px", md: "40px" }} textAlign="center" fontSize={{ base: "md", md: "lg" }}>{position}</Text>
+      
+      {/* Team Logo - Fixed consistent size */}
+      <Box 
+        w={{ base: "100px", md: "110px" }} 
+        h={{ base: "80px", md: "90px" }} 
+        display="flex" 
+        alignItems="center" 
+        justifyContent="flex-start"
+        flexShrink={0}
+        p={3}
+        pl={constructorName === "Williams" || constructorName === "Williams Racing" ? 1 : 3}
+        pr={constructorName === "Williams" || constructorName === "Williams Racing" ? 6 : 3}
+      >
+        <TeamLogo teamName={constructorName} />
+      </Box>
+      
+      <Flex direction="column" flex={1} minW={0} mr={4} ml={6}>
+        <Text fontWeight={700} letterSpacing="wide" noOfLines={1} fontSize={{ base: "sm", md: "md" }} mb={1}>{constructorName}</Text>
         <HStack spacing={2} mt={1}>
           <Badge
             bg={teamColor}
             color="white"
             borderRadius="full"
-            px={3}
+            px={{ base: 2, md: 3 }}
             py={0.5}
-            fontSize="0.65rem"
+            fontSize={{ base: "0.6rem", md: "0.65rem" }}
             fontWeight="500"
             textTransform="none"
             letterSpacing="wide"
@@ -66,14 +118,41 @@ export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = (
           >Team</Badge>
         </HStack>
       </Flex>
-      <HStack spacing={6} pr={2}>
-        <Stat textAlign="right" minW="70px">
-          <StatLabel fontSize="xs" textTransform="uppercase" opacity={0.6}>Points</StatLabel>
-          <StatNumber fontSize="lg" fontWeight="700">{points}</StatNumber>
+      
+      {/* Car Image - Uses remaining space on the right */}
+      {teamCarImages[constructorName] && (
+        <Box 
+          flex={1} 
+          maxW={{ base: "120px", md: "150px" }}
+          display="flex" 
+          alignItems="center" 
+          justifyContent="center"
+          flexShrink={0}
+        >
+          <Image
+            src={teamCarImages[constructorName]}
+            alt={`${constructorName} car`}
+            maxH={{ base: '60px', md: '80px' }}
+            maxW="100%"
+            w="auto"
+            h="auto"
+            objectFit="contain"
+            borderRadius="md"
+          />
+        </Box>
+      )}
+      <HStack spacing={{ base: 2, md: 4 }} pr={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
+        <Stat textAlign="right" minW={{ base: "45px", md: "60px" }}>
+          <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Points</StatLabel>
+          <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="700">{points}</StatNumber>
         </Stat>
-        <Stat textAlign="right" minW="60px">
-          <StatLabel fontSize="xs" textTransform="uppercase" opacity={0.6}>Wins</StatLabel>
-          <StatNumber fontSize="lg" fontWeight="600">{wins}</StatNumber>
+        <Stat textAlign="right" minW={{ base: "40px", md: "50px" }}>
+          <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Wins</StatLabel>
+          <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="600">{wins}</StatNumber>
+        </Stat>
+        <Stat textAlign="right" minW={{ base: "45px", md: "55px" }}>
+          <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Podiums</StatLabel>
+          <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="600">{podiums}</StatNumber>
         </Stat>
       </HStack>
     </Flex>

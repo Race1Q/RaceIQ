@@ -131,6 +131,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             right="-10px"
             bottom="0"
             height="95%"
+            maxW="100%"
             objectFit="contain"
             objectPosition="bottom right"
             zIndex={1}

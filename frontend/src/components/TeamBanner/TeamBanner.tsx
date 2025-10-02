@@ -15,34 +15,51 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
     <Flex
       align="center"
       justify="space-between"
-      p={{ base: 'md', md: 'lg' }}
+      p={{ base: 4, md: 6 }}
       borderRadius="lg"
       mb="md"
-      h="120px"
+      minH={{ base: '100px', md: '120px' }}
       position="relative"
       overflow="hidden"
       border="1px solid"
       borderColor="border-primary"
       bgGradient={`linear(90deg, ${teamColor} 0%, rgba(0,0,0,0.5) 60%, bg-surface-dark 100%)`}
-      boxShadow="lg" // Add shadow for polish
+      boxShadow="lg"
     >
-      <Heading
-        as="h2"
-        fontFamily="heading"
-        fontSize={{ base: 'xl', md: '2xl' }}
-        color="white" // Explicitly white text for better contrast on gradient
-        fontWeight="bold"
-        textTransform="uppercase"
-        textShadow="0 2px 8px rgba(0,0,0,0.5)"
-        ml="md"
-        zIndex={2} // Ensure text is above image
+      {/* Team Name - Left Side */}
+      <Flex
+        flex="1"
+        minW={0}
+        align="center"
+        mr={{ base: 3, md: 4 }}
       >
-        {teamName}
-      </Heading>
+        <Heading
+          as="h2"
+          fontFamily="heading"
+          fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
+          color="white"
+          fontWeight="bold"
+          textTransform="uppercase"
+          textShadow="0 2px 8px rgba(0,0,0,0.5)"
+          noOfLines={2}
+          lineHeight="shorter"
+          zIndex={2}
+        >
+          {teamName}
+        </Heading>
+      </Flex>
 
-      <Spacer />
-      
-      <TeamLogo teamName={teamName} />
+      {/* Team Logo - Right Side */}
+      <Flex
+        align="center"
+        justify="center"
+        flexShrink={0}
+        w={{ base: '80px', sm: '100px', md: '120px' }}
+        h={{ base: '60px', sm: '70px', md: '80px' }}
+        maxW="100%"
+      >
+        <TeamLogo teamName={teamName} />
+      </Flex>
     </Flex>
   );
 };

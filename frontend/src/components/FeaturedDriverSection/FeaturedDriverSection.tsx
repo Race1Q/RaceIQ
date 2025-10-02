@@ -22,26 +22,7 @@ import { teamColors } from '../../lib/teamColors';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
 import ReactCountryFlag from 'react-country-flag';
 
-interface DriverStats {
-  wins: number;
-  podiums: number;
-  poles: number;
-  totalPoints: number;
-  fastestLaps: number;
-  racesCompleted: number;
-}
-
-interface FeaturedDriver {
-  id: number;
-  fullName: string;
-  driverNumber: number | null;
-  countryCode: string | null;
-  teamName: string;
-  seasonPoints: number;
-  seasonWins: number;
-  position: number;
-  careerStats: DriverStats;
-}
+import type { FeaturedDriver } from '../../types';
 
 export interface FeaturedDriverSectionProps {
   featuredDriver: FeaturedDriver | null;
@@ -64,8 +45,8 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
   // Deprecated: inline stat cards now include icons; keeping for reference
 
   return (
-    <Box bg="bg-surface-raised">
-      <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }}>
+    <Box bg="bg-surface-raised" w="100%" overflow="hidden">
+      <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} w="100%" overflow="hidden">
         <Heading
           as="h4"
           size="sm"
@@ -78,12 +59,12 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
         >
           Featured Driver
         </Heading>
-        <Grid templateColumns={{ base: '1fr', lg: '0.3fr 0.7fr' }} gap={{ base: 6, lg: 8 }} alignItems="stretch">
+        <Grid templateColumns={{ base: '1fr', md: '1fr', lg: '0.4fr 0.6fr' }} gap={{ base: 4, md: 6, lg: 8 }} alignItems="stretch">
           {/* Left: Driver Card */}
           <GridItem
             bg="bg-surface"
             borderRadius="lg"
-            p={6}
+            p={{ base: 4, md: 6 }}
             height="100%"
             position="relative"
             _before={{
@@ -98,33 +79,40 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
               borderTopRightRadius: 'lg',
             }}
           >
-            <VStack spacing={4} align="center" height="100%">
+            <VStack spacing={4} align="center" height="100%" >
               {isError && (
                 <Badge colorScheme="orange" variant="subtle" fontSize="0.7rem">Live Data Unavailable</Badge>
               )}
-              <Image
-                src={imageUrl}
-                alt={featuredDriver.fullName}
-                w="100%"
-                maxH="320px"
-                objectFit="cover"
-                borderRadius="lg"
-              />
-              <VStack align="center" spacing={2} mt={2}>
-                <Heading size="2xl" fontFamily="heading" color="text-primary" textAlign="center">
+              <Box w="100%" display="flex" justifyContent="center" alignItems="center">
+                <Image
+                  src={imageUrl}
+                  alt={featuredDriver.fullName}
+                  w="100%"
+                  maxW={{ base: '200px', md: '300px' }}
+                  maxH={{ base: '180px', md: '320px' }}
+                  h={{ base: 'auto', md: '320px' }}
+                  objectFit="contain"
+                  objectPosition="center"
+                  borderRadius="lg"
+                  fallbackSrc="https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png"
+                />
+              </Box>
+              <VStack align="center" spacing={1} mt={2}>
+                <Heading size={{ base: 'xl', md: '2xl' }} fontFamily="heading" color="text-primary" textAlign="center">
                   {featuredDriver.fullName}
                 </Heading>
                 <HStack
                   divider={<StackDivider borderColor="border-primary" />}
-                  spacing={4}
-                  fontSize="lg"
+                  spacing={{ base: 2, md: 4 }}
+                  fontSize={{ base: 'md', md: 'lg' }}
+                  flexWrap="wrap"
                 >
                   <Text fontWeight="bold" color={getTeamColor(featuredDriver.teamName)}>
                     {featuredDriver.teamName}{featuredDriver.driverNumber ? ` • #${featuredDriver.driverNumber}` : ''}
                   </Text>
                   <HStack spacing={1.5}>
-                    <Heading size="lg" color="text-primary">P</Heading>
-                    <Heading size="lg" color="text-primary">{featuredDriver.position}</Heading>
+                    <Heading size={{ base: 'md', md: 'lg' }} color="text-primary">P</Heading>
+                    <Heading size={{ base: 'md', md: 'lg' }} color="text-primary">{featuredDriver.position}</Heading>
                   </HStack>
                 </HStack>
               </VStack>
@@ -132,16 +120,16 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
           </GridItem>
 
           {/* Right: Stats & CTA */}
-          <GridItem>
-            <VStack align="flex-start" spacing={6} w="full">
+          <GridItem overflow="hidden">
+            <VStack align="flex-start" spacing={{ base: 4, md: 6 }} w="full" overflow="hidden">
               {/* Season Stats */}
-              <VStack align="flex-start" spacing={3} w="full">
-                <Heading as="h3" size="md" color="text-primary">{new Date().getFullYear()} Season</Heading>
-                <SimpleGrid columns={{ base: 2, md: 3 }} gap={4} w="full">
+              <VStack align="flex-start" spacing={{ base: 2, md: 3 }} w="full">
+                <Heading as="h3" size={{ base: 'sm', md: 'md' }} color="text-primary">{new Date().getFullYear()} Season</Heading>
+                <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={{ base: 2, md: 3 }} w="full" maxW="100%">
                   <VStack
                     role="group"
                     bg="bg-surface"
-                    p={4}
+                    p={{ base: 2, md: 4 }}
                     borderRadius="lg"
                     align="center"
                     spacing={1}
@@ -154,17 +142,17 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                     }}
                     transition="transform 0.2s, border-color 0.2s, box-shadow 0.2s"
                   >
-                    <HStack spacing={2}>
+                    <HStack spacing={1}>
                       <Icon as={Star} color="text-muted" boxSize={4} _groupHover={{ color: getTeamColor(featuredDriver.teamName) }} />
-                      <Text fontSize="sm" color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Points</Text>
+                      <Text fontSize={{ base: 'xs', md: 'sm' }} color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Points</Text>
                     </HStack>
-                    <Heading size="lg" color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.seasonPoints}</Heading>
+                    <Heading size={{ base: 'md', md: 'lg' }} color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.seasonPoints}</Heading>
                   </VStack>
 
                   <VStack
                     role="group"
                     bg="bg-surface"
-                    p={4}
+                    p={{ base: 2, md: 4 }}
                     borderRadius="lg"
                     align="center"
                     spacing={1}
@@ -177,23 +165,23 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                     }}
                     transition="transform 0.2s, border-color 0.2s, box-shadow 0.2s"
                   >
-                    <HStack spacing={2}>
+                    <HStack spacing={1}>
                       <Icon as={Trophy} color="text-muted" boxSize={4} _groupHover={{ color: getTeamColor(featuredDriver.teamName) }} />
-                      <Text fontSize="sm" color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Wins</Text>
+                      <Text fontSize={{ base: 'xs', md: 'sm' }} color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Wins</Text>
                     </HStack>
-                    <Heading size="lg" color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.seasonWins}</Heading>
+                    <Heading size={{ base: 'md', md: 'lg' }} color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.seasonWins}</Heading>
                   </VStack>
                 </SimpleGrid>
               </VStack>
 
               {/* Career Stats */}
-              <VStack align="flex-start" spacing={3} w="full">
-                <Heading as="h3" size="md" color="text-primary">Career Stats</Heading>
-                <SimpleGrid columns={{ base: 2, md: 3 }} gap={4} w="full">
+              <VStack align="flex-start" spacing={{ base: 2, md: 3 }} w="full">
+                <Heading as="h3" size={{ base: 'sm', md: 'md' }} color="text-primary">Career Stats</Heading>
+                <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={{ base: 2, md: 3 }} w="full" maxW="100%">
                   <VStack
                     role="group"
                     bg="bg-surface"
-                    p={4}
+                    p={{ base: 2, md: 4 }}
                     borderRadius="lg"
                     align="center"
                     spacing={1}
@@ -206,17 +194,17 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                     }}
                     transition="transform 0.2s, border-color 0.2s, box-shadow 0.2s"
                   >
-                    <HStack spacing={2}>
+                    <HStack spacing={1}>
                       <Icon as={Trophy} color="text-muted" boxSize={4} _groupHover={{ color: getTeamColor(featuredDriver.teamName) }} />
-                      <Text fontSize="sm" color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Wins</Text>
+                      <Text fontSize={{ base: 'xs', md: 'sm' }} color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Wins</Text>
                     </HStack>
-                    <Heading size="lg" color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.careerStats.wins}</Heading>
+                    <Heading size={{ base: 'md', md: 'lg' }} color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.careerStats.wins}</Heading>
                   </VStack>
 
                   <VStack
                     role="group"
                     bg="bg-surface"
-                    p={4}
+                    p={{ base: 2, md: 4 }}
                     borderRadius="lg"
                     align="center"
                     spacing={1}
@@ -229,17 +217,17 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                     }}
                     transition="transform 0.2s, border-color 0.2s, box-shadow 0.2s"
                   >
-                    <HStack spacing={2}>
+                    <HStack spacing={1}>
                       <Icon as={Award} color="text-muted" boxSize={4} _groupHover={{ color: getTeamColor(featuredDriver.teamName) }} />
-                      <Text fontSize="sm" color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Podiums</Text>
+                      <Text fontSize={{ base: 'xs', md: 'sm' }} color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Podiums</Text>
                     </HStack>
-                    <Heading size="lg" color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.careerStats.podiums}</Heading>
+                    <Heading size={{ base: 'md', md: 'lg' }} color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.careerStats.podiums}</Heading>
                   </VStack>
 
                   <VStack
                     role="group"
                     bg="bg-surface"
-                    p={4}
+                    p={{ base: 2, md: 4 }}
                     borderRadius="lg"
                     align="center"
                     spacing={1}
@@ -252,20 +240,20 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                     }}
                     transition="transform 0.2s, border-color 0.2s, box-shadow 0.2s"
                   >
-                    <HStack spacing={2}>
+                    <HStack spacing={1}>
                       <Icon as={Timer} color="text-muted" boxSize={4} _groupHover={{ color: getTeamColor(featuredDriver.teamName) }} />
-                      <Text fontSize="sm" color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Poles</Text>
+                      <Text fontSize={{ base: 'xs', md: 'sm' }} color="text-muted" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>Poles</Text>
                     </HStack>
-                    <Heading size="lg" color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.careerStats.poles}</Heading>
+                    <Heading size={{ base: 'md', md: 'lg' }} color="text-primary" _groupHover={{ color: getTeamColor(featuredDriver.teamName) }}>{featuredDriver.careerStats.poles}</Heading>
                   </VStack>
                 </SimpleGrid>
               </VStack>
 
               {/* Recent Form (mini cards with flags) */}
               {Array.isArray((featuredDriver as any).recentForm) && (featuredDriver as any).recentForm.length > 0 && (
-                <VStack align="flex-start" w="100%" spacing={3} pt={4}>
-                  <Heading as="h3" size="md">Recent Form</Heading>
-                  <HStack spacing={4} w="100%" align="stretch">
+                <VStack align="flex-start" w="100%" spacing={{ base: 2, md: 3 }} pt={4}>
+                  <Heading as="h3" size={{ base: 'sm', md: 'md' }}>Recent Form</Heading>
+                  <HStack spacing={{ base: 2, md: 4 }} w="100%" align="stretch" overflowX="auto" pb={2}>
                     {((featuredDriver as any).recentForm as { position: number; raceName: string; countryCode: string }[]).map((result, index) => {
                       const getPodiumColor = () => {
                         if (result.position === 1) return '#FFD700'; // Gold
@@ -279,8 +267,9 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                           key={index}
                           role="group"
                           flex={1}
+                          minW={{ base: '80px', md: '100px' }}
                           bg="bg-surface"
-                          p={4}
+                          p={{ base: 2, md: 4 }}
                           borderRadius="lg"
                           borderWidth="1px"
                           borderColor="border-primary"
@@ -296,7 +285,7 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                           }}
                         >
                           {/* Position on top */}
-                          <HStack spacing={2} align="center">
+                          <HStack spacing={1} align="center">
                             <Heading size="xl" color={getPodiumColor()} fontWeight="bold">
                               P{result.position}
                             </Heading>

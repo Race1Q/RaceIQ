@@ -1,11 +1,12 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack } from '@chakra-ui/react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack } from '@chakra-ui/react';
 import { useDriverComparison } from '../../hooks/useDriverComparison';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { DriverSelectionPanel } from './components/DriverSelectionPanel';
 import { ComparisonTable } from './components/ComparisonTable';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageHeader from '../../components/layout/PageHeader';
 
 
 const CompareDriversPage = () => {
@@ -67,10 +68,12 @@ const CompareDriversPage = () => {
   }
 
   return (
-    <Box p={{ base: 'md', md: 'xl' }}>
-      <Heading as="h1" size="2xl" textAlign="center" mb="xl" fontFamily="heading">
-        Driver Comparison
-      </Heading>
+    <Box>
+      <PageHeader 
+        title="Driver Comparison" 
+        subtitle="Compare F1 drivers head-to-head"
+      />
+      <Box p={{ base: 'md', md: 'xl' }}>
 
       {error && <Text color="brand.red" textAlign="center" fontSize="lg" p="xl">{error}</Text>}
 
@@ -103,10 +106,10 @@ const CompareDriversPage = () => {
         <Flex
           align="center"
           justify="center"
-          h="150px"
-          display={{ base: 'none', lg: 'flex' }}
+          h={{ base: '60px', lg: '150px' }}
+          display={{ base: 'flex', lg: 'flex' }}
         >
-          <Heading size="3xl" color="brand.red" fontFamily="heading">
+          <Heading size={{ base: 'xl', lg: '3xl' }} color="brand.red" fontFamily="heading">
             VS
           </Heading>
         </Flex>
@@ -157,6 +160,7 @@ const CompareDriversPage = () => {
           availableYears={years}
         />
       )}
+      </Box>
     </Box>
   );
 };

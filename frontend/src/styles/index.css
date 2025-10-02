@@ -5,6 +5,34 @@
   that cannot be styled via Chakra UI props.
 */
 
+/* Safe area insets for foldable devices and notched screens */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+}
+
+/* Mobile viewport height handling */
+.mobile-full-height {
+  min-height: 100svh;
+  min-height: 100vh; /* fallback for older browsers */
+}
+
+/* Responsive image defaults */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 /* React Grid Layout Customizations */
 .react-grid-layout {
   position: relative;

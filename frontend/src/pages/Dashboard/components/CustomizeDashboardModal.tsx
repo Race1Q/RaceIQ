@@ -60,7 +60,7 @@ function CustomizeDashboardModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: 'full', md: 'md' }}>
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
       <ModalContent bg="blackAlpha.800" border="1px solid" borderColor="whiteAlpha.200" backdropFilter="blur(10px)">
         <ModalHeader color="text-primary" fontFamily="heading">
@@ -68,7 +68,7 @@ function CustomizeDashboardModal({
         </ModalHeader>
         <ModalCloseButton color="text-primary" />
         
-        <ModalBody pb="lg">
+        <ModalBody pb={{ base: 'md', md: 'lg' }}>
           <VStack spacing="md" align="stretch">
             <Text color="text-secondary" fontSize="sm" mb="sm">
               Choose which widgets to display on your dashboard
@@ -78,7 +78,7 @@ function CustomizeDashboardModal({
             
             {widgets.map((widget, index) => (
               <Box key={widget.key}>
-                <HStack justify="space-between" align="center" p="sm" borderRadius="md" _hover={{ bg: 'whiteAlpha.50' }}>
+                <HStack justify="space-between" align="center" p={{ base: 'xs', md: 'sm' }} borderRadius="md" _hover={{ bg: 'whiteAlpha.50' }}>
                   <VStack align="start" spacing="xs" flex="1">
                     <Text color="text-primary" fontWeight="600" fontSize="sm">
                       {widget.label}

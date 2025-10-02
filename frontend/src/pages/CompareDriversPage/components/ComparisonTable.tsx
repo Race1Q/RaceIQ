@@ -1,5 +1,6 @@
 // frontend/src/pages/CompareDriversPage/components/ComparisonTable.tsx
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, TableContainer, HStack, Text, VStack, Grid, Button } from '@chakra-ui/react';
+import ResponsiveTable from '../../../components/layout/ResponsiveTable';
 import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey, CompositeScore } from '../../../hooks/useDriverComparison';
 
 interface Props {
@@ -100,11 +101,11 @@ export const ComparisonTable: React.FC<Props> = ({
         {/* Comparison Filters - Style like Drivers page tabs */}
         <Box bg="bg-surface" p="lg" borderRadius="md">
           <Heading size="md" mb="md" fontFamily="heading">Compare by Year</Heading>
-          <Grid templateColumns="1fr 1fr" gap="lg">
+          <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="lg">
             {/* Driver 1 Year Filter */}
             <VStack align="stretch" spacing="sm">
               <Text fontSize="sm" fontWeight="medium" color="text-secondary">Driver 1:</Text>
-              <HStack spacing="2" wrap="wrap">
+              <HStack spacing="2" wrap="wrap" overflowX="auto" pb={2}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -156,7 +157,7 @@ export const ComparisonTable: React.FC<Props> = ({
             {/* Driver 2 Year Filter */}
             <VStack align="stretch" spacing="sm">
               <Text fontSize="sm" fontWeight="medium" color="text-secondary">Driver 2:</Text>
-              <HStack spacing="2" wrap="wrap">
+              <HStack spacing="2" wrap="wrap" overflowX="auto" pb={2}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -279,8 +280,7 @@ export const ComparisonTable: React.FC<Props> = ({
         {/* Comparison Table */}
         <Box bg="bg-surface" p="lg" borderRadius="md">
           <Heading size="xl" textAlign="center" mb="lg" fontFamily="heading">Head-to-Head Comparison</Heading>
-          <TableContainer>
-            <Table variant="simple">
+          <ResponsiveTable>
               <Thead>
                 <Tr>
                   <Th>Statistic</Th>
@@ -326,8 +326,7 @@ export const ComparisonTable: React.FC<Props> = ({
                   );
                 })}
               </Tbody>
-            </Table>
-          </TableContainer>
+          </ResponsiveTable>
         </Box>
       </VStack>
     );
@@ -337,8 +336,7 @@ export const ComparisonTable: React.FC<Props> = ({
   return (
     <Box bg="bg-surface" p="lg" borderRadius="md">
       <Heading size="xl" textAlign="center" mb="lg" fontFamily="heading">Head-to-Head Comparison</Heading>
-      <TableContainer>
-        <Table variant="simple">
+      <ResponsiveTable>
           <Thead>
             <Tr>
               <Th>Statistic</Th>
@@ -355,8 +353,7 @@ export const ComparisonTable: React.FC<Props> = ({
               </Tr>
             ))}
           </Tbody>
-        </Table>
-      </TableContainer>
+      </ResponsiveTable>
     </Box>
   );
 };

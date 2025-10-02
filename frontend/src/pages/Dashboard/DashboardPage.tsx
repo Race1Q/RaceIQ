@@ -125,26 +125,35 @@ function DashboardPage() {
   return (
     <Box>
       <DashboardHeader onCustomizeClick={onOpen} />
-      <Box p="lg">
+      <Box p={{ base: 'md', md: 'lg' }}>
         {isFallback && <FallbackBanner />} {/* Render banner when using fallback data */}
         
         {loading ? (
-          <F1LoadingSpinner text="Loading Dashboard..." />
+          <Box textAlign="center" py="xl">
+            <F1LoadingSpinner text="Loading your personalized dashboard..." />
+            <Text mt={4} color="text-secondary" fontSize="sm">
+              Setting up your F1 experience...
+            </Text>
+          </Box>
         ) : (
           <ResponsiveGridLayout
             layouts={layouts}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 4, md: 4, sm: 2, xs: 2, xxs: 1 }}
+            cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
             rowHeight={120}
             onLayoutChange={handleLayoutChange}
             isDraggable={true}
             isResizable={false}
             preventCollision={false}
             isBounded={true}
-            compactType={null}
-            margin={[16, 16]}
-            containerPadding={[0, 0]}
+            compactType="vertical"
+            margin={[8, 8]}
+            containerPadding={[4, 4]}
             draggableCancel={"button, a, .chakra-button, .no-drag, input, select, textarea"}
+            useCSSTransforms={true}
+            transformScale={1}
+            isDroppable={true}
+            allowOverlap={false}
           >
             {Object.keys(widgetVisibility)
               .filter(key => widgetVisibility[key as keyof WidgetVisibility])
