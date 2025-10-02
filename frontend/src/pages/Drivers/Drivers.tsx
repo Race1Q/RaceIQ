@@ -1,7 +1,7 @@
 // frontend/src/pages/Drivers/Drivers.tsx
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Box, Text, Container, SimpleGrid, VStack, HStack, Button, Icon, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
+import { Box, Text, SimpleGrid, VStack, HStack, Button, Icon, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
 import { ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -9,6 +9,8 @@ import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileC
 import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
 import { useDriversData } from '../../hooks/useDriversData';
+import LayoutContainer from '../../components/layout/LayoutContainer';
+import PageHeader from '../../components/layout/PageHeader';
 
 // New component for the fallback banner
 const FallbackBanner = () => (
@@ -73,8 +75,12 @@ const Drivers = () => {
 
 
   return (
-    <Box bg="bg-primary" color="text-primary" minH="100vh" py="lg">
-      <Container maxW="1600px">
+    <Box>
+      <PageHeader 
+        title="Drivers" 
+        subtitle="Explore F1 drivers and their teams"
+      />
+      <LayoutContainer maxW="1600px">
         {isFallback && <FallbackBanner />}
         {loading && <F1LoadingSpinner text="Loading Drivers..." />}
         {!loading && error && !isFallback && (
@@ -200,7 +206,7 @@ const Drivers = () => {
                         teamName={teamName}
                         teamColor={teamColors[teamName] || teamColors['Default']}
                       />
-                      <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
+                      <SimpleGrid columns={{ base: 1, sm: 1, md: 2 }} gap={{ base: 4, md: 6 }}>
                         {driversInTeam.map(driver => {
                           const driverCardData = {
                             id: driver.id.toString(),
@@ -232,7 +238,7 @@ const Drivers = () => {
             </VStack>
           </>
         )}
-      </Container>
+      </LayoutContainer>
     </Box>
   );
 };

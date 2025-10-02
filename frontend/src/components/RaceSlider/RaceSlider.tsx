@@ -31,16 +31,30 @@ export const RaceSlider: React.FC<RaceSliderProps> = ({ seasonSchedule }) => {
   };
 
   return (
-    <Box w="100%">
+    <Box w="100%" overflow="hidden">
       <Swiper
         modules={[Navigation]}
         navigation={true}
         initialSlide={initialSlideIndex}
-        slidesPerView={3}
+        slidesPerView={{ base: 1, sm: 2, md: 3 }}
         centeredSlides={true}
-        spaceBetween={30}
+        spaceBetween={{ base: 20, sm: 25, md: 30 }}
         loop={false}
         className={styles.raceSlider}
+        breakpoints={{
+          320: {
+            slidesPerView: 1,
+            spaceBetween: 20,
+          },
+          640: {
+            slidesPerView: 2,
+            spaceBetween: 25,
+          },
+          768: {
+            slidesPerView: 3,
+            spaceBetween: 30,
+          },
+        }}
       >
         {seasonSchedule.map((race, index) => (
           <SwiperSlide key={race.id} className={styles.raceSlide}>

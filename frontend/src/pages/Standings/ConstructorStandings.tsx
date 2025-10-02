@@ -1,6 +1,6 @@
 // src/pages/Standings/ConstructorStandings.tsx
 import React, { useState, useMemo } from 'react';
-import { useToast, Box, Flex, Heading } from '@chakra-ui/react';
+import { useToast, Box, Flex, Text } from '@chakra-ui/react';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
@@ -9,12 +9,15 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 // import { teamColors } from '../../lib/teamColors';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import ConstructorStandingCard from '../../components/Standings/ConstructorStandingCard';
+import LayoutContainer from '../../components/layout/LayoutContainer';
+import PageHeader from '../../components/layout/PageHeader';
 
 // Interfaces
 interface UiConstructorStanding {
   position: number;
   points: number;
   wins: number;
+  podiums: number;
   constructorId: number;
   constructorName: string;
   nationality?: string; // not present in materialized view currently
@@ -49,6 +52,7 @@ const ConstructorStandings: React.FC = () => {
         position: row.position,
         points: Number(row.seasonPoints) || 0,
         wins: row.seasonWins,
+        podiums: row.seasonPodiums || 0,
         constructorId: row.constructorId,
         constructorName: row.constructorName,
       }));
@@ -84,42 +88,80 @@ const ConstructorStandings: React.FC = () => {
   // No internal tab state; navigation handled by component buttons
 
   return (
-    <Box p={["4", "6", "8"]} fontFamily="var(--font-display)">
-      <Heading mb={6} color="white">Formula 1 Championship Standings</Heading>
-      <StandingsTabs active="constructors" />
+    <Box>
+      <PageHeader 
+        title="Formula 1 Championship Standings" 
+        subtitle="Constructor standings and statistics"
+      />
+      <LayoutContainer>
+        <StandingsTabs active="constructors" />
 
-      <Box mb={4} maxW="220px">
-        <SearchableSelect
-          label="Select Season"
-          options={seasonOptions}
-          value={seasonOptions.find(o => o.value === selectedSeason) || null}
-          onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
-          isClearable={false}
-        />
-      </Box>
+      <Flex 
+        mb={4} 
+        alignItems="center" 
+        justifyContent="space-between" 
+        flexDirection={{ base: 'column', md: 'row' }} 
+        gap={4}
+        wrap="wrap"
+      >
+        <Box maxW={{ base: 'full', md: '220px' }} w="full">
+          <SearchableSelect
+            label="Select Season"
+            options={seasonOptions}
+            value={seasonOptions.find(o => o.value === selectedSeason) || null}
+            onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
+            isClearable={false}
+          />
+        </Box>
+      </Flex>
 
       {loading && <F1LoadingSpinner text="Loading Constructor Standings..." />}
 
       {!loading && (
-      <Flex flexDirection="column" gap={3} overflowX="auto">
-        {teamsToRender.flatMap(teamName => {
-          const constructors = groupedConstructors[teamName];
-          if (!constructors) return [];
-          return constructors
-            .sort((a, b) => a.position - b.position)
-            .map(standing => (
-              <ConstructorStandingCard
-                key={standing.constructorId}
-                constructorId={standing.constructorId}
-                position={standing.position}
-                constructorName={standing.constructorName}
-                points={standing.points}
-                wins={standing.wins}
-              />
-            ));
-        })}
-      </Flex>
+        <Flex flexDirection="column" gap={{ base: 2, md: 3 }}>
+          {teamsToRender.flatMap(teamName => {
+            const constructors = groupedConstructors[teamName];
+            if (!constructors) return [];
+            return constructors
+              .sort((a, b) => a.position - b.position)
+              .map(standing => (
+                  <ConstructorStandingCard
+                    key={standing.constructorId}
+                    constructorId={standing.constructorId}
+                    position={standing.position}
+                    constructorName={standing.constructorName}
+                    points={standing.points}
+                    wins={standing.wins}
+                    podiums={standing.podiums}
+                  />
+              ));
+          })}
+        </Flex>
       )}
+
+      {/* Show non-fatal error message */}
+      {error && error.includes("No constructor data found") && (
+        <Text
+          mt={4}
+          textAlign="center"
+          color="red.500"
+          fontWeight="bold"
+          position="fixed"
+          bottom="20px"
+          left="50%"
+          transform="translateX(-50%)"
+        >
+          {error}
+        </Text>
+      )}
+
+      {/* Show other errors (fatal) */}
+      {error && !error.includes("No constructor data found") && (
+        <Text mt={4} textAlign="center" color="red.500" fontWeight="bold">
+          {error}
+        </Text>
+      )}
+      </LayoutContainer>
     </Box>
   );
 };

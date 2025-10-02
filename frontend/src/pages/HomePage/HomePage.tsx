@@ -13,7 +13,7 @@ import { useHomePageData } from '../../hooks/useHomePageData';
 
 function HomePage() {
   const { isAuthenticated, isLoading, user } = useAuth0();
-  const { featuredDriver, seasonSchedule, loading: dataLoading, error, isFallback } = useHomePageData();
+  const { featuredDriver, seasonSchedule, loading: dataLoading, error } = useHomePageData();
 
   // Ensure page loads at top
   useEffect(() => {
@@ -25,7 +25,7 @@ function HomePage() {
   }
 
   return (
-    <Box>
+    <Box w="100%" minH="100vh" bg="bg-primary">
       <HeroSection />
       
       {!isAuthenticated && (
@@ -41,16 +41,16 @@ function HomePage() {
         </>
       )}
       
-      <Box as="section" bg="bg-surface">
-        <Container maxW="1400px" py="80px">
-          <VStack spacing={12}>
+      <Box as="section" bg="bg-surface" w="100%">
+        <Container maxW="1400px" py={{ base: '40px', md: '80px' }} px={{ base: 4, md: 6 }} w="100%">
+          <VStack spacing={{ base: 8, md: 12 }} w="100%">
             {isAuthenticated && (
-              <VStack spacing={4}>
-                <Heading color="brand.red">Welcome back, {user?.name}!</Heading>
-                <Text color="text-secondary">Your personalized F1 feed will appear here.</Text>
+              <VStack spacing={4} w="100%">
+                <Heading color="brand.red" fontSize={{ base: 'xl', md: '2xl' }} textAlign="center">Welcome back, {user?.name}!</Heading>
+                <Text color="text-secondary" fontSize={{ base: 'md', md: 'lg' }} textAlign="center">Your personalized F1 feed will appear here.</Text>
               </VStack>
             )}
-            <VStack spacing={12} width="100%" overflow="hidden">
+            <VStack spacing={{ base: 8, md: 12 }} width="100%" overflow="hidden">
               <Heading
                 as="h4"
                 size="sm"
@@ -58,8 +58,9 @@ function HomePage() {
                 textTransform="uppercase"
                 letterSpacing="wider"
                 fontWeight="bold"
-                mb={8}
+                mb={{ base: 4, md: 8 }}
                 textAlign="center"
+                fontSize={{ base: 'xs', md: 'sm' }}
               >
                 Recent Races
               </Heading>
@@ -73,11 +74,15 @@ function HomePage() {
       </Box>
 
       {!isAuthenticated && (
-        <Box as="section" bgGradient="linear(to-r, brand.red, brand.redDark)" textAlign="center">
-          <Container maxW="1400px" py="80px">
-            <VStack spacing="xl">
-              <Heading size="lg" color="white">Create your free account and get more from every race.</Heading>
-              <Text fontSize="lg" color="gray.200">Track your favorite drivers, get personalized insights, and never miss a race.</Text>
+        <Box as="section" bgGradient="linear(to-r, brand.red, brand.redDark)" textAlign="center" w="100%">
+          <Container maxW="1400px" py={{ base: '40px', md: '80px' }} px={{ base: 4, md: 6 }} w="100%">
+            <VStack spacing={{ base: 6, md: 'xl' }} w="100%">
+              <Heading size={{ base: 'md', md: 'lg' }} color="white" px={{ base: 4, md: 0 }} textAlign="center">
+                Create your free account and get more from every race.
+              </Heading>
+              <Text fontSize={{ base: 'md', md: 'lg' }} color="gray.200" px={{ base: 4, md: 0 }} textAlign="center">
+                Track your favorite drivers, get personalized insights, and never miss a race.
+              </Text>
               <LoginButton />
             </VStack>
           </Container>

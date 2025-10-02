@@ -46,9 +46,13 @@ export const DriverSelectionPanel: React.FC<Props> = ({
         <Image
           src={driverHeadshots[selectedDriverData.fullName] || selectedDriverData.imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
           alt={selectedDriverData.fullName}
-          boxSize="150px" objectFit="cover" borderRadius="full"
-          borderWidth="4px" borderColor="bg-surface"
+          boxSize={{ base: "120px", md: "150px" }} 
+          objectFit="cover" 
+          borderRadius="full"
+          borderWidth="4px" 
+          borderColor="bg-surface"
           boxShadow="lg"
+          maxW="100%"
         />
         <Heading size="md" color="text-primary">{selectedDriverData.fullName}</Heading>
         <Text color="text-secondary">{selectedDriverData.teamName}</Text>

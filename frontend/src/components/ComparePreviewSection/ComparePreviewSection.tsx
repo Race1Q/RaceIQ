@@ -250,6 +250,7 @@ const ComparePreviewSection: React.FC = () => {
     <Box 
       bg="blackAlpha.200" 
       position="relative"
+      w="100%"
       _before={{
         content: '""',
         position: 'absolute',
@@ -264,8 +265,8 @@ const ComparePreviewSection: React.FC = () => {
         zIndex: 0,
       }}
     >
-      <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1}>
-        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap="xl" alignItems="center">
+      <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1} w="100%">
+        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 6, md: 'xl' }} alignItems="center">
           {/* Left Column - Information & CTA */}
           <GridItem>
             <VStack align="flex-start" justify="center" spacing="lg" h="full">
@@ -283,7 +284,7 @@ const ComparePreviewSection: React.FC = () => {
 
                 <Heading 
                   as="h2" 
-                  size="2xl" 
+                  size={{ base: 'xl', md: '2xl' }}
                   color="text-primary"
                   fontFamily="heading"
                   lineHeight="shorter"
@@ -294,9 +295,9 @@ const ComparePreviewSection: React.FC = () => {
               
               <Text 
                 color="text-secondary" 
-                fontSize="lg"
+                fontSize={{ base: 'md', md: 'lg' }}
                 lineHeight="tall"
-                maxW="400px"
+                maxW={{ base: '100%', md: '400px' }}
               >
                 Dive deep into career statistics. Pit your favorite drivers against each other and settle the debate with hard data.
               </Text>
@@ -310,15 +311,16 @@ const ComparePreviewSection: React.FC = () => {
                   boxShadow: 'lg'
                 }}
                 _active={{ bg: "brand.redDark" }}
-                size="lg"
+                size={{ base: 'md', md: 'lg' }}
                 fontFamily="heading"
                 fontWeight="bold"
-                px="xl"
-                py="md"
+                px={{ base: 6, md: 'xl' }}
+                py={{ base: 3, md: 'md' }}
                 borderRadius="md"
                 onClick={() => loginWithRedirect()}
                 transition="all 0.3s ease"
                 mt="md"
+                w={{ base: 'full', md: 'auto' }}
               >
                 Customize Your Comparison
               </Button>
@@ -358,7 +360,7 @@ const ComparePreviewSection: React.FC = () => {
                       <Image
                         src={comparisonData.driver1.imageUrl}
                         alt={comparisonData.driver1.fullName}
-                        boxSize={{ base: '100px', md: '140px' }}
+                        boxSize={{ base: '80px', md: '140px' }}
                         objectFit="cover"
                         borderRadius="full"
                         border="3px solid"
@@ -366,15 +368,15 @@ const ComparePreviewSection: React.FC = () => {
                       />
                     </Box>
                   </Box>
-                  <Heading as="h3" size="md" color={comparisonData.driver1.teamColorToken}>
+                  <Heading as="h3" size={{ base: 'sm', md: 'md' }} color={comparisonData.driver1.teamColorToken} textAlign="center">
                     {comparisonData.driver1.fullName}
                   </Heading>
-                  <Text fontSize="sm" color={comparisonData.driver1.teamColorToken} mt={1}>
+                  <Text fontSize={{ base: 'xs', md: 'sm' }} color={comparisonData.driver1.teamColorToken} mt={1} textAlign="center">
                     {comparisonData.driver1.teamName}
                   </Text>
                 </VStack>
 
-                <Heading as="h3" size="2xl" color="brand.red" mx="4" fontFamily="heading" fontWeight="bold">
+                <Heading as="h3" size={{ base: 'xl', md: '2xl' }} color="brand.red" mx={{ base: 2, md: 4 }} fontFamily="heading" fontWeight="bold">
                   VS
                 </Heading>
 
@@ -393,7 +395,7 @@ const ComparePreviewSection: React.FC = () => {
                       <Image
                         src={comparisonData.driver2.imageUrl}
                         alt={comparisonData.driver2.fullName}
-                        boxSize={{ base: '100px', md: '140px' }}
+                        boxSize={{ base: '80px', md: '140px' }}
                         objectFit="cover"
                         borderRadius="full"
                         border="3px solid"
@@ -401,27 +403,27 @@ const ComparePreviewSection: React.FC = () => {
                       />
                     </Box>
                   </Box>
-                  <Heading as="h3" size="md" color={comparisonData.driver2.teamColorToken}>
+                  <Heading as="h3" size={{ base: 'sm', md: 'md' }} color={comparisonData.driver2.teamColorToken} textAlign="center">
                     {comparisonData.driver2.fullName}
                   </Heading>
-                  <Text fontSize="sm" color={comparisonData.driver2.teamColorToken} mt={1}>
+                  <Text fontSize={{ base: 'xs', md: 'sm' }} color={comparisonData.driver2.teamColorToken} mt={1} textAlign="center">
                     {comparisonData.driver2.teamName}
                   </Text>
                 </VStack>
               </Flex>
 
               {/* Stat Comparisons */}
-              <VStack spacing={6} w="100%" maxW="450px" pt="md">
+              <VStack spacing={{ base: 4, md: 6 }} w="100%" maxW={{ base: '100%', md: '450px' }} pt="md">
                 {/* Fastest Lap */}
                 <VStack w="100%">
-                  <Text color="text-muted" fontWeight="bold" textTransform="uppercase" fontSize="sm">
+                  <Text color="text-muted" fontWeight="bold" textTransform="uppercase" fontSize={{ base: 'xs', md: 'sm' }}>
                     Fastest Lap (All-Time)
                   </Text>
                   <Grid templateColumns="1fr auto 1fr" gap={4} w="100%" alignItems="start">
                     {/* Driver 1 */}
                     <VStack align="flex-start" spacing={1}>
                       <Flex align="center" gap={2}>
-                        <Text fontSize="xl" fontWeight="bold">{formatLapTime(comparisonData.driver1.stats.allTimeFastestLapMs)}</Text>
+                        <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold">{formatLapTime(comparisonData.driver1.stats.allTimeFastestLapMs)}</Text>
                         {winners.fastestLap === 'driver1' && <Crown color="#FFD700" size={20} />}
                       </Flex>
                       <Box w="100%" h="8px" bg="bg-surface" borderRadius="md" overflow="hidden">
@@ -445,7 +447,7 @@ const ComparePreviewSection: React.FC = () => {
                     {/* Driver 2 */}
                     <VStack align="flex-end" spacing={1}>
                       <Flex align="center" gap={2} direction="row-reverse">
-                        <Text fontSize="xl" fontWeight="bold">{formatLapTime(comparisonData.driver2.stats.allTimeFastestLapMs)}</Text>
+                        <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold">{formatLapTime(comparisonData.driver2.stats.allTimeFastestLapMs)}</Text>
                         {winners.fastestLap === 'driver2' && <Crown color="#FFD700" size={20} />}
                       </Flex>
                       <Box w="100%" h="8px" bg="bg-surface" borderRadius="md" overflow="hidden" dir="rtl">
@@ -465,14 +467,14 @@ const ComparePreviewSection: React.FC = () => {
 
                 {/* Championships */}
                 <VStack w="100%">
-                  <Text color="text-muted" fontWeight="bold" textTransform="uppercase" fontSize="sm">
+                  <Text color="text-muted" fontWeight="bold" textTransform="uppercase" fontSize={{ base: 'xs', md: 'sm' }}>
                     Championships
                   </Text>
                   <Grid templateColumns="1fr auto 1fr" gap={4} w="100%" alignItems="start">
                     {/* Driver 1 */}
                     <VStack align="flex-start" spacing={1}>
                       <Flex align="center" gap={2}>
-                        <Text fontSize="xl" fontWeight="bold">{comparisonData.driver1.stats.championships}</Text>
+                        <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold">{comparisonData.driver1.stats.championships}</Text>
                         {winners.championships === 'driver1' && <Crown color="#FFD700" size={20} />}
                       </Flex>
                       <Box w="100%" h="8px" bg="bg-surface" borderRadius="md" overflow="hidden">
@@ -496,7 +498,7 @@ const ComparePreviewSection: React.FC = () => {
                     {/* Driver 2 */}
                     <VStack align="flex-end" spacing={1}>
                       <Flex align="center" gap={2} direction="row-reverse">
-                        <Text fontSize="xl" fontWeight="bold">{comparisonData.driver2.stats.championships}</Text>
+                        <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold">{comparisonData.driver2.stats.championships}</Text>
                         {winners.championships === 'driver2' && <Crown color="#FFD700" size={20} />}
                       </Flex>
                       <Box w="100%" h="8px" bg="bg-surface" borderRadius="md" overflow="hidden" dir="rtl">

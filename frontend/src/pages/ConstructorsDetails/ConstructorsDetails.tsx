@@ -1,7 +1,7 @@
 // frontend/src/pages/Constructors/ConstructorDetails.tsx
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Flex, Text, Button, useToast, Image, SimpleGrid } from '@chakra-ui/react';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
@@ -59,7 +59,6 @@ const ConstructorDetails: React.FC = () => {
   const { constructorId } = useParams<{ constructorId: string }>();
   const { getAccessTokenSilently } = useAuth0();
   const toast = useToast();
-  const navigate = useNavigate();
 
   const [constructor, setConstructor] = useState<Constructor | null>(null);
   const [pointsPerSeason, setPointsPerSeason] = useState<SeasonPoints[]>([]);
@@ -226,26 +225,28 @@ const ConstructorDetails: React.FC = () => {
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
 
   return (
-    <Box p={['4', '6', '8']} fontFamily="var(--font-display)">
+    <Box bg="bg-primary" color="text-primary" minH="100vh" p={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
       {/* Header Bar */}
       <Flex
         justify="space-between"
         align="center"
         mb={4}
-        p={4}
+        p={{ base: 3, md: 4 }}
         borderRadius="md"
         bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
+        direction={{ base: 'column', md: 'row' }}
+        gap={{ base: 4, md: 0 }}
       >
         {/* Left: Team Logo + Info */}
-        <Flex direction="row" align="center" gap={4}>
-          <Box boxSize="100px" display="flex" alignItems="center" justifyContent="center">
+        <Flex direction={{ base: 'column', sm: 'row' }} align="center" gap={4}>
+          <Box boxSize={{ base: '80px', md: '100px' }} display="flex" alignItems="center" justifyContent="center">
             <TeamLogo teamName={constructor.name} />
           </Box>
-          <Flex direction="column" justify="center">
-            <Text fontSize="3xl" fontWeight="bold" color="white">
+          <Flex direction="column" justify="center" align={{ base: 'center', sm: 'flex-start' }}>
+            <Text fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" color="white" textAlign={{ base: 'center', sm: 'left' }}>
               {constructor.name}
             </Text>
-            <Text fontSize="md" color="gray.300">
+            <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.300" textAlign={{ base: 'center', sm: 'left' }}>
               Nationality: {constructor.nationality}
             </Text>
           </Flex>
@@ -256,55 +257,64 @@ const ConstructorDetails: React.FC = () => {
           <Image
             src={teamCarImages[constructor.name]}
             alt={`${constructor.name} car`}
-            maxH="150px"
+            maxH={{ base: '100px', md: '150px' }}
+            maxW={{ base: '200px', md: '300px' }}
+            w="auto"
+            h="auto"
             objectFit="contain"
+            flexShrink={0}
           />
         )}
 
         {/* Right: Back Button */}
-        <Button onClick={() => navigate('/constructors')} color="white">
+        <Button 
+          onClick={() => window.history.back()} 
+          color="white"
+          size={{ base: 'sm', md: 'md' }}
+          w={{ base: 'full', md: 'auto' }}
+        >
           Back to Constructors
         </Button>
       </Flex>
 
       {/* Stats Cards */}
-      <Flex gap={4} wrap="wrap" mb={6}>
-        <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold">Total Points</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalPoints}</Text>
+      <Flex gap={{ base: 2, md: 4 }} wrap="wrap" mb={6}>
+        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
+          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Points</Text>
+          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalPoints}</Text>
         </Box>
-        <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold">Total Wins</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalWins}</Text>
+        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
+          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Wins</Text>
+          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalWins}</Text>
         </Box>
-        <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold">Total Podiums</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalPodiums}</Text>
+        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
+          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Podiums</Text>
+          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalPodiums}</Text>
         </Box>
-        <Box flex={1} minW="120px" p={4} bg="gray.700" borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold">Total Poles</Text>
-          <Text fontSize="2xl" fontWeight="bold">{totalPoles}</Text>
+        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
+          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Poles</Text>
+          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalPoles}</Text>
         </Box>
       </Flex>
 
       {/* Latest Season Stats */}
       {latestSeason && (
-        <Flex gap={4} wrap="wrap" mb={6}>
-          <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
-            <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Points</Text>
-            <Text fontSize="2xl" fontWeight="bold">{latestSeason.points}</Text>
+        <Flex gap={{ base: 2, md: 4 }} wrap="wrap" mb={6}>
+          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
+            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Points</Text>
+            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeason.points}</Text>
           </Box>
-          <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
-            <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Wins</Text>
-            <Text fontSize="2xl" fontWeight="bold">{latestSeason.wins}</Text>
+          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
+            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Wins</Text>
+            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeason.wins}</Text>
           </Box>
-          <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
-            <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Podiums</Text>
-            <Text fontSize="2xl" fontWeight="bold">{latestSeason.podiums}</Text>
+          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
+            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Podiums</Text>
+            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeason.podiums}</Text>
           </Box>
-          <Box flex={1} minW="120px" p={4} bg="gray.600" borderRadius="md">
-            <Text fontSize="lg" fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Poles</Text>
-            <Text fontSize="2xl" fontWeight="bold">{latestSeasonPoles}</Text>
+          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
+            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Poles</Text>
+            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeasonPoles}</Text>
           </Box>
         </Flex>
       )}

@@ -3,12 +3,27 @@
   height: 220px;
   padding: 10px 0;
   position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .raceSlider {
+    height: 200px;
+    padding: 5px 0;
+  }
 }
 
 .raceSlider :global(.swiper-button-prev),
 .raceSlider :global(.swiper-button-next) {
   color: #e10600;
   transform: scale(0.7);
+}
+
+@media (max-width: 768px) {
+  .raceSlider :global(.swiper-button-prev),
+  .raceSlider :global(.swiper-button-next) {
+    transform: scale(0.5);
+  }
 }
 
 .raceSlide {

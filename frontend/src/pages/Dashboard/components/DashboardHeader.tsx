@@ -12,13 +12,22 @@ function DashboardHeader({ onCustomizeClick }: DashboardHeaderProps) {
   const { user } = useAuth0();
 
   return (
-    <Box bg="bg-surface-raised" p="lg">
-      <HStack justify="space-between" align="start">
-        <Box>
-          <Heading color="text-primary" size="lg" mb="sm">
+    <Box bg="bg-surface-raised" p={{ base: 'md', md: 'lg' }}>
+      <HStack justify="space-between" align="start" flexWrap={{ base: 'wrap', md: 'nowrap' }} spacing={{ base: 4, md: 0 }}>
+        <Box flex="1" minW="0">
+          <Heading 
+            color="text-primary" 
+            size={{ base: 'md', md: 'lg' }} 
+            mb="sm"
+            noOfLines={2}
+          >
             Welcome back, {user?.name || 'User'}!
           </Heading>
-          <Text color="text-secondary">
+          <Text 
+            color="text-secondary"
+            fontSize={{ base: 'sm', md: 'md' }}
+            noOfLines={2}
+          >
             Here's what's happening in the world of F1.
           </Text>
         </Box>
@@ -30,9 +39,12 @@ function DashboardHeader({ onCustomizeClick }: DashboardHeaderProps) {
           color="brand.red"
           _hover={{ bg: 'brand.red', color: 'white' }}
           onClick={onCustomizeClick}
-          size="sm"
+          size={{ base: 'xs', sm: 'sm' }}
+          flexShrink={0}
+          minW={{ base: 'auto', sm: '100px' }}
         >
-          Customize
+          <Text display={{ base: 'none', sm: 'inline' }}>Customize</Text>
+          <Text display={{ base: 'inline', sm: 'none' }}>Customize</Text>
         </Button>
       </HStack>
     </Box>

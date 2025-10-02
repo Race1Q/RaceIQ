@@ -22,7 +22,6 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) =
       h="100%"
       transition="all 0.3s ease"
       _hover={{
-        transform: 'translateY(-8px)',
         boxShadow: '0 12px 30px rgba(0, 0, 0, 0.3)',
         borderColor: 'brand.red',
       }}

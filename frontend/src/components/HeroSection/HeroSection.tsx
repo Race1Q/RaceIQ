@@ -1,7 +1,6 @@
 // frontend/src/components/HeroSection/HeroSection.tsx
 import React from 'react';
-import { Box, Button, Container, Heading, Text, VStack } from '@chakra-ui/react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { Box, Container, Heading, Text, VStack } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { useParallax } from '../../hooks/useParallax';
 import { gsap } from 'gsap';
@@ -18,7 +17,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   title = "Track Every F1 Appearance",
   subtitle = "View race results and appearances for your favourite drivers and teams — across sports."
 }) => {
-  const { loginWithRedirect } = useAuth0();
   const offsetY = useParallax(0.5);
 
   const handleScrollDown = () => {
@@ -34,7 +32,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <Box
       w="100%"
-      h="90vh"
+      minH={{ base: '100vh', md: '90vh' }}
+      h={{ base: 'auto', md: '90vh' }}
       position="relative"
       overflow="hidden"
     >
@@ -51,31 +50,36 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         style={{ transform: `translateY(${offsetY}px)` }}
       />
       
-      <Container maxW="1400px" h="100%" position="relative" zIndex={2}>
+      <Container maxW="1400px" h="100%" position="relative" zIndex={2} px={{ base: 4, md: 6 }}>
         <VStack
           h="100%"
-          spacing={6}
+          spacing={{ base: 4, md: 6 }}
           align={{ base: 'center', md: 'flex-start' }}
           justify="center"
           textAlign={{ base: 'center', md: 'left' }}
+          py={{ base: 8, md: 0 }}
         >
           <Heading
             as="h1"
-            fontSize={{ base: '4xl', md: '6xl', lg: '7xl' }}
+            fontSize={{ base: '3xl', sm: '4xl', md: '6xl', lg: '7xl' }}
             fontWeight="bold"
             fontFamily="heading"
             // IMPROVEMENT: Use semantic text tokens for the gradient.
             // In dark mode, this resolves to white/cccccc. In light mode, it will be dark.
             bgGradient="linear(to-r, text-primary, text-secondary)"
             bgClip="text"
+            textAlign={{ base: 'center', md: 'left' }}
+            px={{ base: 4, md: 0 }}
           >
             {title}
           </Heading>
           <Text
-            fontSize={{ base: 'lg', md: 'xl' }}
+            fontSize={{ base: 'md', sm: 'lg', md: 'xl' }}
             // IMPROVEMENT: Use a semantic token for the subtitle.
             color="text-secondary" 
-            maxW="600px"
+            maxW={{ base: '100%', md: '600px' }}
+            textAlign={{ base: 'center', md: 'left' }}
+            px={{ base: 4, md: 0 }}
           >
             {subtitle}
           </Text>
@@ -85,16 +89,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       
       <Box
         position="absolute"
-        bottom="30px"
+        bottom={{ base: '20px', md: '30px' }}
         left="50%"
         transform="translateX(-50%)"
         color="white" // 'white' is acceptable here over the dark image background
-        fontSize="6xl"
+        fontSize={{ base: '4xl', md: '6xl' }}
         animation="bounceUpDown 2s infinite"
         cursor="pointer"
         onClick={handleScrollDown}
         _hover={{ opacity: 0.7 }}
         zIndex={3}
+        display={{ base: 'block', sm: 'block' }}
         sx={{
           '@keyframes bounceUpDown': {
             '0%, 100%': {

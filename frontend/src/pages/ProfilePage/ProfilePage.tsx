@@ -5,6 +5,7 @@ import {
   Box,
   VStack,
   HStack,
+  Flex,
   Text,
   Input,
   Switch,
@@ -21,6 +22,7 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   useDisclosure,
+  SimpleGrid,
 } from '@chakra-ui/react';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
@@ -38,7 +40,7 @@ import { driverHeadshots } from '../../lib/driverHeadshots';
 const ProfilePage: React.FC = () => {
   // 1. Get the isLoading flag from the hook
   const { user, getAccessTokenSilently, isLoading } = useAuth0();
-  const { profile, loading: isProfileLoading, updateProfile } = useProfile();
+  const { profile, updateProfile } = useProfile();
   const { triggerRefresh } = useProfileUpdate();
   const toast = useToast();
   
@@ -362,23 +364,25 @@ const ProfilePage: React.FC = () => {
               />
             </FormControl>
 
-            <SearchableSelect
-              label="Favorite Team"
-              options={transformedConstructorOptions as unknown as SelectOption[]}
-              value={(transformedConstructorOptions as any).find((o: SelectOption) => o.value === formData.favoriteTeam) || null}
-              onChange={(option) => handleSelectChange('favoriteTeam', option as SelectOption | null)}
-              placeholder="Search and select your favorite team"
-              isLoading={loading}
-            />
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+              <SearchableSelect
+                label="Favorite Team"
+                options={transformedConstructorOptions as unknown as SelectOption[]}
+                value={(transformedConstructorOptions as any).find((o: SelectOption) => o.value === formData.favoriteTeam) || null}
+                onChange={(option) => handleSelectChange('favoriteTeam', option as SelectOption | null)}
+                placeholder="Search and select your favorite team"
+                isLoading={loading}
+              />
 
-            <SearchableSelect
-              label="Favorite Driver"
-              options={transformedDriverOptions as unknown as SelectOption[]}
-              value={(transformedDriverOptions as any).find((o: SelectOption) => o.value === formData.favoriteDriver) || null}
-              onChange={(option) => handleSelectChange('favoriteDriver', option as SelectOption | null)}
-              placeholder="Search and select your favorite driver"
-              isLoading={loading}
-            />
+              <SearchableSelect
+                label="Favorite Driver"
+                options={transformedDriverOptions as unknown as SelectOption[]}
+                value={(transformedDriverOptions as any).find((o: SelectOption) => o.value === formData.favoriteDriver) || null}
+                onChange={(option) => handleSelectChange('favoriteDriver', option as SelectOption | null)}
+                placeholder="Search and select your favorite driver"
+                isLoading={loading}
+              />
+            </SimpleGrid>
             
             <FormControl display="flex" alignItems="center">
               <FormLabel htmlFor="email-notifications" mb="0" color="var(--color-text-light)">
@@ -404,12 +408,19 @@ const ProfilePage: React.FC = () => {
               </HStack>
             </Box>
             <Divider borderColor="var(--color-border-gray)" />
-            <HStack spacing={4} justify="flex-end">
+            <Flex 
+              direction={{ base: 'column', md: 'row' }} 
+              justify={{ base: 'stretch', md: 'flex-end' }}
+              gap={4}
+              wrap="wrap"
+            >
               <Button
                 onClick={handleSendRaceInfo}
                 colorScheme="red"
                 variant="outline"
                 isDisabled={sending}
+                size={{ base: 'sm', md: 'md' }}
+                w={{ base: 'full', md: 'auto' }}
                 _hover={{
                   transform: 'translateY(-2px)'
                 }}
@@ -422,6 +433,8 @@ const ProfilePage: React.FC = () => {
                 variant="outline"
                 isLoading={deleting}
                 loadingText="Deleting"
+                size={{ base: 'sm', md: 'md' }}
+                w={{ base: 'full', md: 'auto' }}
                 _hover={{
                   transform: 'translateY(-2px)'
                 }}
@@ -434,13 +447,15 @@ const ProfilePage: React.FC = () => {
                 isLoading={saving}
                 loadingText="Saving"
                 isDisabled={saving}
+                size={{ base: 'sm', md: 'md' }}
+                w={{ base: 'full', md: 'auto' }}
                 _hover={{
                   transform: 'translateY(-2px)'
                 }}
               >
                 Save Changes
               </Button>
-            </HStack>
+            </Flex>
           </VStack>
         </Box>
       </Container>

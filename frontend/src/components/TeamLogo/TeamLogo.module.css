@@ -2,18 +2,63 @@
 
 .logoContainer {
   height: 100%;
-  width: 250px;
+  width: 100%;
+  max-width: 250px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .logoContainer svg {
-  height: 80%;
+  height: 95%;
   width: auto;
   object-fit: contain;
   /* The drop-shadow is now applied here for all logos */
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+}
+
+/* Special styling for Williams logo to prevent clipping */
+.williamsLogo {
+  width: 100%;
+  max-width: 200px;
+}
+
+.williamsLogo svg {
+  height: 95%;
+  width: 100%;
+  object-fit: contain;
+}
+
+/* Responsive scaling for mobile devices */
+@media (max-width: 768px) {
+  .logoContainer {
+    max-width: 120px;
+  }
+  
+  .logoContainer svg {
+    height: 90%;
+    max-width: 100%;
+  }
+  
+  .williamsLogo {
+    max-width: 100px;
+  }
+  
+  .williamsLogo svg {
+    height: 90%;
+    width: 100%;
+  }
+}
+
+/* Specific fixes for problematic teams */
+@media (max-width: 480px) {
+  .logoContainer {
+    max-width: 80px;
+  }
+  
+  .williamsLogo {
+    max-width: 70px;
+  }
 }
 
 /* --- THE NEW FILTER-BASED STYLING --- */

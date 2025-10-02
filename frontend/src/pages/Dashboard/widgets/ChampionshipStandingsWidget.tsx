@@ -34,16 +34,36 @@ const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; ye
                 borderRadius="md"
                 transition="all 0.2s ease-in-out"
               >
-                <Flex align="center" flex={1}>
-                  <Text w="2em" color={isLeader ? 'white' : 'brand.red'} fontWeight="bold">{item.position}.</Text>
-                  <Avatar size="sm" src={headshot} mr={3} />
-                  <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold" color={isLeader ? 'white' : 'text-primary'}>{item.driverFullName}</Text>
-                    <Text fontSize="sm" color={isLeader ? 'whiteAlpha.800' : 'text-muted'}>{item.constructorName}</Text>
+                <Flex align="center" flex={1} minW="0">
+                  <Text w="2em" color={isLeader ? 'white' : 'brand.red'} fontWeight="bold" flexShrink={0}>{item.position}.</Text>
+                  <Avatar size="sm" src={headshot} mr={2} flexShrink={0} />
+                  <VStack align="start" spacing={0} flex="1" minW="0">
+                    <Text 
+                      fontWeight="bold" 
+                      color={isLeader ? 'white' : 'text-primary'}
+                      fontSize={{ base: 'xs', md: 'sm' }}
+                      noOfLines={1}
+                    >
+                      {item.driverFullName}
+                    </Text>
+                    <Text 
+                      fontSize={{ base: 'xs', md: 'sm' }} 
+                      color={isLeader ? 'whiteAlpha.800' : 'text-muted'}
+                      noOfLines={1}
+                    >
+                      {item.constructorName}
+                    </Text>
                   </VStack>
                 </Flex>
                 {isLeader && <Icon as={Trophy} color="white" mr={3} />}
-                <Text fontWeight="bold" color={isLeader ? 'white' : 'brand.red'}>{item.points} pts</Text>
+                <Text 
+                  fontWeight="bold" 
+                  color={isLeader ? 'white' : 'brand.red'}
+                  fontSize={{ base: 'xs', md: 'sm' }}
+                  flexShrink={0}
+                >
+                  {item.points} pts
+                </Text>
               </Flex>
             );
           })

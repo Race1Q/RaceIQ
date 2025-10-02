@@ -7,19 +7,21 @@ const SectionConnector = () => {
 
   return (
     <Box
-      position="absolute"
+      position="relative"
       left="0"
       right="0"
-      bottom="-75px" // This may need slight tweaking for perfect alignment
-      height="150px"
+      bottom="0"
+      height={{ base: '100px', md: '150px' }}
       zIndex={10}
       pointerEvents="none"
+      mt={{ base: '-50px', md: '-75px' }}
     >
       <svg
         width="100%"
         height="100%"
         viewBox="0 0 1440 150"
         preserveAspectRatio="none"
+        style={{ display: 'block' }}
       >
         {/* Define the fade effect. A mask uses a gradient to control opacity.
           Black areas of the gradient become transparent, white areas remain opaque.
