@@ -1,6 +1,6 @@
 # 🏁 RaceIQ
 
-**RaceIQ** is a simple and easy-to-use tool for tracking Formula 1 race stats and performance.  
+**RaceIQ** is a simple and intuitive tool for tracking Formula 1 race stats and performance.  
 It gathers race data and shows key info like lap times, driver positions, pit stops, and sector performance — with a few surprises. 😉
 
 ## [![codecov](https://codecov.io/gh/Race1Q/RaceIQ/graph/badge.svg?token=0B9G4DM0W3)](https://codecov.io/gh/Race1Q/RaceIQ)
