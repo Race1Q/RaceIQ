@@ -7,12 +7,13 @@ import {
   Container,
   SimpleGrid,
   Flex,
-  Input,
   Image,
+  Input,
 } from '@chakra-ui/react';
 import { Select } from 'chakra-react-select';
 import { InputGroup, InputRightElement, IconButton } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
+import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { buildApiUrl } from '../../lib/api';
@@ -34,8 +35,10 @@ interface Option {
   label: string;
 }
 
+
 const Constructors = () => {
   const toast = useToast();
+  const { isAuthenticated } = useAuth0();
   const [constructors, setConstructors] = useState<ApiConstructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,14 +84,21 @@ const Constructors = () => {
   }, [publicFetch, toast]);
 
 
+
   const statusOptions: Option[] = [
     { value: 'active', label: 'Active Teams' },
     { value: 'inactive', label: 'Inactive Teams' },
     { value: 'all', label: 'All Teams' },
   ];
 
-  // Apply filters
+  // Apply filters based on authentication status
   const filteredConstructors = useMemo(() => {
+    if (!isAuthenticated) {
+      // Non-logged-in users: show only active constructors
+      return constructors.filter(c => c.is_active);
+    }
+    
+    // Logged-in users: apply search and status filters
     return constructors.filter((c) => {
       const matchesSearch =
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,7 +113,7 @@ const Constructors = () => {
 
       return matchesSearch && matchesStatus;
     });
-  }, [constructors, searchTerm, statusFilter]);
+  }, [constructors, searchTerm, statusFilter, isAuthenticated]);
 
   return (
     <Box>
@@ -112,75 +122,78 @@ const Constructors = () => {
         subtitle="Explore F1 teams and constructors"
       />
       
-      {/* Filters Section - Moved outside PageHeader */}
-      <Box bg="bg-primary" color="text-primary" py={{ base: 4, md: 6 }}>
-        <Container maxW="1600px" px={{ base: 4, md: 6 }}>
-          <Flex gap={4} direction={{ base: 'column', md: 'row' }} w="full" align={{ base: 'stretch', md: 'center' }}>
+      {/* Filters Section - Only for logged-in users */}
+      {isAuthenticated && (
+        <Box bg="bg-primary" color="text-primary" py={{ base: 4, md: 6 }}>
+          <Container maxW="1600px" px={{ base: 4, md: 6 }}>
+            <Flex gap={4} direction={{ base: 'column', md: 'row' }} w="full" align={{ base: 'stretch', md: 'center' }}>
 
-            {/* Left: Search - Show for All Teams and Inactive Teams */}
-            {(statusFilter === 'all' || statusFilter === 'inactive') && (
-              <Box maxW={{ base: 'full', md: '260px' }} w="100%">
-                <InputGroup>
-                  <Input
-                    placeholder="Search by name"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    bg="gray.700"
-                    color="white"
-                  />
-                  {searchTerm && (
-                    <InputRightElement>
-                      <IconButton
-                        aria-label="Clear search"
-                        icon={<CloseIcon />}
-                        size="sm"
-                        onClick={() => setSearchTerm('')}
-                        bg="gray.600"
-                        _hover={{ bg: 'gray.500' }}
-                      />
-                    </InputRightElement>
-                  )}
-                </InputGroup>
+              {/* Left: Search - Show for All Teams and Inactive Teams */}
+              {(statusFilter === 'all' || statusFilter === 'inactive') && (
+                <Box maxW={{ base: 'full', md: '260px' }} w="100%">
+                  <InputGroup>
+                    <Input
+                      placeholder="Search by name"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      bg="gray.700"
+                      color="white"
+                    />
+                    {searchTerm && (
+                      <InputRightElement>
+                        <IconButton
+                          aria-label="Clear search"
+                          icon={<CloseIcon />}
+                          size="sm"
+                          onClick={() => setSearchTerm('')}
+                          bg="gray.600"
+                          _hover={{ bg: 'gray.500' }}
+                        />
+                      </InputRightElement>
+                    )}
+                  </InputGroup>
+                </Box>
+              )}
+              
+
+              {/* Status Filter */}
+              <Box maxW={{ base: 'full', md: '220px' }} w={{ base: 'full', md: '220px' }}>
+                <Select
+                  options={statusOptions}
+                  value={statusOptions.find((o) => o.value === statusFilter) || null}
+                  onChange={(option) => {
+                    const newStatus = (option as Option).value as 'active' | 'inactive' | 'all';
+                    setStatusFilter(newStatus);
+                    // Clear search when switching to 'active' (only active teams don't show search)
+                    if (newStatus === 'active') {
+                      setSearchTerm('');
+                    }
+                  }}
+                  placeholder="Filter by Status"
+                  isClearable={false}
+                  chakraStyles={{
+                    control: (provided) => ({
+                      ...provided,
+                      bg: 'gray.700',
+                      color: 'white',
+                      borderColor: 'gray.600',
+                    }),
+                    menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      bg: state.isFocused ? 'gray.600' : 'gray.700',
+                      color: 'white',
+                    }),
+                    singleValue: (provided) => ({ ...provided, color: 'white' }),
+                  }}
+                />
               </Box>
-            )}
-            
-
-            {/* Status Filter */}
-            <Box maxW={{ base: 'full', md: '220px' }} w={{ base: 'full', md: '220px' }}>
-              <Select
-                options={statusOptions}
-                value={statusOptions.find((o) => o.value === statusFilter) || null}
-                onChange={(option) => {
-                  const newStatus = (option as Option).value as 'active' | 'inactive' | 'all';
-                  setStatusFilter(newStatus);
-                  // Clear search when switching to 'active' (only active teams don't show search)
-                  if (newStatus === 'active') {
-                    setSearchTerm('');
-                  }
-                }}
-                placeholder="Filter by Status"
-                isClearable={false}
-                chakraStyles={{
-                  control: (provided) => ({
-                    ...provided,
-                    bg: 'gray.700',
-                    color: 'white',
-                    borderColor: 'gray.600',
-                  }),
-                  menu: (provided) => ({ ...provided, bg: 'gray.700', color: 'white' }),
-                  option: (provided, state) => ({
-                    ...provided,
-                    bg: state.isFocused ? 'gray.600' : 'gray.700',
-                    color: 'white',
-                  }),
-                  singleValue: (provided) => ({ ...provided, color: 'white' }),
-                }}
-              />
-            </Box>
-          </Flex>
-        </Container>
-      </Box>
-      <Box bg="bg-primary" color="text-primary" minH="100vh" py={{ base: 'md', md: 'lg' }}>
+            </Flex>
+          </Container>
+        </Box>
+      )}
+      
+      <Box bg="bg-primary" color="text-primary" py={{ base: 'md', md: 'lg' }}>
         <Container maxW="1600px" px={{ base: 4, md: 6 }}>
           {loading && <F1LoadingSpinner text="Loading Constructors..." />}
           {error && (
@@ -256,13 +269,3 @@ const Constructors = () => {
 };
 
 export default Constructors;
-
-
-
-
-
-
-
-
-
-

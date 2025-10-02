@@ -107,7 +107,7 @@ const NotAuthenticatedView = () => {
 };
 
 const LoadingView = () => (
-  <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+  <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
     {Array.from({ length: 12 }).map((_, idx) => (
       <Box key={idx} p={4} borderRadius="lg" bg="bg-surface" borderWidth="1px" borderColor="border-primary">
         <Skeleton height="150px" borderRadius="md" mb={4} />
@@ -190,7 +190,7 @@ const RacesPage: React.FC = () => {
         {upcomingRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Upcoming races</Heading>
-            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
               {upcomingRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />
@@ -203,7 +203,7 @@ const RacesPage: React.FC = () => {
         {pastRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Past Races</Heading>
-            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
               {pastRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />

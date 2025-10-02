@@ -32,7 +32,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <Box
       w="100%"
-      minH={{ base: '100vh', md: '90vh' }}
+      minH={{ base: '50vh', md: '90vh' }}
       h={{ base: 'auto', md: '90vh' }}
       position="relative"
       overflow="hidden"
@@ -53,11 +53,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       <Container maxW="1400px" h="100%" position="relative" zIndex={2} px={{ base: 4, md: 6 }}>
         <VStack
           h="100%"
-          spacing={{ base: 4, md: 6 }}
+          spacing={{ base: 2, md: 6 }}
           align={{ base: 'center', md: 'flex-start' }}
           justify="center"
           textAlign={{ base: 'center', md: 'left' }}
-          py={{ base: 8, md: 0 }}
+          py={{ base: 4, md: 0 }}
         >
           <Heading
             as="h1"

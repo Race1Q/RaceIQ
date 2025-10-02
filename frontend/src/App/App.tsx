@@ -11,7 +11,7 @@ import AboutUs from '../pages/AboutUs/AboutUs';
 import Drivers from '../pages/Drivers/Drivers';
 import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
 import RacesPage from '../pages/RacesPage/RacesPage';
-import RaceDetailPage from '../pages/RaceDetailPage/RaceDetailPage';
+import RaceDetailPageLayout from '../pages/RaceDetailPage/RaceDetailPage';
 // import Admin from '../pages/Admin/Admin';
 import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
@@ -27,6 +27,7 @@ import Constructors from '../pages/Constructors/Constructors';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
+import ComparisonLoginPrompt from '../pages/ComparisonLoginPrompt/ComparisonLoginPrompt';
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import DriverStandings from '../pages/Standings/DriverStandings';
@@ -241,7 +242,7 @@ function AppContent() {
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
-            <Route path="/races/:raceId" element={<RaceDetailPage />} />
+            <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
             <Route path="/about" element={<AboutUs />} />
             <Route
               path="/profile"
@@ -299,7 +300,7 @@ function AppContent() {
           } 
         />
         <Route path="/races" element={<RacesPage />} />
-        <Route path="/races/:raceId" element={<RaceDetailPage />} />
+        <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
         <Route path="/constructors" element={<Constructors />} />
         <Route 
           path="/constructors/:constructorId" 
@@ -313,6 +314,7 @@ function AppContent() {
           } 
         />
         <Route path="/compare" element={<CompareDriversPage />} />
+        <Route path="/compare-login" element={<ComparisonLoginPrompt />} />
       </Routes>
 
       <BackToTopButton />

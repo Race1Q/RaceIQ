@@ -1,7 +1,8 @@
 // frontend/src/components/RaceDetails/Podium.tsx
 import React from 'react';
-import { Box, Flex, Heading, Text, VStack, useColorModeValue, Image } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, VStack, Image } from '@chakra-ui/react';
 import { driverHeadshots } from '../../lib/driverHeadshots';
+import { getTeamColor } from '../../lib/teamColors';
 import userIcon from '../../assets/UserIcon.png';
 
 // Define the shape of the podium data prop
@@ -25,8 +26,8 @@ const PodiumStep = ({ driver, height }: { driver: PodiumDriver; height: string }
   const teamName = driver.team_name || driver.constructor_name || 'Unknown Team';
   const headshot = driverHeadshots[driverName] || driver.driver_picture || userIcon;
   
-  const metallicGradient = useColorModeValue('linear(to-b, gray.200, gray.400)', 'linear(to-b, gray.700, gray.800)');
-  const highlightColor = useColorModeValue('gray.300', 'gray.600');
+  // Get team color for the podium bar
+  const teamColor = getTeamColor(teamName, { hash: true });
 
   // The main VStack no longer needs padding-top
   return (
@@ -45,10 +46,8 @@ const PodiumStep = ({ driver, height }: { driver: PodiumDriver; height: string }
       <Box position="relative" w="100%" pt={2}>
         <Box
           h={height}
-          bgGradient={metallicGradient}
+          bg={teamColor}
           borderRadius="md"
-          borderTop="2px solid"
-          borderTopColor={highlightColor}
           boxShadow="md"
           display="flex"
           alignItems="center"
@@ -59,7 +58,8 @@ const PodiumStep = ({ driver, height }: { driver: PodiumDriver; height: string }
             fontFamily="heading"
             fontSize={{ base: '5xl', md: '7xl' }}
             fontWeight="black"
-            color={useColorModeValue('blackAlpha.200', 'whiteAlpha.100')}
+            color="white"
+            textShadow="2px 2px 4px rgba(0,0,0,0.8)"
           >
             {driver.position}
           </Text>
