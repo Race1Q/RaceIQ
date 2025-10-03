@@ -1,7 +1,9 @@
 // frontend/src/pages/CompareDriversPage/components/ComparisonTable.tsx
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, TableContainer, HStack, Text, VStack, Grid, Button } from '@chakra-ui/react';
+import { Box, Heading, Thead, Tbody, Tr, Th, Td, HStack, Text, VStack, Grid, Button } from '@chakra-ui/react';
 import ResponsiveTable from '../../../components/layout/ResponsiveTable';
 import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey, CompositeScore } from '../../../hooks/useDriverComparison';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 interface Props {
   driver1: DriverDetails;
@@ -18,6 +20,59 @@ interface Props {
   onMetricToggle?: (metric: MetricKey) => void;
   availableYears?: number[];
 }
+
+const exportComparisonAsPDF = (driver1Name: string, driver2Name: string, stats: { label: string; value1: number | string; value2: number | string }[]) => {
+  const doc = new jsPDF();
+  let yPos = 20;
+
+  doc.setFontSize(18);
+  doc.text("Driver Comparison", 14, yPos);
+  yPos += 10;
+
+  doc.setFontSize(12);
+  doc.text(`${driver1Name} vs ${driver2Name}`, 14, yPos);
+  yPos += 15;
+
+  const tableColumn = ["Stat", driver1Name, driver2Name];
+  const tableRows: (string | number)[][] = [];
+
+  stats.forEach(stat => {
+    tableRows.push([stat.label, stat.value1, stat.value2]);
+  });
+
+  if (typeof (doc as any).autoTable === 'function') {
+    (doc as any).autoTable(tableColumn, tableRows, { startY: yPos });
+  } else {
+    console.error("jsPDF autoTable plugin not loaded.");
+    // Fallback if autoTable is not available (e.g., plain text output)
+    stats.forEach(stat => {
+      doc.text(`${stat.label}: ${driver1Name}: ${stat.value1}, ${driver2Name}: ${stat.value2}`, 14, yPos);
+      yPos += 7;
+    });
+  }
+
+  doc.save("comparison.pdf");
+};
+
+const exportComparisonAsCSV = (driver1Name: string, driver2Name: string, stats: { label: string; value1: number | string; value2: number | string }[]) => {
+  let csvContent = `Stat,${driver1Name},${driver2Name}\n`;
+
+  stats.forEach(stat => {
+    csvContent += `"${stat.label}","${stat.value1}","${stat.value2}"\n`;
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  if (link.download !== undefined) { // feature detection
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'comparison.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
 
 const legacyStats: { key: keyof DriverDetails; label: string }[] = [
   { key: 'teamName', label: 'Team' },
@@ -328,6 +383,24 @@ export const ComparisonTable: React.FC<Props> = ({
               </Tbody>
           </ResponsiveTable>
         </Box>
+
+        {/* Export Buttons */}
+        <HStack spacing={4} mt={4} justify="center">
+          <Button 
+            onClick={() => exportComparisonAsPDF(title1, title2, metricRows.map(row => ({ label: row.label, value1: row.value1, value2: row.value2 })))}
+            colorScheme="red" 
+            variant="solid"
+          >
+            Export as PDF
+          </Button>
+          <Button 
+            onClick={() => exportComparisonAsCSV(title1, title2, metricRows.map(row => ({ label: row.label, value1: row.value1, value2: row.value2 })))}
+            colorScheme="green" 
+            variant="solid"
+          >
+            Export as CSV
+          </Button>
+        </HStack>
       </VStack>
     );
   }
