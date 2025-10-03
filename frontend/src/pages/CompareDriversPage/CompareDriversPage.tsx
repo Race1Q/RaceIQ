@@ -165,19 +165,11 @@ const CompareDriversPage = () => {
     }
 
     try {
-      console.log('Starting PDF export...');
-      console.log('PDF card element:', pdfCardRef.current);
-      console.log('PDF card dimensions:', {
-        width: pdfCardRef.current.offsetWidth,
-        height: pdfCardRef.current.offsetHeight
-      });
-
       // Give time for images to load (base64 conversion happens in useEffect)
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Wait for images to be in DOM
       const images = pdfCardRef.current.querySelectorAll('img');
-      console.log('Found images:', images.length);
       
       await Promise.all(
         Array.from(images).map(img => {
@@ -193,18 +185,15 @@ const CompareDriversPage = () => {
       const html2canvas = (await import('html2canvas')).default;
       const jsPDF = (await import('jspdf')).default;
 
-      console.log('Capturing with html2canvas...');
       const canvas = await html2canvas(pdfCardRef.current, {
         backgroundColor: "#ffffff",
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: true,
+        logging: false,
         width: pdfCardRef.current.offsetWidth,
         height: pdfCardRef.current.offsetHeight,
       });
-
-      console.log('Canvas dimensions:', { width: canvas.width, height: canvas.height });
 
       const img = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -212,8 +201,6 @@ const CompareDriversPage = () => {
       const pageH = pdf.internal.pageSize.getHeight();
       const imgW = pageW;
       const imgH = (canvas.height * imgW) / canvas.width;
-      
-      console.log('PDF dimensions:', { pageW, pageH, imgW, imgH });
       
       // If image is taller than page, scale down to fit
       if (imgH > pageH) {
@@ -231,8 +218,6 @@ const CompareDriversPage = () => {
       const driver2Name = pdfDriver2.fullName.replace(/\s+/g, '_');
       const yearSuffix = selection1 && selection1.year !== 'career' ? `_${selection1.year}` : '';
       pdf.save(`RaceIQ_${driver1Name}_vs_${driver2Name}${yearSuffix}.pdf`);
-      
-      console.log('PDF exported successfully!');
     } catch (error) {
       console.error('Failed to export PDF:', error);
       alert('Failed to export PDF. Check console for details or try using different drivers.');
@@ -376,15 +361,14 @@ const CompareDriversPage = () => {
             </Button>
           </Box>
 
-          {/* PDF Comparison Card - Temporarily visible for debugging */}
+          {/* Hidden PDF Comparison Card for export */}
           {pdfDriver1 && pdfDriver2 && (
             <Box
-              mt="xl"
-              p="md"
-              bg="gray.100"
+              position="absolute"
+              left="-9999px"
+              top="-9999px"
               id="pdf-export-card"
             >
-              <Text mb="md" fontWeight="bold">PDF Preview (Debug):</Text>
               <PdfComparisonCard
                 ref={pdfCardRef}
                 driver1={{

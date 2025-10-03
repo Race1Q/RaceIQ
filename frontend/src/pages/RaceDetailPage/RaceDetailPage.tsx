@@ -368,11 +368,6 @@ const RaceDetailPage: React.FC = () => {
     [raceResults, showDrivers]
   );
 
-  React.useEffect(() => {
-    // Debug: log qualiResults to help diagnose display issues
-    // eslint-disable-next-line no-console
-    console.log('qualiResults', qualiResults);
-  }, [qualiResults]);
 
   const filteredQuali = useMemo(() =>
     qualiResults
