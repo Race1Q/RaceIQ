@@ -1,0 +1,62 @@
+/* backButton styles removed; functionality moved into KeyInfoBar */
+
+/* New Hero Content Layout Styles */
+.heroContentLayout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-xl) 0;
+}
+
+.heroTitleBlock { text-align: left; }
+
+.heroTitle {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.firstName {
+  font-family: var(--font-signature);
+  font-size: 6rem;
+  font-weight: 400;
+  color: var(--color-text-light);
+  margin-bottom: -1rem;
+}
+
+.lastName {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.heroBioBlock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--color-text-medium);
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-md);
+  backdrop-filter: blur(5px);
+}
+
+.flagImage {
+  width: 50px;
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.bioText {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+}
+
+
