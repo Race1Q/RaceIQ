@@ -1,6 +1,6 @@
 // src/pages/RaceDetailPage/RaceDetailPage.tsx
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, SimpleGrid, Table,
@@ -140,7 +140,97 @@ const fetchLapsByRaceId = (raceId: string | number) =>
   tryGet<Lap[]>(candidates('laps', raceId));
 
 // ---------- utils ----------
-const fmtMs = (ms?: number | null) => (ms == null ? '-' : `${(ms / 1000).toFixed(3)}s`);
+const fmtMs = (ms?: number | null) => {
+  if (ms == null) return '-';
+  const totalSeconds = ms / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = (totalSeconds % 60).toFixed(3);
+  return `${minutes}:${seconds.padStart(6, '0')}`;
+};
+
+const fmtRaceTime = (timeMs?: number | null, status?: string | null) => {
+  if (timeMs == null || status == null) return '-';
+  
+  // If driver didn't finish (DNF, DNS, etc.), show status
+  if (status !== 'Finished' && status !== 'Lapped') return status;
+  
+  // For lapped drivers, calculate laps behind
+  if (status === 'Lapped') {
+    const totalSeconds = timeMs / 1000;
+    const typicalLapTime = 100; // 100 seconds per lap as baseline
+    
+    // For lapped drivers, the time represents gap behind leader
+    // If gap is less than a lap time, they're 1 lap behind
+    // If gap is more than a lap time, calculate how many laps
+    if (totalSeconds < typicalLapTime) {
+      return '+1 LAP';
+    } else {
+      const lapsBehind = Math.floor(totalSeconds / typicalLapTime);
+      return lapsBehind === 1 ? '+1 LAP' : `+${lapsBehind} LAPS`;
+    }
+  }
+  
+  // For finished drivers, check if they're lapped
+  // Assuming a typical F1 race lap time is around 90-120 seconds (1.5-2 minutes)
+  // If time is significantly longer than expected, they're likely lapped
+  const totalSeconds = timeMs / 1000;
+  const typicalLapTime = 100; // 100 seconds per lap as baseline
+  
+  // If time is more than 1.5x a typical lap time, they're likely lapped
+  if (totalSeconds > typicalLapTime * 1.5) {
+    const lapsBehind = Math.floor(totalSeconds / typicalLapTime);
+    return lapsBehind === 1 ? '+1 LAP' : `+${lapsBehind} LAPS`;
+  }
+  
+  // For normal finishing times, show the formatted time
+  return fmtMs(timeMs);
+};
+
+// Format race summary times with gap behind leader
+const fmtRaceSummaryTime = (timeMs?: number | null, status?: string | null) => {
+  if (timeMs == null || status == null) return '-';
+  
+  // If driver didn't finish (DNF, DNS, etc.), show status
+  if (status !== 'Finished' && status !== 'Lapped') return status;
+  
+  // For lapped drivers, show lap count
+  if (status === 'Lapped') {
+    const totalSeconds = timeMs / 1000;
+    const typicalLapTime = 100; // 100 seconds per lap as baseline
+    
+    if (totalSeconds < typicalLapTime) {
+      return '+1 LAP';
+    } else {
+      const lapsBehind = Math.floor(totalSeconds / typicalLapTime);
+      return lapsBehind === 1 ? '+1 LAP' : `+${lapsBehind} LAPS`;
+    }
+  }
+  
+  // For finished drivers, show gap behind leader with + prefix
+  const totalSeconds = timeMs / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = (totalSeconds % 60).toFixed(3);
+  
+  // If no minutes, don't show 0: prefix
+  if (minutes === 0) {
+    return `+${seconds}`;
+  } else {
+    return `+${minutes}:${seconds.padStart(6, '0')}`;
+  }
+};
+
+// Helper function to find fastest times in each qualifying session
+const getFastestQualiTimes = (qualiResults: QualiResult[]) => {
+  const fastestQ1 = Math.min(...qualiResults.map(q => q.q1_time_ms || Infinity).filter(t => t !== Infinity));
+  const fastestQ2 = Math.min(...qualiResults.map(q => q.q2_time_ms || Infinity).filter(t => t !== Infinity));
+  const fastestQ3 = Math.min(...qualiResults.map(q => q.q3_time_ms || Infinity).filter(t => t !== Infinity));
+  
+  return {
+    q1: fastestQ1 === Infinity ? null : fastestQ1,
+    q2: fastestQ2 === Infinity ? null : fastestQ2,
+    q3: fastestQ3 === Infinity ? null : fastestQ3,
+  };
+};
 const uniq = <T,>(arr: T[]) => Array.from(new Set(arr));
 
 
@@ -670,7 +760,7 @@ const RaceDetailPage: React.FC = () => {
                         <Td>{r.constructor_name ?? r.constructor_id}</Td>
                         <Td>{r.grid ?? '-'}</Td>
                         <Td>{r.status ?? '-'}</Td>
-                        <Td isNumeric>{fmtMs(r.time_ms)}</Td>
+                        <Td isNumeric>{fmtRaceSummaryTime(r.time_ms, r.status)}</Td>
                       </Tr>
                     ))}
                   </Tbody>
@@ -774,16 +864,53 @@ const RaceDetailPage: React.FC = () => {
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {filteredQuali.map((q, idx) => (
-                      <Tr key={idx}>
-                        <Td>{q.position ?? '-'}</Td>
-                        <Td>{q.driver_name ?? q.driver_code ?? q.driver_id}</Td>
-                        <Td>{q.constructor_name ?? q.constructor_id}</Td>
-                        <Td isNumeric>{fmtMs(q.q1_time_ms)}</Td>
-                        <Td isNumeric>{fmtMs(q.q2_time_ms)}</Td>
-                        <Td isNumeric>{fmtMs(q.q3_time_ms)}</Td>
-                      </Tr>
-                    ))}
+                    {filteredQuali.map((q, idx) => {
+                      const fastestTimes = getFastestQualiTimes(filteredQuali);
+                      const isFastestQ1 = q.q1_time_ms === fastestTimes.q1;
+                      const isFastestQ2 = q.q2_time_ms === fastestTimes.q2;
+                      const isFastestQ3 = q.q3_time_ms === fastestTimes.q3;
+                      
+                      return (
+                        <Tr key={idx}>
+                          <Td>{q.position ?? '-'}</Td>
+                          <Td>{q.driver_name ?? q.driver_code ?? q.driver_id}</Td>
+                          <Td>{q.constructor_name ?? q.constructor_id}</Td>
+                          <Td 
+                            isNumeric 
+                            color={isFastestQ1 ? '#8B5CF6' : undefined}
+                            fontWeight={isFastestQ1 ? 'bold' : undefined}
+                            bg={isFastestQ1 ? 'rgba(139, 92, 246, 0.1)' : undefined}
+                            borderRadius={isFastestQ1 ? 'md' : undefined}
+                            px={isFastestQ1 ? 2 : undefined}
+                            py={isFastestQ1 ? 1 : undefined}
+                          >
+                            {fmtMs(q.q1_time_ms)}
+                          </Td>
+                          <Td 
+                            isNumeric 
+                            color={isFastestQ2 ? '#8B5CF6' : undefined}
+                            fontWeight={isFastestQ2 ? 'bold' : undefined}
+                            bg={isFastestQ2 ? 'rgba(139, 92, 246, 0.1)' : undefined}
+                            borderRadius={isFastestQ2 ? 'md' : undefined}
+                            px={isFastestQ2 ? 2 : undefined}
+                            py={isFastestQ2 ? 1 : undefined}
+                          >
+                            {fmtMs(q.q2_time_ms)}
+                          </Td>
+                          <Td 
+                            isNumeric 
+                            color={isFastestQ3 ? '#8B5CF6' : undefined}
+                            fontWeight={isFastestQ3 ? 'bold' : undefined}
+                            bg={isFastestQ3 ? 'rgba(139, 92, 246, 0.1)' : undefined}
+                            borderRadius={isFastestQ3 ? 'md' : undefined}
+                            px={isFastestQ3 ? 2 : undefined}
+                            py={isFastestQ3 ? 1 : undefined}
+                          >
+                            {fmtMs(q.q3_time_ms)}
+                          </Td>
+                        </Tr>
+                      );
+                    })}
                   </Tbody>
                 </ResponsiveTable>
               </VStack>
@@ -1049,41 +1176,12 @@ const RaceDetailPage: React.FC = () => {
   );
 };
 
-// Footer for RaceDetailPage
-const Footer = () => (
-  <Box
-    as="footer"
-    bg="bg-surface-raised"
-    borderTop="2px solid"
-    borderColor="brand.red"
-    py="xl"
-    w="100%"
-    position="fixed"
-    left={0}
-    bottom={0}
-    zIndex={100}
-  >
-    <Container maxW="1200px">
-      <Flex justify="space-between" align="center" wrap="wrap" gap="md">
-        <HStack spacing="lg">
-          <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
-          <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
-          <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
-        </HStack>
-        <Text color="text-muted" fontSize="sm">
-          ©{new Date().getFullYear()} RaceIQ. All rights reserved.
-        </Text>
-      </Flex>
-    </Container>
-  </Box>
-);
 
 const RaceDetailPageLayout: React.FC = () => (
   <Box minH="100vh" display="flex" flexDirection="column" bg="bg-primary" color="text-primary">
-    <Box flex="1">
+    <Box flex="1" overflow="hidden">
       <RaceDetailPage />
     </Box>
-    <Footer />
   </Box>
 );
 

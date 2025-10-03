@@ -1,7 +1,7 @@
 // frontend/src/components/ComparePreviewSection/ComparePreviewSection.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useNavigate } from 'react-router-dom';
 import { Crown, Shuffle } from 'lucide-react';
 import { 
   Box, 
@@ -38,7 +38,7 @@ interface ComparisonData {
 }
 
 const ComparePreviewSection: React.FC = () => {
-  const { loginWithRedirect } = useAuth0();
+  const navigate = useNavigate();
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [randomizeLoading, setRandomizeLoading] = useState(false);
@@ -317,7 +317,7 @@ const ComparePreviewSection: React.FC = () => {
                 px={{ base: 6, md: 'xl' }}
                 py={{ base: 3, md: 'md' }}
                 borderRadius="md"
-                onClick={() => loginWithRedirect()}
+                onClick={() => navigate('/compare-login')}
                 transition="all 0.3s ease"
                 mt="md"
                 w={{ base: 'full', md: 'auto' }}

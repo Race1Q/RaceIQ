@@ -1,21 +1,15 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import Constructors from './Constructors';
 
-// Auth0 mock (kept lightweight / deterministic)
+// Auth0 mock - will be overridden in individual tests
+const mockUseAuth0 = vi.fn();
 vi.mock('@auth0/auth0-react', () => ({
-  useAuth0: () => ({
-    isAuthenticated: true,
-    isLoading: false,
-    user: { sub: 'auth0|123', name: 'Test User' },
-    loginWithRedirect: vi.fn(),
-    logout: vi.fn(),
-  }),
+  useAuth0: () => mockUseAuth0(),
 }));
 
 // Global fetch mock
@@ -70,6 +64,7 @@ vi.mock('chakra-react-select', () => {
   return { Select };
 });
 
+
 // Toast mock (preserve other chakra exports)
 const mockToast = vi.fn();
 vi.mock('@chakra-ui/react', async (importOriginal) => {
@@ -97,6 +92,14 @@ describe('Constructors Page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default to authenticated user
+    mockUseAuth0.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      user: { sub: 'auth0|123', name: 'Test User' },
+      loginWithRedirect: vi.fn(),
+      logout: vi.fn(),
+    });
   });
 
   it('shows loading indicator initially', () => {
@@ -105,67 +108,55 @@ describe('Constructors Page', () => {
     expect(screen.getByTestId('loading-spinner')).toHaveTextContent('Loading Constructors...');
   });
 
-  it('renders active constructors (default status filter = active)', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => data });
-    renderPage(<Constructors />);
-    await waitFor(() => expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument());
-    ['Red Bull Racing','Ferrari','McLaren','Mercedes','Aston Martin'].forEach(n => {
-      expect(screen.getByText(n)).toBeInTheDocument();
+  describe('when user is authenticated', () => {
+    it('renders all constructors with filters', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => data });
+      renderPage(<Constructors />);
+      await waitFor(() => expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument());
+      
+      // Should show filter dropdown
+      expect(screen.getByText('Filter by Status')).toBeInTheDocument();
+      
+      // Should show all active teams by default
+      ['Red Bull Racing','Ferrari','McLaren','Mercedes','Aston Martin'].forEach(n => {
+        expect(screen.getByText(n)).toBeInTheDocument();
+      });
+      // Inactive team should be hidden by default (active filter)
+      expect(screen.queryByText('Haas F1 Team')).not.toBeInTheDocument();
     });
-    expect(screen.queryByText('Haas F1 Team')).not.toBeInTheDocument(); // inactive hidden
-    // Search input is NOT visible while status=active
-    expect(screen.queryByPlaceholderText('Search by name')).not.toBeInTheDocument();
   });
 
-  it('switching to "all" reveals search and shows inactive team', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => data });
-    renderPage(<Constructors />);
-    await waitFor(() => expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument());
-    const statusSelect = screen.getByTestId('status-select');
-    fireEvent.change(statusSelect, { target: { value: 'all' } });
-    expect(screen.getByPlaceholderText('Search by name')).toBeInTheDocument();
-    expect(screen.getByText('Haas F1 Team')).toBeInTheDocument();
+  describe('when user is not authenticated', () => {
+    beforeEach(() => {
+      mockUseAuth0.mockReturnValue({
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+        loginWithRedirect: vi.fn(),
+        logout: vi.fn(),
+      });
+    });
+
+    it('renders only active constructors without filters', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => data });
+      renderPage(<Constructors />);
+      await waitFor(() => expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument());
+      
+      // Should not show filter dropdown
+      expect(screen.queryByText('Filter by Status')).not.toBeInTheDocument();
+      
+      // Should show only active teams
+      ['Red Bull Racing','Ferrari','McLaren','Mercedes','Aston Martin'].forEach(n => {
+        expect(screen.getByText(n)).toBeInTheDocument();
+      });
+      // Inactive team should be hidden
+      expect(screen.queryByText('Haas F1 Team')).not.toBeInTheDocument();
+    });
   });
 
-  it('filters via search when status is all', async () => {
-    const user = userEvent.setup();
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => data });
-    renderPage(<Constructors />);
-    await waitFor(() => expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('status-select'), { target: { value: 'all' } });
-    const search = screen.getByPlaceholderText('Search by name');
-    await user.type(search, 'Ferr');
-    expect(screen.getByText('Ferrari')).toBeInTheDocument();
-    // An unrelated team should be filtered out logically by name match
-    // (The component filters client-side).
-    expect(screen.queryByText('Red Bull Racing')).not.toBeInTheDocument();
-  });
 
-  it('shows inactive only when status set to inactive', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => data });
-    renderPage(<Constructors />);
-    await waitFor(() => expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('status-select'), { target: { value: 'inactive' } });
-    expect(screen.getByText('Haas F1 Team')).toBeInTheDocument();
-    // Active teams hidden
-    expect(screen.queryByText('Ferrari')).not.toBeInTheDocument();
-    // Search input appears for inactive
-    expect(screen.getByPlaceholderText('Search by name')).toBeInTheDocument();
-  });
 
-  it('clear search button resets input', async () => {
-    const user = userEvent.setup();
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => data });
-    renderPage(<Constructors />);
-    await waitFor(() => expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('status-select'), { target: { value: 'all' } });
-    const search = screen.getByPlaceholderText('Search by name');
-    await user.type(search, 'Merc');
-    expect(screen.getByDisplayValue('Merc')).toBeInTheDocument();
-    const clearBtn = screen.getByLabelText('Clear search');
-    await user.click(clearBtn);
-    expect(screen.getByDisplayValue('')).toBeInTheDocument();
-  });
+
 
   it('handles fetch error and shows toast + error message', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network Boom'));

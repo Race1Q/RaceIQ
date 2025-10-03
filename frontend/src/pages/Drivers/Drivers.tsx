@@ -206,7 +206,7 @@ const Drivers = () => {
                         teamName={teamName}
                         teamColor={teamColors[teamName] || teamColors['Default']}
                       />
-                      <SimpleGrid columns={{ base: 1, sm: 1, md: 2 }} gap={{ base: 4, md: 6 }}>
+                      <SimpleGrid columns={{ base: 2, sm: 2, md: 2 }} gap={{ base: 3, md: 6 }}>
                         {driversInTeam.map(driver => {
                           const driverCardData = {
                             id: driver.id.toString(),
