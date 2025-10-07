@@ -1,6 +1,6 @@
 // frontend/src/pages/Dashboard/DashboardPage.tsx
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Box, useDisclosure, Text, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
 import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
@@ -82,8 +82,11 @@ function DashboardPage() {
     f1News: true,
   });
 
-  // Layout state management
+  // Layout state management - always maintain full layout configuration
   const [layouts, setLayouts] = useState<Layouts>(initialLayouts);
+  
+  // Track previous visibility state to detect when widgets are re-added
+  const prevVisibilityRef = useRef<WidgetVisibility>(widgetVisibility);
 
   // Only show a full-page error if the API fails AND we have no fallback data
   if (error && !dashboardData) {
@@ -118,9 +121,31 @@ function DashboardPage() {
     f1News: <LatestF1NewsWidget />,
   };
 
-  // Refined layout change handler for proper state management
+  // Effect to handle widget re-addition - reset to original layout
+  useEffect(() => {
+    const prevVisibility = prevVisibilityRef.current;
+    const reAddedWidgets: string[] = [];
+    
+    // Find widgets that were just re-added (false -> true)
+    Object.keys(widgetVisibility).forEach(key => {
+      if (widgetVisibility[key as keyof WidgetVisibility] && !prevVisibility[key as keyof WidgetVisibility]) {
+        reAddedWidgets.push(key);
+      }
+    });
+    
+    if (reAddedWidgets.length > 0) {
+      // Reset to original layout to ensure proper positioning
+      setLayouts(initialLayouts);
+    }
+    
+    // Update the ref for next comparison
+    prevVisibilityRef.current = { ...widgetVisibility };
+  }, [widgetVisibility]);
+
+  // Refined layout change handler that preserves hidden widget layouts
   const handleLayoutChange = (_layout: any, allLayouts: Layouts) => {
-    // console.log("Layout changed:", allLayouts); // Useful for debugging
+    // Simply update the layouts with the new positions
+    // The layouts state should always contain all widgets, visible and hidden
     setLayouts(allLayouts);
   };
 
@@ -139,7 +164,16 @@ function DashboardPage() {
           </Box>
         ) : (
           <ResponsiveGridLayout
-            layouts={layouts}
+            layouts={(() => {
+              // Filter layouts to only include visible widgets
+              const filteredLayouts: Layouts = {};
+              Object.keys(layouts).forEach(breakpoint => {
+                filteredLayouts[breakpoint] = layouts[breakpoint].filter((item: any) => 
+                  widgetVisibility[item.i as keyof WidgetVisibility]
+                );
+              });
+              return filteredLayouts;
+            })()}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
             rowHeight={120}
