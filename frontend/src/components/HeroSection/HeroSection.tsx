@@ -15,7 +15,7 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ 
   title = "Track Every F1 Appearance",
-  subtitle = "View race results and appearances for your favourite drivers and teams — across sports."
+  subtitle = "Track real-time performance insights, compare drivers and dive deeper into every Formula 1 season."
 }) => {
   const offsetY = useParallax(0.5);
 
