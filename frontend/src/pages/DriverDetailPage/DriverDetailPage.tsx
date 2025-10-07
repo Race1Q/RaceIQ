@@ -28,16 +28,27 @@ const DriverDetailPage: React.FC = () => {
 
   return (
     <Box>
-      {/* --- NEW LAYERED HERO SECTION --- */}
+      {/* --- POLISHED HERO SECTION --- */}
       <Box
         position="relative"
-        minH={{ base: '30vh', md: '50vh' }}
+        minH={{ base: '40vh', md: '55vh' }}
         bgColor={teamColor}
         overflow="hidden"
-        _after={{ // Abstract geometric pattern overlay
-          content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1,
-          bgImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3e%3cpath d='M-100 100L100 200L100 0L-100 100Z' fill-opacity='0.02' fill='%23fff'/%3e%3c/svg%3e")`,
-          backgroundSize: '300px',
+        _before={{
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          background:
+            'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 60%)',
+          zIndex: 1,
+        }}
+        _after={{
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.55) 100%)',
+          zIndex: 4,
         }}
       >
         <Image
@@ -45,40 +56,85 @@ const DriverDetailPage: React.FC = () => {
           alt={`${driverDetails.teamName} car`}
           position="absolute"
           top="50%"
-          right={{ base: '-50%', md: '0' }}
+          left={{ base: '-35%', md: '-10%' }}
           transform="translateY(-50%)"
-          w={{ base: '100%', md: '70%' }}
+          w={{ base: '160%', md: '110%' }}
+          maxW="none"
+          opacity={0.25}
+          filter="blur(0.3px)"
           zIndex={2}
-          opacity={0.4}
+          pointerEvents="none"
         />
         <Image
           src={driverDetails.imageUrl || ''}
           alt={driverDetails.fullName}
           position="absolute"
           bottom={0}
-          right={{ base: '0', md: '5%' }}
-          h={{ base: '80%', md: '90%' }}
-          zIndex={3}
+          right={{ base: '-5%', md: '6%' }}
+          h={{ base: '75%', md: '88%' }}
+          maxH="95%"
           objectFit="contain"
-          filter="drop-shadow(0 10px 15px rgba(0,0,0,0.4))"
+          zIndex={5}
+          filter="drop-shadow(0 18px 30px rgba(0,0,0,0.45))"
+          pointerEvents="none"
         />
-        <Container maxW="1400px" h="100%" position="relative" zIndex={4}>
-          <Flex direction="column" justify="center" h="100%" align="flex-start" color="white" textShadow="0 2px 10px rgba(0,0,0,0.5)">
-            <Heading as="h1" lineHeight={1}>
-              <Text fontFamily="signature" fontSize={{ base: '5xl', md: '8xl' }} fontWeight="normal" mb={{ base: -4, md: -8 }}>
+        <Container maxW="1600px" h="100%" position="relative" zIndex={6} px={{ base: 4, md: 6 }}>
+          <Flex direction="column" justify="flex-end" h="100%" py={{ base: 6, md: 10 }} color="white">
+            {/* Breadcrumb / Back row */}
+            <Button
+              as={Link}
+              to="/drivers"
+              size="sm"
+              variant="outline"
+              colorScheme="whiteAlpha"
+              leftIcon={<ArrowLeft size={16} />}
+              mb={{ base: 4, md: 6 }}
+              alignSelf="flex-start"
+              borderColor="whiteAlpha.400"
+              _hover={{ bg: 'whiteAlpha.200' }}
+            >
+              Back to Drivers
+            </Button>
+
+            {/* Name block */}
+            <Heading as="h1" lineHeight={1} mb={{ base: 2, md: 3 }}>
+              <Text
+                fontFamily="signature"
+                fontWeight="normal"
+                letterSpacing="-0.02em"
+                fontSize={{ base: 'clamp(2.25rem, 6vw, 5rem)', md: 'clamp(3rem, 6vw, 7rem)' }}
+                mb={{ base: -2, md: -4 }}
+              >
                 {driverDetails.firstName}
               </Text>
-              <Text fontFamily="heading" fontSize={{ base: '4xl', md: '7xl' }} fontWeight="bold" textTransform="uppercase">
+              <Text
+                fontFamily="heading"
+                textTransform="uppercase"
+                fontWeight="800"
+                letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                fontSize={{ base: 'clamp(2rem, 7vw, 4rem)', md: 'clamp(3rem, 5vw, 6rem)' }}
+              >
                 {driverDetails.lastName}
               </Text>
             </Heading>
-            <HStack mt="md" spacing="md" bg="blackAlpha.300" p={2} borderRadius="md" backdropFilter="blur(5px)">
-              <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '32px', height: '24px' }} title={driverDetails.countryCode} />
-              <Text>{driverDetails.countryCode}</Text>
+
+            {/* Meta row */}
+            <HStack
+              spacing="md"
+              bg="blackAlpha.300"
+              p={2}
+              borderRadius="md"
+              backdropFilter="blur(6px)"
+              color="whiteAlpha.900"
+              border="1px solid"
+              borderColor="whiteAlpha.300"
+              alignSelf="flex-start"
+            >
+              <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '28px', height: '20px' }} title={driverDetails.countryCode} />
+              <Text fontSize="sm">{driverDetails.countryCode}</Text>
               <Text>•</Text>
-              <Text>{driverDetails.teamName}</Text>
+              <Text fontSize="sm">{driverDetails.teamName}</Text>
               <Text>•</Text>
-              {/* Ensure driver number is displayed */}
               <Text fontWeight="bold">#{driverDetails.number}</Text>
             </HStack>
           </Flex>
@@ -87,10 +143,7 @@ const DriverDetailPage: React.FC = () => {
 
       <KeyInfoBar driver={driverDetails} />
 
-      <Container maxW="1400px" py="xl">
-        <Link to="/drivers">
-          <Button leftIcon={<ArrowLeft />} variant="outline" mb="lg">Back to Drivers</Button>
-        </Link>
+      <Container maxW="1600px" py="xl" px={{ base: 4, md: 6 }}>
         
         {/* --- NEW STATS SECTIONS --- */}
         <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap="xl">

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, Button, useToast, Image, SimpleGrid } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container } from '@chakra-ui/react';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
@@ -253,7 +253,8 @@ const ConstructorDetails: React.FC = () => {
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
 
   return (
-    <Box bg="bg-primary" color="text-primary" minH="100vh" p={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+    <Box bg="bg-primary" color="text-primary" minH="100vh" py={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+      <Container maxW="1600px" px={{ base: 4, md: 6 }}>
       {/* Header Bar */}
       <Flex
         justify="space-between"
@@ -305,17 +306,17 @@ const ConstructorDetails: React.FC = () => {
         </Button>
       </Flex>
 
-      {/* Stats Cards - styled like Driver Details */}
-      <Box mb={6}>
-        <StatSection title="Career Totals" stats={totalStats} />
-      </Box>
-
-      {/* Latest Season Stats - styled like Driver Details */}
+      {/* Latest Season Stats - styled like Driver Details (placed first) */}
       {latestStats.length > 0 && (
         <Box mb={6}>
           <StatSection title={`${latestSeasonYear} Season`} stats={latestStats} />
         </Box>
       )}
+
+      {/* Career Totals - styled like Driver Details */}
+      <Box mb={6}>
+        <StatSection title="Career Totals" stats={totalStats} />
+      </Box>
 
       {/* Graphs Grid - 2 per row on desktop, 1 per row on mobile */}
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} mb={6}>
@@ -404,6 +405,7 @@ const ConstructorDetails: React.FC = () => {
           <Text fontSize="xl" mt={2} textAlign="left">Points: {topRace.points}</Text>
         </Box>
       )}
+      </Container>
     </Box>
   );
 };
