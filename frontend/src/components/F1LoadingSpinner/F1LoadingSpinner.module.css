@@ -4,21 +4,16 @@
   /* ... (loading text styles remain the same) ... */
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--chakra-colors-brand-red);
   text-transform: uppercase;
   letter-spacing: 2px;
   padding: 15px var(--chakra-space-lg);
-  border: 2px solid var(--chakra-colors-brand-red);
   border-radius: 25px;
-  background: rgba(225, 6, 0, 0.1);
-  box-shadow: 0 0 20px rgba(225, 6, 0, 0.4), inset 0 0 20px rgba(225, 6, 0, 0.1);
-  text-shadow: 0 0 10px rgba(225, 6, 0, 0.5);
   animation: loading-pulse 2s ease-in-out infinite;
 }
 
 @keyframes loading-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(225, 6, 0, 0.4), inset 0 0 20px rgba(225, 6, 0, 0.1); }
-  50% { box-shadow: 0 0 30px rgba(225, 6, 0, 0.6), inset 0 0 30px rgba(225, 6, 0, 0.2); }
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
 }
 
 /* --- New Speedometer Styles --- */
@@ -57,7 +52,6 @@
 .marking.major {
   height: 14px;
   width: 3px;
-  background: var(--chakra-colors-brand-red);
 }
 
 .number {
@@ -66,7 +60,6 @@
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 18px;
-  color: var(--chakra-colors-brand-red);
   font-weight: bold;
   z-index: 7; /* above arc and dial, below needle */
   pointer-events: none;
@@ -76,8 +69,6 @@
   position: absolute;
   width: 4px;
   height: 70px;
-  background: linear-gradient(to top, var(--chakra-colors-brand-red) 0%, #ff5555 100%);
-  box-shadow: 0 0 8px rgba(225, 6, 0, 0.8);
   transform-origin: bottom center;
   /* Top of needle aligns with center of dial */
   bottom: 50%; 
@@ -88,9 +79,7 @@
   position: absolute;
   width: 20px;
   height: 20px;
-  background: var(--chakra-colors-brand-red);
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(225, 6, 0, 0.8);
   z-index: 10;
 }
 
@@ -105,10 +94,8 @@
 
 .arcPath {
   fill: none;
-  stroke: var(--chakra-colors-brand-red);
   stroke-width: 12;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 5px var(--chakra-colors-brand-red));
 }
 
 /* Outer ring encircling the numbers */

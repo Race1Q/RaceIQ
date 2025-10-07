@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { IconButton, Fade } from '@chakra-ui/react';
 import { ArrowUp } from 'lucide-react';
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 const BackToTopButton = () => {
+  const { accentColorWithHash, accentColorDark } = useThemeColor();
   const [isVisible, setIsVisible] = useState(false);
 
   // --- Logic remains the same ---
@@ -43,13 +45,13 @@ const BackToTopButton = () => {
         right="lg" // <-- Uses 'lg' from your theme's space tokens
         zIndex="overlay"
         size="lg" // Controls width/height for the button
-        bg="brand.red"
+        bg={accentColorWithHash}
         color="staticWhite"
         borderRadius="full" // Chakra's token for 50%
         boxShadow="lg"
         transition="transform 0.2s ease-in-out, background-color 0.2s ease-in-out"
         _hover={{
-          bg: 'brand.redDark',
+          bg: accentColorDark,
           transform: 'translateY(-3px)',
         }}
       />

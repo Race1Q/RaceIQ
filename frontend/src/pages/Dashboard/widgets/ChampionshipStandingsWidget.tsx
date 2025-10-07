@@ -5,13 +5,16 @@ import WidgetCard from './WidgetCard';
 import { teamColors } from '../../../lib/teamColors';
 import { Trophy } from 'lucide-react';
 import { driverHeadshots } from '../../../lib/driverHeadshots';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; year?: number }) => {
+  const { accentColorWithHash } = useThemeColor();
+  
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
         <HStack justify="space-between" align="center" w="full">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Driver Standings
           </Heading>
           {year !== undefined && (
@@ -35,7 +38,7 @@ const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; ye
                 transition="all 0.2s ease-in-out"
               >
                 <Flex align="center" flex={1} minW="0">
-                  <Text w="2em" color={isLeader ? 'white' : 'brand.red'} fontWeight="bold" flexShrink={0}>{item.position}.</Text>
+                  <Text w="2em" color={isLeader ? 'white' : '{accentColorWithHash}'} fontWeight="bold" flexShrink={0}>{item.position}.</Text>
                   <Avatar size="sm" src={headshot} mr={2} flexShrink={0} />
                   <VStack align="start" spacing={0} flex="1" minW="0">
                     <Text 
@@ -58,7 +61,7 @@ const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; ye
                 {isLeader && <Icon as={Trophy} color="white" mr={3} />}
                 <Text 
                   fontWeight="bold" 
-                  color={isLeader ? 'white' : 'brand.red'}
+                  color={isLeader ? 'white' : '{accentColorWithHash}'}
                   fontSize={{ base: 'xs', md: 'sm' }}
                   flexShrink={0}
                 >

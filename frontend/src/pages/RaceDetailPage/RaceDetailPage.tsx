@@ -6,6 +6,7 @@ import {
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, SimpleGrid, Table,
   Thead, Tbody, Tr, Th, Td,
 } from '@chakra-ui/react';
+import { useThemeColor } from '../../context/ThemeColorContext';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import ResponsiveTable from '../../components/layout/ResponsiveTable';
 import { motion } from 'framer-motion';
@@ -284,6 +285,7 @@ const fetchRaceSummary = async (raceId: string | number): Promise<RaceSummary> =
 const RaceDetailPage: React.FC = () => {
   const { raceId } = useParams<{ raceId: string }>();
   const navigate = useNavigate();
+  const { accentColorWithHash, accentColorRgba } = useThemeColor();
 
   const [race, setRace] = useState<Race | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -527,9 +529,9 @@ const RaceDetailPage: React.FC = () => {
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
-                bg: "brand.red",
+                bg: accentColorWithHash,
                 borderRadius: "full",
-                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+                boxShadow: `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset`,
               }}
               transition="all 0.25s ease"
               whiteSpace="nowrap"
@@ -546,9 +548,9 @@ const RaceDetailPage: React.FC = () => {
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
-                bg: "brand.red",
+                bg: accentColorWithHash,
                 borderRadius: "full",
-                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+                boxShadow: `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset`,
               }}
               transition="all 0.25s ease"
               whiteSpace="nowrap"
@@ -565,9 +567,9 @@ const RaceDetailPage: React.FC = () => {
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
-                bg: "brand.red",
+                bg: accentColorWithHash,
                 borderRadius: "full",
-                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+                boxShadow: `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset`,
               }}
               transition="all 0.25s ease"
               whiteSpace="nowrap"
@@ -585,9 +587,9 @@ const RaceDetailPage: React.FC = () => {
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
-                bg: "brand.red",
+                bg: accentColorWithHash,
                 borderRadius: "full",
-                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+                boxShadow: `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset`,
               }}
               transition="all 0.25s ease"
               whiteSpace="nowrap"
@@ -604,9 +606,9 @@ const RaceDetailPage: React.FC = () => {
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
-                bg: "brand.red",
+                bg: accentColorWithHash,
                 borderRadius: "full",
-                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+                boxShadow: `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset`,
               }}
               transition="all 0.25s ease"
             >
@@ -621,9 +623,9 @@ const RaceDetailPage: React.FC = () => {
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
-                bg: "brand.red",
+                bg: accentColorWithHash,
                 borderRadius: "full",
-                boxShadow: "0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset",
+                boxShadow: `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset`,
               }}
               transition="all 0.25s ease"
             >
@@ -699,11 +701,11 @@ const RaceDetailPage: React.FC = () => {
                       py={1}
                       borderRadius="md"
                       borderWidth={2}
-                      borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
-                      boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                      borderColor={driverFilter.length === 0 ? accentColorWithHash : 'border-subtle'}
+                      boxShadow={driverFilter.length === 0 ? `0 0 0 2px ${accentColorWithHash}` : undefined}
                       bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
                       fontWeight="bold"
-                      color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                      color={driverFilter.length === 0 ? accentColorWithHash : 'text-primary'}
                       onClick={() => setDriverFilter([])}
                       transition="all 0.2s"
                     >
@@ -722,11 +724,11 @@ const RaceDetailPage: React.FC = () => {
                           py={1}
                           borderRadius="md"
                           borderWidth={2}
-                          borderColor={selected ? 'brand.red' : 'border-subtle'}
-                          boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                          borderColor={selected ? accentColorWithHash : 'border-subtle'}
+                          boxShadow={selected ? `0 0 8px 2px ${accentColorWithHash}` : undefined}
                           bg={selected ? 'bg-elevated' : 'bg-surface'}
                           fontWeight="bold"
-                          color={selected ? 'brand.red' : 'text-primary'}
+                          color={selected ? accentColorWithHash : 'text-primary'}
                           cursor="pointer"
                           m={1}
                           transition="all 0.2s"
@@ -783,11 +785,11 @@ const RaceDetailPage: React.FC = () => {
                             px={3} py={1}
                             borderRadius="md"
                             borderWidth={2}
-                            borderColor={selected ? 'blue.400' : 'border-subtle'}
-                            boxShadow={selected ? '0 0 8px 2px #4299E1' : undefined}
+                            borderColor={selected ? accentColorWithHash : 'border-subtle'}
+                            boxShadow={selected ? `0 0 8px 2px ${accentColorWithHash}` : undefined}
                             bg={selected ? 'bg-elevated' : 'bg-surface'}
                             fontWeight="bold"
-                            color={selected ? 'blue.400' : 'text-primary'}
+                            color={selected ? accentColorWithHash : 'text-primary'}
                             cursor="pointer"
                             m={1}
                             transition="all 0.2s"
@@ -809,11 +811,11 @@ const RaceDetailPage: React.FC = () => {
                         px={3} py={1}
                         borderRadius="md"
                         borderWidth={2}
-                        borderColor={driverFilter.length === 0 ? 'brand.red' : 'border-subtle'}
-                        boxShadow={driverFilter.length === 0 ? '0 0 0 2px #F56565' : undefined}
+                        borderColor={driverFilter.length === 0 ? accentColorWithHash : 'border-subtle'}
+                        boxShadow={driverFilter.length === 0 ? `0 0 0 2px ${accentColorWithHash}` : undefined}
                         bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
                         fontWeight="bold"
-                        color={driverFilter.length === 0 ? 'brand.red' : 'text-primary'}
+                        color={driverFilter.length === 0 ? accentColorWithHash : 'text-primary'}
                         onClick={() => setDriverFilter([])}
                         transition="all 0.2s"
                       >
@@ -831,11 +833,11 @@ const RaceDetailPage: React.FC = () => {
                             px={3} py={1}
                             borderRadius="md"
                             borderWidth={2}
-                            borderColor={selected ? 'brand.red' : 'border-subtle'}
-                            boxShadow={selected ? '0 0 8px 2px #F56565' : undefined}
+                            borderColor={selected ? accentColorWithHash : 'border-subtle'}
+                            boxShadow={selected ? `0 0 8px 2px ${accentColorWithHash}` : undefined}
                             bg={selected ? 'bg-elevated' : 'bg-surface'}
                             fontWeight="bold"
-                            color={selected ? 'brand.red' : 'text-primary'}
+                            color={selected ? accentColorWithHash : 'text-primary'}
                             cursor="pointer"
                             m={1}
                             transition="all 0.2s"

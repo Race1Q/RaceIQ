@@ -12,6 +12,7 @@ interface ProfileResponse {
   favorite_driver_id: number | null;
   favorite_constructor_id: number | null;
   theme_preference?: ThemePref | null;
+  use_custom_team_color?: boolean;
 }
 
 export const useProfile = () => {

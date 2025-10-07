@@ -10,6 +10,8 @@ interface UserProfile {
   email: string | null;
   favorite_constructor_id: number | null;
   favorite_driver_id: number | null;
+  theme_preference?: 'dark' | 'light' | null;
+  use_custom_team_color?: boolean;
   role: string;
   created_at: string;
 }

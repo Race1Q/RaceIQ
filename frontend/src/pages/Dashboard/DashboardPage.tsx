@@ -1,10 +1,11 @@
 // frontend/src/pages/Dashboard/DashboardPage.tsx
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Box, useDisclosure, Text, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
 import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { useThemeColor } from '../../context/ThemeColorContext';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
@@ -24,8 +25,8 @@ import { Link } from 'react-router-dom';
 const ResponsiveGridLayout = WidthProvider(RGL);
 
 // Fallback banner component
-const FallbackBanner = () => (
-  <Alert status="warning" variant="solid" bg="brand.red" color="white" borderRadius="md" mb="lg">
+const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
+  <Alert status="warning" variant="solid" bg={`#${accentColor}`} color="white" borderRadius="md" mb="lg">
     <AlertIcon as={AlertTriangle} color="white" />
     <AlertTitle fontFamily="heading" fontSize="md">Live Data Unavailable. Showing cached data.</AlertTitle>
   </Alert>
@@ -66,6 +67,7 @@ interface WidgetVisibility {
 function DashboardPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { data: dashboardData, loading, error, isFallback } = useDashboardData();
+  const { accentColor, accentColorWithHash } = useThemeColor();
 
   // TODO: Sync this state with user preferences in Supabase
   const [widgetVisibility, setWidgetVisibility] = useState<WidgetVisibility>({
@@ -80,8 +82,11 @@ function DashboardPage() {
     f1News: true,
   });
 
-  // Layout state management
+  // Layout state management - always maintain full layout configuration
   const [layouts, setLayouts] = useState<Layouts>(initialLayouts);
+  
+  // Track previous visibility state to detect when widgets are re-added
+  const prevVisibilityRef = useRef<WidgetVisibility>(widgetVisibility);
 
   // Only show a full-page error if the API fails AND we have no fallback data
   if (error && !dashboardData) {
@@ -89,7 +94,7 @@ function DashboardPage() {
       <Box>
         <DashboardHeader onCustomizeClick={onOpen} />
         <Box p="lg">
-          <Text color="brand.red">Error loading dashboard: {error}</Text>
+          <Text color={accentColorWithHash}>Error loading dashboard: {error}</Text>
         </Box>
       </Box>
     );
@@ -116,9 +121,31 @@ function DashboardPage() {
     f1News: <LatestF1NewsWidget />,
   };
 
-  // Refined layout change handler for proper state management
+  // Effect to handle widget re-addition - reset to original layout
+  useEffect(() => {
+    const prevVisibility = prevVisibilityRef.current;
+    const reAddedWidgets: string[] = [];
+    
+    // Find widgets that were just re-added (false -> true)
+    Object.keys(widgetVisibility).forEach(key => {
+      if (widgetVisibility[key as keyof WidgetVisibility] && !prevVisibility[key as keyof WidgetVisibility]) {
+        reAddedWidgets.push(key);
+      }
+    });
+    
+    if (reAddedWidgets.length > 0) {
+      // Reset to original layout to ensure proper positioning
+      setLayouts(initialLayouts);
+    }
+    
+    // Update the ref for next comparison
+    prevVisibilityRef.current = { ...widgetVisibility };
+  }, [widgetVisibility]);
+
+  // Refined layout change handler that preserves hidden widget layouts
   const handleLayoutChange = (_layout: any, allLayouts: Layouts) => {
-    // console.log("Layout changed:", allLayouts); // Useful for debugging
+    // Simply update the layouts with the new positions
+    // The layouts state should always contain all widgets, visible and hidden
     setLayouts(allLayouts);
   };
 
@@ -126,7 +153,7 @@ function DashboardPage() {
     <Box>
       <DashboardHeader onCustomizeClick={onOpen} />
       <Box p={{ base: 'md', md: 'lg' }}>
-        {isFallback && <FallbackBanner />} {/* Render banner when using fallback data */}
+        {isFallback && <FallbackBanner accentColor={accentColor} />} {/* Render banner when using fallback data */}
         
         {loading ? (
           <Box textAlign="center" py="xl">
@@ -137,7 +164,16 @@ function DashboardPage() {
           </Box>
         ) : (
           <ResponsiveGridLayout
-            layouts={layouts}
+            layouts={(() => {
+              // Filter layouts to only include visible widgets
+              const filteredLayouts: Layouts = {};
+              Object.keys(layouts).forEach(breakpoint => {
+                filteredLayouts[breakpoint] = layouts[breakpoint].filter((item: any) => 
+                  widgetVisibility[item.i as keyof WidgetVisibility]
+                );
+              });
+              return filteredLayouts;
+            })()}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
             rowHeight={120}
