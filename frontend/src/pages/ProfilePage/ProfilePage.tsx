@@ -26,7 +26,7 @@ import {
 } from '@chakra-ui/react';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
-import HeroSection from '../../components/HeroSection/HeroSection';
+import PageHeader from '../../components/layout/PageHeader';
 import ThemeToggleButton from '../../components/ThemeToggleButton/ThemeToggleButton';
 import styles from './ProfilePage.module.css';
 import { buildApiUrl } from '../../lib/api';
@@ -334,10 +334,10 @@ const ProfilePage: React.FC = () => {
   // Using standardized SearchableSelect component; styles are handled internally.
 
   return (
-    <div className={styles.profilePage}>
-      <HeroSection
+    <Box bg="bg-primary" minH="100vh">
+      <PageHeader
         title="My Profile"
-        subtitle="Customize your RaceIQ experience and manage your account settings."
+        subtitle="Customize your RaceIQ experience and manage your account settings"
       />
       
       <Container maxW="container.md" py={8}>
@@ -535,7 +535,7 @@ const ProfilePage: React.FC = () => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </div>
+    </Box>
   );
   
 };

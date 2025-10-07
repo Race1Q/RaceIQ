@@ -1,5 +1,5 @@
 import { Heading, Text, VStack, HStack, Box, Image } from '@chakra-ui/react';
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import SearchableSelect from '../../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../../components/DropDownSearch/SearchableSelect';
@@ -129,147 +129,14 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
 
   return (
     <WidgetCard>
-      <VStack align="start" spacing="md">
-        <Heading color={accentColorWithHash} size="md" fontFamily="heading">
+      <VStack align="start" spacing="xs">
+        <Heading color={accentColorWithHash} size="sm" fontFamily="heading" mb="xs">
           Head to Head
         </Heading>
         
         {/* Mobile Layout */}
-        <VStack spacing="md" align="stretch" w="full" display={{ base: 'flex', md: 'none' }}>
-          <VStack spacing="sm" align="center">
-            <SearchableSelect
-              label=""
-              options={options}
-              value={selected1 ? { value: selected1, label: driver1.name } : null}
-              onChange={(opt) => setSelected1(opt ? Number((opt as SelectOption).value) : null)}
-              placeholder="Select driver"
-            />
-            <Box
-              w="80px"
-              h="80px"
-              borderRadius="full"
-              overflow="hidden"
-              border="2px solid"
-              borderColor={`#${driver1.teamColor}`}
-            >
-              <Image
-                src={driver1.image}
-                alt={driver1.name}
-                w="full"
-                h="full"
-                objectFit="cover"
-                fallbackSrc="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-              />
-            </Box>
-            
-            <VStack spacing="xs" align="center">
-              <Text color="text-primary" fontSize="sm" fontWeight="bold" textAlign="center">
-                {driver1.name}
-              </Text>
-              <HStack spacing="xs" align="center">
-                <Box w="12px" h="12px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
-                  <Image
-                    src={driver1.teamLogo}
-                    alt={`${driver1.team} Logo`}
-                    w="full"
-                    h="full"
-                    objectFit="contain"
-                    p="1px"
-                  />
-                </Box>
-                <Text color="text-secondary" fontSize="xs" textAlign="center">
-                  {driver1.team}
-                </Text>
-              </HStack>
-            </VStack>
-            
-            <VStack spacing="xs" align="center">
-              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
-                Wins: {driver1.wins}
-              </Text>
-              <Text color="text-muted" fontSize="xs">
-                Podiums: {driver1.podiums}
-              </Text>
-              <Text color="text-secondary" fontSize="xs">
-                Points: {driver1.points}
-              </Text>
-            </VStack>
-          </VStack>
-
-          {/* VS Divider for Mobile */}
-          <HStack spacing="md" align="center" justify="center">
-            <Box w="full" h="1px" bg="{accentColorWithHash}" />
-            <Text color="{accentColorWithHash}" fontSize="lg" fontWeight="bold" fontFamily="heading">
-              VS
-            </Text>
-            <Box w="full" h="1px" bg="{accentColorWithHash}" />
-          </HStack>
-
-          <VStack spacing="sm" align="center">
-            <SearchableSelect
-              label=""
-              options={options}
-              value={selected2 ? { value: selected2, label: driver2.name } : null}
-              onChange={(opt) => setSelected2(opt ? Number((opt as SelectOption).value) : null)}
-              placeholder="Select driver"
-            />
-            <Box
-              w="80px"
-              h="80px"
-              borderRadius="full"
-              overflow="hidden"
-              border="2px solid"
-              borderColor={`#${driver2.teamColor}`}
-            >
-              <Image
-                src={driver2.image}
-                alt={driver2.name}
-                w="full"
-                h="full"
-                objectFit="cover"
-                fallbackSrc="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
-              />
-            </Box>
-            
-            <VStack spacing="xs" align="center">
-              <Text color="text-primary" fontSize="sm" fontWeight="bold" textAlign="center">
-                {driver2.name}
-              </Text>
-              <HStack spacing="xs" align="center">
-                <Box w="12px" h="12px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
-                  <Image
-                    src={driver2.teamLogo}
-                    alt={`${driver2.team} Logo`}
-                    w="full"
-                    h="full"
-                    objectFit="contain"
-                    p="1px"
-                  />
-                </Box>
-                <Text color="text-secondary" fontSize="xs" textAlign="center">
-                  {driver2.team}
-                </Text>
-              </HStack>
-            </VStack>
-            
-            <VStack spacing="xs" align="center">
-              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
-                Wins: {driver2.wins}
-              </Text>
-              <Text color="text-muted" fontSize="xs">
-                Podiums: {driver2.podiums}
-              </Text>
-              <Text color="text-secondary" fontSize="xs">
-                Points: {driver2.points}
-              </Text>
-            </VStack>
-          </VStack>
-        </VStack>
-
-        {/* Desktop Layout */}
-        <HStack spacing="lg" align="center" w="full" justify="space-between" display={{ base: 'none', md: 'flex' }}>
-          {/* Driver 1 */}
-          <VStack spacing="sm" align="center" flex="1">
+        <VStack spacing="xs" align="stretch" w="full" display={{ base: 'flex', md: 'none' }}>
+          <VStack spacing="xs" align="center">
             <SearchableSelect
               label=""
               options={options}
@@ -295,12 +162,12 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
               />
             </Box>
             
-            <VStack spacing="xs" align="center">
-              <Text color="text-primary" fontSize="sm" fontWeight="bold" textAlign="center">
+            <VStack spacing="0" align="center">
+              <Text color="text-primary" fontSize="xs" fontWeight="bold" textAlign="center" noOfLines={1}>
                 {driver1.name}
               </Text>
               <HStack spacing="xs" align="center">
-                <Box w="12px" h="12px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
+                <Box w="10px" h="10px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
                   <Image
                     src={driver1.teamLogo}
                     alt={`${driver1.team} Logo`}
@@ -310,40 +177,173 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
                     p="1px"
                   />
                 </Box>
-                <Text color="text-secondary" fontSize="xs" textAlign="center">
+                <Text color="text-secondary" fontSize="2xs" textAlign="center" noOfLines={1}>
                   {driver1.team}
                 </Text>
               </HStack>
             </VStack>
             
-            <VStack spacing="xs" align="center">
-              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
-                Wins: {driver1.wins}
+            <HStack spacing="sm" align="center" justify="center">
+              <Text color="{accentColorWithHash}" fontSize="2xs" fontWeight="semibold">
+                W: {driver1.wins}
               </Text>
-              <Text color="text-muted" fontSize="xs">
-                Podiums: {driver1.podiums}
+              <Text color="text-muted" fontSize="2xs">
+                P: {driver1.podiums}
               </Text>
-              <Text color="text-secondary" fontSize="xs">
-                Points: {driver1.points}
+              <Text color="text-secondary" fontSize="2xs">
+                Pts: {driver1.points}
               </Text>
+            </HStack>
+          </VStack>
+
+          {/* VS Divider for Mobile */}
+          <HStack spacing="sm" align="center" justify="center" py="xs">
+            <Box w="full" h="1px" bg="{accentColorWithHash}" />
+            <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold" fontFamily="heading">
+              VS
+            </Text>
+            <Box w="full" h="1px" bg="{accentColorWithHash}" />
+          </HStack>
+
+          <VStack spacing="xs" align="center">
+            <SearchableSelect
+              label=""
+              options={options}
+              value={selected2 ? { value: selected2, label: driver2.name } : null}
+              onChange={(opt) => setSelected2(opt ? Number((opt as SelectOption).value) : null)}
+              placeholder="Select driver"
+            />
+            <Box
+              w="60px"
+              h="60px"
+              borderRadius="full"
+              overflow="hidden"
+              border="2px solid"
+              borderColor={`#${driver2.teamColor}`}
+            >
+              <Image
+                src={driver2.image}
+                alt={driver2.name}
+                w="full"
+                h="full"
+                objectFit="cover"
+                fallbackSrc="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+              />
+            </Box>
+            
+            <VStack spacing="0" align="center">
+              <Text color="text-primary" fontSize="xs" fontWeight="bold" textAlign="center" noOfLines={1}>
+                {driver2.name}
+              </Text>
+              <HStack spacing="xs" align="center">
+                <Box w="10px" h="10px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
+                  <Image
+                    src={driver2.teamLogo}
+                    alt={`${driver2.team} Logo`}
+                    w="full"
+                    h="full"
+                    objectFit="contain"
+                    p="1px"
+                  />
+                </Box>
+                <Text color="text-secondary" fontSize="2xs" textAlign="center" noOfLines={1}>
+                  {driver2.team}
+                </Text>
+              </HStack>
             </VStack>
+            
+            <HStack spacing="sm" align="center" justify="center">
+              <Text color="{accentColorWithHash}" fontSize="2xs" fontWeight="semibold">
+                W: {driver2.wins}
+              </Text>
+              <Text color="text-muted" fontSize="2xs">
+                P: {driver2.podiums}
+              </Text>
+              <Text color="text-secondary" fontSize="2xs">
+                Pts: {driver2.points}
+              </Text>
+            </HStack>
+          </VStack>
+        </VStack>
+
+        {/* Desktop Layout */}
+        <HStack spacing="sm" align="center" w="full" justify="space-between" display={{ base: 'none', md: 'flex' }}>
+          {/* Driver 1 */}
+          <VStack spacing="xs" align="center" flex="1">
+            <SearchableSelect
+              label=""
+              options={options}
+              value={selected1 ? { value: selected1, label: driver1.name } : null}
+              onChange={(opt) => setSelected1(opt ? Number((opt as SelectOption).value) : null)}
+              placeholder="Select driver"
+            />
+            <Box
+              w="50px"
+              h="50px"
+              borderRadius="full"
+              overflow="hidden"
+              border="2px solid"
+              borderColor={`#${driver1.teamColor}`}
+            >
+              <Image
+                src={driver1.image}
+                alt={driver1.name}
+                w="full"
+                h="full"
+                objectFit="cover"
+                fallbackSrc="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+              />
+            </Box>
+            
+            <VStack spacing="0" align="center">
+              <Text color="text-primary" fontSize="xs" fontWeight="bold" textAlign="center" noOfLines={1}>
+                {driver1.name}
+              </Text>
+              <HStack spacing="xs" align="center">
+                <Box w="10px" h="10px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
+                  <Image
+                    src={driver1.teamLogo}
+                    alt={`${driver1.team} Logo`}
+                    w="full"
+                    h="full"
+                    objectFit="contain"
+                    p="1px"
+                  />
+                </Box>
+                <Text color="text-secondary" fontSize="2xs" textAlign="center" noOfLines={1}>
+                  {driver1.team}
+                </Text>
+              </HStack>
+            </VStack>
+            
+            <HStack spacing="xs" align="center" justify="center">
+              <Text color="{accentColorWithHash}" fontSize="2xs" fontWeight="semibold">
+                W: {driver1.wins}
+              </Text>
+              <Text color="text-muted" fontSize="2xs">
+                P: {driver1.podiums}
+              </Text>
+              <Text color="text-secondary" fontSize="2xs">
+                Pts: {driver1.points}
+              </Text>
+            </HStack>
           </VStack>
           
           {/* VS */}
-          <VStack spacing="xs" align="center">
-            <Text color="{accentColorWithHash}" fontSize="2xl" fontWeight="bold" fontFamily="heading">
+          <VStack spacing="0" align="center" px="xs">
+            <Text color="{accentColorWithHash}" fontSize="lg" fontWeight="bold" fontFamily="heading">
               VS
             </Text>
             <Box
-              w="2px"
-              h="40px"
+              w="1px"
+              h="20px"
               bg="{accentColorWithHash}"
               borderRadius="full"
             />
           </VStack>
           
           {/* Driver 2 */}
-          <VStack spacing="sm" align="center" flex="1">
+          <VStack spacing="xs" align="center" flex="1">
             <SearchableSelect
               label=""
               options={options}
@@ -352,8 +352,8 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
               placeholder="Select driver"
             />
             <Box
-              w="60px"
-              h="60px"
+              w="50px"
+              h="50px"
               borderRadius="full"
               overflow="hidden"
               border="2px solid"
@@ -369,12 +369,12 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
               />
             </Box>
             
-            <VStack spacing="xs" align="center">
-              <Text color="text-primary" fontSize="sm" fontWeight="bold" textAlign="center">
+            <VStack spacing="0" align="center">
+              <Text color="text-primary" fontSize="xs" fontWeight="bold" textAlign="center" noOfLines={1}>
                 {driver2.name}
               </Text>
               <HStack spacing="xs" align="center">
-                <Box w="12px" h="12px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
+                <Box w="10px" h="10px" borderRadius="sm" overflow="hidden" bg="whiteAlpha.100">
                   <Image
                     src={driver2.teamLogo}
                     alt={`${driver2.team} Logo`}
@@ -384,23 +384,23 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
                     p="1px"
                   />
                 </Box>
-                <Text color="text-secondary" fontSize="xs" textAlign="center">
+                <Text color="text-secondary" fontSize="2xs" textAlign="center" noOfLines={1}>
                   {driver2.team}
                 </Text>
               </HStack>
             </VStack>
             
-            <VStack spacing="xs" align="center">
-              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
-                Wins: {driver2.wins}
+            <HStack spacing="xs" align="center" justify="center">
+              <Text color="{accentColorWithHash}" fontSize="2xs" fontWeight="semibold">
+                W: {driver2.wins}
               </Text>
-              <Text color="text-muted" fontSize="xs">
-                Podiums: {driver2.podiums}
+              <Text color="text-muted" fontSize="2xs">
+                P: {driver2.podiums}
               </Text>
-              <Text color="text-secondary" fontSize="xs">
-                Points: {driver2.points}
+              <Text color="text-secondary" fontSize="2xs">
+                Pts: {driver2.points}
               </Text>
-            </VStack>
+            </HStack>
           </VStack>
         </HStack>
       </VStack>
