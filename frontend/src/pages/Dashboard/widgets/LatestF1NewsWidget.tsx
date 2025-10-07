@@ -1,8 +1,11 @@
 import { Heading, Text, VStack, HStack, Icon } from '@chakra-ui/react';
 import { Newspaper, AlertTriangle, Settings } from 'lucide-react';
 import WidgetCard from './WidgetCard';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 function LatestF1NewsWidget() {
+  const { accentColorWithHash } = useThemeColor();
+  
   const newsItems = [
     {
       icon: Newspaper,
@@ -24,7 +27,7 @@ function LatestF1NewsWidget() {
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <Heading color="brand.red" size="md" fontFamily="heading">
+        <Heading color={accentColorWithHash} size="md" fontFamily="heading">
           Latest F1 News
         </Heading>
         
@@ -40,7 +43,7 @@ function LatestF1NewsWidget() {
               _hover={{ bg: 'whiteAlpha.100' }}
               transition="background-color 0.2s ease"
             >
-              <Icon as={item.icon} boxSize={4} color="brand.red" flexShrink={0} mt="1px" />
+              <Icon as={item.icon} boxSize={4} color={accentColorWithHash} flexShrink={0} mt="1px" />
               
               <VStack align="start" spacing="xs" flex="1">
                 <Text color="text-primary" fontSize="sm" fontWeight="500" lineHeight="1.4">

@@ -14,10 +14,13 @@ import {
 } from '@chakra-ui/react';
 import { UserCheck, Archive, BarChart3, DatabaseZap } from 'lucide-react';
 import TeamMemberCard from '../../components/TeamMemberCard/TeamMemberCard';
-import HeroSection from '../../components/HeroSection/HeroSection';
+import PageHeader from '../../components/layout/PageHeader';
 import FeatureCard from '../../components/FeatureCard-AboutUs/FeatureCard'; // Import the new component
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 const AboutUsPage: React.FC = () => {
+  const { accentColorWithHash } = useThemeColor();
+  
   // Data remains the same
   const teamMembers = [
     { name: 'Abdullah', role: 'Frontend Developer' },
@@ -37,10 +40,10 @@ const AboutUsPage: React.FC = () => {
   ];
 
   return (
-    <Box bg="bg-primary">
-      <HeroSection
-        title="Beyond the Finish Line"
-        subtitle="RaceIQ is the ultimate F1 stats tracker, delivering real-time data, deep historical analysis, and unparalleled insights into every driver and team. We bring you closer to the action, translating every millisecond into knowledge."
+    <Box bg="bg-primary" minH="100vh">
+      <PageHeader
+        title="About RaceIQ"
+        subtitle="The ultimate F1 stats tracker, delivering real-time data, deep historical analysis, and unparalleled insights"
       />
 
       {/* Features Section */}
@@ -90,13 +93,13 @@ const AboutUsPage: React.FC = () => {
                 _hover={{
                   transform: 'translateY(-4px)',
                   boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
-                  borderColor: 'brand.red',
+                  borderColor: accentColorWithHash,
                 }}
               >
                 {tech.logo ? (
                   <Image src={tech.logo} alt={tech.name} height="40px" objectFit="contain" />
                 ) : (
-                  <Icon as={tech.icon} boxSize="40px" color="brand.red" />
+                  <Icon as={tech.icon} boxSize="40px" color={accentColorWithHash} />
                 )}
                 <Text color="text-secondary" fontSize="sm" fontWeight="500">
                   {tech.name}

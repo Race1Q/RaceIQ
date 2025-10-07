@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button, Flex, Text } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 interface StandingsTabsProps {
   active: 'drivers' | 'constructors';
@@ -9,6 +10,7 @@ interface StandingsTabsProps {
 // A pill-style toggle bar for switching standings views
 const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
   const navigate = useNavigate();
+  const { accentColorWithHash, accentColorRgba } = useThemeColor();
   const tabs: { key: 'drivers' | 'constructors'; label: string; path: string }[] = [
     { key: 'drivers', label: 'Drivers', path: '/standings' },
     { key: 'constructors', label: 'Constructors', path: '/standings/constructors' },
@@ -47,9 +49,9 @@ const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
             _hover={{ color: isActive ? 'text-on-accent' : 'text-primary' }}
             _active={{}} // prevent chakra focus ring color shift
             transition="color .25s ease"
-            bg={isActive ? 'brand.red' : 'transparent'}
+            bg={isActive ? accentColorWithHash : 'transparent'}
             borderRadius="full"
-            boxShadow={isActive ? '0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset' : 'none'}
+            boxShadow={isActive ? `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset` : 'none'}
           >
             <Text>{t.label}</Text>
           </Button>

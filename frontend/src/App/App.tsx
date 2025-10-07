@@ -20,6 +20,7 @@ import { useActiveRoute } from '../hooks/useActiveRoute';
 import HomePage from '../pages/HomePage/HomePage';
 import { RoleProvider } from '../context/RoleContext';
 import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
+import { ThemeColorProvider, useThemeColor } from '../context/ThemeColorContext';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
@@ -38,6 +39,7 @@ function Navbar() {
   const { isAuthenticated } = useAuth0();
   const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { accentColorWithHash } = useThemeColor();
 
   const navLinks = [
     { path: '/', label: isAuthenticated ? 'Dashboard' : 'Home' },
@@ -87,10 +89,10 @@ function Navbar() {
                 as={Link}
                 to={path}
                 variant="link"
-                color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
+                color={useActiveRoute(path) ? accentColorWithHash : 'text-primary'}
                 fontFamily="heading"
                 fontWeight="500"
-                _hover={{ color: 'brand.red', textDecor: 'none' }}
+                _hover={{ color: accentColorWithHash, textDecor: 'none' }}
                 position="relative"
                 _after={{
                   content: '""',
@@ -99,7 +101,7 @@ function Navbar() {
                   height: '2px',
                   bottom: '-5px',
                   left: 0,
-                  bgColor: 'brand.red',
+                  bgColor: accentColorWithHash,
                   transition: 'width 0.3s ease',
                 }}
               >
@@ -115,9 +117,9 @@ function Navbar() {
             {isAuthenticated && (
               <Button
                 variant="outline"
-                borderColor="brand.red"
-                color="brand.red"
-                _hover={{ bg: 'brand.red', color: 'white' }}
+                borderColor={accentColorWithHash}
+                color={accentColorWithHash}
+                _hover={{ bg: accentColorWithHash, color: 'white' }}
                 onClick={() => navigate('/profile')}
                 isActive={useActiveRoute('/profile')}
               >
@@ -158,12 +160,12 @@ function Navbar() {
                   as={Link}
                   to={path}
                   variant="ghost"
-                  color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
+                  color={useActiveRoute(path) ? accentColorWithHash : 'text-primary'}
                   fontFamily="heading"
                   fontWeight="500"
                   justifyContent="flex-start"
                   h="48px"
-                  _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}
+                  _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}
                   onClick={onClose}
                 >
                   {label}
@@ -175,9 +177,9 @@ function Navbar() {
                   <VStack spacing={2} align="stretch">
                     <Button
                       variant="outline"
-                      borderColor="brand.red"
-                      color="brand.red"
-                      _hover={{ bg: 'brand.red', color: 'white' }}
+                      borderColor={accentColorWithHash}
+                      color={accentColorWithHash}
+                      _hover={{ bg: accentColorWithHash, color: 'white' }}
                       onClick={() => {
                         navigate('/profile');
                         onClose();
@@ -203,6 +205,7 @@ function AppContent() {
   useScrollToTop();
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth0();
+  const { accentColorWithHash } = useThemeColor();
   
   // Don't show navbar on driver detail pages (they have their own custom header)
   // But show navbar when login prompt is displayed (user not authenticated)
@@ -214,7 +217,7 @@ function AppContent() {
       <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
         {showNavbar && <Navbar />}
         <Flex flex="1" align="center" justify="center" direction="column" gap={4}>
-          <Spinner thickness="3px" speed="0.65s" emptyColor="whiteAlpha.200" color="brand.red" size="lg" />
+          <Spinner thickness="3px" speed="0.65s" emptyColor="whiteAlpha.200" color={accentColorWithHash} size="lg" />
           <Text color="text-secondary" fontSize="sm">
             {isAuthenticated ? "Preparing your dashboard..." : "Loading RaceIQ..."}
           </Text>
@@ -260,13 +263,13 @@ function AppContent() {
         <BackToTopButton />
 
         {/* Footer */}
-        <Box as="footer" bg="bg-surface-raised" borderTop="2px solid" borderColor="brand.red" py="xl" mt="auto">
+        <Box as="footer" bg="bg-surface-raised" borderTop="2px solid" borderColor={accentColorWithHash} py="xl" mt="auto">
           <Container maxW="1200px">
             <Flex justify="space-between" align="center" wrap="wrap" gap="md">
               <HStack spacing="lg">
-                <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
-                <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
-                <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
+                <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>API Docs</Text></Link>
+                <Link to="/privacy"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Privacy Policy</Text></Link>
+                <Link to="/contact"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Contact</Text></Link>
               </HStack>
               <Text color="text-muted" fontSize="sm">
                 ©{new Date().getFullYear()} RaceIQ. All rights reserved.
@@ -320,13 +323,13 @@ function AppContent() {
       <BackToTopButton />
 
       {/* Footer */}
-      <Box as="footer" bg="bg-surface-raised" borderTop="2px solid" borderColor="brand.red" py="xl" mt="auto">
+      <Box as="footer" bg="bg-surface-raised" borderTop="2px solid" borderColor={accentColorWithHash} py="xl" mt="auto">
         <Container maxW="1200px">
           <Flex justify="space-between" align="center" wrap="wrap" gap="md">
             <HStack spacing="lg">
-              <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>API Docs</Text></Link>
-              <Link to="/privacy"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Privacy Policy</Text></Link>
-              <Link to="/contact"><Text color="text-secondary" _hover={{ color: 'brand.red' }}>Contact</Text></Link>
+              <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>API Docs</Text></Link>
+              <Link to="/privacy"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Privacy Policy</Text></Link>
+              <Link to="/contact"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Contact</Text></Link>
             </HStack>
             <Text color="text-muted" fontSize="sm">
               ©{new Date().getFullYear()} RaceIQ. All rights reserved.
@@ -342,9 +345,11 @@ function App() {
   return (
     <RoleProvider>
       <ProfileUpdateProvider>
-        <UserRegistrationHandler>
-          <AppContent />
-        </UserRegistrationHandler>
+        <ThemeColorProvider>
+          <UserRegistrationHandler>
+            <AppContent />
+          </UserRegistrationHandler>
+        </ThemeColorProvider>
       </ProfileUpdateProvider>
     </RoleProvider>
   );

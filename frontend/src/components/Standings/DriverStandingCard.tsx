@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Flex, Avatar, Text, HStack, Badge, Tooltip, Stat, StatLabel, StatNumber, useColorModeValue } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { teamColors } from '../../lib/teamColors';
+import { driverHeadshots } from '../../lib/driverHeadshots';
 
 interface DriverStandingCardProps {
   id: number;
@@ -20,6 +21,10 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
   const navigate = useNavigate();
   const teamColor = `#${teamColors[constructor] || teamColors.Default}`;
   const subtleBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
+  
+  // Get the driver headshot URL with fallback chain
+  const headshotUrl = driverHeadshots[fullName] || profileImageUrl || undefined;
+  
   // Create soft gradient tints using hex with alpha (#RRGGBBAA)
   const baseGradient = useColorModeValue(
     `linear(to-r, ${teamColor}15, ${teamColor}08)`, // light mode - much more subtle
@@ -90,8 +95,8 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
       <Text fontWeight="bold" w={{ base: "30px", md: "40px" }} textAlign="center" fontSize={{ base: "md", md: "lg" }}>{position}</Text>
       <Avatar
         name={fullName}
-        src={profileImageUrl || undefined}
-        size={{ base: "xs", md: "sm" }}
+        src={headshotUrl}
+        size={{ base: "md", md: "lg" }}
         borderWidth="2px"
         borderColor={teamColor}
         boxShadow={`0 0 0 1px ${teamColor}AA, 0 0 10px -2px ${teamColor}`}

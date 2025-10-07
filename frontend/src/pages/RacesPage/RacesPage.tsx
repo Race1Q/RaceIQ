@@ -6,7 +6,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
-import HeroSection from '../../components/HeroSection/HeroSection';
+import PageHeader from '../../components/layout/PageHeader';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
 import type { Race } from '../../types/races';
 import { apiFetch } from '../../lib/api';
@@ -217,19 +217,27 @@ const RacesPage: React.FC = () => {
   };
 
   return (
-    <Box bg="bg-primary">
-      <HeroSection title="Races" subtitle={`Season ${season}`} />
-      <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
-        {/* Season filter */}
-        <HStack mb={6} justify="flex-end">
+    <Box bg="bg-primary" minH="100vh">
+      <PageHeader 
+        title="Races" 
+        subtitle={`Season ${season} - Track every race of the F1 season`}
+        rightContent={
           <HStack>
-            <Text color="text-secondary">Season:</Text>
-            <Select size="sm" w="fit-content" value={season} onChange={(e) => setSeason(Number(e.target.value))}>
+            <Text color="text-secondary" fontSize="sm">Season:</Text>
+            <Select 
+              size="sm" 
+              w="fit-content" 
+              value={season} 
+              onChange={(e) => setSeason(Number(e.target.value))}
+              bg="bg-surface"
+              borderColor="border-subtle"
+            >
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </Select>
           </HStack>
-        </HStack>
-
+        }
+      />
+      <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
         {renderContent()}
       </Container>
     </Box>

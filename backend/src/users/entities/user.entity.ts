@@ -36,6 +36,9 @@ export class User {
   @Column({ type: 'text', default: 'dark' })
   theme_preference: 'dark' | 'light';
 
+  @Column({ type: 'boolean', default: true })
+  use_custom_team_color: boolean;
+
   @Column({ type: 'timestamp with time zone', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 

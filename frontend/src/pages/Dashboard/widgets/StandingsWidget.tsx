@@ -2,20 +2,23 @@ import { Heading, Text, VStack, HStack, Box } from '@chakra-ui/react';
 import type { StandingsItem } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import WidgetCard from './WidgetCard';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 interface StandingsWidgetProps {
   data?: StandingsItem[];
 }
 
 function StandingsWidget({ data }: StandingsWidgetProps) {
+  const { accentColorWithHash } = useThemeColor();
+  
   if (!data || data.length === 0) {
     return (
       <WidgetCard>
-        <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+        <VStack align="start" spacing="xs">
+          <Heading color={accentColorWithHash} size="sm" fontFamily="heading">
             Championship Standings
           </Heading>
-          <Text color="text-muted">Loading...</Text>
+          <Text color="text-muted" fontSize="xs">Loading...</Text>
         </VStack>
       </WidgetCard>
     );
@@ -26,36 +29,36 @@ function StandingsWidget({ data }: StandingsWidgetProps) {
 
   return (
     <WidgetCard>
-      <VStack align="start" spacing="md">
-        <Heading color="brand.red" size="md" fontFamily="heading">
+      <VStack align="start" spacing="0" w="full">
+        <Heading color={accentColorWithHash} size="sm" fontFamily="heading" mb="2">
           Championship Standings
         </Heading>
         
-        <VStack align="stretch" spacing="sm" w="full">
+        <VStack align="stretch" spacing="1" w="full">
           {topStandings.map((item) => {
             const teamColor = teamColors[item.constructorName] || teamColors['Default'];
             return (
-              <HStack key={item.position} spacing="md" align="center" p="sm" borderRadius="md" bg="whiteAlpha.50">
+              <HStack key={item.position} spacing="2" align="center" py="1" px="2" borderRadius="md" bg="whiteAlpha.50">
                 <Box
-                  w="8px"
-                  h="8px"
+                  w="5px"
+                  h="5px"
                   borderRadius="full"
                   bg={`#${teamColor}`}
                   flexShrink={0}
                 />
-                <Text color="text-primary" fontWeight="bold" fontSize="sm" minW="20px">
+                <Text color="text-primary" fontWeight="bold" fontSize="xs" minW="14px">
                   {item.position}.
                 </Text>
-                <VStack align="start" spacing="xs" flex="1">
-                  <Text color="text-primary" fontSize="sm" fontWeight="600">
+                <VStack align="start" spacing="0" flex="1" minW="0">
+                  <Text color="text-primary" fontSize="xs" fontWeight="600" noOfLines={1}>
                     {item.driverFullName}
                   </Text>
-                  <Text color="text-muted" fontSize="xs">
+                  <Text color="text-muted" fontSize="2xs" noOfLines={1}>
                     {item.constructorName}
                   </Text>
                 </VStack>
-                <Text color="brand.red" fontSize="sm" fontWeight="bold" fontFamily="mono">
-                  {item.points} pts
+                <Text color={accentColorWithHash} fontSize="2xs" fontWeight="bold" fontFamily="mono" flexShrink={0}>
+                  {item.points}
                 </Text>
               </HStack>
             );
