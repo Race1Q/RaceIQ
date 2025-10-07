@@ -9,6 +9,8 @@ import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
+import StatSection from '../../components/DriverDetails/StatSection';
+import type { Stat } from '../../types';
 import {
   LineChart,
   Line,
@@ -219,6 +221,32 @@ const ConstructorDetails: React.FC = () => {
     [pointsPerSeason]
   );
 
+  // Map totals to DriverDetails-style Stat cards (hooks must be before early returns)
+  const totalStats: Stat[] = useMemo(
+    () => [
+      { label: 'Total Points', value: totalPoints },
+      { label: 'Total Wins', value: totalWins },
+      { label: 'Total Podiums', value: totalPodiums },
+      { label: 'Total Poles', value: totalPoles },
+    ],
+    [totalPoints, totalWins, totalPodiums, totalPoles]
+  );
+
+  const latestSeasonYear = useMemo(() => {
+    if (!latestSeason) return undefined;
+    return seasons.find((s) => s.id === latestSeason.season)?.year;
+  }, [latestSeason, seasons]);
+
+  const latestStats: Stat[] = useMemo(() => {
+    if (!latestSeason || !latestSeasonYear) return [];
+    return [
+      { label: `${latestSeasonYear} Points`, value: latestSeason.points },
+      { label: `${latestSeasonYear} Wins`, value: latestSeason.wins },
+      { label: `${latestSeasonYear} Podiums`, value: latestSeason.podiums },
+      { label: `${latestSeasonYear} Poles`, value: latestSeasonPoles },
+    ];
+  }, [latestSeason, latestSeasonYear, latestSeasonPoles]);
+
   if (loading) return <F1LoadingSpinner text="Loading Constructor Details..." />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
@@ -277,46 +305,16 @@ const ConstructorDetails: React.FC = () => {
         </Button>
       </Flex>
 
-      {/* Stats Cards */}
-      <Flex gap={{ base: 2, md: 4 }} wrap="wrap" mb={6}>
-        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
-          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Points</Text>
-          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalPoints}</Text>
-        </Box>
-        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
-          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Wins</Text>
-          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalWins}</Text>
-        </Box>
-        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
-          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Podiums</Text>
-          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalPodiums}</Text>
-        </Box>
-        <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.700" borderRadius="md">
-          <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">Total Poles</Text>
-          <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{totalPoles}</Text>
-        </Box>
-      </Flex>
+      {/* Stats Cards - styled like Driver Details */}
+      <Box mb={6}>
+        <StatSection title="Career Totals" stats={totalStats} />
+      </Box>
 
-      {/* Latest Season Stats */}
-      {latestSeason && (
-        <Flex gap={{ base: 2, md: 4 }} wrap="wrap" mb={6}>
-          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
-            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Points</Text>
-            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeason.points}</Text>
-          </Box>
-          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
-            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Wins</Text>
-            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeason.wins}</Text>
-          </Box>
-          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
-            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Podiums</Text>
-            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeason.podiums}</Text>
-          </Box>
-          <Box flex={1} minW={{ base: '140px', md: '120px' }} p={{ base: 3, md: 4 }} bg="gray.600" borderRadius="md">
-            <Text fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">{seasons.find(s => s.id === latestSeason.season)?.year || 'Latest'} Poles</Text>
-            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">{latestSeasonPoles}</Text>
-          </Box>
-        </Flex>
+      {/* Latest Season Stats - styled like Driver Details */}
+      {latestStats.length > 0 && (
+        <Box mb={6}>
+          <StatSection title={`${latestSeasonYear} Season`} stats={latestStats} />
+        </Box>
       )}
 
       {/* Graphs Grid - 2 per row on desktop, 1 per row on mobile */}
