@@ -1,6 +1,6 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, Button, Heading, Flex, Grid, HStack, Image, VStack } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
@@ -29,6 +29,22 @@ const DriverDetailPage: React.FC = () => {
 
   return (
     <Box>
+      {/* Top Utility Bar */}
+      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary">
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
+          <Button
+            as={Link}
+            to="/drivers"
+            size={{ base: 'sm', md: 'md' }}
+            leftIcon={<ArrowLeft size={16} />}
+            variant="outline"
+            borderColor="border-primary"
+          >
+            Back to Drivers
+          </Button>
+        </Container>
+      </Box>
+
       {/* Header Bar (matching Constructors header) */}
       <Box bg="bg-primary" color="text-primary" py={{ base: 6, md: 8 }}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
@@ -40,7 +56,17 @@ const DriverDetailPage: React.FC = () => {
             p={{ base: 6, md: 8 }}
             minH={{ base: '180px', md: '240px' }}
             borderRadius="md"
+            position="relative"
             bgGradient={`linear-gradient(135deg, #${teamColor.replace('#','')} 0%, rgba(0,0,0,0.6) 100%)`}
+            _before={{
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              background:
+                'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
+              zIndex: 0,
+            }}
           >
             {/* 1) Team Logo */}
             <Box justifySelf="center">
@@ -51,16 +77,29 @@ const DriverDetailPage: React.FC = () => {
 
             {/* 2) Name + meta pill */}
             <Box justifySelf="center" textAlign={{ base: 'center', md: 'left' }}>
-              <Heading as="h1" lineHeight={1} color="white">
-                <Text fontFamily="signature" fontWeight="normal" letterSpacing="-0.02em" fontSize={{ base: '3xl', md: '5xl' }} mb={{ base: -2, md: -3 }}>
+              <Heading as="h1" lineHeight={1} color="white" alignSelf="start">
+                <Text
+                  fontFamily="signature"
+                  fontWeight="normal"
+                  letterSpacing="-0.02em"
+                  fontSize={{ base: '4xl', md: '6xl', xl: '7xl' }}
+                  mb={{ base: -2, md: -4 }}
+                >
                   {driverDetails.firstName}
                 </Text>
-                <Text fontFamily="heading" textTransform="uppercase" fontWeight="800" letterSpacing={{ base: '0.01em', md: '0.02em' }} fontSize={{ base: '2xl', md: '4xl' }}>
+                <Text
+                  fontFamily="heading"
+                  textTransform="uppercase"
+                  fontWeight="900"
+                  letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                  fontSize={{ base: '5xl', md: '8xl', xl: '9xl' }}
+                  lineHeight={0.95}
+                >
                   {driverDetails.lastName}
                 </Text>
               </Heading>
               <Box
-                mt={2}
+                mt={{ base: 2, md: 3 }}
                 display="inline-block"
                 bg="blackAlpha.300"
                 border="1px solid"
@@ -113,22 +152,8 @@ const DriverDetailPage: React.FC = () => {
               )}
             </Box>
 
-            {/* 4) Back button */}
-            <Box justifySelf="center">
-              <Button
-                as={Link}
-                to="/drivers"
-                color="white"
-                size={{ base: 'sm', md: 'md' }}
-                w={{ base: 'full', md: 'auto' }}
-                leftIcon={<ArrowLeft size={16} />}
-                variant="outline"
-                borderColor="whiteAlpha.600"
-                _hover={{ bg: 'whiteAlpha.200' }}
-              >
-                Back to Drivers
-              </Button>
-            </Box>
+            {/* 4) Spacer cell for equal spacing */}
+            <Box />
           </Grid>
         </Container>
       </Box>
