@@ -125,7 +125,7 @@ const Constructors = () => {
       {/* Filters Section - Only for logged-in users */}
       {isAuthenticated && (
         <Box bg="bg-primary" color="text-primary" py={{ base: 4, md: 6 }}>
-          <Container maxW="1600px" px={{ base: 4, md: 6 }}>
+          <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
             <Flex gap={4} direction={{ base: 'column', md: 'row' }} w="full" align={{ base: 'stretch', md: 'center' }}>
 
               {/* Left: Search - Show for All Teams and Inactive Teams */}
@@ -194,7 +194,7 @@ const Constructors = () => {
       )}
       
       <Box bg="bg-primary" color="text-primary" py={{ base: 'md', md: 'lg' }}>
-        <Container maxW="1600px" px={{ base: 4, md: 6 }}>
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
           {loading && <F1LoadingSpinner text="Loading Constructors..." />}
           {error && (
             <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">

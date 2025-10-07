@@ -97,6 +97,26 @@ const theme = extendTheme({
     lg: '12px',
   },
 
+  // 4.1 Container sizes
+  sizes: {
+    containers: {
+      '2xl': '1600px',
+    },
+  },
+  components: {
+    Container: {
+      defaultProps: {
+        // Enable custom size token via maxW="container.2xl"
+        // Chakra maps container tokens to theme.sizes.containers
+      },
+      sizes: {
+        '2xl': {
+          maxW: 'containers.2xl',
+        },
+      },
+    },
+  },
+
   // 5. GLOBAL STYLES: Now uses the semantic tokens for automatic theme switching.
   styles: {
     global: {

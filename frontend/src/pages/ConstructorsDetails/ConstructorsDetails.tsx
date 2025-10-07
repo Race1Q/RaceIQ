@@ -254,13 +254,14 @@ const ConstructorDetails: React.FC = () => {
 
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" py={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
-      <Container maxW="1600px" px={{ base: 4, md: 6 }}>
+      <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
       {/* Header Bar */}
       <Flex
         justify="space-between"
         align="center"
         mb={4}
-        p={{ base: 3, md: 4 }}
+        p={{ base: 6, md: 8 }}
+        minH={{ base: '180px', md: '240px' }}
         borderRadius="md"
         bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
         direction={{ base: 'column', md: 'row' }}
