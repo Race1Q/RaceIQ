@@ -34,6 +34,19 @@ import { useProfile } from '../../hooks/useProfile';
 import { sendRaceUpdate } from '../../services/notifications';
 import { useProfileUpdate } from '../../context/ProfileUpdateContext';
 import { driverHeadshots } from '../../lib/driverHeadshots';
+import { useThemeColor } from '../../context/ThemeColorContext';
+
+// Extended interface to include the new field
+interface ExtendedProfileResponse {
+  id: number;
+  auth0_sub: string;
+  username: string | null;
+  email: string | null;
+  favorite_driver_id: number | null;
+  favorite_constructor_id: number | null;
+  theme_preference?: 'dark' | 'light' | null;
+  use_custom_team_color?: boolean;
+}
 
 // SelectOption type imported from SearchableSelect component
 
@@ -42,6 +55,7 @@ const ProfilePage: React.FC = () => {
   const { user, getAccessTokenSilently, isLoading } = useAuth0();
   const { profile, updateProfile } = useProfile();
   const { triggerRefresh } = useProfileUpdate();
+  const { useCustomTeamColor, toggleCustomTeamColor } = useThemeColor();
   const toast = useToast();
   
   const [formData, setFormData] = useState({
@@ -186,7 +200,8 @@ const ProfilePage: React.FC = () => {
         (formData.username !== (profile?.username || user?.name || '')) ||
         (formData.favoriteTeam !== (profile?.favorite_constructor_id ?? '')) ||
         (formData.favoriteDriver !== (profile?.favorite_driver_id ?? '')) ||
-        (pendingTheme && pendingTheme !== profile?.theme_preference);
+        (pendingTheme && pendingTheme !== profile?.theme_preference) ||
+        (useCustomTeamColor !== (profile as ExtendedProfileResponse)?.use_custom_team_color);
 
       if (!hasChanges) {
         toast({
@@ -203,6 +218,7 @@ const ProfilePage: React.FC = () => {
         username: formData.username || undefined,
         favorite_constructor_id: formData.favoriteTeam === '' ? null : Number(formData.favoriteTeam),
         favorite_driver_id: formData.favoriteDriver === '' ? null : Number(formData.favoriteDriver),
+        use_custom_team_color: useCustomTeamColor,
       };
       if (pendingTheme) {
         payload.theme_preference = pendingTheme;
@@ -400,12 +416,30 @@ const ProfilePage: React.FC = () => {
               <Text fontSize="xl" fontWeight="bold" mb={4} color="var(--color-text-light)">
                 Appearance
               </Text>
-              <HStack spacing={4} align="center">
-                <Text fontSize="sm" color="var(--color-text-medium)">
-                  Switch between light and dark themes:
-                </Text>
-                <ThemeToggleButton onToggle={(theme) => setPendingTheme(theme)} />
-              </HStack>
+              <VStack spacing={4} align="stretch">
+                <HStack spacing={4} align="center">
+                  <Text fontSize="sm" color="var(--color-text-medium)">
+                    Switch between light and dark themes:
+                  </Text>
+                  <ThemeToggleButton onToggle={(theme) => setPendingTheme(theme)} />
+                </HStack>
+                <HStack spacing={4} align="center">
+                  <Text fontSize="sm" color="var(--color-text-medium)">
+                    Use custom team colors:
+                  </Text>
+                  <Switch
+                    isChecked={useCustomTeamColor}
+                    onChange={toggleCustomTeamColor}
+                    colorScheme="red"
+                    size="md"
+                  />
+                  <Text fontSize="xs" color="var(--color-text-medium)" maxW="200px">
+                    {useCustomTeamColor 
+                      ? "Colors match your favorite team" 
+                      : "Use default red theme colors"}
+                  </Text>
+                </HStack>
+              </VStack>
             </Box>
             <Divider borderColor="var(--color-border-gray)" />
             <Flex 

@@ -8,10 +8,12 @@ import { driverHeadshots } from '../../../lib/driverHeadshots';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { buildApiUrl } from '../../../lib/api';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 function FavoriteDriverSnapshotWidget() {
   const { favoriteDriver, loading, error } = useUserProfile();
   const { getAccessTokenSilently } = useAuth0();
+  const { accentColorWithHash } = useThemeColor();
   const [points, setPoints] = useState<number | null>(null);
   const [position, setPosition] = useState<number | null>(null);
   
@@ -58,11 +60,11 @@ function FavoriteDriverSnapshotWidget() {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Favorite Driver
           </Heading>
           <HStack spacing="md" align="center" justify="center" w="full" h="100px">
-            <Spinner color="brand.red" size="md" />
+            <Spinner color={accentColorWithHash} size="md" />
             <Text color="text-muted" fontSize="sm">Loading...</Text>
           </HStack>
         </VStack>
@@ -74,7 +76,7 @@ function FavoriteDriverSnapshotWidget() {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Favorite Driver
           </Heading>
           
@@ -95,7 +97,7 @@ function FavoriteDriverSnapshotWidget() {
               <Text color="text-muted" fontSize="sm" textAlign="center">
                 No favorite driver set
               </Text>
-              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
                 Select Driver
               </Button>
             </VStack>
@@ -126,7 +128,7 @@ function FavoriteDriverSnapshotWidget() {
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <Heading color="brand.red" size="md" fontFamily="heading">
+        <Heading color={accentColorWithHash} size="md" fontFamily="heading">
           Favorite Driver
         </Heading>
         
@@ -160,7 +162,7 @@ function FavoriteDriverSnapshotWidget() {
             
             <VStack align="start" spacing="xs" mt="sm">
               <HStack spacing="md">
-                <Text color="brand.red" fontSize="sm" fontWeight="bold">
+                <Text color={accentColorWithHash} fontSize="sm" fontWeight="bold">
                   #{(favoriteDriver as any).driver_number || (favoriteDriver as any).driverNumber || 'N/A'}
                 </Text>
                 <Text color="text-muted" fontSize="sm">
@@ -172,7 +174,7 @@ function FavoriteDriverSnapshotWidget() {
               </Text>
             </VStack>
 
-            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
               Select Driver
             </Button>
           </VStack>
@@ -181,7 +183,7 @@ function FavoriteDriverSnapshotWidget() {
         {/* Points summary (mirrors Favorite Team styling) */}
         <VStack align="start" spacing="xs" mt="sm" w="full">
           <HStack spacing="md" justify="space-between" w="full">
-            <Text color="brand.red" fontSize="lg" fontWeight="bold" fontFamily="mono">
+            <Text color={accentColorWithHash} fontSize="lg" fontWeight="bold" fontFamily="mono">
               {points !== null ? `${points} pts` : '—'}
             </Text>
             <Text color="text-muted" fontSize="sm">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Heading, Text, VStack, HStack, Icon } from '@chakra-ui/react';
 import { MapPin, Clock } from 'lucide-react';
 import type { NextRace } from '../../../types';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 import WidgetCard from './WidgetCard';
 
 interface NextRaceWidgetProps {
@@ -15,6 +16,7 @@ interface Countdown {
 }
 
 function NextRaceWidget({ data }: NextRaceWidgetProps) {
+  const { accentColorWithHash } = useThemeColor();
   const [countdown, setCountdown] = useState<Countdown | null>(null);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Next Race
           </Heading>
           <Text color="text-muted">Loading...</Text>
@@ -54,12 +56,12 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <Heading color="brand.red" size="md" fontFamily="heading">
+        <Heading color={accentColorWithHash} size="md" fontFamily="heading">
           Next Race: {data.raceName}
         </Heading>
         
         <HStack spacing="sm" align="center">
-          <Icon as={MapPin} boxSize={4} color="brand.red" />
+          <Icon as={MapPin} boxSize={4} color={accentColorWithHash} />
           <Text color="text-secondary" fontSize="sm" fontFamily="body">
             {data.circuitName}
           </Text>
@@ -67,14 +69,14 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
         
         <VStack align="start" spacing="xs">
           <HStack spacing="sm" align="center">
-            <Icon as={Clock} boxSize={4} color="brand.red" />
+            <Icon as={Clock} boxSize={4} color={accentColorWithHash} />
             <Text color="text-muted" fontSize="xs" fontFamily="body" textTransform="uppercase" letterSpacing="wide">
               Time Until Race
             </Text>
           </HStack>
           {countdown ? (
             <Text 
-              color="brand.red" 
+              color={accentColorWithHash} 
               fontSize="2xl" 
               fontWeight="bold" 
               fontFamily="mono"
@@ -83,7 +85,7 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
               {countdown.days} Days : {countdown.hours} Hours : {countdown.minutes} Mins
             </Text>
           ) : (
-            <Text color="brand.red" fontSize="lg" fontWeight="bold">
+            <Text color={accentColorWithHash} fontSize="lg" fontWeight="bold">
               Race has started!
             </Text>
           )}

@@ -5,6 +5,7 @@ import { Box, useDisclosure, Text, Alert, AlertIcon, AlertTitle } from '@chakra-
 import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { useThemeColor } from '../../context/ThemeColorContext';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
@@ -24,8 +25,8 @@ import { Link } from 'react-router-dom';
 const ResponsiveGridLayout = WidthProvider(RGL);
 
 // Fallback banner component
-const FallbackBanner = () => (
-  <Alert status="warning" variant="solid" bg="brand.red" color="white" borderRadius="md" mb="lg">
+const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
+  <Alert status="warning" variant="solid" bg={`#${accentColor}`} color="white" borderRadius="md" mb="lg">
     <AlertIcon as={AlertTriangle} color="white" />
     <AlertTitle fontFamily="heading" fontSize="md">Live Data Unavailable. Showing cached data.</AlertTitle>
   </Alert>
@@ -66,6 +67,7 @@ interface WidgetVisibility {
 function DashboardPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { data: dashboardData, loading, error, isFallback } = useDashboardData();
+  const { accentColor, accentColorWithHash } = useThemeColor();
 
   // TODO: Sync this state with user preferences in Supabase
   const [widgetVisibility, setWidgetVisibility] = useState<WidgetVisibility>({
@@ -89,7 +91,7 @@ function DashboardPage() {
       <Box>
         <DashboardHeader onCustomizeClick={onOpen} />
         <Box p="lg">
-          <Text color="brand.red">Error loading dashboard: {error}</Text>
+          <Text color={accentColorWithHash}>Error loading dashboard: {error}</Text>
         </Box>
       </Box>
     );
@@ -126,7 +128,7 @@ function DashboardPage() {
     <Box>
       <DashboardHeader onCustomizeClick={onOpen} />
       <Box p={{ base: 'md', md: 'lg' }}>
-        {isFallback && <FallbackBanner />} {/* Render banner when using fallback data */}
+        {isFallback && <FallbackBanner accentColor={accentColor} />} {/* Render banner when using fallback data */}
         
         {loading ? (
           <Box textAlign="center" py="xl">

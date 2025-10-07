@@ -5,13 +5,16 @@ import WidgetCard from './WidgetCard';
 import { teamColors } from '../../../lib/teamColors';
 import { Trophy } from 'lucide-react';
 import TeamLogo from '../../../components/TeamLogo/TeamLogo';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandingsItem[] | undefined; year?: number }) => {
+  const { accentColorWithHash } = useThemeColor();
+  
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
         <HStack justify="space-between" align="center" w="full">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Constructor Standings
           </Heading>
           {year !== undefined && (
@@ -34,7 +37,7 @@ const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandings
                 transition="all 0.2s ease-in-out"
               >
                 <Flex align="center" flex={1}>
-                  <Text w="2em" color={isLeader ? 'white' : 'brand.red'} fontWeight="bold">{item.position}.</Text>
+                  <Text w="2em" color={isLeader ? 'white' : '{accentColorWithHash}'} fontWeight="bold">{item.position}.</Text>
                   <Box
                     mr={3}
                     w="32px"
@@ -52,7 +55,7 @@ const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandings
                   <Text fontWeight="bold" color={isLeader ? 'white' : 'text-primary'}>{item.constructorName}</Text>
                 </Flex>
                 {isLeader && <Icon as={Trophy} color="white" mr={3} />}
-                <Text fontWeight="bold" color={isLeader ? 'white' : 'brand.red'}>{item.points} pts</Text>
+                <Text fontWeight="bold" color={isLeader ? 'white' : '{accentColorWithHash}'}>{item.points} pts</Text>
               </Flex>
             );
           })

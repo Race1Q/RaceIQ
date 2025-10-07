@@ -8,6 +8,7 @@ import type { HeadToHead } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
 import { driverHeadshots } from '../../../lib/driverHeadshots';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 import WidgetCard from './WidgetCard';
 
 interface HeadToHeadQuickCompareWidgetProps {
@@ -16,6 +17,7 @@ interface HeadToHeadQuickCompareWidgetProps {
 
 function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProps) {
   const { getAccessTokenSilently } = useAuth0();
+  const { accentColorWithHash } = useThemeColor();
   const currentSeason = new Date().getFullYear();
 
   type DriverRow = {
@@ -85,7 +87,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">Head to Head</Heading>
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">Head to Head</Heading>
           <Text color="text-muted">Loading...</Text>
         </VStack>
       </WidgetCard>
@@ -96,7 +98,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">Head to Head</Heading>
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">Head to Head</Heading>
           <Text color="text-muted">{error || 'Unable to load drivers'}</Text>
         </VStack>
       </WidgetCard>
@@ -128,7 +130,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <Heading color="brand.red" size="md" fontFamily="heading">
+        <Heading color={accentColorWithHash} size="md" fontFamily="heading">
           Head to Head
         </Heading>
         
@@ -182,7 +184,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
             </VStack>
             
             <VStack spacing="xs" align="center">
-              <Text color="brand.red" fontSize="sm" fontWeight="bold">
+              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
                 Wins: {driver1.wins}
               </Text>
               <Text color="text-muted" fontSize="xs">
@@ -196,11 +198,11 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
 
           {/* VS Divider for Mobile */}
           <HStack spacing="md" align="center" justify="center">
-            <Box w="full" h="1px" bg="brand.red" />
-            <Text color="brand.red" fontSize="lg" fontWeight="bold" fontFamily="heading">
+            <Box w="full" h="1px" bg="{accentColorWithHash}" />
+            <Text color="{accentColorWithHash}" fontSize="lg" fontWeight="bold" fontFamily="heading">
               VS
             </Text>
-            <Box w="full" h="1px" bg="brand.red" />
+            <Box w="full" h="1px" bg="{accentColorWithHash}" />
           </HStack>
 
           <VStack spacing="sm" align="center">
@@ -251,7 +253,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
             </VStack>
             
             <VStack spacing="xs" align="center">
-              <Text color="brand.red" fontSize="sm" fontWeight="bold">
+              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
                 Wins: {driver2.wins}
               </Text>
               <Text color="text-muted" fontSize="xs">
@@ -315,7 +317,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
             </VStack>
             
             <VStack spacing="xs" align="center">
-              <Text color="brand.red" fontSize="sm" fontWeight="bold">
+              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
                 Wins: {driver1.wins}
               </Text>
               <Text color="text-muted" fontSize="xs">
@@ -329,13 +331,13 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
           
           {/* VS */}
           <VStack spacing="xs" align="center">
-            <Text color="brand.red" fontSize="2xl" fontWeight="bold" fontFamily="heading">
+            <Text color="{accentColorWithHash}" fontSize="2xl" fontWeight="bold" fontFamily="heading">
               VS
             </Text>
             <Box
               w="2px"
               h="40px"
-              bg="brand.red"
+              bg="{accentColorWithHash}"
               borderRadius="full"
             />
           </VStack>
@@ -389,7 +391,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
             </VStack>
             
             <VStack spacing="xs" align="center">
-              <Text color="brand.red" fontSize="sm" fontWeight="bold">
+              <Text color="{accentColorWithHash}" fontSize="sm" fontWeight="bold">
                 Wins: {driver2.wins}
               </Text>
               <Text color="text-muted" fontSize="xs">

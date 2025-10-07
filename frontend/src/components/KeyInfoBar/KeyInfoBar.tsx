@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Flex, Grid, Heading, Icon, Text } from '@chakra-ui/react';
 import { Trophy, TrendingUp, Calendar, Medal } from 'lucide-react';
 import TeamLogo from '../TeamLogo/TeamLogo';
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 interface InfoBlockProps {
   label: string;
@@ -10,16 +11,20 @@ interface InfoBlockProps {
   icon: React.ElementType;
 }
 
-const InfoBlock: React.FC<InfoBlockProps> = ({ label, value, subValue, icon }) => (
-  <Flex align="center" gap={4} p={{ base: 2, md: 4 }}>
-    <Icon as={icon} boxSize={8} color="brand.red" />
+const InfoBlock: React.FC<InfoBlockProps> = ({ label, value, subValue, icon }) => {
+  const { accentColorWithHash } = useThemeColor();
+  
+  return (
+    <Flex align="center" gap={4} p={{ base: 2, md: 4 }}>
+      <Icon as={icon} boxSize={8} color={accentColorWithHash} />
     <Box>
       <Text fontSize="xs" color="text-muted" textTransform="uppercase">{label}</Text>
       <Heading size="md" fontWeight="bold">{value}</Heading>
       {subValue && <Text fontSize="sm" color="text-muted">{subValue}</Text>}
     </Box>
   </Flex>
-);
+  );
+};
 
 interface KeyInfoBarProps {
   driver: {

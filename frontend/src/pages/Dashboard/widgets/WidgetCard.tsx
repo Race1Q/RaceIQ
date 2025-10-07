@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
 import { Box } from '@chakra-ui/react';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 interface WidgetCardProps {
   children: ReactNode;
 }
 
 function WidgetCard({ children }: WidgetCardProps) {
+  const { accentColorWithHash } = useThemeColor();
+  
   return (
     <Box
       bg="bg-card"
@@ -27,7 +30,7 @@ function WidgetCard({ children }: WidgetCardProps) {
         left: 0,
         right: 0,
         height: '1px',
-        bgGradient: 'linear(to-r, brand.red, transparent)',
+        bgGradient: `linear(to-r, ${accentColorWithHash}, transparent)`,
         zIndex: 1,
       }}
       _hover={{

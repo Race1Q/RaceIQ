@@ -2,17 +2,20 @@ import { Heading, Text, VStack, HStack, Box } from '@chakra-ui/react';
 import type { StandingsItem } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import WidgetCard from './WidgetCard';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 interface StandingsWidgetProps {
   data?: StandingsItem[];
 }
 
 function StandingsWidget({ data }: StandingsWidgetProps) {
+  const { accentColorWithHash } = useThemeColor();
+  
   if (!data || data.length === 0) {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Championship Standings
           </Heading>
           <Text color="text-muted">Loading...</Text>
@@ -27,7 +30,7 @@ function StandingsWidget({ data }: StandingsWidgetProps) {
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <Heading color="brand.red" size="md" fontFamily="heading">
+        <Heading color={accentColorWithHash} size="md" fontFamily="heading">
           Championship Standings
         </Heading>
         
@@ -54,7 +57,7 @@ function StandingsWidget({ data }: StandingsWidgetProps) {
                     {item.constructorName}
                   </Text>
                 </VStack>
-                <Text color="brand.red" fontSize="sm" fontWeight="bold" fontFamily="mono">
+                <Text color={accentColorWithHash} fontSize="sm" fontWeight="bold" fontFamily="mono">
                   {item.points} pts
                 </Text>
               </HStack>
