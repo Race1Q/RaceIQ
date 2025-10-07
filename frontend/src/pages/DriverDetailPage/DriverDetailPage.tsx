@@ -142,10 +142,10 @@ const DriverDetailPage: React.FC = () => {
                   src={driverDetails.imageUrl}
                   alt={driverDetails.fullName}
                   position="absolute"
-                  bottom={{ base: '-12px', md: '-16px' }}
+                  bottom={{ base: '-20px', md: '-32px' }}
                   left="50%"
                   transform="translateX(-50%)"
-                  h={{ base: '180px', md: '280px' }}
+                  h={{ base: '190px', md: '300px' }}
                   zIndex={3}
                   objectFit="contain"
                 />
