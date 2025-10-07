@@ -17,7 +17,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { buildApiUrl } from '../../lib/api';
-import { teamColors } from '../../lib/teamColors';
+import { getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import PageHeader from '../../components/layout/PageHeader';
 
@@ -207,8 +207,8 @@ const Constructors = () => {
               {/* Constructors Grid */}
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
               {filteredConstructors.map((constructor) => {
-                const teamColor = teamColors[constructor.name] || 'FF1801';
-                const gradientBg = `linear-gradient(135deg, #${teamColor} 0%, rgba(0,0,0,0.6) 100%)`;
+                const teamColor = getTeamColor(constructor.name);
+                const gradientBg = `linear-gradient(135deg, #${teamColor} 0%, rgba(0,0,0,0.75) 100%)`;
                 const carImage = teamCarImages[constructor.name];
 
                 return (
@@ -218,9 +218,11 @@ const Constructors = () => {
                     state={{ constructorId: constructor.id }}
                   >
                     <Flex
+                      position="relative"
                       bgGradient={gradientBg}
                       borderRadius="lg"
                       p={6}
+                      overflow="hidden"
                       transition="all 0.2s ease-in-out"
                       _hover={{
                         transform: 'translateY(-4px)',
@@ -229,15 +231,33 @@ const Constructors = () => {
                       }}
                       align="center"
                       justify="space-between"
+                      _before={{
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        pointerEvents: 'none',
+                        background: 'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)'
+                      }}
                     >
                       {/* Left: Info */}
-                      <Box textAlign="left">
+                      <Box textAlign="left" zIndex={1}>
                         <Text fontWeight="bold" fontSize="lg" color="white" fontFamily="heading">
                           {constructor.name}
                         </Text>
                         <Text fontSize="sm" color="whiteAlpha.800" fontFamily="body">
                           {constructor.nationality}
                         </Text>
+                        {/* Key stats preview (placeholder if real API not wired here) */}
+                        <Flex mt={3} gap={4} color="whiteAlpha.900" fontFamily="heading" fontSize="sm">
+                          <Box>
+                            <Text opacity={0.8}>Position</Text>
+                            <Text fontWeight="bold">—</Text>
+                          </Box>
+                          <Box>
+                            <Text opacity={0.8}>Points</Text>
+                            <Text fontWeight="bold">—</Text>
+                          </Box>
+                        </Flex>
                       </Box>
 
                       {/* Right: Car Image */}
@@ -245,16 +265,20 @@ const Constructors = () => {
                         <Image
                           src={carImage}
                           alt={`${constructor.name} car`}
-                          maxH={{ base: '60px', md: '80px' }}
-                          maxW={{ base: '120px', md: '150px' }}
+                          position="relative"
+                          maxH={{ base: '90px', md: '140px' }}
+                          maxW={{ base: '200px', md: '320px' }}
                           w="auto"
                           h="auto"
                           objectFit="contain"
-                          borderRadius="md"
                           ml={{ base: 2, md: 4 }}
                           flexShrink={0}
+                          zIndex={1}
                         />
                       )}
+
+                      {/* Decorative overflow shard/right glow */}
+                      <Box position="absolute" right={-20} top={-20} w={"220px"} h={"220px"} borderRadius="full" bg="whiteAlpha.100" filter="blur(30px)" />
                     </Flex>
                   </Link>
                 );

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading } from '@chakra-ui/react';
 import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
@@ -253,7 +253,20 @@ const ConstructorDetails: React.FC = () => {
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
 
   return (
-    <Box bg="bg-primary" color="text-primary" minH="100vh" py={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+    <Box bg="bg-primary" color="text-primary" minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+      {/* Top Utility Bar */}
+      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary" mt={0}>
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
+          <Button
+            onClick={() => window.history.back()}
+            size={{ base: 'sm', md: 'md' }}
+            variant="outline"
+            borderColor="border-primary"
+          >
+            Back to Constructors
+          </Button>
+        </Container>
+      </Box>
       <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
       {/* Header Bar */}
       <Flex
@@ -263,22 +276,53 @@ const ConstructorDetails: React.FC = () => {
         p={{ base: 6, md: 8 }}
         minH={{ base: '180px', md: '240px' }}
         borderRadius="md"
+        position="relative"
         bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
         direction={{ base: 'column', md: 'row' }}
         gap={{ base: 4, md: 0 }}
+        _before={{
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          background:
+            'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
+          zIndex: 0,
+        }}
       >
         {/* Left: Team Logo + Info */}
-        <Flex direction={{ base: 'column', sm: 'row' }} align="center" gap={4}>
+        <Flex direction={{ base: 'column', sm: 'row' }} align="center" gap={4} zIndex={1}>
           <Box boxSize={{ base: '80px', md: '100px' }} display="flex" alignItems="center" justifyContent="center">
             <TeamLogo teamName={constructor.name} />
           </Box>
           <Flex direction="column" justify="center" align={{ base: 'center', sm: 'flex-start' }}>
-            <Text fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" color="white" textAlign={{ base: 'center', sm: 'left' }}>
-              {constructor.name}
-            </Text>
-            <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.300" textAlign={{ base: 'center', sm: 'left' }}>
-              Nationality: {constructor.nationality}
-            </Text>
+            <Heading as="h1" lineHeight={1} color="white" textAlign={{ base: 'center', sm: 'left' }}>
+              <Text
+                fontFamily="heading"
+                textTransform="uppercase"
+                fontWeight="900"
+                letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                fontSize={{ base: '4xl', md: '7xl', xl: '8xl' }}
+                lineHeight={0.95}
+              >
+                {constructor.name}
+              </Text>
+            </Heading>
+            <Box
+              mt={{ base: 2, md: 3 }}
+              display="inline-block"
+              bg="blackAlpha.300"
+              border="1px solid"
+              borderColor="whiteAlpha.300"
+              borderRadius="md"
+              px={3}
+              py={2}
+              backdropFilter="blur(6px)"
+            >
+              <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>
+                Nationality: {constructor.nationality}
+              </Text>
+            </Box>
           </Flex>
         </Flex>
 
@@ -287,8 +331,8 @@ const ConstructorDetails: React.FC = () => {
           <Image
             src={teamCarImages[constructor.name]}
             alt={`${constructor.name} car`}
-            maxH={{ base: '100px', md: '150px' }}
-            maxW={{ base: '200px', md: '300px' }}
+            maxH={{ base: '140px', md: '220px' }}
+            maxW={{ base: '280px', md: '440px' }}
             w="auto"
             h="auto"
             objectFit="contain"
@@ -296,15 +340,8 @@ const ConstructorDetails: React.FC = () => {
           />
         )}
 
-        {/* Right: Back Button */}
-        <Button 
-          onClick={() => window.history.back()} 
-          color="white"
-          size={{ base: 'sm', md: 'md' }}
-          w={{ base: 'full', md: 'auto' }}
-        >
-          Back to Constructors
-        </Button>
+        {/* Right: Placeholder to maintain spacing */}
+        <Box display={{ base: 'none', md: 'block' }} />
       </Flex>
 
       {/* Latest Season Stats - styled like Driver Details (placed first) */}

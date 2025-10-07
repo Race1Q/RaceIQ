@@ -86,6 +86,7 @@ type HookState = {
   score: CompositeScore;
   selectDriver: (slot: 1 | 2, driverId: string, year: number | 'career') => void;
   toggleMetric: (metric: MetricKey) => void;
+  clearSelection: (slot: 1 | 2) => void;
 };
 
 // HTTP helper using central apiFetch with automatic /api prefix.
@@ -306,6 +307,19 @@ export function useDriverComparison(): HookState {
       [metric]: !prev[metric],
     }));
   }, []);
+
+  // Clear selection/driver for a slot
+  const clearSelection = useCallback((slot: 1 | 2) => {
+    if (slot === 1) {
+      setDriver1(null);
+      setSelection1(null);
+      setStats1(null);
+    } else {
+      setDriver2(null);
+      setSelection2(null);
+      setStats2(null);
+    }
+  }, []);
   
   // Compute composite score
   const score = useMemo(() => {
@@ -331,8 +345,9 @@ export function useDriverComparison(): HookState {
     score,
     selectDriver,
     toggleMetric,
+    clearSelection,
   }), [
     allDrivers, driver1, driver2, loading, error, handleSelectDriver,
-    years, selection1, selection2, stats1, stats2, enabledMetrics, score, selectDriver, toggleMetric
+    years, selection1, selection2, stats1, stats2, enabledMetrics, score, selectDriver, toggleMetric, clearSelection
   ]);
 }

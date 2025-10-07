@@ -54,7 +54,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   onChange,
   placeholder = "Search and select...",
   isLoading = false,
-  isClearable = true,
+  isClearable = false,
   isDisabled = false,
   ...rest
 }) => {
@@ -65,12 +65,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         options={options}
         value={value}
         onChange={onChange}
+        onClear={() => {
+          // Ensure clearing propagates to parent when user clicks the X
+          if (onChange) (onChange as any)(null);
+        }}
         placeholder={placeholder}
         isClearable={isClearable}
         isLoading={isLoading}
         isDisabled={isDisabled || isLoading}
         chakraStyles={customSelectStyles}
         focusBorderColor="brand.red"
+        // Avoid focusing the search input immediately on open; require user tap in input first
+        openMenuOnFocus={false}
+        backspaceRemovesValue={true}
         {...rest}
       />
     </FormControl>

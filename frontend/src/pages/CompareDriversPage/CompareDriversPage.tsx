@@ -36,6 +36,7 @@ const CompareDriversPage = () => {
     score,
     selectDriver,
     toggleMetric,
+    clearSelection,
   } = useDriverComparison();
 
   // Build dropdown options with proper name fallbacks
@@ -273,13 +274,7 @@ const CompareDriversPage = () => {
           }}
           isLoading={loading}
           // NEW: Year selection support - using simplified controls in panel
-          extraControl={selection1 ? (
-            <VStack spacing="sm" align="stretch" w="100%">
-              <Text fontSize="sm" fontWeight="medium" color="text-secondary">
-                {selection1.year === 'career' ? 'Career Stats' : `${selection1.year} Season`}
-              </Text>
-            </VStack>
-          ) : null}
+          extraControl={null}
         />
 
         <Flex
@@ -304,13 +299,7 @@ const CompareDriversPage = () => {
           }}
           isLoading={loading}
           // NEW: Year selection support - using simplified controls in panel  
-          extraControl={selection2 ? (
-            <VStack spacing="sm" align="stretch" w="100%">
-              <Text fontSize="sm" fontWeight="medium" color="text-secondary">
-                {selection2.year === 'career' ? 'Career Stats' : `${selection2.year} Season`}
-              </Text>
-            </VStack>
-          ) : null}
+          extraControl={null}
         />
       </Grid>
 

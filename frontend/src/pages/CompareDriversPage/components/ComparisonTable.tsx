@@ -1,5 +1,6 @@
 // frontend/src/pages/CompareDriversPage/components/ComparisonTable.tsx
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, TableContainer, HStack, Text, VStack, Grid, Button } from '@chakra-ui/react';
+import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, TableContainer, HStack, Text, VStack, Grid, Button, Image } from '@chakra-ui/react';
+import { driverHeadshots } from '../../../lib/driverHeadshots';
 import ResponsiveTable from '../../../components/layout/ResponsiveTable';
 import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey, CompositeScore } from '../../../hooks/useDriverComparison';
 
@@ -282,10 +283,46 @@ export const ComparisonTable: React.FC<Props> = ({
           <Heading size="xl" textAlign="center" mb="lg" fontFamily="heading">Head-to-Head Comparison</Heading>
           <ResponsiveTable>
               <Thead>
+                {/* Aligned driver headshots and names as header row */}
+                <Tr>
+                  <Th></Th>
+                  <Th textAlign="center">
+                    <VStack spacing={2}>
+                      <Image
+                        src={driverHeadshots[driver1.fullName] || (driver1 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                        alt={driver1.fullName}
+                        boxSize={{ base: '64px', md: '96px' }}
+                        objectFit="cover"
+                        borderRadius="full"
+                        borderWidth="3px"
+                        borderColor="bg-surface"
+                        boxShadow="lg"
+                        mx="auto"
+                      />
+                      <Text fontWeight="bold">{title1}</Text>
+                    </VStack>
+                  </Th>
+                  <Th textAlign="center">
+                    <VStack spacing={2}>
+                      <Image
+                        src={driverHeadshots[driver2.fullName] || (driver2 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                        alt={driver2.fullName}
+                        boxSize={{ base: '64px', md: '96px' }}
+                        objectFit="cover"
+                        borderRadius="full"
+                        borderWidth="3px"
+                        borderColor="bg-surface"
+                        boxShadow="lg"
+                        mx="auto"
+                      />
+                      <Text fontWeight="bold">{title2}</Text>
+                    </VStack>
+                  </Th>
+                </Tr>
                 <Tr>
                   <Th>Statistic</Th>
-                  <Th>{title1}</Th>
-                  <Th>{title2}</Th>
+                  <Th></Th>
+                  <Th></Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -313,12 +350,14 @@ export const ComparisonTable: React.FC<Props> = ({
                       <Td 
                         fontWeight={better1 ? 'bold' : 'normal'}
                         color={better1 ? 'brand.red' : 'text-primary'}
+                        textAlign="center"
                       >
                         {value1}
                       </Td>
                       <Td 
                         fontWeight={better2 ? 'bold' : 'normal'}
                         color={better2 ? 'brand.red' : 'text-primary'}
+                        textAlign="center"
                       >
                         {value2}
                       </Td>
@@ -338,10 +377,46 @@ export const ComparisonTable: React.FC<Props> = ({
       <Heading size="xl" textAlign="center" mb="lg" fontFamily="heading">Head-to-Head Comparison</Heading>
       <ResponsiveTable>
           <Thead>
+            {/* Aligned driver headshots and names as header row (legacy) */}
+            <Tr>
+              <Th></Th>
+              <Th textAlign="center">
+                <VStack spacing={2}>
+                  <Image
+                    src={driverHeadshots[driver1.fullName] || (driver1 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                    alt={driver1.fullName}
+                    boxSize={{ base: '64px', md: '96px' }}
+                    objectFit="cover"
+                    borderRadius="full"
+                    borderWidth="3px"
+                    borderColor="bg-surface"
+                    boxShadow="lg"
+                    mx="auto"
+                  />
+                  <Text fontWeight="bold">{driver1.fullName}</Text>
+                </VStack>
+              </Th>
+              <Th textAlign="center">
+                <VStack spacing={2}>
+                  <Image
+                    src={driverHeadshots[driver2.fullName] || (driver2 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                    alt={driver2.fullName}
+                    boxSize={{ base: '64px', md: '96px' }}
+                    objectFit="cover"
+                    borderRadius="full"
+                    borderWidth="3px"
+                    borderColor="bg-surface"
+                    boxShadow="lg"
+                    mx="auto"
+                  />
+                  <Text fontWeight="bold">{driver2.fullName}</Text>
+                </VStack>
+              </Th>
+            </Tr>
             <Tr>
               <Th>Statistic</Th>
-              <Th>{driver1.fullName}</Th>
-              <Th>{driver2.fullName}</Th>
+              <Th textAlign="center"></Th>
+              <Th textAlign="center"></Th>
             </Tr>
           </Thead>
           <Tbody>
