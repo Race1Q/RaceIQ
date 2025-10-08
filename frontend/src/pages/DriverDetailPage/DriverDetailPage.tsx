@@ -1,6 +1,6 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, Button, Heading, Flex, Grid, HStack, Image } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
@@ -12,6 +12,7 @@ import { teamCarImages } from '../../lib/teamCars';
 import { teamColors } from '../../lib/teamColors';
 import StatSection from '../../components/DriverDetails/StatSection';
 import WinsPerSeasonChart from '../../components/WinsPerSeasonChart/WinsPerSeasonChart';
+import TeamLogo from '../../components/TeamLogo/TeamLogo';
 
 const DriverDetailPage: React.FC = () => {
   const { driverId } = useParams<{ driverId: string }>();
@@ -28,75 +29,144 @@ const DriverDetailPage: React.FC = () => {
 
   return (
     <Box>
-      {/* --- NEW LAYERED HERO SECTION --- */}
-      <Box
-        position="relative"
-        minH={{ base: '30vh', md: '50vh' }}
-        bgColor={teamColor}
-        overflow="hidden"
-        _after={{ // Abstract geometric pattern overlay
-          content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1,
-          bgImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3e%3cpath d='M-100 100L100 200L100 0L-100 100Z' fill-opacity='0.02' fill='%23fff'/%3e%3c/svg%3e")`,
-          backgroundSize: '300px',
-        }}
-      >
-        <Image
-          src={teamCarImages[driverDetails.teamName]}
-          alt={`${driverDetails.teamName} car`}
-          position="absolute"
-          top="50%"
-          right={{ base: '-50%', md: '0' }}
-          transform="translateY(-50%)"
-          w={{ base: '100%', md: '70%' }}
-          zIndex={2}
-          opacity={0.4}
-        />
-        <Image
-          src={driverDetails.imageUrl || ''}
-          alt={driverDetails.fullName}
-          position="absolute"
-          bottom={0}
-          right={{ base: '0', md: '5%' }}
-          h={{ base: '80%', md: '90%' }}
-          zIndex={3}
-          objectFit="contain"
-          filter="drop-shadow(0 10px 15px rgba(0,0,0,0.4))"
-        />
-        <Container maxW="1400px" h="100%" position="relative" zIndex={4}>
-          <Flex direction="column" justify="center" h="100%" align="flex-start" color="white" textShadow="0 2px 10px rgba(0,0,0,0.5)">
-            <Heading as="h1" lineHeight={1}>
-              <Text fontFamily="signature" fontSize={{ base: '5xl', md: '8xl' }} fontWeight="normal" mb={{ base: -4, md: -8 }}>
-                {driverDetails.firstName}
-              </Text>
-              <Text fontFamily="heading" fontSize={{ base: '4xl', md: '7xl' }} fontWeight="bold" textTransform="uppercase">
-                {driverDetails.lastName}
-              </Text>
-            </Heading>
-            <HStack mt="md" spacing="md" bg="blackAlpha.300" p={2} borderRadius="md" backdropFilter="blur(5px)">
-              <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '32px', height: '24px' }} title={driverDetails.countryCode} />
-              <Text>{driverDetails.countryCode}</Text>
-              <Text>•</Text>
-              <Text>{driverDetails.teamName}</Text>
-              <Text>•</Text>
-              {/* Ensure driver number is displayed */}
-              <Text fontWeight="bold">#{driverDetails.number}</Text>
-            </HStack>
-          </Flex>
+      {/* Top Utility Bar */}
+      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary">
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
+          <Button
+            as={Link}
+            to="/drivers"
+            size={{ base: 'sm', md: 'md' }}
+            leftIcon={<ArrowLeft size={16} />}
+            variant="outline"
+            borderColor="border-primary"
+          >
+            Back to Drivers
+          </Button>
+        </Container>
+      </Box>
+
+      {/* Header Bar (matching Constructors header) */}
+      <Box bg="bg-primary" color="text-primary" py={{ base: 6, md: 8 }}>
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
+          <Grid
+            templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }}
+            alignItems="center"
+            gap={{ base: 4, md: 6 }}
+            mb={4}
+            p={{ base: 6, md: 8 }}
+            minH={{ base: '180px', md: '240px' }}
+            borderRadius="md"
+            position="relative"
+            bgGradient={`linear-gradient(135deg, #${teamColor.replace('#','')} 0%, rgba(0,0,0,0.6) 100%)`}
+            _before={{
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              background:
+                'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
+              zIndex: 0,
+            }}
+          >
+            {/* 1) Team Logo */}
+            <Box justifySelf="center">
+              <Box boxSize={{ base: '80px', md: '100px' }} display="flex" alignItems="center" justifyContent="center">
+                <TeamLogo teamName={driverDetails.teamName} />
+              </Box>
+            </Box>
+
+            {/* 2) Name + meta pill */}
+            <Box justifySelf="center" textAlign={{ base: 'center', md: 'left' }}>
+              <Heading as="h1" lineHeight={1} color="white" alignSelf="start">
+                <Text
+                  fontFamily="signature"
+                  fontWeight="normal"
+                  letterSpacing="-0.02em"
+                  fontSize={{ base: '4xl', md: '6xl', xl: '7xl' }}
+                  mb={{ base: -2, md: -4 }}
+                >
+                  {driverDetails.firstName}
+                </Text>
+                <Text
+                  fontFamily="heading"
+                  textTransform="uppercase"
+                  fontWeight="900"
+                  letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                  fontSize={{ base: '5xl', md: '8xl', xl: '9xl' }}
+                  lineHeight={0.95}
+                >
+                  {driverDetails.lastName}
+                </Text>
+              </Heading>
+              <Box
+                mt={{ base: 2, md: 3 }}
+                display="inline-block"
+                bg="blackAlpha.300"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+                borderRadius="md"
+                px={3}
+                py={2}
+                backdropFilter="blur(6px)"
+              >
+                <HStack spacing="md">
+                  <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '28px', height: '20px' }} title={driverDetails.countryCode} />
+                  <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>{driverDetails.countryCode}</Text>
+                  <Text color="gray.300">•</Text>
+                  <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>{driverDetails.teamName}</Text>
+                  <Text color="gray.300">•</Text>
+                  <Text color="white" fontWeight="bold">#{driverDetails.number}</Text>
+                </HStack>
+              </Box>
+            </Box>
+
+            {/* 3) Driver image + car */}
+            <Box justifySelf="center" position="relative" w={{ base: '100%', md: '420px' }} minW={{ base: 'auto', md: '420px' }} minH={{ base: '160px', md: '260px' }}>
+              {teamCarImages[driverDetails.teamName] && (
+                <Image
+                  src={teamCarImages[driverDetails.teamName]}
+                  alt={`${driverDetails.teamName} car`}
+                  position="absolute"
+                  bottom="8px"
+                  left="50%"
+                  transform="translateX(-50%)"
+                  w={{ base: '85%', md: '420px' }}
+                  maxW="none"
+                  opacity={0.4}
+                  objectFit="contain"
+                  zIndex={1}
+                />
+              )}
+              {driverDetails.imageUrl && (
+                <Image
+                  src={driverDetails.imageUrl}
+                  alt={driverDetails.fullName}
+                  position="absolute"
+                  bottom={{ base: '-20px', md: '-32px' }}
+                  left="50%"
+                  transform="translateX(-50%)"
+                  h={{ base: '190px', md: '300px' }}
+                  zIndex={3}
+                  objectFit="contain"
+                />
+              )}
+            </Box>
+
+            {/* 4) Spacer cell for equal spacing */}
+            <Box />
+          </Grid>
         </Container>
       </Box>
 
       <KeyInfoBar driver={driverDetails} />
 
-      <Container maxW="1400px" py="xl">
-        <Link to="/drivers">
-          <Button leftIcon={<ArrowLeft />} variant="outline" mb="lg">Back to Drivers</Button>
-        </Link>
+      <Container maxW="container.2xl" py="xl" px={{ base: 4, md: 6 }}>
         
-        {/* --- NEW STATS SECTIONS --- */}
-        <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap="xl">
+        {/* --- STATS SECTIONS (stacked: season above career) --- */}
+        <VStack align="stretch" spacing="xl">
           <StatSection title="2025 Season" stats={driverDetails.currentSeasonStats} />
           <StatSection title="Career" stats={driverDetails.careerStats} />
-        </Grid>
+        </VStack>
 
         {/* --- NEW GRAPH SECTION --- */}
         <Box mt="xl">

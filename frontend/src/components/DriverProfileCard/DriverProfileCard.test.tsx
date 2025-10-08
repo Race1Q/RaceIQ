@@ -169,7 +169,8 @@ describe('DriverProfileCard Component', () => {
   it('renders driver number when available', () => {
     renderWithProviders(<DriverProfileCard driver={mockDriver} />);
     
-    expect(screen.getByText('1')).toBeInTheDocument();
+    // Should have two instances of the number: ghosted overlay and regular text
+    expect(screen.getAllByText('1')).toHaveLength(2);
   });
 
   it('renders driver image with correct src', () => {
@@ -301,7 +302,8 @@ describe('DriverProfileCard Component', () => {
     // Check that all main elements are present
     expect(screen.getByText('Max')).toBeInTheDocument();
     expect(screen.getByText('Verstappen')).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
+    // Should have two instances of the number: ghosted overlay and regular text
+    expect(screen.getAllByText('1')).toHaveLength(2);
     expect(screen.getByRole('img')).toBeInTheDocument();
     expect(screen.getByText('View Profile')).toBeInTheDocument();
   });
@@ -368,8 +370,8 @@ describe('DriverProfileCard Edge Cases', () => {
     
     renderWithProviders(<DriverProfileCard driver={driverWithEmptyName} />);
     
-    // Should still render the number and other elements
-    expect(screen.getByText('88')).toBeInTheDocument();
+    // Should still render the number and other elements (two instances: ghosted overlay and regular text)
+    expect(screen.getAllByText('88')).toHaveLength(2);
     expect(screen.getByText('View Profile')).toBeInTheDocument();
     expect(screen.getByTestId('flag-de')).toBeInTheDocument();
   });

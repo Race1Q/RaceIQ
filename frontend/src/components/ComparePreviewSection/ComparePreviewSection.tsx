@@ -276,7 +276,7 @@ const ComparePreviewSection: React.FC = () => {
                 <Heading
                   as="h4"
                   size="sm"
-                  color="brand.red"
+                  color="border-accent"
                   textTransform="uppercase"
                   letterSpacing="wider"
                   fontWeight="bold"
@@ -305,14 +305,14 @@ const ComparePreviewSection: React.FC = () => {
               </Text>
               
               <Button
-                bg="brand.red"
+                bg="border-accent"
                 color="white"
                 _hover={{ 
-                  bg: "brand.redDark",
+                  bg: "border-accentDark",
                   transform: 'translateY(-2px)',
                   boxShadow: 'lg'
                 }}
-                _active={{ bg: "brand.redDark" }}
+                _active={{ bg: "border-accentDark" }}
                 size={{ base: 'md', md: 'lg' }}
                 fontFamily="heading"
                 fontWeight="bold"
@@ -338,8 +338,8 @@ const ComparePreviewSection: React.FC = () => {
                 onClick={handleRandomize}
                 isLoading={randomizeLoading}
                 variant="ghost"
-                _hover={{ bg: 'brand.red', color: 'white' }}
-                _active={{ bg: 'brand.redDark', color: 'white' }}
+                _hover={{ bg: 'border-accent', color: 'white' }}
+                _active={{ bg: 'border-accentDark', color: 'white' }}
                 alignSelf="center"
               >
                 Randomize
@@ -378,7 +378,7 @@ const ComparePreviewSection: React.FC = () => {
                   </Text>
                 </VStack>
 
-                <Heading as="h3" size={{ base: 'xl', md: '2xl' }} color="brand.red" mx={{ base: 2, md: 4 }} fontFamily="heading" fontWeight="bold">
+                <Heading as="h3" size={{ base: 'xl', md: '2xl' }} color="border-accent" mx={{ base: 2, md: 4 }} fontFamily="heading" fontWeight="bold">
                   VS
                 </Heading>
 

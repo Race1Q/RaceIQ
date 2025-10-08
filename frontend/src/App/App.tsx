@@ -21,6 +21,8 @@ import HomePage from '../pages/HomePage/HomePage';
 import { RoleProvider } from '../context/RoleContext';
 import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
 import { ThemeColorProvider, useThemeColor } from '../context/ThemeColorContext';
+import { DynamicThemeProvider } from '../components/DynamicThemeProvider';
+import { getLogoFilter } from '../lib/colorUtils';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
@@ -76,7 +78,8 @@ function Navbar() {
               style={{ 
                 height: '60px', 
                 width: 'auto',
-                maxHeight: '100%'
+                maxHeight: '100%',
+                filter: getLogoFilter(accentColorWithHash)
               }}
             />
           </HStack>
@@ -346,9 +349,11 @@ function App() {
     <RoleProvider>
       <ProfileUpdateProvider>
         <ThemeColorProvider>
-          <UserRegistrationHandler>
-            <AppContent />
-          </UserRegistrationHandler>
+          <DynamicThemeProvider>
+            <UserRegistrationHandler>
+              <AppContent />
+            </UserRegistrationHandler>
+          </DynamicThemeProvider>
         </ThemeColorProvider>
       </ProfileUpdateProvider>
     </RoleProvider>

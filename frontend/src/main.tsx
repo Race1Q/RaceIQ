@@ -3,13 +3,13 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
-import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
+import { ColorModeScript } from '@chakra-ui/react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import App from './App/App.tsx';
-import theme from './styles/theme';
+import { createTheme } from './styles/theme';
 import Fonts from './styles/fonts';
 import './styles/index.css';
 
@@ -39,9 +39,12 @@ const getAuth0Config = () => {
 const auth0Config = getAuth0Config();
 const root = createRoot(document.getElementById('root')!);
 
+// Create default theme for ColorModeScript
+const defaultTheme = createTheme('e10600');
+
 root.render(
   <>
-    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+    <ColorModeScript initialColorMode={defaultTheme.config.initialColorMode} />
     <Auth0Provider
       domain={auth0Config.domain}
       clientId={auth0Config.clientId}
@@ -53,12 +56,10 @@ root.render(
       useRefreshTokens={true}
       cacheLocation="localstorage"
     >
-      <ChakraProvider theme={theme}>
-        <Fonts />
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ChakraProvider>
+      <Fonts />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </Auth0Provider>
   </>
 );

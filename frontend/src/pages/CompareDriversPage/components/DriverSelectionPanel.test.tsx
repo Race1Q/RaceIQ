@@ -48,7 +48,7 @@ describe('DriverSelectionPanel', () => {
     id: 1,
     fullName: 'Max Verstappen',
     teamName: 'Red Bull Racing',
-    teamColorToken: 'brand.red',
+    teamColorToken: 'border-accent',
     imageUrl: 'max-verstappen.jpg',
   };
 

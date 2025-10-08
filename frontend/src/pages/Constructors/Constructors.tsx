@@ -5,20 +5,24 @@ import {
   Box,
   Text,
   SimpleGrid,
-  VStack,
-  Heading,
+  Container,
+  Flex,
+  Image,
+  Input,
+  InputGroup,
+  InputRightElement,
+  IconButton,
 } from '@chakra-ui/react';
+import { CloseIcon } from '@chakra-ui/icons';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
-import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
+import Select from 'react-select'; // Assuming 'react-select' is used for the custom styled select
+import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner'; // Assuming this path
 import { buildApiUrl } from '../../lib/api';
+import { getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
-import { TeamCard } from '../../components/TeamCard/TeamCard';
-import { SegmentTabs } from '../../components/SegmentTabs/SegmentTabs';
-import { normalizeTeamName, getTeamMeta } from '../../theme/teamTokens';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import PageHeader from '../../components/layout/PageHeader';
-import LayoutContainer from '../../components/layout/LayoutContainer';
 
 // Interfaces
 interface ApiConstructor {
@@ -29,94 +33,61 @@ interface ApiConstructor {
   is_active: boolean;
 }
 
-type FilterOption = "active" | "historical" | "all";
+interface Option {
+  value: string;
+  label: string;
+}
 
-// Country flag emoji mapping - handles both ISO codes and full names
+type FilterOption = 'active' | 'historical' | 'all';
+
+// Country flag emoji mapping
 const getFlagEmoji = (nationality: string): string => {
   const flags: Record<string, string> = {
-    // ISO Country Codes (what the API returns)
-    'FR': '🇫🇷',  // France
-    'GB': '🇬🇧',  // United Kingdom
-    'IT': '🇮🇹',  // Italy
-    'US': '🇺🇸',  // United States
-    'DE': '🇩🇪',  // Germany
-    'AT': '🇦🇹',  // Austria
-    'CH': '🇨🇭',  // Switzerland
-    'ES': '🇪🇸',  // Spain
-    'CA': '🇨🇦',  // Canada
-    'AU': '🇦🇺',  // Australia
-    'JP': '🇯🇵',  // Japan
-    'BR': '🇧🇷',  // Brazil
-    'MX': '🇲🇽',  // Mexico
-    'FI': '🇫🇮',  // Finland
-    'DK': '🇩🇰',  // Denmark
-    'MC': '🇲🇨',  // Monaco
-    'TH': '🇹🇭',  // Thailand
-    'NL': '🇳🇱',  // Netherlands
-    
-    // Full country names (fallback)
-    'Austrian': '🇦🇹',
-    'Italy': '🇮🇹',
-    'Italian': '🇮🇹',
-    'Germany': '🇩🇪',
-    'German': '🇩🇪',
-    'United Kingdom': '🇬🇧',
-    'British': '🇬🇧',
-    'UK': '🇬🇧',
-    'France': '🇫🇷',
-    'French': '🇫🇷',
-    'Switzerland': '🇨🇭',
-    'Swiss': '🇨🇭',
-    'United States': '🇺🇸',
-    'American': '🇺🇸',
-    'USA': '🇺🇸',
-    'Netherlands': '🇳🇱',
-    'Dutch': '🇳🇱',
-    'Spain': '🇪🇸',
-    'Spanish': '🇪🇸',
-    'Canada': '🇨🇦',
-    'Canadian': '🇨🇦',
-    'Australia': '🇦🇺',
-    'Australian': '🇦🇺',
-    'Japan': '🇯🇵',
-    'Japanese': '🇯🇵',
-    'Brazil': '🇧🇷',
-    'Brazilian': '🇧🇷',
-    'Mexico': '🇲🇽',
-    'Mexican': '🇲🇽',
-    'Finland': '🇫🇮',
-    'Finnish': '🇫🇮',
-    'Denmark': '🇩🇰',
-    'Danish': '🇩🇰',
-    'Monaco': '🇲🇨',
-    'Monegasque': '🇲🇨',
-    'Thailand': '🇹🇭',
-    'Thai': '🇹🇭',
+    FR: '🇫🇷',
+    GB: '🇬🇧',
+    IT: '🇮🇹',
+    US: '🇺🇸',
+    DE: '🇩🇪',
+    AT: '🇦🇹',
+    CH: '🇨🇭',
+    ES: '🇪🇸',
+    CA: '🇨🇦',
+    AU: '🇦🇺',
+    JP: '🇯🇵',
+    BR: '🇧🇷',
+    MX: '🇲🇽',
+    FI: '🇫🇮',
+    DK: '🇩🇰',
+    MC: '🇲🇨',
+    TH: '🇹🇭',
+    NL: '🇳🇱',
+    Austrian: '🇦🇹',
+    Italian: '🇮🇹',
+    German: '🇩🇪',
+    British: '🇬🇧',
+    French: '🇫🇷',
+    Swiss: '🇨🇭',
+    American: '🇺🇸',
+    Dutch: '🇳🇱',
+    Spanish: '🇪🇸',
+    Canadian: '🇨🇦',
+    Australian: '🇦🇺',
+    Japanese: '🇯🇵',
+    Brazilian: '🇧🇷',
+    Mexican: '🇲🇽',
+    Finnish: '🇫🇮',
+    Danish: '🇩🇰',
+    Monegasque: '🇲🇨',
+    Thai: '🇹🇭',
   };
-  
-  // Try exact match first (handles both ISO codes and full names)
-  if (flags[nationality]) {
-    return flags[nationality];
-  }
-  
-  // Try case-insensitive match
-  const lowerNationality = nationality.toLowerCase();
-  for (const [key, flag] of Object.entries(flags)) {
-    if (key.toLowerCase() === lowerNationality) {
-      return flag;
-    }
-  }
-  
-  // Try partial match
-  for (const [key, flag] of Object.entries(flags)) {
-    if (key.toLowerCase().includes(lowerNationality) || lowerNationality.includes(key.toLowerCase())) {
-      return flag;
-    }
-  }
-  
-  // Fallback to F1 flag
-  return '🏁';
+  return flags[nationality] || '🏁';
 };
+
+const statusOptions: Option[] = [
+  { value: 'active', label: 'Active Teams' },
+  { value: 'historical', label: 'Historical Teams' },
+  { value: 'all', label: 'All Teams' },
+];
 
 const Constructors = () => {
   const toast = useToast();
@@ -126,10 +97,14 @@ const Constructors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<FilterOption>('active');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeason] = useState<number>(new Date().getFullYear());
-  
-  // Get real constructor standings data (skip when logged out)
-  const { standings: constructorStandings, loading: standingsLoading, error: standingsError } = useConstructorStandings(selectedSeason, { enabled: isAuthenticated });
+
+  const {
+    standings: constructorStandings,
+    loading: standingsLoading,
+    error: standingsError,
+  } = useConstructorStandings(selectedSeason, { enabled: isAuthenticated });
 
   const publicFetch = useCallback(async (url: string) => {
     const response = await fetch(url);
@@ -169,14 +144,10 @@ const Constructors = () => {
     fetchConstructors();
   }, [publicFetch, toast]);
 
-  // Apply filters based on authentication status
   const filteredConstructors = useMemo(() => {
     if (!isAuthenticated) {
-      // Non-logged-in users: show only active constructors
-      return constructors.filter(c => c.is_active);
+      return constructors.filter((c) => c.is_active);
     }
-    
-    // Logged-in users: apply status filters
     return constructors.filter((c) => {
       const matchesStatus =
         statusFilter === 'all'
@@ -185,28 +156,22 @@ const Constructors = () => {
           ? c.is_active
           : !c.is_active;
 
-      return matchesStatus;
+      const matchesSearch = c.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      return matchesStatus && matchesSearch;
     });
-  }, [constructors, statusFilter, isAuthenticated]);
+  }, [constructors, statusFilter, isAuthenticated, searchTerm]);
 
-  // Calculate max points for progress bars from real data
-  const maxPoints = useMemo(() => {
-    if (constructorStandings.length > 0) {
-      return Math.max(...constructorStandings.map(s => s.seasonPoints), 1);
-    }
-    return 100; // fallback
-  }, [constructorStandings]);
-
-  // Create a map of constructor standings for easy lookup
   const standingsMap = useMemo(() => {
     const map = new Map();
-    constructorStandings.forEach(standing => {
+    constructorStandings.forEach((standing) => {
       map.set(standing.constructorName, standing);
     });
     return map;
   }, [constructorStandings]);
 
-  // Sort constructors by points (descending) using standings data
   const sortedConstructors = useMemo(() => {
     const arr = [...filteredConstructors];
     arr.sort((a, b) => {
@@ -219,65 +184,114 @@ const Constructors = () => {
 
   return (
     <Box>
-      <PageHeader 
-        title="Constructors" 
+      <PageHeader
+        title="Constructors"
         subtitle="Explore F1 teams and constructors"
-        rightContent={
-          isAuthenticated ? (
-            <VStack align="end" spacing={2}>
-              <SegmentTabs value={statusFilter} onChange={setStatusFilter} />
-              <Text fontSize="sm" color="text-muted">
-                {selectedSeason} Season · {filteredConstructors.filter(c => c.is_active).length} Teams · 24 Races
-              </Text>
-            </VStack>
-          ) : (
-            <Text fontSize="sm" color="text-muted">
-              {selectedSeason} Season · {filteredConstructors.filter(c => c.is_active).length} Teams · 24 Races
-            </Text>
-          )
-        }
       />
-      
-      <LayoutContainer maxW="1600px">
 
-          {/* Loading & Error States */}
-          {(loading || standingsLoading) && <PageLoadingOverlay text="Loading Constructors..." />}
-          
-          {(error || standingsError) && (
-            <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">
+      {isAuthenticated && (
+        <Box bg="bg-surface" py={{ base: 4, md: 6 }}>
+          <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
+            <Flex
+              gap={4}
+              direction={{ base: 'column', md: 'row' }}
+              w="full"
+              align={{ base: 'stretch', md: 'center' }}
+            >
+              {(statusFilter === 'all' || statusFilter === 'historical') && (
+                <Box maxW={{ base: 'full', md: '260px' }} w="100%">
+                  <InputGroup>
+                    <Input
+                      placeholder="Search by name"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      bg="bg-primary"
+                      borderColor="border-primary"
+                    />
+                    {searchTerm && (
+                      <InputRightElement>
+                        <IconButton
+                          aria-label="Clear search"
+                          icon={<CloseIcon />}
+                          size="sm"
+                          onClick={() => setSearchTerm('')}
+                          variant="ghost"
+                        />
+                      </InputRightElement>
+                    )}
+                  </InputGroup>
+                </Box>
+              )}
+
+              <Box
+                maxW={{ base: 'full', md: '220px' }}
+                w={{ base: 'full', md: '220px' }}
+              >
+                <Select
+                  options={statusOptions}
+                  value={
+                    statusOptions.find((o) => o.value === statusFilter) || null
+                  }
+                  onChange={(option) => {
+                    const newStatus = (option as Option).value as FilterOption;
+                    setStatusFilter(newStatus);
+                    if (newStatus === 'active') {
+                      setSearchTerm('');
+                    }
+                  }}
+                  placeholder="Filter by Status"
+                  isClearable={false}
+                  // This is a common pattern for styling 'react-select' with Chakra UI tokens
+                  styles={{
+                    control: (provided) => ({
+                      ...provided,
+                      backgroundColor: '#0f0f0f', // bg-primary
+                      borderColor: '#2d2d2d', // border-primary
+                      color: 'white',
+                    }),
+                    menu: (provided) => ({
+                      ...provided,
+                      backgroundColor: '#0f0f0f',
+                      color: 'white',
+                    }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      backgroundColor: state.isFocused ? '#2d2d2d' : '#0f0f0f',
+                      color: 'white',
+                    }),
+                    singleValue: (provided) => ({
+                      ...provided,
+                      color: 'white',
+                    }),
+                  }}
+                />
+              </Box>
+            </Flex>
+          </Container>
+        </Box>
+      )}
+
+      <Box bg="bg-primary" color="text-primary" py={{ base: 'md', md: 'lg' }}>
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
+          {loading || (standingsLoading && isAuthenticated) ? (
+            <F1LoadingSpinner text="Loading Constructors..." />
+          ) : error || standingsError ? (
+            <Text
+              color="brand.redLight"
+              textAlign="center"
+              fontSize="1.2rem"
+              p="xl"
+            >
               {error || standingsError}
             </Text>
-          )}
-
-          {/* Team grid */}
-          {!loading && !error && !standingsLoading && !standingsError && (
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+          ) : (
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
               {sortedConstructors.map((constructor) => {
-                const teamKey = normalizeTeamName(constructor.name);
-                const carImage = teamCarImages[constructor.name] || '/assets/default-car.png';
-                
-                // Get real standings data for this constructor
+                const teamColor = getTeamColor(constructor.name);
+                const gradientBg = `linear-gradient(135deg, #${teamColor} 0%, rgba(0,0,0,0.75) 100%)`;
+                const carImage = teamCarImages[constructor.name];
                 const standing = standingsMap.get(constructor.name);
-                
-                // If we have a valid teamKey, use TeamCard
-                if (teamKey) {
-                  return (
-                    <TeamCard
-                      key={constructor.id}
-                      teamKey={teamKey}
-                      countryName={constructor.nationality}
-                      points={standing?.seasonPoints || 0}
-                      maxPoints={maxPoints}
-                      wins={standing?.seasonWins || 0}
-                      podiums={standing?.seasonPodiums || 0}
-                      carImage={carImage}
-                      onClick={() => navigate(`/constructors/${constructor.id}`)}
-                    />
-                  );
-                }
-                
-                // Fallback for historical/unknown teams without teamKey
-                const fallbackMeta = getTeamMeta(constructor.name);
+
                 return (
                   <Box
                     key={constructor.id}
@@ -292,37 +306,97 @@ const Constructors = () => {
                     }}
                     cursor="pointer"
                   >
-                    <Box
+                    <Flex
                       position="relative"
+                      bgGradient={gradientBg}
+                      borderRadius="lg"
+                      p={6}
                       overflow="hidden"
-                      rounded="2xl"
-                      px={{ base: 4, md: 6 }}
-                      py={{ base: 5, md: 6 }}
-                      bgGradient={fallbackMeta.gradient}
-                      border="1px solid"
-                      borderColor="whiteAlpha.150"
-                      boxShadow="0 8px 30px rgba(0,0,0,0.45)"
-                      _hover={{ 
-                        borderColor: "whiteAlpha.300",
-                        transform: "translateY(-4px)",
+                      transition="all 0.2s ease-in-out"
+                      _hover={{
+                        transform: 'translateY(-4px)',
+                        boxShadow: 'lg',
                       }}
-                      transition="all 0.2s ease"
+                      align="center"
+                      justify="space-between"
+                      _before={{
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        pointerEvents: 'none',
+                        background:
+                          'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
+                      }}
                     >
-                      <VStack align="start" spacing={2}>
-                        <Heading size="md" color={fallbackMeta.textOn}>
+                      <Box textAlign="left" zIndex={1}>
+                        <Text
+                          fontWeight="bold"
+                          fontSize="lg"
+                          color="white"
+                          fontFamily="heading"
+                        >
                           {constructor.name}
-                        </Heading>
-                        <Text color={fallbackMeta.textOn} opacity={0.8}>
-                          {getFlagEmoji(constructor.nationality)} {constructor.nationality}
                         </Text>
-                      </VStack>
-                    </Box>
+                        <Text color="white" opacity={0.8}>
+                          {getFlagEmoji(constructor.nationality)}{' '}
+                          {constructor.nationality}
+                        </Text>
+                        <Flex
+                          mt={3}
+                          gap={4}
+                          color="whiteAlpha.900"
+                          fontFamily="heading"
+                          fontSize="sm"
+                        >
+                          <Box>
+                            <Text opacity={0.8}>Position</Text>
+                            <Text fontWeight="bold">
+                              {standing?.position ?? '—'}
+                            </Text>
+                          </Box>
+                          <Box>
+                            <Text opacity={0.8}>Points</Text>
+                            <Text fontWeight="bold">
+                              {standing?.seasonPoints ?? '—'}
+                            </Text>
+                          </Box>
+                        </Flex>
+                      </Box>
+
+                      {carImage && (
+                        <Image
+                          src={carImage}
+                          alt={`${constructor.name} car`}
+                          position="relative"
+                          maxH={{ base: '90px', md: '140px' }}
+                          maxW={{ base: '200px', md: '320px' }}
+                          w="auto"
+                          h="auto"
+                          objectFit="contain"
+                          ml={{ base: 2, md: 4 }}
+                          flexShrink={0}
+                          zIndex={1}
+                        />
+                      )}
+
+                      <Box
+                        position="absolute"
+                        right={-20}
+                        top={-20}
+                        w={'220px'}
+                        h={'220px'}
+                        borderRadius="full"
+                        bg="whiteAlpha.100"
+                        filter="blur(30px)"
+                      />
+                    </Flex>
                   </Box>
                 );
               })}
             </SimpleGrid>
           )}
-      </LayoutContainer>
+        </Container>
+      </Box>
     </Box>
   );
 };

@@ -1,7 +1,9 @@
 // frontend/src/pages/CompareDriversPage/components/ComparisonTable.tsx
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, TableContainer, HStack, Text, VStack, Grid, Button } from '@chakra-ui/react';
+import { Box, Heading, Thead, Tbody, Tr, Th, Td, HStack, Text, VStack, Grid, Button, Image } from '@chakra-ui/react';
+import { driverHeadshots } from '../../../lib/driverHeadshots';
 import ResponsiveTable from '../../../components/layout/ResponsiveTable';
 import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey, CompositeScore } from '../../../hooks/useDriverComparison';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 interface Props {
   driver1: DriverDetails;
@@ -52,6 +54,7 @@ export const ComparisonTable: React.FC<Props> = ({
   onMetricToggle,
   availableYears = [2024, 2023, 2022, 2021, 2020]
 }) => {
+  const { accentColorWithHash } = useThemeColor();
   // Enhanced comparison mode if we have new stats
   if (stats1 && stats2 && enabledMetrics) {
     const useYearStats = stats1.yearStats !== null && stats2.yearStats !== null;
@@ -118,11 +121,11 @@ export const ComparisonTable: React.FC<Props> = ({
                   py="sm"
                   borderRadius={0}
                   borderBottom="3px solid"
-                  borderColor={selection1?.year === 'career' ? 'brand.red' : 'transparent'}
+                  borderColor={selection1?.year === 'career' ? 'border-accent' : 'transparent'}
                   _hover={{ color: 'text-primary' }}
                   _active={{ 
-                    color: 'brand.red', 
-                    borderColor: 'brand.red' 
+                    color: 'border-accent', 
+                    borderColor: 'border-accent' 
                   }}
                 >
                   Career
@@ -141,11 +144,11 @@ export const ComparisonTable: React.FC<Props> = ({
                     py="sm"
                     borderRadius={0}
                     borderBottom="3px solid"
-                    borderColor={selection1?.year === year ? 'brand.red' : 'transparent'}
+                    borderColor={selection1?.year === year ? 'border-accent' : 'transparent'}
                     _hover={{ color: 'text-primary' }}
                     _active={{ 
-                      color: 'brand.red', 
-                      borderColor: 'brand.red' 
+                      color: 'border-accent', 
+                      borderColor: 'border-accent' 
                     }}
                   >
                     {year}
@@ -170,11 +173,11 @@ export const ComparisonTable: React.FC<Props> = ({
                   py="sm"
                   borderRadius={0}
                   borderBottom="3px solid"
-                  borderColor={selection2?.year === 'career' ? 'brand.red' : 'transparent'}
+                  borderColor={selection2?.year === 'career' ? 'border-accent' : 'transparent'}
                   _hover={{ color: 'text-primary' }}
                   _active={{ 
-                    color: 'brand.red', 
-                    borderColor: 'brand.red' 
+                    color: 'border-accent', 
+                    borderColor: 'border-accent' 
                   }}
                 >
                   Career
@@ -193,11 +196,11 @@ export const ComparisonTable: React.FC<Props> = ({
                     py="sm"
                     borderRadius={0}
                     borderBottom="3px solid"
-                    borderColor={selection2?.year === year ? 'brand.red' : 'transparent'}
+                    borderColor={selection2?.year === year ? 'border-accent' : 'transparent'}
                     _hover={{ color: 'text-primary' }}
                     _active={{ 
-                      color: 'brand.red', 
-                      borderColor: 'brand.red' 
+                      color: 'border-accent', 
+                      borderColor: 'border-accent' 
                     }}
                   >
                     {year}
@@ -228,18 +231,18 @@ export const ComparisonTable: React.FC<Props> = ({
                     py={1}
                     borderRadius="md"
                     borderWidth={2}
-                    borderColor={isSelected ? 'brand.red' : 'border-subtle'}
-                    boxShadow={isSelected ? '0 0 8px 2px #F56565' : undefined}
+                    borderColor={isSelected ? 'border-accent' : 'border-subtle'}
+                    boxShadow={isSelected ? `0 0 8px 2px ${accentColorWithHash}` : undefined}
                     bg={isSelected ? 'bg-elevated' : 'bg-surface'}
                     fontWeight="bold"
-                    color={isSelected ? 'brand.red' : 'text-primary'}
+                    color={isSelected ? 'border-accent' : 'text-primary'}
                     cursor="pointer"
                     m={1}
                     transition="all 0.2s"
                     onClick={() => onMetricToggle(key as MetricKey)}
                     _hover={{
-                      borderColor: 'brand.red',
-                      color: 'brand.red',
+                      borderColor: 'border-accent',
+                      color: 'border-accent',
                       transform: 'translateY(-1px)'
                     }}
                   >
@@ -260,7 +263,7 @@ export const ComparisonTable: React.FC<Props> = ({
                 <Text fontSize="sm" color="text-secondary">
                   {selection1 ? `Driver 1 ${selection1.year === 'career' ? '(Career)' : `(${selection1.year})`}` : 'Driver 1'}
                 </Text>
-                <Text fontSize="3xl" fontWeight="bold" color="brand.red">
+                <Text fontSize="3xl" fontWeight="bold" color="border-accent">
                   {score.d1}/100
                 </Text>
               </Box>
@@ -269,7 +272,7 @@ export const ComparisonTable: React.FC<Props> = ({
                 <Text fontSize="sm" color="text-secondary">
                   {selection2 ? `Driver 2 ${selection2.year === 'career' ? '(Career)' : `(${selection2.year})`}` : 'Driver 2'}
                 </Text>
-                <Text fontSize="3xl" fontWeight="bold" color="brand.red">
+                <Text fontSize="3xl" fontWeight="bold" color="border-accent">
                   {score.d2}/100
                 </Text>
               </Box>
@@ -282,10 +285,46 @@ export const ComparisonTable: React.FC<Props> = ({
           <Heading size="xl" textAlign="center" mb="lg" fontFamily="heading">Head-to-Head Comparison</Heading>
           <ResponsiveTable>
               <Thead>
+                {/* Aligned driver headshots and names as header row */}
+                <Tr>
+                  <Th></Th>
+                  <Th textAlign="center">
+                    <VStack spacing={2}>
+                      <Image
+                        src={driverHeadshots[driver1.fullName] || (driver1 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                        alt={driver1.fullName}
+                        boxSize={{ base: '64px', md: '96px' }}
+                        objectFit="cover"
+                        borderRadius="full"
+                        borderWidth="3px"
+                        borderColor="bg-surface"
+                        boxShadow="lg"
+                        mx="auto"
+                      />
+                      <Text fontWeight="bold">{title1}</Text>
+                    </VStack>
+                  </Th>
+                  <Th textAlign="center">
+                    <VStack spacing={2}>
+                      <Image
+                        src={driverHeadshots[driver2.fullName] || (driver2 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                        alt={driver2.fullName}
+                        boxSize={{ base: '64px', md: '96px' }}
+                        objectFit="cover"
+                        borderRadius="full"
+                        borderWidth="3px"
+                        borderColor="bg-surface"
+                        boxShadow="lg"
+                        mx="auto"
+                      />
+                      <Text fontWeight="bold">{title2}</Text>
+                    </VStack>
+                  </Th>
+                </Tr>
                 <Tr>
                   <Th>Statistic</Th>
-                  <Th>{title1}</Th>
-                  <Th>{title2}</Th>
+                  <Th></Th>
+                  <Th></Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -312,13 +351,15 @@ export const ComparisonTable: React.FC<Props> = ({
                       <Td fontWeight="bold">{label}</Td>
                       <Td 
                         fontWeight={better1 ? 'bold' : 'normal'}
-                        color={better1 ? 'brand.red' : 'text-primary'}
+                        color={better1 ? 'border-accent' : 'text-primary'}
+                        textAlign="center"
                       >
                         {value1}
                       </Td>
                       <Td 
                         fontWeight={better2 ? 'bold' : 'normal'}
-                        color={better2 ? 'brand.red' : 'text-primary'}
+                        color={better2 ? 'border-accent' : 'text-primary'}
+                        textAlign="center"
                       >
                         {value2}
                       </Td>
@@ -338,10 +379,46 @@ export const ComparisonTable: React.FC<Props> = ({
       <Heading size="xl" textAlign="center" mb="lg" fontFamily="heading">Head-to-Head Comparison</Heading>
       <ResponsiveTable>
           <Thead>
+            {/* Aligned driver headshots and names as header row (legacy) */}
+            <Tr>
+              <Th></Th>
+              <Th textAlign="center">
+                <VStack spacing={2}>
+                  <Image
+                    src={driverHeadshots[driver1.fullName] || (driver1 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                    alt={driver1.fullName}
+                    boxSize={{ base: '64px', md: '96px' }}
+                    objectFit="cover"
+                    borderRadius="full"
+                    borderWidth="3px"
+                    borderColor="bg-surface"
+                    boxShadow="lg"
+                    mx="auto"
+                  />
+                  <Text fontWeight="bold">{driver1.fullName}</Text>
+                </VStack>
+              </Th>
+              <Th textAlign="center">
+                <VStack spacing={2}>
+                  <Image
+                    src={driverHeadshots[driver2.fullName] || (driver2 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                    alt={driver2.fullName}
+                    boxSize={{ base: '64px', md: '96px' }}
+                    objectFit="cover"
+                    borderRadius="full"
+                    borderWidth="3px"
+                    borderColor="bg-surface"
+                    boxShadow="lg"
+                    mx="auto"
+                  />
+                  <Text fontWeight="bold">{driver2.fullName}</Text>
+                </VStack>
+              </Th>
+            </Tr>
             <Tr>
               <Th>Statistic</Th>
-              <Th>{driver1.fullName}</Th>
-              <Th>{driver2.fullName}</Th>
+              <Th textAlign="center"></Th>
+              <Th textAlign="center"></Th>
             </Tr>
           </Thead>
           <Tbody>
