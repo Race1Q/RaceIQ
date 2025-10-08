@@ -1,5 +1,5 @@
 import React from 'react';
-import { Avatar, Flex, Heading, HStack, Icon, Text, VStack } from '@chakra-ui/react';
+import { Avatar, Flex, Heading, HStack, Icon, Text, VStack, useColorModeValue } from '@chakra-ui/react';
 import type { StandingsItem } from '../../../types';
 import WidgetCard from './WidgetCard';
 import { teamColors } from '../../../lib/teamColors';
@@ -8,6 +8,8 @@ import { driverHeadshots } from '../../../lib/driverHeadshots';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; year?: number }) => {
+  // Fix: Use dark text for 1st position in light mode
+  const firstPlaceTextColor = useColorModeValue('#1a1a1a', 'white');
   const { accentColorWithHash } = useThemeColor();
   
   return (
@@ -38,12 +40,12 @@ const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; ye
                 transition="all 0.2s ease-in-out"
               >
                 <Flex align="center" flex={1} minW="0">
-                  <Text w="2em" color={isLeader ? 'white' : '{accentColorWithHash}'} fontWeight="bold" flexShrink={0}>{item.position}.</Text>
+                  <Text w="2em" color={isLeader ? firstPlaceTextColor : 'brand.red'} fontWeight="bold" flexShrink={0}>{item.position}.</Text>
                   <Avatar size="sm" src={headshot} mr={2} flexShrink={0} />
                   <VStack align="start" spacing={0} flex="1" minW="0">
                     <Text 
                       fontWeight="bold" 
-                      color={isLeader ? 'white' : 'text-primary'}
+                      color={isLeader ? firstPlaceTextColor : 'text-primary'}
                       fontSize={{ base: 'xs', md: 'sm' }}
                       noOfLines={1}
                     >
@@ -61,7 +63,7 @@ const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; ye
                 {isLeader && <Icon as={Trophy} color="white" mr={3} />}
                 <Text 
                   fontWeight="bold" 
-                  color={isLeader ? 'white' : '{accentColorWithHash}'}
+                  color={isLeader ? firstPlaceTextColor : 'brand.red'}
                   fontSize={{ base: 'xs', md: 'sm' }}
                   flexShrink={0}
                 >
