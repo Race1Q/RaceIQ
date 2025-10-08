@@ -6,6 +6,7 @@ import {
   Text,
   SimpleGrid,
   VStack,
+  Heading,
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
@@ -127,8 +128,8 @@ const Constructors = () => {
   const [statusFilter, setStatusFilter] = useState<FilterOption>('active');
   const [selectedSeason] = useState<number>(new Date().getFullYear());
   
-  // Get real constructor standings data
-  const { standings: constructorStandings, loading: standingsLoading, error: standingsError } = useConstructorStandings(selectedSeason);
+  // Get real constructor standings data (skip when logged out)
+  const { standings: constructorStandings, loading: standingsLoading, error: standingsError } = useConstructorStandings(selectedSeason, { enabled: isAuthenticated });
 
   const publicFetch = useCallback(async (url: string) => {
     const response = await fetch(url);
@@ -205,6 +206,17 @@ const Constructors = () => {
     return map;
   }, [constructorStandings]);
 
+  // Sort constructors by points (descending) using standings data
+  const sortedConstructors = useMemo(() => {
+    const arr = [...filteredConstructors];
+    arr.sort((a, b) => {
+      const pa = standingsMap.get(a.name)?.seasonPoints ?? 0;
+      const pb = standingsMap.get(b.name)?.seasonPoints ?? 0;
+      return pb - pa;
+    });
+    return arr;
+  }, [filteredConstructors, standingsMap]);
+
   return (
     <Box>
       <PageHeader 
@@ -215,12 +227,12 @@ const Constructors = () => {
             <VStack align="end" spacing={2}>
               <SegmentTabs value={statusFilter} onChange={setStatusFilter} />
               <Text fontSize="sm" color="text-muted">
-                2025 Season · {filteredConstructors.filter(c => c.is_active).length} Teams · 24 Races
+                {selectedSeason} Season · {filteredConstructors.filter(c => c.is_active).length} Teams · 24 Races
               </Text>
             </VStack>
           ) : (
             <Text fontSize="sm" color="text-muted">
-              2025 Season · {filteredConstructors.filter(c => c.is_active).length} Teams · 24 Races
+              {selectedSeason} Season · {filteredConstructors.filter(c => c.is_active).length} Teams · 24 Races
             </Text>
           )
         }
@@ -240,7 +252,7 @@ const Constructors = () => {
           {/* Team grid */}
           {!loading && !error && !standingsLoading && !standingsError && (
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-              {filteredConstructors.map((constructor) => {
+              {sortedConstructors.map((constructor) => {
                 const teamKey = normalizeTeamName(constructor.name);
                 const carImage = teamCarImages[constructor.name] || '/assets/default-car.png';
                 
