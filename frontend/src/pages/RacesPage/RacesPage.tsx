@@ -1,19 +1,55 @@
 // src/pages/RacesPage/RacesPage.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Container, Box, Flex, Text, Button, SimpleGrid, Heading, Icon, VStack, HStack, Select,
+  Container, Box, Flex, Text, Button, SimpleGrid, Heading, Icon, VStack,
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import { Select } from 'chakra-react-select';
 import PageHeader from '../../components/layout/PageHeader';
+import LayoutContainer from '../../components/layout/LayoutContainer';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
 import RacesSkeleton from './RacesSkeleton';
 import type { Race } from '../../types/races';
 import { apiFetch } from '../../lib/api';
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 // Local wrapper to keep minimalist callsites
 const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? path : `/${path}`}`);
+
+// Custom styles to match SearchableSelect
+const getCustomSelectStyles = (accentColor: string) => ({
+  control: (provided: any) => ({
+    ...provided,
+    bg: 'bg-surface-raised',
+    borderColor: 'border-primary',
+    '&:hover': {
+      borderColor: 'border-primary',
+    },
+  }),
+  menu: (provided: any) => ({
+    ...provided,
+    bg: 'bg-surface-raised',
+    zIndex: 10,
+  }),
+  option: (provided: any, state: { isSelected: boolean; isFocused: boolean }) => ({
+    ...provided,
+    bg: state.isFocused ? 'bg-surface' : 'transparent',
+    color: state.isSelected ? accentColor : 'text-primary',
+    '&:active': {
+      bg: 'bg-surface',
+    },
+  }),
+  placeholder: (provided: any) => ({
+    ...provided,
+    color: 'text-muted',
+  }),
+  singleValue: (provided: any) => ({
+    ...provided,
+    color: 'text-primary',
+  }),
+});
 
 function combine(date?: string | null, time?: string | null) {
   if (!date && !time) return '';
@@ -118,6 +154,7 @@ const ErrorView = ({ message }: { message: string }) => (
 
 const RacesPage: React.FC = () => {
   const { isAuthenticated } = useAuth0();
+  const { accentColorWithHash } = useThemeColor();
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const [season, setSeason] = useState<number>(currentYear);
   const [years, setYears] = useState<number[]>([]);
@@ -165,6 +202,12 @@ const RacesPage: React.FC = () => {
 
   if (!isAuthenticated) return <NotAuthenticatedView />;
 
+  // Create season options for the select
+  const seasonOptions = years.map(year => ({
+    value: year.toString(),
+    label: year.toString()
+  }));
+
   const renderContent = () => {
     if (loading) return <RacesSkeleton />;
     if (error) return <ErrorView message={error} />;
@@ -180,7 +223,7 @@ const RacesPage: React.FC = () => {
         {upcomingRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Upcoming races</Heading>
-            <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
+            <SimpleGrid columns={2} spacing={{ base: 3, md: 6 }}>
               {upcomingRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />
@@ -193,7 +236,7 @@ const RacesPage: React.FC = () => {
         {pastRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Past Races</Heading>
-            <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
+            <SimpleGrid columns={2} spacing={{ base: 3, md: 6 }}>
               {pastRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />
@@ -211,22 +254,28 @@ const RacesPage: React.FC = () => {
       <PageHeader 
         title="Races" 
         subtitle={`Season ${season} - Track every race of the F1 season`}
-        rightContent={
-          <HStack>
-            <Text color="text-secondary" fontSize="sm">Season:</Text>
-            <Select 
-              size="sm" 
-              w="fit-content" 
-              value={season} 
-              onChange={(e) => setSeason(Number(e.target.value))}
-              bg="bg-surface"
-              borderColor="border-subtle"
-            >
-              {years.map((y) => <option key={y} value={y}>{y}</option>)}
-            </Select>
-          </HStack>
-        }
       />
+
+      <LayoutContainer>
+        <Flex alignItems="flex-end" justifyContent="flex-end" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
+          <Box maxW={{ base: 'full', md: '220px' }} w="full">
+            <Select
+              options={seasonOptions}
+              value={seasonOptions.find((o) => o.value === season.toString()) || null}
+              onChange={(option) => {
+                if (option) {
+                  setSeason(Number(option.value));
+                }
+              }}
+              placeholder="Select Season"
+              isClearable={false}
+              chakraStyles={getCustomSelectStyles(accentColorWithHash)}
+              focusBorderColor={accentColorWithHash}
+            />
+          </Box>
+        </Flex>
+      </LayoutContainer>
+
       <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
         {renderContent()}
       </Container>

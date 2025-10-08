@@ -74,9 +74,9 @@ vi.mock('../../lib/teamAssets', () => ({
   },
 }));
 
-// Mock F1LoadingSpinner
-vi.mock('../../components/F1LoadingSpinner/F1LoadingSpinner', () => ({
-  default: ({ text }: any) => <div data-testid="loading-spinner">{text}</div>,
+// Mock ConstructorsDetailsSkeleton
+vi.mock('./ConstructorsDetailsSkeleton', () => ({
+  default: () => <div>Loading constructor details...</div>,
 }));
 
 // Mock recharts components
@@ -131,8 +131,7 @@ describe('ConstructorsDetails', () => {
   it('renders loading state initially', () => {
     renderPage(<ConstructorsDetails />);
 
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-    expect(screen.getByText('Loading Constructor Details...')).toBeInTheDocument();
+    expect(screen.getByText('Loading constructor details...')).toBeInTheDocument();
   });
 
   it('renders error state when API fails', async () => {
@@ -140,9 +139,8 @@ describe('ConstructorsDetails', () => {
 
     renderPage(<ConstructorsDetails />);
 
-    // Should show loading spinner initially
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-    expect(screen.getByText('Loading Constructor Details...')).toBeInTheDocument();
+    // Should show loading skeleton initially
+    expect(screen.getByText('Loading constructor details...')).toBeInTheDocument();
   });
 
   it('renders error state when constructor not found', async () => {
@@ -156,9 +154,8 @@ describe('ConstructorsDetails', () => {
 
     renderPage(<ConstructorsDetails />);
 
-    // Should show loading spinner initially
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-    expect(screen.getByText('Loading Constructor Details...')).toBeInTheDocument();
+    // Should show loading skeleton initially
+    expect(screen.getByText('Loading constructor details...')).toBeInTheDocument();
   });
 
   it('renders constructor details when data is loaded', async () => {
@@ -214,9 +211,8 @@ describe('ConstructorsDetails', () => {
 
     renderPage(<ConstructorsDetails />);
 
-    // Should show loading spinner initially
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-    expect(screen.getByText('Loading Constructor Details...')).toBeInTheDocument();
+    // Should show loading skeleton initially
+    expect(screen.getByText('Loading constructor details...')).toBeInTheDocument();
   });
 
   it('renders all main sections for constructor details page', async () => {
@@ -272,9 +268,8 @@ describe('ConstructorsDetails', () => {
 
     renderPage(<ConstructorsDetails />);
 
-    // Should show loading spinner initially
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-    expect(screen.getByText('Loading Constructor Details...')).toBeInTheDocument();
+    // Should show loading skeleton initially
+    expect(screen.getByText('Loading constructor details...')).toBeInTheDocument();
   });
 
   it('handles missing constructor ID parameter', async () => {
@@ -283,6 +278,6 @@ describe('ConstructorsDetails', () => {
     renderPage(<ConstructorsDetails />);
 
     // Should show loading spinner initially
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    expect(screen.getByText('Loading constructor details...')).toBeInTheDocument();
   });
 });

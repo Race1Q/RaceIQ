@@ -124,12 +124,7 @@ export default function RacesSkeleton() {
             <SkeletonLine w="200px" h="24px" mb={4} />
             <Box
               display="grid"
-              gridTemplateColumns={{ 
-                base: "repeat(2, 1fr)", 
-                sm: "repeat(2, 1fr)", 
-                md: "repeat(3, 1fr)", 
-                lg: "repeat(4, 1fr)" 
-              }}
+              gridTemplateColumns="repeat(2, 1fr)"
               gap={{ base: 3, md: 6 }}
             >
               {Array.from({ length: 8 }).map((_, i) => (
@@ -143,12 +138,7 @@ export default function RacesSkeleton() {
             <SkeletonLine w="150px" h="24px" mb={4} />
             <Box
               display="grid"
-              gridTemplateColumns={{ 
-                base: "repeat(2, 1fr)", 
-                sm: "repeat(2, 1fr)", 
-                md: "repeat(3, 1fr)", 
-                lg: "repeat(4, 1fr)" 
-              }}
+              gridTemplateColumns="repeat(2, 1fr)"
               gap={{ base: 3, md: 6 }}
             >
               {Array.from({ length: 4 }).map((_, i) => (

@@ -4,22 +4,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, SimpleGrid, Table,
-  Thead, Tbody, Tr, Th, Td,
+  Thead, Tbody, Tr, Th, Td, Button, Heading,
 } from '@chakra-ui/react';
 import { useThemeColor } from '../../context/ThemeColorContext';
-import LayoutContainer from '../../components/layout/LayoutContainer';
 import ResponsiveTable from '../../components/layout/ResponsiveTable';
 import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MapPin, RotateCcw, CornerUpRight, Zap } from 'lucide-react';
 import type { Race } from '../../types/races';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import CircuitTrack3D from '../RacesPage/components/CircuitTrack3D';
 import { teamColors } from '../../lib/teamColors';
 import { apiFetch } from '../../lib/api';
+import { getCircuitBackground, getDefaultCircuitBackground } from '../../lib/circuitBackgrounds';
+import StatCard from '../../components/StatCard/StatCard';
 import Podium from '../../components/RaceDetails/Podium';
 import FastestLapWidget from '../../components/RaceDetails/FastestLapWidget';
 import RaceEventsWidget from '../../components/RaceDetails/RaceEventsWidget';
+import RaceDetailSkeleton from './RaceDetailSkeleton';
 
 const MotionBox = motion.create(Box);
 
@@ -149,43 +151,6 @@ const fmtMs = (ms?: number | null) => {
   return `${minutes}:${seconds.padStart(6, '0')}`;
 };
 
-const fmtRaceTime = (timeMs?: number | null, status?: string | null) => {
-  if (timeMs == null || status == null) return '-';
-  
-  // If driver didn't finish (DNF, DNS, etc.), show status
-  if (status !== 'Finished' && status !== 'Lapped') return status;
-  
-  // For lapped drivers, calculate laps behind
-  if (status === 'Lapped') {
-    const totalSeconds = timeMs / 1000;
-    const typicalLapTime = 100; // 100 seconds per lap as baseline
-    
-    // For lapped drivers, the time represents gap behind leader
-    // If gap is less than a lap time, they're 1 lap behind
-    // If gap is more than a lap time, calculate how many laps
-    if (totalSeconds < typicalLapTime) {
-      return '+1 LAP';
-    } else {
-      const lapsBehind = Math.floor(totalSeconds / typicalLapTime);
-      return lapsBehind === 1 ? '+1 LAP' : `+${lapsBehind} LAPS`;
-    }
-  }
-  
-  // For finished drivers, check if they're lapped
-  // Assuming a typical F1 race lap time is around 90-120 seconds (1.5-2 minutes)
-  // If time is significantly longer than expected, they're likely lapped
-  const totalSeconds = timeMs / 1000;
-  const typicalLapTime = 100; // 100 seconds per lap as baseline
-  
-  // If time is more than 1.5x a typical lap time, they're likely lapped
-  if (totalSeconds > typicalLapTime * 1.5) {
-    const lapsBehind = Math.floor(totalSeconds / typicalLapTime);
-    return lapsBehind === 1 ? '+1 LAP' : `+${lapsBehind} LAPS`;
-  }
-  
-  // For normal finishing times, show the formatted time
-  return fmtMs(timeMs);
-};
 
 // Format race summary times with gap behind leader
 const fmtRaceSummaryTime = (timeMs?: number | null, status?: string | null) => {
@@ -427,9 +392,7 @@ const RaceDetailPage: React.FC = () => {
     return (
       <Box bg="bg-primary" minH="100vh">
         <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
-          <Flex align="center" justify="center" minH="50vh">
-            <Spinner size="xl" />
-          </Flex>
+          <RaceDetailSkeleton />
         </Container>
       </Box>
     );
@@ -458,37 +421,139 @@ const RaceDetailPage: React.FC = () => {
     );
   }
 
-  return (
-    <LayoutContainer maxW="1400px">
-        {/* Header - Mobile Responsive */}
-        <Flex align="center" gap={{ base: 2, md: 4 }} mb={{ base: 4, md: 8 }} flexWrap="wrap">
-          <IconButton
-            aria-label="Go back"
-            icon={<ArrowLeft size={18} />}
-            onClick={() => navigate('/races')}
-            variant="ghost"
-            size={{ base: 'sm', md: 'md' }}
-          />
-          <VStack align="flex-start" spacing={1} flex={1} minW={0}>
-            <Text 
-              fontSize={{ base: 'lg', md: '2xl' }} 
-              fontWeight="bold" 
-              color="text-primary" 
-              fontFamily="heading"
-              noOfLines={{ base: 2, md: 1 }}
-            >
-              {race.name}
-            </Text>
-            <Text 
-              fontSize={{ base: 'sm', md: 'md' }} 
-              color="text-secondary"
-              noOfLines={1}
-            >
-              Round {race.round} • {new Date(race.date).toLocaleDateString()}
-            </Text>
-          </VStack>
-        </Flex>
+  // Circuit styling and data
+  const circuitBackground = getCircuitBackground(race.circuit_id) || getDefaultCircuitBackground();
 
+  return (
+    <Box bg="bg-primary" color="text-primary" minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+      {/* Top Utility Bar */}
+      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary">
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
+          <Button
+            onClick={() => navigate('/races')}
+            size={{ base: 'sm', md: 'md' }}
+            variant="outline"
+            borderColor="border-primary"
+          >
+            Back to Races
+          </Button>
+        </Container>
+      </Box>
+
+      {/* Compact Banner Header */}
+      <Box
+        position="relative"
+        minH={{ base: '180px', md: '220px' }}
+        overflow="hidden"
+        display="flex"
+        alignItems="center"
+      >
+        {/* Subtle Background with Ghosted Circuit Image */}
+        <Box
+          position="absolute"
+          inset={0}
+          bg="linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)"
+          _before={{
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: circuitBackground.image,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center right',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.1,
+            zIndex: 1,
+          }}
+          _after={{
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)',
+            zIndex: 2,
+          }}
+        />
+
+        {/* Content Container */}
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }} position="relative" zIndex={3}>
+          <Flex
+            direction={{ base: 'column', md: 'row' }}
+            align={{ base: 'center', md: 'center' }}
+            justify="space-between"
+            gap={{ base: 6, md: 8 }}
+            minH={{ base: '180px', md: '220px' }}
+            py={{ base: 6, md: 8 }}
+          >
+            {/* Left Side: Event Title */}
+            <Flex
+              direction="column"
+              align={{ base: 'center', md: 'flex-start' }}
+              gap={3}
+              flex="1"
+            >
+              <Heading as="h1" lineHeight={1} color="white" textAlign={{ base: 'center', md: 'left' }}>
+                <Text
+                  fontFamily="heading"
+                  textTransform="uppercase"
+                  fontWeight="900"
+                  letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                  fontSize={{ base: '3xl', md: '4xl', lg: '5xl' }}
+                  lineHeight={0.95}
+                >
+                  {race.name}
+                </Text>
+              </Heading>
+              
+              {/* Date/Round Info */}
+              <Box
+                display="inline-block"
+                bg="blackAlpha.300"
+                border="1px solid"
+                borderColor="whiteAlpha.200"
+                borderRadius="full"
+                px={4}
+                py={2}
+                backdropFilter="blur(8px)"
+              >
+                <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }} fontWeight="500">
+                  Round {race.round} • {new Date(race.date).toLocaleDateString()}
+                </Text>
+              </Box>
+            </Flex>
+
+            {/* Right Side: Stats Grid */}
+            <Box flex="1" maxW={{ base: '100%', md: '600px' }}>
+              <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                <StatCard
+                  icon={MapPin}
+                  value={circuitBackground.keyStats.length}
+                  label="Length"
+                  color="#3B82F6"
+                />
+                <StatCard
+                  icon={RotateCcw}
+                  value={circuitBackground.keyStats.laps}
+                  label="Laps"
+                  color="#10B981"
+                />
+                <StatCard
+                  icon={CornerUpRight}
+                  value={circuitBackground.keyStats.corners}
+                  label="Corners"
+                  color="#F59E0B"
+                />
+                <StatCard
+                  icon={Zap}
+                  value={circuitBackground.keyStats.drsZones}
+                  label="DRS Zones"
+                  color="#EF4444"
+                />
+              </SimpleGrid>
+            </Box>
+          </Flex>
+        </Container>
+      </Box>
+
+      <Container maxW="container.2xl" px={{ base: 4, md: 6 }} mt={8}>
         {/* Upcoming race notice */}
         {(() => {
           const now = new Date();
@@ -505,7 +570,7 @@ const RaceDetailPage: React.FC = () => {
           ) : null;
         })()}
 
-        {/* 3D Track Visualization (unchanged block) */}
+        {/* 3D Track Visualization */}
         <MotionBox
           bg="bg-elevated"
           borderRadius="lg"
@@ -1236,7 +1301,8 @@ const RaceDetailPage: React.FC = () => {
             </TabPanel>
           </TabPanels>
         </Tabs>
-      </LayoutContainer>
+      </Container>
+    </Box>
   );
 };
 
