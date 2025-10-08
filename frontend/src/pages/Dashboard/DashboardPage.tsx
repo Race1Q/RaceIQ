@@ -6,7 +6,7 @@ import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useThemeColor } from '../../context/ThemeColorContext';
-import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
+import DashboardSkeleton from './DashboardSkeleton';
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
 import NextRaceWidget from './widgets/NextRaceWidget';
@@ -156,7 +156,7 @@ function DashboardPage() {
         {isFallback && <FallbackBanner accentColor={accentColor} />} {/* Render banner when using fallback data */}
         
         {loading ? (
-          <PageLoadingOverlay text="Loading your personalized dashboard..." />
+          <DashboardSkeleton />
         ) : (
           <ResponsiveGridLayout
             layouts={(() => {

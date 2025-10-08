@@ -27,7 +27,6 @@ const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
       p="6px"
       w="fit-content"
       boxShadow="shadow-md"
-      mb={8}
       position="relative"
       gap={2}
     >

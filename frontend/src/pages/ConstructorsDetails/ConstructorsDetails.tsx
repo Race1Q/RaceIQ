@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading } from '@chakra-ui/react';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
@@ -247,7 +247,7 @@ const ConstructorDetails: React.FC = () => {
     ];
   }, [latestSeason, latestSeasonYear, latestSeasonPoles]);
 
-  if (loading) return <F1LoadingSpinner text="Loading Constructor Details..." />;
+  if (loading) return <ConstructorsDetailsSkeleton />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
@@ -255,7 +255,7 @@ const ConstructorDetails: React.FC = () => {
   return (
     <Box bg="bg-primary" color="text-primary" minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
       {/* Top Utility Bar */}
-      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary" mt={0}>
+      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary">
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
           <Button
             onClick={() => window.history.back()}
@@ -267,9 +267,11 @@ const ConstructorDetails: React.FC = () => {
           </Button>
         </Container>
       </Box>
-      <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
+
       {/* Header Bar */}
-      <Flex
+      <Box bg="bg-primary" color="text-primary" py={{ base: 6, md: 8 }}>
+        <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
+          <Flex
         justify="space-between"
         align="center"
         mb={4}
@@ -343,8 +345,11 @@ const ConstructorDetails: React.FC = () => {
         {/* Right: Placeholder to maintain spacing */}
         <Box display={{ base: 'none', md: 'block' }} />
       </Flex>
+        </Container>
+      </Box>
 
-      {/* Latest Season Stats - styled like Driver Details (placed first) */}
+      <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
+        {/* Latest Season Stats - styled like Driver Details (placed first) */}
       {latestStats.length > 0 && (
         <Box mb={6}>
           <StatSection title={`${latestSeasonYear} Season`} stats={latestStats} />

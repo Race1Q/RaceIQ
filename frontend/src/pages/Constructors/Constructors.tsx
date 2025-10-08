@@ -16,13 +16,15 @@ import {
 import { CloseIcon } from '@chakra-ui/icons';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
-import Select from 'react-select'; // Assuming 'react-select' is used for the custom styled select
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner'; // Assuming this path
+import { Select } from 'chakra-react-select';
+import ConstructorsSkeleton from './ConstructorsSkeleton';
+import LayoutContainer from '../../components/layout/LayoutContainer';
 import { buildApiUrl } from '../../lib/api';
 import { getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import PageHeader from '../../components/layout/PageHeader';
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 // Interfaces
 interface ApiConstructor {
@@ -89,10 +91,44 @@ const statusOptions: Option[] = [
   { value: 'all', label: 'All Teams' },
 ];
 
+// Custom styles to match SearchableSelect
+const getCustomSelectStyles = (accentColor: string) => ({
+  control: (provided: any) => ({
+    ...provided,
+    bg: 'bg-surface-raised',
+    borderColor: 'border-primary',
+    '&:hover': {
+      borderColor: 'border-primary',
+    },
+  }),
+  menu: (provided: any) => ({
+    ...provided,
+    bg: 'bg-surface-raised',
+    zIndex: 10,
+  }),
+  option: (provided: any, state: { isSelected: boolean; isFocused: boolean }) => ({
+    ...provided,
+    bg: state.isFocused ? 'bg-surface' : 'transparent',
+    color: state.isSelected ? accentColor : 'text-primary',
+    '&:active': {
+      bg: 'bg-surface',
+    },
+  }),
+  placeholder: (provided: any) => ({
+    ...provided,
+    color: 'text-muted',
+  }),
+  singleValue: (provided: any) => ({
+    ...provided,
+    color: 'text-primary',
+  }),
+});
+
 const Constructors = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth0();
+  const { accentColorWithHash } = useThemeColor();
   const [constructors, setConstructors] = useState<ApiConstructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -190,16 +226,11 @@ const Constructors = () => {
       />
 
       {isAuthenticated && (
-        <Box bg="bg-surface" py={{ base: 4, md: 6 }}>
-          <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
-            <Flex
-              gap={4}
-              direction={{ base: 'column', md: 'row' }}
-              w="full"
-              align={{ base: 'stretch', md: 'center' }}
-            >
+        <LayoutContainer>
+          <Flex mb={4} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
+            <Box>
               {(statusFilter === 'all' || statusFilter === 'historical') && (
-                <Box maxW={{ base: 'full', md: '260px' }} w="100%">
+                <Box maxW={{ base: 'full', md: '260px' }} w="100%" mb={{ base: 4, md: 0 }}>
                   <InputGroup>
                     <Input
                       placeholder="Search by name"
@@ -222,59 +253,34 @@ const Constructors = () => {
                   </InputGroup>
                 </Box>
               )}
-
-              <Box
-                maxW={{ base: 'full', md: '220px' }}
-                w={{ base: 'full', md: '220px' }}
-              >
-                <Select
-                  options={statusOptions}
-                  value={
-                    statusOptions.find((o) => o.value === statusFilter) || null
+            </Box>
+            <Box maxW={{ base: 'full', md: '220px' }} w="full">
+              <Select
+                options={statusOptions}
+                value={
+                  statusOptions.find((o) => o.value === statusFilter) || null
+                }
+                onChange={(option) => {
+                  const newStatus = (option as Option).value as FilterOption;
+                  setStatusFilter(newStatus);
+                  if (newStatus === 'active') {
+                    setSearchTerm('');
                   }
-                  onChange={(option) => {
-                    const newStatus = (option as Option).value as FilterOption;
-                    setStatusFilter(newStatus);
-                    if (newStatus === 'active') {
-                      setSearchTerm('');
-                    }
-                  }}
-                  placeholder="Filter by Status"
-                  isClearable={false}
-                  // This is a common pattern for styling 'react-select' with Chakra UI tokens
-                  styles={{
-                    control: (provided) => ({
-                      ...provided,
-                      backgroundColor: '#0f0f0f', // bg-primary
-                      borderColor: '#2d2d2d', // border-primary
-                      color: 'white',
-                    }),
-                    menu: (provided) => ({
-                      ...provided,
-                      backgroundColor: '#0f0f0f',
-                      color: 'white',
-                    }),
-                    option: (provided, state) => ({
-                      ...provided,
-                      backgroundColor: state.isFocused ? '#2d2d2d' : '#0f0f0f',
-                      color: 'white',
-                    }),
-                    singleValue: (provided) => ({
-                      ...provided,
-                      color: 'white',
-                    }),
-                  }}
-                />
-              </Box>
-            </Flex>
-          </Container>
-        </Box>
+                }}
+                placeholder="Filter by Status"
+                isClearable={false}
+                chakraStyles={getCustomSelectStyles(accentColorWithHash)}
+                focusBorderColor={accentColorWithHash}
+              />
+            </Box>
+          </Flex>
+        </LayoutContainer>
       )}
 
       <Box bg="bg-primary" color="text-primary" py={{ base: 'md', md: 'lg' }}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
           {loading || (standingsLoading && isAuthenticated) ? (
-            <F1LoadingSpinner text="Loading Constructors..." />
+            <ConstructorsSkeleton />
           ) : error || standingsError ? (
             <Text
               color="brand.redLight"

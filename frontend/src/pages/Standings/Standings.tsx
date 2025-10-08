@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { teamColors } from '../../lib/teamColors';
 import { buildApiUrl } from '../../lib/api';
-import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
+import StandingsSkeleton from './StandingsSkeleton';
 
 // Normalize backend URL to guarantee a trailing slash
 // Removed bespoke BACKEND_URL logic; using buildApiUrl for all requests.
@@ -111,7 +111,7 @@ const Standings: React.FC = () => {
       </Heading>
 
       {loading ? (
-        <PageLoadingOverlay text="Loading Standings..." />
+        <StandingsSkeleton />
       ) : (
         <Flex gap={6} flexDirection={['column', 'row']}>
 

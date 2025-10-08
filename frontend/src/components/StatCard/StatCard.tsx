@@ -1,35 +1,65 @@
-// frontend/src/components/StatCard/StatCard.tsx
-
 import React from 'react';
-import { Flex, Box, Text } from '@chakra-ui/react';
-import styles from './StatCard.module.css';
+import { Box, HStack, VStack, Text, Icon } from '@chakra-ui/react';
 
 interface StatCardProps {
-  icon: React.ReactNode;
+  icon: React.ComponentType<any>;
+  value: string | number;
   label: string;
-  value: string;
-  description: string;
-  teamColor?: string;
+  color?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value, description, teamColor }) => {
+const StatCard: React.FC<StatCardProps> = ({ 
+  icon, 
+  value, 
+  label, 
+  color = '#dc2626' // Default brand red
+}) => {
   return (
-    <Box className={styles.card}>
-      <Box className={styles.cardBody}>
-        <Flex align="center" justify="space-between">
-          <Box 
-            className={styles.iconContainer}
-            style={{ backgroundColor: teamColor || 'var(--color-primary-red)' }}
+    <Box
+      borderWidth="1px"
+      borderColor="whiteAlpha.200"
+      borderRadius="md"
+      p={4}
+      bg="blackAlpha.100"
+      backdropFilter="blur(8px)"
+      transition="all 0.2s ease"
+      _hover={{
+        bg: 'blackAlpha.200',
+        borderColor: 'whiteAlpha.300',
+        transform: 'translateY(-2px)'
+      }}
+    >
+      <HStack spacing={4} align="center">
+        <Box
+          p={3}
+          borderRadius="md"
+          bg={`${color}20`}
+          border="1px solid"
+          borderColor={`${color}40`}
+          flexShrink={0}
+        >
+          <Icon as={icon} boxSize={6} color={color} />
+        </Box>
+        <VStack align="flex-start" spacing={0} flex="1">
+          <Text
+            fontSize="2xl"
+            fontWeight="bold"
+            color="white"
+            lineHeight={1}
           >
-            {icon}
-          </Box>
-          <Box className={styles.stat}>
-            <Text className={styles.statLabel}>{label}</Text>
-            <Text className={styles.statNumber}>{value}</Text>
-            <Text className={styles.statHelpText}>{description}</Text>
-          </Box>
-        </Flex>
-      </Box>
+            {value}
+          </Text>
+          <Text
+            fontSize="sm"
+            color="gray.300"
+            textTransform="uppercase"
+            letterSpacing="0.05em"
+            fontWeight="500"
+          >
+            {label}
+          </Text>
+        </VStack>
+      </HStack>
     </Box>
   );
 };
