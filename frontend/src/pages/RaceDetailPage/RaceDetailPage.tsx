@@ -297,6 +297,34 @@ const RaceDetailPage: React.FC = () => {
   const [qualiResults, setQualiResults] = useState<QualiResult[]>([]);
   const [pitStops, setPitStops] = useState<PitStop[]>([]);
   const [laps, setLaps] = useState<Lap[]>([]);
+  // UX: 3D track affordance state
+  const [hasInteracted3D, setHasInteracted3D] = useState(false);
+  const [isDragging3D, setIsDragging3D] = useState(false);
+  const [show3DHint, setShow3DHint] = useState(false); // appear after swirl
+  const [autoRotateSpeed, setAutoRotateSpeed] = useState(0.0);
+
+  // On load: do a quick swirl, then slow down and show hint if no interaction
+  useEffect(() => {
+  const swirlSpeed = 3.0;  // faster for short "swirl"
+    const slowSpeed = 0.08;  // very gentle idle motion
+  const swirlDurationMs = 4000;
+
+    let timeoutId: number | undefined;
+
+    if (!hasInteracted3D) {
+      setAutoRotateSpeed(swirlSpeed);
+      timeoutId = window.setTimeout(() => {
+        if (!hasInteracted3D) {
+          setAutoRotateSpeed(slowSpeed);
+          setShow3DHint(true);
+        }
+      }, swirlDurationMs);
+    }
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [hasInteracted3D]);
 
   // summary state
   const [summary, setSummary] = useState<RaceSummary | null>(null);
@@ -489,7 +517,17 @@ const RaceDetailPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Box h={{ base: '300px', md: '400px' }} bg="#0b0b0b" position="relative">
+          <Box
+            h={{ base: '300px', md: '400px' }}
+            bg="#0b0b0b"
+            position="relative"
+            // Make interactivity obvious via cursor and quick hint
+            cursor={isDragging3D ? 'grabbing' : 'grab'}
+            onPointerDown={() => { setIsDragging3D(true); setHasInteracted3D(true); setShow3DHint(false); }}
+            onPointerUp={() => setIsDragging3D(false)}
+            onPointerLeave={() => setIsDragging3D(false)}
+            onWheel={() => { setHasInteracted3D(true); setShow3DHint(false); }}
+          >
             <Suspense fallback={<Flex h="100%" align="center" justify="center"><Spinner /></Flex>}>
               <Canvas camera={{ position: [0, 20, 40], fov: 40 }}>
                 <CircuitTrack3D
@@ -499,10 +537,39 @@ const RaceDetailPage: React.FC = () => {
                 />
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[5, 10, 5]} intensity={0.8} />
-                <OrbitControls enablePan enableZoom enableRotate />
+                {/* Auto-rotate until the user interacts to hint interactivity */}
+                <OrbitControls
+                  enablePan
+                  enableZoom
+                  enableRotate
+                  autoRotate={!hasInteracted3D}
+                  autoRotateSpeed={autoRotateSpeed}
+                />
                 <Environment preset="warehouse" />
               </Canvas>
             </Suspense>
+
+            {/* Subtle interactive hint chip */}
+            {show3DHint && (
+              <Box
+                position="absolute"
+                bottom={{ base: 2, md: 3 }}
+                left="50%"
+                transform="translateX(-50%)"
+                bg="blackAlpha.700"
+                color="white"
+                fontSize={{ base: 'xs', md: 'sm' }}
+                px={{ base: 2.5, md: 3.5 }}
+                py={{ base: 1.5, md: 2 }}
+                borderRadius="full"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+                boxShadow="0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06) inset"
+                pointerEvents="none"
+              >
+                Drag to rotate • Scroll to zoom • Right-click to pan
+              </Box>
+            )}
           </Box>
         </MotionBox>
 
