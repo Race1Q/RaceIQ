@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text, SimpleGrid, VStack, HStack, Button, Icon, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
 import { ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import DriversSkeleton from './DriversSkeleton';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
 import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
@@ -84,7 +84,7 @@ const Drivers = () => {
       />
       <LayoutContainer maxW="1600px">
         {isFallback && <FallbackBanner accentColor={accentColor} />}
-        {loading && <F1LoadingSpinner text="Loading Drivers..." />}
+  {loading && <DriversSkeleton />}
         {!loading && error && !isFallback && (
           <Text color={`#${accentColorLight}`} textAlign="center" fontSize="1.2rem" p="xl">{error}</Text>
         )}

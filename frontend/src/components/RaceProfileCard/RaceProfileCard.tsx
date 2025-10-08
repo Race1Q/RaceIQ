@@ -20,6 +20,40 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
   const circuitImage = getCircuitImage(race.circuit_id);
 
   const twoLetter = countryCodeMap[(race as any)?.circuit?.country_code?.toUpperCase?.() ?? ''] ?? '';
+  const flagAccentMap: Record<string, string> = {
+    // Europe
+    GB: 'rgba(12, 36, 125, 0.45)', // UK blue
+    FR: 'rgba(0, 85, 164, 0.45)',  // France blue
+    IT: 'rgba(0, 146, 70, 0.45)',  // Italy green
+    ES: 'rgba(255, 204, 0, 0.45)', // Spain yellow
+    DE: 'rgba(255, 206, 0, 0.45)', // Germany yellow
+    NL: 'rgba(192, 116, 16, 0.45)', // Netherlands blue
+    BE: 'rgba(253, 218, 36, 0.45)',// Belgium yellow
+    AT: 'rgba(237, 41, 57, 0.45)', // Austria red
+    MC: 'rgba(234, 40, 57, 0.45)', // Monaco red
+    DK: 'rgba(198, 12, 48, 0.45)', // Denmark red
+    FI: 'rgba(0, 53, 128, 0.45)',  // Finland blue
+    PT: 'rgba(0, 102, 0, 0.45)',   // Portugal green
+    GR: 'rgba(13, 94, 175, 0.45)', // Greece blue
+    HU: 'rgba(0, 166, 81, 0.45)',  // Hungary green
+
+    // Americas
+    US: 'rgba(10, 49, 97, 0.45)',  // USA blue
+    CA: 'rgba(255, 0, 0, 0.45)',   // Canada red
+    BR: 'rgba(199, 202, 31, 0.37)',  // Brazil green
+    MX: 'rgba(0, 104, 71, 0.45)',  // Mexico green
+
+    // Middle East / Asia-Pacific
+    AE: 'rgba(1, 167, 167, 0.45)',  // UAE green
+    QA: 'rgba(128, 0, 64, 0.45)',  // Qatar maroon
+    SA: 'rgba(0, 106, 78, 0.45)',  // Saudi green
+    BH: 'rgba(187, 0, 0, 0.45)',   // Bahrain red
+    SG: 'rgba(237, 41, 57, 0.45)', // Singapore red
+    AZ: 'rgba(0, 163, 224, 0.45)', // Azerbaijan blue
+    JP: 'rgba(188, 0, 45, 0.45)',  // Japan red
+    AU: 'rgba(0, 39, 104, 0.45)',  // Australia blue
+  };
+  const glossAccent = flagAccentMap[(twoLetter || '').toUpperCase()] || 'rgba(255, 255, 255, 0.4)';
 
   const shortName = race.name.replace(/Grand Prix|GP/g, '').trim();
 
@@ -85,7 +119,7 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
         left: isHovered ? '100%' : '-100%',
         width: '100%',
         height: '100%',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+        background: `linear-gradient(90deg, transparent, ${glossAccent}, transparent)`,
         transform: 'skewX(-25deg)',
         transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
         zIndex: 2,

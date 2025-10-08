@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import F1LoadingSpinner from '../F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../loaders/PageLoadingOverlay';
 import { useRole } from '../../context/RoleContext';
 
 type Props = { children: React.ReactNode; requirePermissions?: string[]; requireAdmin?: boolean };
@@ -35,7 +35,7 @@ export default function ProtectedRoute({ children, requirePermissions, requireAd
   }, [isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently, requirePermissions, requireAdmin, role, roleLoading]);
 
   if (isLoading || roleLoading || allowed === null) {
-    return <F1LoadingSpinner text="Authenticating" />;
+    return <PageLoadingOverlay text="Authenticating" minHeight={{ base: '50vh', md: '60vh' }} speedometerSize={200} />;
   }
   if (allowed === false) return <Navigate to="/" replace />;
   return <>{children}</>;
