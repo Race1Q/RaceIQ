@@ -54,21 +54,20 @@ const DriverStandingsPage: React.FC = () => {
         subtitle="Driver standings and statistics"
       />
       <LayoutContainer>
-        <StandingsTabs active="drivers" />
+        <Flex mb={12} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
+          <StandingsTabs active="drivers" />
+          <Box maxW={{ base: 'full', md: '220px' }} w="full">
+            <SearchableSelect
+              label="Select Season"
+              options={seasonOptions}
+              value={seasonOptions.find(o => o.value === selectedSeason) || null}
+              onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
+              isClearable={false}
+            />
+          </Box>
+        </Flex>
 
-      <Flex mb={4} alignItems="center" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
-        <Box maxW={{ base: 'full', md: '220px' }} w="full">
-          <SearchableSelect
-            label="Select Season"
-            options={seasonOptions}
-            value={seasonOptions.find(o => o.value === selectedSeason) || null}
-            onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
-            isClearable={false}
-          />
-        </Box>
-      </Flex>
-
-  {loading && <StandingsSkeleton />}
+  {loading && <StandingsSkeleton type="drivers" text="Loading Driver Standings..." />}
 
       {!loading && standings.length > 0 && (
         <Flex flexDirection="column" gap={3}>

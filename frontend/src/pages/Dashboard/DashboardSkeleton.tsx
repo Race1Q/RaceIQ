@@ -233,7 +233,7 @@ export default function DashboardSkeleton() {
       </Box>
 
       {/* Foreground: centered speedometer + text */}
-      <Box position="absolute" inset={0} display="flex" flexDir="column" alignItems="center" justifyContent="center" gap={4}>
+      <Box position="absolute" inset={0} display="flex" flexDir="column" alignItems="center" justifyContent="flex-start" gap={4} pt={{ base: '120px', md: '140px' }}>
         <SpeedometerMini size={260} />
         <Text fontFamily="heading" fontWeight={700} fontSize={{ base: 'lg', md: 'xl' }} color="text-secondary" textAlign="center">
           Loading your personalized dashboard...

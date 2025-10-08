@@ -5,7 +5,7 @@ import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 // import { useNavigate } from 'react-router-dom';
-import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
+import StandingsSkeleton from './StandingsSkeleton';
 // import { teamColors } from '../../lib/teamColors';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import ConstructorStandingCard from '../../components/Standings/ConstructorStandingCard';
@@ -94,28 +94,27 @@ const ConstructorStandings: React.FC = () => {
         subtitle="Constructor standings and statistics"
       />
       <LayoutContainer>
-        <StandingsTabs active="constructors" />
+        <Flex 
+          mb={12} 
+          alignItems="flex-end" 
+          justifyContent="space-between" 
+          flexDirection={{ base: 'column', md: 'row' }} 
+          gap={4}
+          wrap="wrap"
+        >
+          <StandingsTabs active="constructors" />
+          <Box maxW={{ base: 'full', md: '220px' }} w="full">
+            <SearchableSelect
+              label="Select Season"
+              options={seasonOptions}
+              value={seasonOptions.find(o => o.value === selectedSeason) || null}
+              onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
+              isClearable={false}
+            />
+          </Box>
+        </Flex>
 
-      <Flex 
-        mb={4} 
-        alignItems="center" 
-        justifyContent="space-between" 
-        flexDirection={{ base: 'column', md: 'row' }} 
-        gap={4}
-        wrap="wrap"
-      >
-        <Box maxW={{ base: 'full', md: '220px' }} w="full">
-          <SearchableSelect
-            label="Select Season"
-            options={seasonOptions}
-            value={seasonOptions.find(o => o.value === selectedSeason) || null}
-            onChange={(option) => setSelectedSeason(Number((option as SeasonOption).value))}
-            isClearable={false}
-          />
-        </Box>
-      </Flex>
-
-  {loading && <PageLoadingOverlay text="Loading Constructor Standings..." />}
+  {loading && <StandingsSkeleton type="constructors" text="Loading Constructor Standings..." />}
 
       {!loading && (
         <Flex flexDirection="column" gap={{ base: 2, md: 3 }}>

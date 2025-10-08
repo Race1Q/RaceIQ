@@ -1,11 +1,10 @@
 // frontend/src/pages/Constructors/ConstructorsSkeleton.tsx
-import React from 'react';
-import { Box, Flex, SimpleGrid, Text, VStack } from '@chakra-ui/react';
+import { Box, Flex, Text, SimpleGrid, Container } from '@chakra-ui/react';
 import SpeedometerMini from '../../components/loaders/SpeedometerMini';
 
 // Skeleton line component with shimmer animation
-const SkeletonLine = ({ w = '60%', h = '12px', br = 'md' }: { w?: any; h?: any; br?: string }) => (
-  <Box w={w} h={h} borderRadius={br} bg="bg-surface" position="relative" overflow="hidden">
+const SkeletonLine = ({ w = '60%', h = '12px', br = 'md', mt = 0 }: { w?: any; h?: any; br?: string; mt?: number }) => (
+  <Box w={w} h={h} borderRadius={br} bg="bg-surface" position="relative" overflow="hidden" mt={mt}>
     <Box
       position="absolute"
       inset={0}
@@ -33,16 +32,6 @@ const SkeletonCircle = ({ size = '40px' }: { size?: string }) => (
   </Box>
 );
 
-// Filter Dropdown Skeleton
-const FilterDropdownSkeleton = () => (
-  <Box mb={6}>
-    <Flex justify="space-between" align="center" mb={4}>
-      <SkeletonLine w="200px" h="20px" />
-      <SkeletonLine w="120px" h="36px" br="md" />
-    </Flex>
-  </Box>
-);
-
 // Constructor Card Skeleton
 const ConstructorCardSkeleton = () => (
   <Box
@@ -51,147 +40,118 @@ const ConstructorCardSkeleton = () => (
     borderRadius="lg"
     p={6}
     overflow="hidden"
-    minH="200px"
-    cursor="pointer"
-    transition="all 0.2s ease-in-out"
+    minH="180px"
   >
-    {/* Background gradient effect */}
+    {/* Gradient background skeleton */}
     <Box
       position="absolute"
       inset={0}
-      bg="linear-gradient(135deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.05) 100%)"
-      borderRadius="lg"
+      bgGradient="linear(135deg, bg-surface 0%, bg-surface-raised 100%)"
+      opacity={0.8}
     />
     
-    {/* Radial gradient overlay */}
+    {/* Decorative blur circle */}
     <Box
       position="absolute"
-      inset={0}
-      background="radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)"
-      borderRadius="lg"
-      pointerEvents="none"
+      right={-20}
+      top={-20}
+      w="220px"
+      h="220px"
+      borderRadius="full"
+      bg="whiteAlpha.100"
+      filter="blur(30px)"
     />
 
-    <Flex
-      position="relative"
-      zIndex={1}
-      align="center"
-      justify="space-between"
-      h="full"
-    >
+    <Flex align="center" justify="space-between" position="relative" zIndex={1}>
       {/* Left side - Team info */}
       <Box textAlign="left" flex={1}>
         {/* Team name */}
-        <SkeletonLine w="140px" h="20px" mb={2} />
+        <SkeletonLine w="140px" h="20px" />
         
         {/* Nationality with flag */}
-        <Flex align="center" gap={2} mb={4}>
+        <Flex align="center" gap={2} mt={2}>
           <SkeletonCircle size="16px" />
           <SkeletonLine w="80px" h="14px" />
         </Flex>
         
-        {/* Position and Points */}
-        <Flex gap={4}>
+        {/* Stats */}
+        <Flex mt={4} gap={6}>
           <Box>
-            <SkeletonLine w="50px" h="12px" mb={1} />
-            <SkeletonLine w="20px" h="16px" />
+            <SkeletonLine w="50px" h="12px" />
+            <SkeletonLine w="20px" h="16px" mt={1} />
           </Box>
           <Box>
-            <SkeletonLine w="40px" h="12px" mb={1} />
-            <SkeletonLine w="30px" h="16px" />
+            <SkeletonLine w="40px" h="12px" />
+            <SkeletonLine w="25px" h="16px" mt={1} />
           </Box>
         </Flex>
       </Box>
 
-      {/* Right side - F1 Car image */}
+      {/* Right side - Car image placeholder */}
       <Box
-        w="200px"
-        h="120px"
-        bg="bg-primary"
+        w={{ base: '120px', md: '200px' }}
+        h={{ base: '60px', md: '100px' }}
+        bg="bg-surface-raised"
         borderRadius="md"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
         position="relative"
         overflow="hidden"
+        ml={{ base: 2, md: 4 }}
+        flexShrink={0}
       >
-        {/* Car silhouette placeholder */}
         <Box
-          w="180px"
-          h="80px"
-          bg="bg-surface"
-          borderRadius="lg"
-          position="relative"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          {/* Car shape approximation */}
-          <Box
-            w="160px"
-            h="40px"
-            bg="bg-primary"
-            borderRadius="full"
-            position="relative"
-          >
-            {/* Car details */}
-            <Box
-              position="absolute"
-              top="8px"
-              left="20px"
-              w="120px"
-              h="24px"
-              bg="bg-surface"
-              borderRadius="md"
-            />
-            <Box
-              position="absolute"
-              bottom="4px"
-              left="10px"
-              w="20px"
-              h="20px"
-              bg="bg-surface"
-              borderRadius="full"
-            />
-            <Box
-              position="absolute"
-              bottom="4px"
-              right="10px"
-              w="20px"
-              h="20px"
-              bg="bg-surface"
-              borderRadius="full"
-            />
-          </Box>
-        </Box>
+          position="absolute"
+          inset={0}
+          transform="translateX(-100%)"
+          bgGradient="linear(to-r, transparent, whiteAlpha.200, transparent)"
+          animation="shimmer 1.4s infinite"
+          sx={{ '@keyframes shimmer': { '100%': { transform: 'translateX(100%)' } } }}
+        />
       </Box>
     </Flex>
   </Box>
 );
 
-export default function ConstructorsSkeleton() {
+
+interface ConstructorsSkeletonProps {
+  text?: string;
+}
+
+export default function ConstructorsSkeleton({ text = "Loading Constructors..." }: ConstructorsSkeletonProps) {
   return (
-    <Box position="relative" minH={{ base: '70vh', md: '75vh' }}>
-      {/* Background skeleton layer */}
-      <VStack spacing="xl" align="stretch" opacity={0.7} pointerEvents="none">
-        {/* Filter dropdown */}
-        <FilterDropdownSkeleton />
+    <Box bg="bg-primary" color="text-primary" py={{ base: 'md', md: 'lg' }}>
+      <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
+        <Box position="relative" minH={{ base: '50vh', md: '60vh' }}>
+          {/* Background skeleton layer - constructor cards */}
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg" opacity={0.7} pointerEvents="none">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ConstructorCardSkeleton key={i} />
+            ))}
+          </SimpleGrid>
 
-        {/* Constructor cards grid */}
-        <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ConstructorCardSkeleton key={i} />
-          ))}
-        </SimpleGrid>
-      </VStack>
-
-      {/* Foreground: centered speedometer + text */}
-      <Box position="absolute" inset={0} display="flex" flexDir="column" alignItems="center" justifyContent="center" gap={4}>
-        <SpeedometerMini size={260} />
-        <Text fontFamily="heading" fontWeight={700} fontSize={{ base: 'lg', md: 'xl' }} color="text-secondary" textAlign="center">
-          Loading constructors...
-        </Text>
-      </Box>
+          {/* Foreground: centered speedometer + text */}
+          <Box 
+            position="absolute" 
+            inset={0} 
+            display="flex" 
+            flexDir="column" 
+            alignItems="center" 
+            justifyContent="flex-start" 
+            gap={4} 
+            pt={{ base: '120px', md: '140px' }}
+          >
+            <SpeedometerMini size={260} />
+            <Text 
+              fontFamily="heading" 
+              fontWeight={700} 
+              fontSize={{ base: 'lg', md: 'xl' }} 
+              color="text-secondary" 
+              textAlign="center"
+            >
+              {text}
+            </Text>
+          </Box>
+        </Box>
+      </Container>
     </Box>
   );
 }

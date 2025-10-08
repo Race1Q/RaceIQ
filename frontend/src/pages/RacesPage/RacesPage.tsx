@@ -1,13 +1,14 @@
 // src/pages/RacesPage/RacesPage.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Container, Box, Flex, Text, Button, SimpleGrid, Skeleton, Heading, Icon, VStack, HStack, Select,
+  Container, Box, Flex, Text, Button, SimpleGrid, Heading, Icon, VStack, HStack, Select,
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import PageHeader from '../../components/layout/PageHeader';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
+import RacesSkeleton from './RacesSkeleton';
 import type { Race } from '../../types/races';
 import { apiFetch } from '../../lib/api';
 
@@ -106,17 +107,6 @@ const NotAuthenticatedView = () => {
   );
 };
 
-const LoadingView = () => (
-  <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
-    {Array.from({ length: 12 }).map((_, idx) => (
-      <Box key={idx} p={4} borderRadius="lg" bg="bg-surface" borderWidth="1px" borderColor="border-primary">
-        <Skeleton height="150px" borderRadius="md" mb={4} />
-        <Skeleton height="20px" mb={3} />
-        <Skeleton height="16px" width="70%" />
-      </Box>
-    ))}
-  </SimpleGrid>
-);
 
 const ErrorView = ({ message }: { message: string }) => (
   <Flex direction="column" align="center" justify="center" minH="20vh" gap={4} color="red.400">
@@ -176,7 +166,7 @@ const RacesPage: React.FC = () => {
   if (!isAuthenticated) return <NotAuthenticatedView />;
 
   const renderContent = () => {
-    if (loading) return <LoadingView />;
+    if (loading) return <RacesSkeleton />;
     if (error) return <ErrorView message={error} />;
     if (races.length === 0) {
       return (
