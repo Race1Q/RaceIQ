@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Flex, Heading, HStack, Icon, Text, VStack } from '@chakra-ui/react';
+import { Box, Flex, Heading, HStack, Icon, Text, VStack, useColorModeValue } from '@chakra-ui/react';
 import type { ConstructorStandingsItem } from '../../../types';
 import WidgetCard from './WidgetCard';
 import { teamColors } from '../../../lib/teamColors';
@@ -7,6 +7,8 @@ import { Trophy } from 'lucide-react';
 import TeamLogo from '../../../components/TeamLogo/TeamLogo';
 
 const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandingsItem[] | undefined; year?: number }) => {
+  // Fix: Use dark text for 1st position in light mode
+  const firstPlaceTextColor = useColorModeValue('#1a1a1a', 'white');
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
@@ -34,7 +36,7 @@ const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandings
                 transition="all 0.2s ease-in-out"
               >
                 <Flex align="center" flex={1}>
-                  <Text w="2em" color={isLeader ? 'white' : 'brand.red'} fontWeight="bold">{item.position}.</Text>
+                  <Text w="2em" color={isLeader ? firstPlaceTextColor : 'brand.red'} fontWeight="bold">{item.position}.</Text>
                   <Box
                     mr={3}
                     w="32px"
@@ -49,10 +51,10 @@ const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandings
                   >
                     <TeamLogo teamName={item.constructorName} />
                   </Box>
-                  <Text fontWeight="bold" color={isLeader ? 'white' : 'text-primary'}>{item.constructorName}</Text>
+                  <Text fontWeight="bold" color={isLeader ? firstPlaceTextColor : 'text-primary'}>{item.constructorName}</Text>
                 </Flex>
                 {isLeader && <Icon as={Trophy} color="white" mr={3} />}
-                <Text fontWeight="bold" color={isLeader ? 'white' : 'brand.red'}>{item.points} pts</Text>
+                <Text fontWeight="bold" color={isLeader ? firstPlaceTextColor : 'brand.red'}>{item.points} pts</Text>
               </Flex>
             );
           })
