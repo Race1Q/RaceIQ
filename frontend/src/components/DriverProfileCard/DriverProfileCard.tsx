@@ -3,6 +3,7 @@ import { Box, VStack, Heading, Text, Image, Flex } from '@chakra-ui/react';
 import ReactCountryFlag from 'react-country-flag';
 import userIcon from '../../assets/UserIcon.png';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
+import { driverHeadshots } from '../../lib/driverHeadshots';
 // Import our new color helpers
 import { lightenColor, darkenColor } from '../../lib/colorUtils';
 
@@ -32,8 +33,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
   return (
     <Box
       height="100%"
-      borderRadius="lg"
-      overflow="hidden"
+      borderRadius="24px" // Custom high border radius for very rounded corners
+      overflow="visible" // Changed to visible to allow image to break frame
       boxShadow="lg"
       border="1px solid"
       borderColor="border-primary"
@@ -43,22 +44,42 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
         boxShadow: 'xl',
       }}
       role="group" // Add role group for child _groupHover effects
+      position="relative"
     >
       <VStack spacing={0} height="100%" align="stretch">
         <Box
           position="relative"
           flexGrow={1}
           p={{ base: 'sm', md: 'lg' }}
-          // UPDATED: Changed 25% to 45% for a softer gradient
-          bgGradient={`radial(at 70% 30%, ${lightenColor(teamColor, 20)} 0%, ${teamColor} 45%, ${darkenColor(teamColor, 80)} 90%)`}
+          // Enhanced spotlight gradient for premium depth
+          bgGradient={`radial(at 60% 20%, ${lightenColor(teamColor, 0.3)} 0%, ${lightenColor(teamColor, 0.1)} 25%, ${teamColor} 50%, ${darkenColor(teamColor, 0.4)} 80%, ${darkenColor(teamColor, 0.8)} 100%)`}
           minH={{ base: '200px', md: '300px' }}
           overflow="hidden"
+          borderTopRadius="24px" // Match the outer container's border radius
         >
+          {/* Ghosted Driver Number Overlay */}
+          {isNumberAvailable && (
+            <Box
+              position="absolute"
+              top="50%"
+              left="50%"
+              transform="translate(-50%, -50%)"
+              fontSize={{ base: '120px', md: '200px' }}
+              fontWeight="900"
+              color="rgba(255, 255, 255, 0.08)"
+              fontFamily="heading"
+              zIndex={0}
+              pointerEvents="none"
+              userSelect="none"
+            >
+              {driver.number}
+            </Box>
+          )}
           {/* Driver Text Info */}
           <VStack
             align="flex-start"
             spacing={0}
-            zIndex={2}
+            zIndex={3} // Increased z-index to appear above ghosted number
             position="relative"
             w="65%"
             color="white"
@@ -103,7 +124,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             position="absolute"
             left={{ base: 'sm', md: 'lg' }}
             bottom={{ base: 'sm', md: 'lg' }}
-            zIndex={2}
+            zIndex={3} // Increased z-index to appear above ghosted number
             align="center"
           >
             <Box
@@ -123,21 +144,21 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             </Box>
           </Flex>
 
-          {/* Driver Image */}
+          {/* Driver Image - Fitting within card */}
           <Image
-            src={driver.image || userIcon}
+            src={driverHeadshots[driver.name] || driver.image || userIcon}
             alt={driver.name}
             position="absolute"
-            right="-10px"
-            bottom="0"
-            height="95%"
-            maxW="100%"
+            right="10px"
+            bottom="0" // Changed to 0 to touch the bottom of the card
+            height="85%" // Reduced height to fit within card
+            maxW="60%" // Reduced max width to fit better
             objectFit="contain"
             objectPosition="bottom right"
             zIndex={1}
             filter="drop-shadow(5px 5px 10px rgba(0,0,0,0.4))"
             transition="transform 0.3s ease"
-            _groupHover={{ transform: 'scale(1.03)' }}
+            _groupHover={{ transform: 'scale(1.05)' }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
           />
         </Box>
@@ -152,6 +173,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           transition="all 0.2s ease"
           borderTop="1px solid"
           borderColor="border-primary"
+          borderBottomRadius="24px" // Match the outer container's border radius
           _groupHover={{
             bg: teamColor,
             color: 'white',

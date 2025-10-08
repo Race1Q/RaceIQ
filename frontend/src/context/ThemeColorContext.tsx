@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { getTeamColor } from '../lib/teamColors';
+import { lightenColor, darkenColor } from '../lib/colorUtils';
 
 // Extended interface to include the new field
 interface ExtendedUserProfile {
@@ -44,23 +45,6 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Helper to lighten a hex color (simple approach)
-const lightenColor = (hex: string, percent: number): string => {
-  const cleanHex = hex.replace('#', '');
-  const r = Math.min(255, parseInt(cleanHex.slice(0, 2), 16) + Math.round(255 * percent));
-  const g = Math.min(255, parseInt(cleanHex.slice(2, 4), 16) + Math.round(255 * percent));
-  const b = Math.min(255, parseInt(cleanHex.slice(4, 6), 16) + Math.round(255 * percent));
-  return `${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-};
-
-// Helper to darken a hex color
-const darkenColor = (hex: string, percent: number): string => {
-  const cleanHex = hex.replace('#', '');
-  const r = Math.max(0, parseInt(cleanHex.slice(0, 2), 16) - Math.round(255 * percent));
-  const g = Math.max(0, parseInt(cleanHex.slice(2, 4), 16) - Math.round(255 * percent));
-  const b = Math.max(0, parseInt(cleanHex.slice(4, 6), 16) - Math.round(255 * percent));
-  return `${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-};
 
 export const ThemeColorProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Hooks must be called unconditionally
@@ -107,8 +91,8 @@ export const ThemeColorProvider: React.FC<{ children: ReactNode }> = ({ children
   const value: ThemeColorContextValue = {
     accentColor,
     accentColorWithHash: `#${accentColor}`,
-    accentColorLight: lightenColor(accentColor, 0.2),
-    accentColorDark: darkenColor(accentColor, 0.15),
+    accentColorLight: lightenColor(`#${accentColor}`, 0.2),
+    accentColorDark: darkenColor(`#${accentColor}`, 0.15),
     accentColorRgba: (alpha: number) => hexToRgba(accentColor, alpha),
     isLoading: loading,
     useCustomTeamColor,

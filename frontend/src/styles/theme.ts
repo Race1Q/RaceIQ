@@ -1,4 +1,4 @@
-// frontend/src/theme.ts
+// frontend/src/styles/theme.ts
 
 import { extendTheme, type ThemeConfig } from '@chakra-ui/react';
 
@@ -8,8 +8,9 @@ const config: ThemeConfig = {
   useSystemColorMode: true, // Respects the user's OS preference
 };
 
-// 2. The new, fully migrated theme object
-const theme = extendTheme({
+// 2. Dynamic theme creation function
+export const createTheme = (accentColor: string = 'e10600') => {
+  return extendTheme({
   config,
 
   // 3. SEMANTIC TOKENS: The key to powerful light/dark mode.
@@ -29,9 +30,14 @@ const theme = extendTheme({
 
       // Border Colors
       'border-primary': { default: '#E2E8F0', _dark: '#333333' },
+      'border-subtle': { default: 'rgba(0, 0, 0, 0.06)', _dark: 'rgba(255, 255, 255, 0.1)' },
+      'border-strong': { default: 'rgba(0, 0, 0, 0.15)', _dark: 'rgba(255, 255, 255, 0.2)' },
+      'border-accent': { default: `#${accentColor}`, _dark: `#${accentColor}` },
 
       // Icon Colors
+      'icon-primary': { default: '#475569', _dark: '#cccccc' },
       'icon-muted': { default: '#A0AEC0', _dark: '#666666' },
+      'icon-accent': { default: `#${accentColor}`, _dark: `#${accentColor}` },
 
       // Logo Color (swaps based on theme)
       'logo-primary': { default: '#1a202c', _dark: '#FFFFFF' },
@@ -120,6 +126,9 @@ const theme = extendTheme({
       },
     },
   },
-});
+  });
+};
 
+// Default theme with F1 red color
+const theme = createTheme('e10600');
 export default theme;

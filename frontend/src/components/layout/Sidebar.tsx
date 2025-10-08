@@ -11,6 +11,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
 import { useThemeColor } from '../../context/ThemeColorContext';
+import { getLogoFilter } from '../../lib/colorUtils';
 import ThemeToggleButton from '../ThemeToggleButton/ThemeToggleButton';
 
 // --- Sub-component for Navigation Links ---
@@ -163,6 +164,7 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
                 h="40px"
                 w="auto"
                 objectFit="contain"
+                filter={getLogoFilter(accentColorWithHash)}
               />
               <DrawerCloseButton />
             </HStack>
@@ -228,6 +230,7 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
             w="auto"
             maxW={isExpanded ? "70%" : "70%"}
             objectFit="contain"
+            filter={getLogoFilter(accentColorWithHash)}
           />
         </Box>
 

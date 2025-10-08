@@ -6,6 +6,8 @@ import { Box, useBreakpointValue, Flex, IconButton, HStack, Image, Link } from '
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import PageShell from './PageShell';
+import { useThemeColor } from '../../context/ThemeColorContext';
+import { getLogoFilter } from '../../lib/colorUtils';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -14,6 +16,7 @@ interface AppLayoutProps {
 function AppLayout({ children }: AppLayoutProps) {
   const [sidebarWidth, setSidebarWidth] = useState(80);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { accentColorWithHash } = useThemeColor();
   
   // Responsive behavior: show sidebar on desktop, hide on mobile
   const isDesktop = useBreakpointValue({ base: false, lg: true });
@@ -48,6 +51,7 @@ function AppLayout({ children }: AppLayoutProps) {
                 h="40px"
                 w="auto"
                 objectFit="contain"
+                filter={getLogoFilter(accentColorWithHash)}
               />
             </HStack>
             

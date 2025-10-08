@@ -1,22 +1,28 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack } from '@chakra-ui/react';
-import { useRef, useMemo } from 'react';
+import { Box, Heading, Grid, Text, Button, VStack, HStack, Image, Badge, Skeleton, SkeletonText } from '@chakra-ui/react';
+import { useMemo, useState } from 'react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Download } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDriverComparison } from '../../hooks/useDriverComparison';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { DriverSelectionPanel } from './components/DriverSelectionPanel';
-import { ComparisonTable } from './components/ComparisonTable';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import { AnimatedStatistics } from './components/AnimatedStatistics';
+import { AnimatedCompositeScore } from './components/AnimatedCompositeScore';
 import PageHeader from '../../components/layout/PageHeader';
-import PdfComparisonCard from '../../components/compare/PdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import { driverTeamMapping } from '../../lib/driverTeamMapping';
 
+// Step types for progressive disclosure
+type ComparisonStep = 'drivers' | 'parameters' | 'results';
 
 const CompareDriversPage = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
+  
+  // Progressive disclosure state
+  const [currentStep, setCurrentStep] = useState<ComparisonStep>('drivers');
 
   // Enhanced hook with new comparison features
   const { 
@@ -28,357 +34,499 @@ const CompareDriversPage = () => {
     handleSelectDriver,
     // NEW: Comparison features
     years,
-    selection1,
-    selection2,
     stats1,
     stats2,
     enabledMetrics,
     score,
     selectDriver,
+    selectDriverForYears,
     toggleMetric,
-    clearSelection,
   } = useDriverComparison();
+  
+  // Year selection state - allow multiple years per driver
+  const [selectedYears1, setSelectedYears1] = useState<string[]>([]);
+  const [selectedYears2, setSelectedYears2] = useState<string[]>([]);
 
-  // Build dropdown options with proper name fallbacks
-  const driverOptions: SelectOption[] = allDrivers.map((d) => {
-    // Create a proper display name with fallbacks
-    const displayName = d.full_name || 
-                       (d.given_name && d.family_name ? `${d.given_name} ${d.family_name}` : '') ||
-                       d.code ||
-                       `Driver ${d.id}`;
-    
-    return {
-      value: String(d.id),
-      label: displayName,
-    };
-  }).filter(option => option.label.trim() !== ''); // Remove any entries with empty labels
+  // Available metrics for comparison
+  const availableMetrics = {
+    wins: 'Wins',
+    podiums: 'Podiums',
+    poles: 'Pole Positions',
+    fastest_laps: 'Fastest Laps',
+    points: 'Points',
+    races: 'Races',
+    dnf: 'DNFs',
+    avg_finish: 'Average Finish',
+  };
 
-  // PDF Export - reference to hidden PDF card
-  const pdfCardRef = useRef<HTMLDivElement>(null);
+  // Convert allDrivers to SelectOption format for dropdowns
+  const driverOptions: SelectOption[] = useMemo(() => {
+    return allDrivers.map(driver => ({
+      value: driver.id.toString(),
+      label: driver.full_name || 'Unknown Driver',
+      extra: driver.current_team_name || 'Unknown Team'
+    }));
+  }, [allDrivers]);
 
-  // Get full driver info for PDF (using hardcoded mappings)
-  const pdfDriver1 = useMemo(() => {
-    if (!selection1 || !stats1) return null;
-    
-    const driverData = allDrivers.find(d => String(d.id) === String(selection1.driverId));
-    const fullName = driverData?.full_name || 
-                    (driverData?.given_name && driverData?.family_name ? `${driverData.given_name} ${driverData.family_name}` : '') ||
-                    driver1?.fullName || 
-                    'Unknown';
-    
-    // Use hardcoded mappings
-    const teamName = driverTeamMapping[fullName] || 'Unknown Team';
-    const teamColor = getTeamColor(teamName, { hash: true }); // Get hex WITH # prefix
-    const imageUrl = driverHeadshots[fullName] || '';
-    
-    return {
-      fullName,
-      teamName,
-      teamColorToken: teamColor,
-      imageUrl,
-    };
-  }, [selection1, stats1, allDrivers, driver1]);
+  // Convert years to SelectOption format
+  const yearOptions: SelectOption[] = useMemo(() => {
+    return years.map(year => ({
+      value: year.toString(),
+      label: year.toString()
+    }));
+  }, [years]);
 
-  const pdfDriver2 = useMemo(() => {
-    if (!selection2 || !stats2) return null;
-    
-    const driverData = allDrivers.find(d => String(d.id) === String(selection2.driverId));
-    const fullName = driverData?.full_name || 
-                    (driverData?.given_name && driverData?.family_name ? `${driverData.given_name} ${driverData.family_name}` : '') ||
-                    driver2?.fullName || 
-                    'Unknown';
-    
-    // Use hardcoded mappings
-    const teamName = driverTeamMapping[fullName] || 'Unknown Team';
-    const teamColor = getTeamColor(teamName, { hash: true }); // Get hex WITH # prefix
-    const imageUrl = driverHeadshots[fullName] || '';
-    
-    return {
-      fullName,
-      teamName,
-      teamColorToken: teamColor,
-      imageUrl,
-    };
-  }, [selection2, stats2, allDrivers, driver2]);
+  // Check if we can proceed to next step
+  const canProceedToParameters = driver1 && driver2;
+  const canProceedToResults = canProceedToParameters && selectedYears1.length > 0 && selectedYears2.length > 0;
 
-  // Prepare comparison rows for PDF
-  const comparisonRows = useMemo(() => {
-    if (!pdfDriver1 || !pdfDriver2 || !stats1 || !stats2 || !enabledMetrics) return [];
+  // Navigation functions
+  const nextStep = () => {
+    if (currentStep === 'drivers' && canProceedToParameters) {
+      setCurrentStep('parameters');
+    } else if (currentStep === 'parameters' && canProceedToResults) {
+      // Aggregate data for selected years before showing results
+      if (driver1 && driver2 && selectedYears1.length > 0 && selectedYears2.length > 0) {
+        const years1 = selectedYears1.map(y => parseInt(y, 10));
+        const years2 = selectedYears2.map(y => parseInt(y, 10));
 
-    const useYearStats = stats1.yearStats !== null && stats2.yearStats !== null;
-    const s1 = useYearStats ? stats1.yearStats! : stats1.career;
-    const s2 = useYearStats ? stats2.yearStats! : stats2.career;
-
-    const rows: Array<{ label: string; value1: number | string; value2: number | string; better1?: boolean; better2?: boolean }> = [];
-
-    // Add team info
-    rows.push({ label: 'Team', value1: pdfDriver1.teamName || 'Unknown', value2: pdfDriver2.teamName || 'Unknown' });
-
-    if (enabledMetrics.wins) {
-      const better1 = s1.wins > s2.wins;
-      const better2 = s2.wins > s1.wins;
-      rows.push({ label: 'Wins', value1: s1.wins, value2: s2.wins, better1, better2 });
-    }
-    if (enabledMetrics.podiums) {
-      const better1 = s1.podiums > s2.podiums;
-      const better2 = s2.podiums > s1.podiums;
-      rows.push({ label: 'Podiums', value1: s1.podiums, value2: s2.podiums, better1, better2 });
-    }
-    if (enabledMetrics.fastestLaps) {
-      const better1 = s1.fastestLaps > s2.fastestLaps;
-      const better2 = s2.fastestLaps > s1.fastestLaps;
-      rows.push({ label: 'Fastest Laps', value1: s1.fastestLaps, value2: s2.fastestLaps, better1, better2 });
-    }
-    if (enabledMetrics.points) {
-      const better1 = s1.points > s2.points;
-      const better2 = s2.points > s1.points;
-      rows.push({ label: 'Points', value1: Math.round(s1.points), value2: Math.round(s2.points), better1, better2 });
-    }
-    if (enabledMetrics.sprintWins) {
-      const better1 = s1.sprintWins > s2.sprintWins;
-      const better2 = s2.sprintWins > s1.sprintWins;
-      rows.push({ label: 'Sprint Wins', value1: s1.sprintWins, value2: s2.sprintWins, better1, better2 });
-    }
-    if (enabledMetrics.sprintPodiums) {
-      const better1 = s1.sprintPodiums > s2.sprintPodiums;
-      const better2 = s2.sprintPodiums > s1.sprintPodiums;
-      rows.push({ label: 'Sprint Podiums', value1: s1.sprintPodiums, value2: s2.sprintPodiums, better1, better2 });
-    }
-    if (enabledMetrics.dnfs) {
-      const better1 = s1.dnfs < s2.dnfs;
-      const better2 = s2.dnfs < s1.dnfs;
-      rows.push({ label: 'DNFs', value1: s1.dnfs, value2: s2.dnfs, better1, better2 });
-    }
-    if (enabledMetrics.poles && useYearStats && 'poles' in s1 && 'poles' in s2) {
-      const better1 = (s1 as any).poles > (s2 as any).poles;
-      const better2 = (s2 as any).poles > (s1 as any).poles;
-      rows.push({ label: 'Pole Positions', value1: (s1 as any).poles, value2: (s2 as any).poles, better1, better2 });
-    }
-
-    return rows;
-  }, [pdfDriver1, pdfDriver2, stats1, stats2, enabledMetrics]);
-
-  // Export function with image loading wait
-  const handleExportPdf = async () => {
-    if (!pdfCardRef.current || !pdfDriver1 || !pdfDriver2) {
-      console.error('Missing required data for PDF export:', { pdfCardRef: !!pdfCardRef.current, pdfDriver1: !!pdfDriver1, pdfDriver2: !!pdfDriver2 });
-      return;
-    }
-
-    try {
-      // Give time for images to load (base64 conversion happens in useEffect)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Wait for images to be in DOM
-      const images = pdfCardRef.current.querySelectorAll('img');
-      
-      await Promise.all(
-        Array.from(images).map(img => {
-          if (img.complete) return Promise.resolve<void>(undefined);
-          return new Promise<void>((resolve) => {
-            img.onload = () => resolve(undefined);
-            img.onerror = () => resolve(undefined);
-            setTimeout(() => resolve(undefined), 3000);
-          });
-        })
-      );
-
-      const html2canvas = (await import('html2canvas')).default;
-      const jsPDF = (await import('jspdf')).default;
-
-      const canvas = await html2canvas(pdfCardRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        width: pdfCardRef.current.offsetWidth,
-        height: pdfCardRef.current.offsetHeight,
-      });
-
-      const img = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-      
-      // If image is taller than page, scale down to fit
-      if (imgH > pageH) {
-        const scale = pageH / imgH;
-        const scaledW = imgW * scale;
-        const scaledH = pageH;
-        const x = (pageW - scaledW) / 2;
-        pdf.addImage(img, "PNG", x, 0, scaledW, scaledH, undefined, "FAST");
-      } else {
-        const y = (pageH - imgH) / 2;
-        pdf.addImage(img, "PNG", 0, y, imgW, imgH, undefined, "FAST");
+        // Fetch aggregated stats for both drivers
+        selectDriverForYears(1, driver1.id.toString(), years1);
+        selectDriverForYears(2, driver2.id.toString(), years2);
       }
-
-      const driver1Name = pdfDriver1.fullName.replace(/\s+/g, '_');
-      const driver2Name = pdfDriver2.fullName.replace(/\s+/g, '_');
-      const yearSuffix = selection1 && selection1.year !== 'career' ? `_${selection1.year}` : '';
-      pdf.save(`RaceIQ_${driver1Name}_vs_${driver2Name}${yearSuffix}.pdf`);
-    } catch (error) {
-      console.error('Failed to export PDF:', error);
-      alert('Failed to export PDF. Check console for details or try using different drivers.');
+      setCurrentStep('results');
     }
   };
 
+  const prevStep = () => {
+    if (currentStep === 'parameters') {
+      setCurrentStep('drivers');
+    } else if (currentStep === 'results') {
+      setCurrentStep('parameters');
+    }
+  };
 
+  // Year selection handlers
+  const handleYearSelection = (driverSlot: 1 | 2, year: string) => {
+    if (driverSlot === 1) {
+      setSelectedYears1(prev => 
+        prev.includes(year) 
+          ? prev.filter(y => y !== year)
+          : [...prev, year]
+      );
+    } else {
+      setSelectedYears2(prev => 
+        prev.includes(year) 
+          ? prev.filter(y => y !== year)
+          : [...prev, year]
+      );
+    }
+  };
 
+  // PDF export handler
+  const handleExportPdf = () => {
+    // TODO: Implement PDF export functionality
+    console.log('Exporting PDF...');
+  };
 
-
-  if (!isAuthenticated) {
-    return (
-      <Flex direction="column" align="center" justify="center" minH="60vh" gap={4} p="xl">
-        <Heading size="md" fontFamily="heading">Login to Compare Drivers</Heading>
-        <Text color="text-secondary">Please sign in to access the comparison tool.</Text>
-        <Button
-          bg="brand.red"
-          _hover={{ bg: 'brand.redDark' }}
-          color="white"
-          onClick={() => loginWithRedirect()}
-        >
-          Login
-        </Button>
-      </Flex>
-    );
-  }
-
-  return (
-    <Box>
-      <PageHeader 
-        title="Driver Comparison" 
-        subtitle="Compare F1 drivers head-to-head"
-      />
-      <Box p={{ base: 'md', md: 'xl' }}>
-
-      {error && <Text color="brand.red" textAlign="center" fontSize="lg" p="xl">{error}</Text>}
-
-      {/* Driver Selection Grid - Always visible */}
-      <Grid
-        templateColumns={{ base: '1fr', lg: '1fr auto 1fr' }}
-        gap="lg"
-        mb="xl"
-        alignItems="flex-start"
-      >
+  // Step 1: Driver Selection Component
+  const Step1DriverSelection = () => (
+    <VStack spacing="lg" w="full">
+      <Heading size="lg" fontFamily="heading" color="text-primary" textAlign="center">
+        Select Drivers to Compare
+      </Heading>
+      
+      <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap="lg" w="full" maxW="800px" mx="auto">
         <DriverSelectionPanel
           title="Driver 1"
           allDrivers={driverOptions}
           selectedDriverData={driver1}
           onDriverSelect={(id) => {
             const driverId = String(id);
-            handleSelectDriver(1, driverId); // Fetch basic driver info with team
-            selectDriver(1, driverId, 'career'); // Fetch comparison stats
+            // Use the new selectDriver function for live stats
+            selectDriver(1, driverId, 'career');
+            // Also update legacy data for backward compatibility
+            handleSelectDriver(1, driverId);
           }}
           isLoading={loading}
-          // NEW: Year selection support - using simplified controls in panel
           extraControl={null}
         />
-
-        <Flex
-          align="center"
-          justify="center"
-          h={{ base: '60px', lg: '150px' }}
-          display={{ base: 'flex', lg: 'flex' }}
-        >
-          <Heading size={{ base: 'xl', lg: '3xl' }} color="brand.red" fontFamily="heading">
-            VS
-          </Heading>
-        </Flex>
-
+        
         <DriverSelectionPanel
           title="Driver 2"
           allDrivers={driverOptions}
           selectedDriverData={driver2}
           onDriverSelect={(id) => {
             const driverId = String(id);
-            handleSelectDriver(2, driverId); // Fetch basic driver info with team
-            selectDriver(2, driverId, 'career'); // Fetch comparison stats
+            // Use the new selectDriver function for live stats
+            selectDriver(2, driverId, 'career');
+            // Also update legacy data for backward compatibility
+            handleSelectDriver(2, driverId);
           }}
           isLoading={loading}
-          // NEW: Year selection support - using simplified controls in panel  
           extraControl={null}
         />
       </Grid>
+    </VStack>
+  );
 
-      {/* Loading Spinner - Below driver selection cards */}
-      {loading && <F1LoadingSpinner text="Loading comparison data..." />}
+  // Step 2: Parameters Selection Component
+  const Step2Parameters = () => (
+    <VStack spacing="lg" w="full">
+      <Heading size="lg" fontFamily="heading" color="text-primary" textAlign="center">
+        Select Comparison Parameters
+      </Heading>
+      
+      {/* Year Selection */}
+      <VStack spacing="md" w="full" maxW="600px" mx="auto">
+        <Text fontFamily="heading" fontWeight="bold" color="text-primary">
+          Select Years for Comparison
+        </Text>
+        
+        <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="lg" w="full">
+          {/* Driver 1 Years */}
+          <VStack spacing="sm" align="stretch">
+            <Text fontSize="sm" color="text-muted" textAlign="center">
+              {driver1?.fullName} - Years
+            </Text>
+            <VStack spacing="xs">
+              {yearOptions.map((year) => {
+                const yearValue = String(year.value);
+                return (
+                  <Button
+                    key={yearValue}
+                    size="sm"
+                    variant={selectedYears1.includes(yearValue) ? "solid" : "outline"}
+                    colorScheme={selectedYears1.includes(yearValue) ? "blue" : "gray"}
+                    onClick={() => {
+                      handleYearSelection(1, yearValue);
+                      // Also trigger live stats update for this year
+                      if (driver1) {
+                        const yearNumber = parseInt(yearValue, 10) as number;
+                        selectDriver(1, String(driver1.id), yearNumber);
+                      }
+                    }}
+                    w="full"
+                  >
+                    {year.label}
+                  </Button>
+                );
+              })}
+            </VStack>
+          </VStack>
 
-      {/* Comparison Table - Only show when both drivers are selected and not loading */}
-      {driver1 && driver2 && !loading && (
-        <>
-        <ComparisonTable 
-          driver1={driver1} 
-          driver2={driver2} 
-          // NEW: Pass additional stats for enhanced comparison
-          stats1={stats1}
-          stats2={stats2}
-          enabledMetrics={enabledMetrics}
-          selection1={selection1}
-          selection2={selection2}
-          score={score}
-          // NEW: Pass handlers for the updated filter styling
-          onYearChange={(driverIndex, year) => {
-            const driverId = driverIndex === 1 ? selection1?.driverId : selection2?.driverId;
-            if (driverId) {
-              selectDriver(driverIndex, driverId, year);
-            }
-          }}
-          onMetricToggle={toggleMetric}
-          availableYears={years}
-        />
+          {/* Driver 2 Years */}
+          <VStack spacing="sm" align="stretch">
+            <Text fontSize="sm" color="text-muted" textAlign="center">
+              {driver2?.fullName} - Years
+            </Text>
+            <VStack spacing="xs">
+              {yearOptions.map((year) => {
+                const yearValue = String(year.value);
+                return (
+                  <Button
+                    key={yearValue}
+                    size="sm"
+                    variant={selectedYears2.includes(yearValue) ? "solid" : "outline"}
+                    colorScheme={selectedYears2.includes(yearValue) ? "blue" : "gray"}
+                    onClick={() => {
+                      handleYearSelection(2, yearValue);
+                      // Also trigger live stats update for this year
+                      if (driver2) {
+                        const yearNumber = parseInt(yearValue, 10) as number;
+                        selectDriver(2, String(driver2.id), yearNumber);
+                      }
+                    }}
+                    w="full"
+                  >
+                    {year.label}
+                  </Button>
+                );
+              })}
+            </VStack>
+          </VStack>
+        </Grid>
+      </VStack>
 
-          {/* PDF Export Button */}
-          <Box mt="lg" textAlign="center">
+      {/* Metrics Selection */}
+      <VStack spacing="md" w="full" maxW="600px" mx="auto">
+        <Text fontFamily="heading" fontWeight="bold" color="text-primary">
+          Select Metrics to Compare
+        </Text>
+        
+        <Grid templateColumns="repeat(auto-fit, minmax(150px, 1fr))" gap="sm" w="full">
+          {Object.entries(availableMetrics).map(([key, label]) => (
             <Button
-              leftIcon={<Download />}
-              bg="brand.red"
-              color="white"
-              _hover={{ bg: 'brand.redDark', transform: 'translateY(-2px)' }}
-              _active={{ transform: 'translateY(0px)' }}
+              key={key}
+              size="sm"
+              variant={enabledMetrics[key as keyof typeof enabledMetrics] ? "solid" : "outline"}
+              colorScheme={enabledMetrics[key as keyof typeof enabledMetrics] ? "blue" : "gray"}
+              onClick={() => toggleMetric(key as keyof typeof enabledMetrics)}
+              w="full"
+            >
+              {label}
+            </Button>
+          ))}
+        </Grid>
+      </VStack>
+    </VStack>
+  );
+
+  // Step 3: Results Display Component
+  const Step3Results = () => {
+    // Get driver headshots - use stats data if available, fallback to legacy
+    const driver1Headshot = (stats1 ? driverHeadshots[driver1?.fullName || ''] : driver1 ? driverHeadshots[driver1.fullName] : null);
+    const driver2Headshot = (stats2 ? driverHeadshots[driver2?.fullName || ''] : driver2 ? driverHeadshots[driver2.fullName] : null);
+
+    // Get team colors - use stats data if available, fallback to legacy
+    const driver1TeamColor = (stats1 ? getTeamColor(driverTeamMapping[driver1?.id || ''] || '') : driver1 ? getTeamColor(driverTeamMapping[driver1.id] || '') : '#e10600');
+    const driver2TeamColor = (stats2 ? getTeamColor(driverTeamMapping[driver2?.id || ''] || '') : driver2 ? getTeamColor(driverTeamMapping[driver2.id] || '') : '#e10600');
+
+    return (
+      <VStack spacing="lg" w="full">
+        <Heading size="lg" fontFamily="heading" color="text-primary" textAlign="center">
+          Comparison Results
+        </Heading>
+
+        {/* Animated Composite Score */}
+        {!loading && score && (
+          <AnimatedCompositeScore
+            score={score}
+            driver1TeamColor={driver1TeamColor}
+            driver2TeamColor={driver2TeamColor}
+            driver1Name={driver1?.fullName}
+            driver2Name={driver2?.fullName}
+          />
+        )}
+
+        {/* Central-Axis Results Display */}
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+          <VStack spacing="lg">
+            <Heading size="md" fontFamily="heading" color="text-primary">Statistics Comparison</Heading>
+            
+            {/* Loading State */}
+            {loading && (
+              <VStack spacing="md" w="full">
+                <Skeleton height="120px" width="120px" borderRadius="full" />
+                <SkeletonText noOfLines={2} spacing="2" skeletonHeight="4" />
+                <VStack spacing="sm" w="full">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} height="60px" width="full" borderRadius="md" />
+                  ))}
+                </VStack>
+              </VStack>
+            )}
+            
+            {/* Driver Headshots and Names */}
+            {!loading && (
+              <Grid templateColumns="1fr auto 1fr" gap="lg" w="full" maxW="800px" mx="auto" alignItems="center">
+              {/* Driver 1 */}
+              <VStack spacing="md" align="center">
+                <Box position="relative">
+                  <Image
+                    src={driver1Headshot || '/default-driver.png'}
+                    alt={driver1?.fullName || 'Driver 1'}
+                    w="120px"
+                    h="120px"
+                    borderRadius="full"
+                    objectFit="cover"
+                    border="3px solid"
+                    borderColor={driver1TeamColor}
+                    boxShadow={`0 0 20px ${driver1TeamColor}40`}
+                  />
+                </Box>
+                <VStack spacing="xs" textAlign="center">
+                  <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color="text-primary">
+                    {driver1?.fullName || 'Driver 1'}
+                  </Text>
+                  {driver1?.teamName && (
+                    <Text fontSize="sm" color="text-muted">
+                      {driver1.teamName}
+                    </Text>
+                  )}
+                </VStack>
+              </VStack>
+
+              {/* VS Badge */}
+              <VStack spacing="sm">
+                <Badge
+                  bg="bg-glassmorphism"
+                  color="text-primary"
+                  px="md"
+                  py="sm"
+                  borderRadius="full"
+                  fontSize="sm"
+                  fontFamily="heading"
+                  fontWeight="bold"
+                  border="1px solid"
+                  borderColor="border-accent"
+                >
+                  VS
+                </Badge>
+              </VStack>
+
+              {/* Driver 2 */}
+              <VStack spacing="md" align="center">
+                <Box position="relative">
+                  <Image
+                    src={driver2Headshot || '/default-driver.png'}
+                    alt={driver2?.fullName || 'Driver 2'}
+                    w="120px"
+                    h="120px"
+                    borderRadius="full"
+                    objectFit="cover"
+                    border="3px solid"
+                    borderColor={driver2TeamColor}
+                    boxShadow={`0 0 20px ${driver2TeamColor}40`}
+                  />
+                </Box>
+                <VStack spacing="xs" textAlign="center">
+                  <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color="text-primary">
+                    {driver2?.fullName || 'Driver 2'}
+                  </Text>
+                  {driver2?.teamName && (
+                    <Text fontSize="sm" color="text-muted">
+                      {driver2.teamName}
+                    </Text>
+                  )}
+                </VStack>
+              </VStack>
+            </Grid>
+            )}
+
+            {/* Animated Statistics */}
+            {!loading && stats1 && stats2 && (
+              <AnimatedStatistics
+                driver1={driver1}
+                driver2={driver2}
+                stats1={stats1}
+                stats2={stats2}
+                enabledMetrics={enabledMetrics}
+                driver1TeamColor={driver1TeamColor}
+                driver2TeamColor={driver2TeamColor}
+              />
+            )}
+          </VStack>
+        </Box>
+
+        {/* Export Button */}
+        <Button
+          leftIcon={<Download size={16} />}
+          onClick={handleExportPdf}
+          colorScheme="blue"
+          size="lg"
+          fontFamily="heading"
+        >
+          Export Results
+        </Button>
+      </VStack>
+    );
+  };
+
+  // Main render
+  if (!isAuthenticated) {
+    return (
+      <Box p="lg" textAlign="center">
+        <VStack spacing="md">
+          <Heading size="lg" fontFamily="heading" color="text-primary">
+            Please log in to compare drivers
+          </Heading>
+          <Button onClick={() => loginWithRedirect()} colorScheme="blue" size="lg">
+            Log In
+          </Button>
+        </VStack>
+      </Box>
+    );
+  }
+
+  return (
+    <Box p="lg" minH="100vh" bg="bg-primary">
+      <PageHeader title="Compare Drivers" />
+      
+      {/* Error Display */}
+      {error && (
+        <Box p="md" bg="red.50" border="1px solid" borderColor="red.200" borderRadius="md" mb="lg">
+          <Text color="red.600" fontFamily="heading">
+            Error: {error}
+          </Text>
+        </Box>
+      )}
+
+      {/* Main Content */}
+      <VStack spacing="lg" w="full" maxW="1200px" mx="auto">
+        {/* Step Content */}
+        <AnimatePresence mode="wait">
+          {currentStep === 'drivers' && (
+            <motion.div
+              key="drivers"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              style={{ width: '100%' }}
+            >
+              <Step1DriverSelection />
+            </motion.div>
+          )}
+          
+          {currentStep === 'parameters' && (
+            <motion.div
+              key="parameters"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              style={{ width: '100%' }}
+            >
+              <Step2Parameters />
+            </motion.div>
+          )}
+          
+          {currentStep === 'results' && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              style={{ width: '100%' }}
+            >
+              <Step3Results />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Navigation Controls */}
+        <HStack spacing="md" justify="center" w="full">
+          {currentStep !== 'drivers' && (
+            <Button
+              leftIcon={<ChevronLeft size={16} />}
+              onClick={prevStep}
+              variant="outline"
               size="lg"
               fontFamily="heading"
-              fontWeight="bold"
-              boxShadow="0 4px 12px rgba(225, 6, 0, 0.3)"
-              transition="all 0.2s"
-              onClick={handleExportPdf}
-              isDisabled={comparisonRows.length === 0}
             >
-              Export as PDF
+              Previous
             </Button>
-          </Box>
-
-          {/* Hidden PDF Comparison Card for export */}
-          {pdfDriver1 && pdfDriver2 && (
-            <Box
-              position="absolute"
-              left="-9999px"
-              top="-9999px"
-              id="pdf-export-card"
-            >
-              <PdfComparisonCard
-                ref={pdfCardRef}
-                driver1={{
-                  fullName: pdfDriver1.fullName,
-                  imageUrl: pdfDriver1.imageUrl,
-                  teamColorToken: pdfDriver1.teamColorToken,
-                  teamColorHex: pdfDriver1.teamColorToken
-                }}
-                driver2={{
-                  fullName: pdfDriver2.fullName,
-                  imageUrl: pdfDriver2.imageUrl,
-                  teamColorToken: pdfDriver2.teamColorToken,
-                  teamColorHex: pdfDriver2.teamColorToken
-                }}
-                rows={comparisonRows}
-              />
-            </Box>
           )}
-        </>
-      )}
-      </Box>
+          
+          {currentStep !== 'results' && (
+            <Button
+              rightIcon={<ChevronRight size={16} />}
+              onClick={nextStep}
+              isDisabled={
+                (currentStep === 'drivers' && !canProceedToParameters) ||
+                (currentStep === 'parameters' && !canProceedToResults)
+              }
+              colorScheme="blue"
+              size="lg"
+              fontFamily="heading"
+            >
+              Next
+            </Button>
+          )}
+        </HStack>
+      </VStack>
     </Box>
   );
 };

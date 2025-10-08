@@ -3,45 +3,13 @@ import React, { useState } from 'react';
 import { VStack, Heading, Box, Text } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { useThemeColor } from '../../context/ThemeColorContext';
+import { getLogoFilter } from '../../lib/colorUtils';
 import styles from './F1LoadingSpinner.module.css';
 
 interface F1LoadingSpinnerProps {
   text: string;
 }
 
-// Helper function to calculate hue rotation for color filtering
-const getHueRotation = (hexColor: string): number => {
-  // Convert hex to RGB
-  const hex = hexColor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16) / 255;
-  const g = parseInt(hex.substr(2, 2), 16) / 255;
-  const b = parseInt(hex.substr(4, 2), 16) / 255;
-  
-  // Convert to HSL
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  
-  if (max === min) {
-    h = 0;
-  } else if (max === r) {
-    h = ((g - b) / (max - min)) % 6;
-  } else if (max === g) {
-    h = (b - r) / (max - min) + 2;
-  } else {
-    h = (r - g) / (max - min) + 4;
-  }
-  
-  h = Math.round(h * 60);
-  if (h < 0) h += 360;
-  
-  // Calculate rotation needed to get from red (0deg) to target hue
-  const redHue = 0; // Red is at 0 degrees
-  let rotation = h - redHue;
-  if (rotation < 0) rotation += 360;
-  
-  return rotation;
-};
 
 const F1LoadingSpinner: React.FC<F1LoadingSpinnerProps> = ({ text }) => {
   const { accentColorWithHash } = useThemeColor();
@@ -131,7 +99,7 @@ const F1LoadingSpinner: React.FC<F1LoadingSpinnerProps> = ({ text }) => {
           style={{
             background: `url('/race_IQ_logo.svg') no-repeat center center`,
             backgroundSize: 'contain',
-            filter: `brightness(0.8) hue-rotate(${getHueRotation(accentColorWithHash)}deg) saturate(1.5)`,
+            filter: getLogoFilter(accentColorWithHash),
           }}
         />
 

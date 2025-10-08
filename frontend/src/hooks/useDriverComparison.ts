@@ -85,6 +85,7 @@ type HookState = {
   enabledMetrics: EnabledMetrics;
   score: CompositeScore;
   selectDriver: (slot: 1 | 2, driverId: string, year: number | 'career') => void;
+  selectDriverForYears: (slot: 1 | 2, driverId: string, years: number[]) => void;
   toggleMetric: (metric: MetricKey) => void;
   clearSelection: (slot: 1 | 2) => void;
 };
@@ -109,6 +110,54 @@ async function fetchYears(): Promise<number[]> {
 async function fetchDriverStats(driverId: string, year?: number | 'career'): Promise<DriverComparisonStats> {
   const yearParam = year && year !== 'career' ? `?year=${year}` : '';
   return getJSON<DriverComparisonStats>(`/drivers/${driverId}/stats${yearParam}`);
+}
+
+// NEW: Aggregate multiple years of stats
+async function fetchDriverStatsForYears(driverId: string, years: number[]): Promise<DriverComparisonStats> {
+  if (years.length === 0) {
+    return fetchDriverStats(driverId, 'career');
+  }
+  
+  if (years.length === 1) {
+    return fetchDriverStats(driverId, years[0]);
+  }
+  
+  // Fetch stats for each year and aggregate
+  const yearStats = await Promise.all(
+    years.map(year => fetchDriverStats(driverId, year))
+  );
+  
+  // Aggregate the yearStats from each year
+  const aggregatedYearStats = yearStats.reduce((acc, stats) => {
+    if (stats.yearStats) {
+      acc.wins += stats.yearStats.wins;
+      acc.podiums += stats.yearStats.podiums;
+      acc.fastestLaps += stats.yearStats.fastestLaps;
+      acc.points += stats.yearStats.points;
+      acc.dnfs += stats.yearStats.dnfs;
+      acc.sprintWins += stats.yearStats.sprintWins;
+      acc.sprintPodiums += stats.yearStats.sprintPodiums;
+      acc.poles += stats.yearStats.poles || 0;
+    }
+    return acc;
+  }, {
+    wins: 0,
+    podiums: 0,
+    fastestLaps: 0,
+    points: 0,
+    dnfs: 0,
+    sprintWins: 0,
+    sprintPodiums: 0,
+    poles: 0,
+  });
+  
+  // Return the aggregated stats in the same format
+  return {
+    driverId: yearStats[0].driverId,
+    year: null, // Multiple years aggregated
+    career: yearStats[0].career, // Keep career stats as reference
+    yearStats: aggregatedYearStats,
+  };
 }
 
 // Legacy stats fetch
@@ -299,6 +348,26 @@ export function useDriverComparison(): HookState {
       .catch((e) => setError(e.message || 'Failed to load driver stats'))
       .finally(() => setLoading(false));
   }, [getListItem]);
+
+  // NEW: Enhanced driver select with multiple years support
+  const selectDriverForYears = useCallback((slot: 1 | 2, driverId: string, years: number[]) => {
+    if (!driverId) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    // Fetch aggregated stats for multiple years
+    fetchDriverStatsForYears(driverId, years)
+      .then((stats) => {
+        if (slot === 1) {
+          setStats1(stats);
+        } else {
+          setStats2(stats);
+        }
+      })
+      .catch((e) => setError(e.message || 'Failed to load driver stats'))
+      .finally(() => setLoading(false));
+  }, []);
   
   // Toggle metric function
   const toggleMetric = useCallback((metric: MetricKey) => {
@@ -344,10 +413,11 @@ export function useDriverComparison(): HookState {
     enabledMetrics,
     score,
     selectDriver,
+    selectDriverForYears,
     toggleMetric,
     clearSelection,
   }), [
     allDrivers, driver1, driver2, loading, error, handleSelectDriver,
-    years, selection1, selection2, stats1, stats2, enabledMetrics, score, selectDriver, toggleMetric, clearSelection
+    years, selection1, selection2, stats1, stats2, enabledMetrics, score, selectDriver, selectDriverForYears, toggleMetric, clearSelection
   ]);
 }
