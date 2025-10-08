@@ -1,6 +1,7 @@
 // frontend/src/hooks/useDriverComparison.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../lib/api';
+import { driverTeamMapping } from '../lib/driverTeamMapping';
 
 // NEW: Types for the comparison feature
 export type DriverSelection = {
@@ -185,7 +186,11 @@ function mapStatsToDetails(id: string, base: Partial<DriverListItem> | undefined
                   base?.code || 
                   String(id);
 
-  const teamName = base?.current_team_name || stats?.teamName || '—';
+  // Resolve team name with multiple fallbacks including static mapping
+  let teamName = base?.current_team_name || stats?.teamName || '—';
+  if ((!teamName || teamName === '—') && fullName && driverTeamMapping[fullName]) {
+    teamName = driverTeamMapping[fullName];
+  }
 
   return {
     id,

@@ -193,3 +193,23 @@ Use SimpleGrid for responsive grids:
 - [CSS Grid Layout](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout)
 - [Flexbox Guide](https://css-tricks.com/snippets/css/a-guide-to-flexbox/)
 - [Touch Target Guidelines](https://web.dev/accessible-tap-targets/)
+
+## Composite Driver Comparison Score
+
+The Driver Comparison page displays a Composite Score for each selected driver along with an expandable breakdown panel.
+
+How it works:
+1. For every ENABLED metric (Wins, Podiums, Fastest Laps, Points, Sprint Wins, Sprint Podiums, DNFs, and Pole Positions when available) a normalized value in the range 0–1 is computed for each driver.
+  - Standard metrics use: value / max(value1, value2). If both values are 0, each driver gets 0.5.
+  - DNFs invert the scale because fewer is better: 1 - (driverDNFs / maxDNFs). If both are 0 DNFs, each driver gets 1.0.
+2. The composite score is: round( average( normalized metric values ) * 100 ).
+3. Every metric contributes equally; disabling a metric removes it from the averaging set.
+4. Pole Positions only appear when both drivers are compared on a specific season (not career) and that stat is available.
+
+Breakdown UI shows:
+* Per-metric raw numbers (via tooltip)
+* Normalized percentages (progress bars)
+* Approximate maximum contribution slice (equal weight)
+* Formula and normalization notes
+
+Rationale: This approach provides an at-a-glance synthetic indicator while remaining transparent and resistant to skew from a single dominant metric.

@@ -1,5 +1,6 @@
 // frontend/src/pages/CompareDriversPage/components/ComparisonTable.tsx
-import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, TableContainer, HStack, Text, VStack, Grid, Button } from '@chakra-ui/react';
+import { Box, Heading, Thead, Tbody, Tr, Th, Td, HStack, Text, VStack, Grid, Button, Collapse, IconButton, Tooltip, Divider, Progress, useDisclosure } from '@chakra-ui/react';
+import { Info, ChevronDown, ChevronUp } from 'lucide-react';
 import ResponsiveTable from '../../../components/layout/ResponsiveTable';
 import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey, CompositeScore } from '../../../hooks/useDriverComparison';
 
@@ -253,28 +254,14 @@ export const ComparisonTable: React.FC<Props> = ({
         
         {/* Composite Score Display - Below Statistics to Compare */}
         {score && score.d1 !== null && score.d2 !== null && (
-          <Box bg="bg-surface" p="lg" borderRadius="md" textAlign="center">
-            <Heading size="lg" mb="md" fontFamily="heading">Composite Score</Heading>
-            <HStack justify="center" spacing="xl">
-              <Box>
-                <Text fontSize="sm" color="text-secondary">
-                  {selection1 ? `Driver 1 ${selection1.year === 'career' ? '(Career)' : `(${selection1.year})`}` : 'Driver 1'}
-                </Text>
-                <Text fontSize="3xl" fontWeight="bold" color="brand.red">
-                  {score.d1}/100
-                </Text>
-              </Box>
-              <Text fontSize="2xl" color="text-secondary">VS</Text>
-              <Box>
-                <Text fontSize="sm" color="text-secondary">
-                  {selection2 ? `Driver 2 ${selection2.year === 'career' ? '(Career)' : `(${selection2.year})`}` : 'Driver 2'}
-                </Text>
-                <Text fontSize="3xl" fontWeight="bold" color="brand.red">
-                  {score.d2}/100
-                </Text>
-              </Box>
-            </HStack>
-          </Box>
+          <CompositeScoreBreakdown
+            score={score}
+            selection1={selection1}
+            selection2={selection2}
+            stats1={stats1}
+            stats2={stats2}
+            enabledMetrics={enabledMetrics}
+          />
         )}
         
         {/* Comparison Table */}
@@ -354,6 +341,128 @@ export const ComparisonTable: React.FC<Props> = ({
             ))}
           </Tbody>
       </ResponsiveTable>
+    </Box>
+  );
+};
+
+// --- Composite Score Breakdown Component ---
+interface BreakdownProps {
+  score: CompositeScore;
+  selection1?: DriverSelection | null;
+  selection2?: DriverSelection | null;
+  stats1?: DriverComparisonStats | null;
+  stats2?: DriverComparisonStats | null;
+  enabledMetrics?: EnabledMetrics;
+}
+
+const CompositeScoreBreakdown: React.FC<BreakdownProps> = ({ score, selection1, selection2, stats1, stats2, enabledMetrics }) => {
+  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: false });
+
+  if (!stats1 || !stats2 || !enabledMetrics) return null;
+
+  const useYearStats = stats1.yearStats !== null && stats2.yearStats !== null;
+  const s1 = useYearStats ? stats1.yearStats! : stats1.career;
+  const s2 = useYearStats ? stats2.yearStats! : stats2.career;
+
+  // Build list of enabled metrics present in perMetric map keeping UI order
+  const order: MetricKey[] = ['wins','podiums','fastestLaps','points','sprintWins','sprintPodiums','dnfs','poles'];
+  const rows = order
+    .filter(m => enabledMetrics[m])
+    .filter(m => m !== 'poles' || (useYearStats && 'poles' in s1 && 'poles' in s2))
+    .map(m => {
+      const normalized = score.perMetric[m];
+      const raw1 = (s1 as any)[m] ?? 0;
+      const raw2 = (s2 as any)[m] ?? 0;
+      return { metric: m, normalized, raw1, raw2 };
+    });
+
+  const labelMap: Record<MetricKey,string> = {
+    wins: 'Wins',
+    podiums: 'Podiums',
+    fastestLaps: 'Fastest Laps',
+    points: 'Points',
+    sprintWins: 'Sprint Wins',
+    sprintPodiums: 'Sprint Podiums',
+    dnfs: 'DNFs (lower better)',
+    poles: 'Pole Positions'
+  };
+
+  return (
+    <Box bg="bg-surface" p="lg" borderRadius="md" position="relative">
+      <HStack justify="space-between" align="flex-start" mb={4}>
+        <Box>
+          <Heading size="lg" fontFamily="heading" display="flex" alignItems="center" gap={2}>
+            Composite Score
+            <Tooltip label="Average of normalized metrics (DNFs inverted).">
+              <span><Info size={18} /></span>
+            </Tooltip>
+          </Heading>
+          <Text fontSize="xs" color="text-secondary" mt={1}>
+            Each enabled metric is normalized between 0 and 1 per driver (best = 1, DNFs reversed), then averaged and scaled to 100.
+          </Text>
+        </Box>
+        <IconButton
+          aria-label={isOpen ? 'Hide score breakdown' : 'Show score breakdown'}
+          icon={isOpen ? <ChevronUp /> : <ChevronDown />}
+          variant="outline"
+          size="sm"
+          onClick={onToggle}
+        />
+      </HStack>
+      <HStack justify="center" spacing="xl" mb={isOpen ? 6 : 2}>
+        <Box textAlign="center">
+          <Text fontSize="sm" color="text-secondary">
+            {selection1 ? `Driver 1 ${selection1.year === 'career' ? '(Career)' : `(${selection1.year})`}` : 'Driver 1'}
+          </Text>
+          <Text fontSize="4xl" fontWeight="bold" color="brand.red">{score.d1}/100</Text>
+        </Box>
+        <Text fontSize="2xl" color="text-secondary">VS</Text>
+        <Box textAlign="center">
+          <Text fontSize="sm" color="text-secondary">
+            {selection2 ? `Driver 2 ${selection2.year === 'career' ? '(Career)' : `(${selection2.year})`}` : 'Driver 2'}
+          </Text>
+          <Text fontSize="4xl" fontWeight="bold" color="brand.red">{score.d2}/100</Text>
+        </Box>
+      </HStack>
+      <Collapse in={isOpen} animateOpacity>
+        <VStack align="stretch" spacing={4}>
+          {rows.map(r => {
+            const [n1, n2] = r.normalized || [0,0];
+            // Compute contribution percentage of each metric to final 100 (equal weight)
+            const contribution = rows.length ? 100 / rows.length : 0; // each metric equal slice
+            return (
+              <Box key={r.metric}>
+                <HStack justify="space-between" mb={1}>
+                  <Text fontWeight="medium" fontSize="sm">{labelMap[r.metric]}</Text>
+                  <Text fontSize="xs" color="text-secondary">Contributes ~{contribution.toFixed(1)} pts max</Text>
+                </HStack>
+                <HStack align="flex-end" gap={4}>
+                  <Box flex={1}>
+                    <Tooltip label={`Raw: ${r.raw1} | Normalized: ${n1.toFixed(2)}`}>
+                      <Progress value={n1 * 100} size="sm" borderRadius="md" colorScheme="red" />
+                    </Tooltip>
+                  </Box>
+                  <Text fontSize="xs" w="42px" textAlign="right">{(n1*100).toFixed(0)}</Text>
+                  <Text fontSize="xs" color="text-secondary">vs</Text>
+                  <Text fontSize="xs" w="42px">{(n2*100).toFixed(0)}</Text>
+                  <Box flex={1}>
+                    <Tooltip label={`Raw: ${r.raw2} | Normalized: ${n2.toFixed(2)}`}>
+                      <Progress value={n2 * 100} size="sm" borderRadius="md" colorScheme="red" />
+                    </Tooltip>
+                  </Box>
+                </HStack>
+                <Divider mt={2} />
+              </Box>
+            );
+          })}
+          <Box>
+            <Text fontSize="xs" color="text-secondary" mb={1}>Formula</Text>
+            <Text fontSize="xs" lineHeight={1.4}>
+              score = round( average( normalized_metric_values ) * 100 ). DNFs use inverted normalization so fewer DNFs yields a higher normalized value. If a metric has zero for both drivers its normalized value is 0.5 each (except DNFs which become 1.0 each when both are 0). Pole Positions only appear when season stats are selected for both drivers. 
+            </Text>
+          </Box>
+        </VStack>
+      </Collapse>
     </Box>
   );
 };
