@@ -27,7 +27,7 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
     IT: 'rgba(0, 146, 70, 0.45)',  // Italy green
     ES: 'rgba(255, 204, 0, 0.45)', // Spain yellow
     DE: 'rgba(255, 206, 0, 0.45)', // Germany yellow
-    NL: 'rgba(33, 70, 139, 0.45)', // Netherlands blue
+    NL: 'rgba(192, 116, 16, 0.45)', // Netherlands blue
     BE: 'rgba(253, 218, 36, 0.45)',// Belgium yellow
     AT: 'rgba(237, 41, 57, 0.45)', // Austria red
     MC: 'rgba(234, 40, 57, 0.45)', // Monaco red
@@ -40,11 +40,11 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
     // Americas
     US: 'rgba(10, 49, 97, 0.45)',  // USA blue
     CA: 'rgba(255, 0, 0, 0.45)',   // Canada red
-    BR: 'rgba(0, 156, 59, 0.45)',  // Brazil green
+    BR: 'rgba(199, 202, 31, 0.37)',  // Brazil green
     MX: 'rgba(0, 104, 71, 0.45)',  // Mexico green
 
     // Middle East / Asia-Pacific
-    AE: 'rgba(0, 122, 61, 0.45)',  // UAE green
+    AE: 'rgba(1, 167, 167, 0.45)',  // UAE green
     QA: 'rgba(128, 0, 64, 0.45)',  // Qatar maroon
     SA: 'rgba(0, 106, 78, 0.45)',  // Saudi green
     BH: 'rgba(187, 0, 0, 0.45)',   // Bahrain red

@@ -116,7 +116,8 @@ const F1LoadingSpinner: React.FC<F1LoadingSpinnerProps> = ({ text }) => {
               key={`num-${i}`} 
               className={styles.number} 
               style={{ 
-                transform: `rotate(${markings[i]}deg) translateY(-118px) rotate(${-markings[i]}deg)`,
+                // Move slightly further outward from inner rings
+                transform: `translate(-50%, -50%) rotate(${markings[i]}deg) translateY(-112px) rotate(${-markings[i]}deg)`,
                 color: accentColorWithHash
               }}
             >

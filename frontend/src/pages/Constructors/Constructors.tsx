@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import { buildApiUrl } from '../../lib/api';
 import { teamCarImages } from '../../lib/teamCars';
 import { TeamCard } from '../../components/TeamCard/TeamCard';
@@ -241,7 +241,7 @@ const Constructors = () => {
       <LayoutContainer maxW="1600px">
 
           {/* Loading & Error States */}
-          {(loading || standingsLoading) && <F1LoadingSpinner text="Loading Constructors..." />}
+          {(loading || standingsLoading) && <PageLoadingOverlay text="Loading Constructors..." />}
           
           {(error || standingsError) && (
             <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">

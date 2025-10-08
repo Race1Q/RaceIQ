@@ -5,7 +5,7 @@ import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 // import { useNavigate } from 'react-router-dom';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 // import { teamColors } from '../../lib/teamColors';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import ConstructorStandingCard from '../../components/Standings/ConstructorStandingCard';
@@ -115,7 +115,7 @@ const ConstructorStandings: React.FC = () => {
         </Box>
       </Flex>
 
-      {loading && <F1LoadingSpinner text="Loading Constructor Standings..." />}
+  {loading && <PageLoadingOverlay text="Loading Constructor Standings..." />}
 
       {!loading && (
         <Flex flexDirection="column" gap={{ base: 2, md: 3 }}>
