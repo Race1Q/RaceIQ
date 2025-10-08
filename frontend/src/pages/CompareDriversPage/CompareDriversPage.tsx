@@ -8,7 +8,7 @@ import { useDriverComparison } from '../../hooks/useDriverComparison';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { DriverSelectionPanel } from './components/DriverSelectionPanel';
 import { ComparisonTable } from './components/ComparisonTable';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import PageHeader from '../../components/layout/PageHeader';
 import PdfComparisonCard from '../../components/compare/PdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Box, VStack, Heading, Text, Image, Flex } from '@chakra-ui/react';
 import ReactCountryFlag from 'react-country-flag';
 import userIcon from '../../assets/UserIcon.png';
@@ -30,8 +30,31 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
   const countryCode = countryCodeMap[driver.nationality] || driver.nationality;
   const isNumberAvailable = driver.number && driver.number !== 'N/A';
 
+  // 3D Hover Effect State (ported from RaceProfileCard)
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+  const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const tiltX = (mousePosition.y - 0.5) * -15; // -7.5 to +7.5 degrees
+  const tiltY = (mousePosition.x - 0.5) * 15;  // -7.5 to +7.5 degrees
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setMousePosition({ x, y });
+  };
+
+  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setMousePosition({ x: 0.5, y: 0.5 });
+  };
+
   return (
     <Box
+      ref={cardRef}
       height="100%"
       borderRadius="24px" // Custom high border radius for very rounded corners
       overflow="visible" // Changed to visible to allow image to break frame
@@ -84,6 +107,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             w="65%"
             color="white"
             textShadow="0 1px 4px rgba(0, 0, 0, 0.5)"
+            transform={isHovered ? 'translateZ(18px)' : 'translateZ(0px)'}
+            transition="transform 0.3s ease"
           >
             <Heading
               as="h2"
@@ -93,6 +118,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
               lineHeight="1"
               textTransform="none"
               mb="-0.2em"
+              textShadow={isHovered ? '0 4px 12px rgba(0,0,0,0.8), 0 0 18px rgba(255,255,255,0.25)' : '0 1px 4px rgba(0,0,0,0.5)'}
+              transition="text-shadow 0.3s ease"
             >
               {firstName}
             </Heading>
@@ -103,6 +130,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
               fontWeight="bold"
               lineHeight="1.1"
               textTransform="uppercase"
+              textShadow={isHovered ? '0 4px 12px rgba(0,0,0,0.8), 0 0 18px rgba(255,255,255,0.25)' : '0 1px 4px rgba(0,0,0,0.5)'}
+              transition="text-shadow 0.3s ease"
             >
               {lastName}
             </Heading>
@@ -113,6 +142,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
                 fontSize={{ base: 'xl', md: '3xl' }}
                 fontWeight="bold"
                 pt="sm"
+                transform={isHovered ? 'translateZ(16px)' : 'translateZ(0px)'}
+                transition="transform 0.3s ease"
               >
                 {driver.number}
               </Text>
@@ -126,21 +157,22 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             bottom={{ base: 'sm', md: 'lg' }}
             zIndex={3} // Increased z-index to appear above ghosted number
             align="center"
+            transform={isHovered ? 'translateZ(20px) scale(1.05)' : 'translateZ(0px) scale(1)'}
+            transition="transform 0.3s ease"
           >
             <Box
               boxShadow="lg"
               border="1px solid rgba(255, 255, 255, 0.15)"
               lineHeight="0"
             >
-              <ReactCountryFlag
-                countryCode={countryCode.toLowerCase()}
-                svg
-                style={{
-                  width: '32px',
-                  height: '24px',
-                }}
-                title={driver.nationality}
-              />
+              {countryCode && countryCode.length === 2 ? (
+                <ReactCountryFlag
+                  countryCode={countryCode.toLowerCase()}
+                  svg
+                  style={{ width: '32px', height: '24px' }}
+                  title={driver.nationality}
+                />
+              ) : null}
             </Box>
           </Flex>
 
@@ -164,13 +196,13 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
         </Box>
 
         <Box
-          bg="bg-surface"
+          bg={isHovered ? 'bg-elevated' : 'bg-surface'}
           textAlign="center"
           p={{ base: 'sm', md: 'md' }}
           fontFamily="heading"
-          color="text-muted"
+          color={isHovered ? 'text-primary' : 'text-muted'}
           fontSize={{ base: 'xs', md: 'sm' }}
-          transition="all 0.2s ease"
+          transition="all 0.3s ease"
           borderTop="1px solid"
           borderColor="border-primary"
           borderBottomRadius="24px" // Match the outer container's border radius

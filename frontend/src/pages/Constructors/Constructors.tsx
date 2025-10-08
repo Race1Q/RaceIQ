@@ -4,22 +4,22 @@ import {
   useToast,
   Box,
   Text,
-  Container,
   SimpleGrid,
-  Flex,
-  Image,
-  Input,
+  VStack,
+  Heading,
 } from '@chakra-ui/react';
-import { Select } from 'chakra-react-select';
-import { InputGroup, InputRightElement, IconButton } from '@chakra-ui/react';
-import { CloseIcon } from '@chakra-ui/icons';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Link } from 'react-router-dom';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import { useNavigate } from 'react-router-dom';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import { buildApiUrl } from '../../lib/api';
 import { getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
+import { TeamCard } from '../../components/TeamCard/TeamCard';
+import { SegmentTabs } from '../../components/SegmentTabs/SegmentTabs';
+import { normalizeTeamName, getTeamMeta } from '../../theme/teamTokens';
+import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import PageHeader from '../../components/layout/PageHeader';
+import LayoutContainer from '../../components/layout/LayoutContainer';
 
 // Interfaces
 interface ApiConstructor {
@@ -30,20 +30,107 @@ interface ApiConstructor {
   is_active: boolean;
 }
 
-interface Option {
-  value: string;
-  label: string;
-}
+type FilterOption = "active" | "historical" | "all";
 
+// Country flag emoji mapping - handles both ISO codes and full names
+const getFlagEmoji = (nationality: string): string => {
+  const flags: Record<string, string> = {
+    // ISO Country Codes (what the API returns)
+    'FR': '🇫🇷',  // France
+    'GB': '🇬🇧',  // United Kingdom
+    'IT': '🇮🇹',  // Italy
+    'US': '🇺🇸',  // United States
+    'DE': '🇩🇪',  // Germany
+    'AT': '🇦🇹',  // Austria
+    'CH': '🇨🇭',  // Switzerland
+    'ES': '🇪🇸',  // Spain
+    'CA': '🇨🇦',  // Canada
+    'AU': '🇦🇺',  // Australia
+    'JP': '🇯🇵',  // Japan
+    'BR': '🇧🇷',  // Brazil
+    'MX': '🇲🇽',  // Mexico
+    'FI': '🇫🇮',  // Finland
+    'DK': '🇩🇰',  // Denmark
+    'MC': '🇲🇨',  // Monaco
+    'TH': '🇹🇭',  // Thailand
+    'NL': '🇳🇱',  // Netherlands
+    
+    // Full country names (fallback)
+    'Austrian': '🇦🇹',
+    'Italy': '🇮🇹',
+    'Italian': '🇮🇹',
+    'Germany': '🇩🇪',
+    'German': '🇩🇪',
+    'United Kingdom': '🇬🇧',
+    'British': '🇬🇧',
+    'UK': '🇬🇧',
+    'France': '🇫🇷',
+    'French': '🇫🇷',
+    'Switzerland': '🇨🇭',
+    'Swiss': '🇨🇭',
+    'United States': '🇺🇸',
+    'American': '🇺🇸',
+    'USA': '🇺🇸',
+    'Netherlands': '🇳🇱',
+    'Dutch': '🇳🇱',
+    'Spain': '🇪🇸',
+    'Spanish': '🇪🇸',
+    'Canada': '🇨🇦',
+    'Canadian': '🇨🇦',
+    'Australia': '🇦🇺',
+    'Australian': '🇦🇺',
+    'Japan': '🇯🇵',
+    'Japanese': '🇯🇵',
+    'Brazil': '🇧🇷',
+    'Brazilian': '🇧🇷',
+    'Mexico': '🇲🇽',
+    'Mexican': '🇲🇽',
+    'Finland': '🇫🇮',
+    'Finnish': '🇫🇮',
+    'Denmark': '🇩🇰',
+    'Danish': '🇩🇰',
+    'Monaco': '🇲🇨',
+    'Monegasque': '🇲🇨',
+    'Thailand': '🇹🇭',
+    'Thai': '🇹🇭',
+  };
+  
+  // Try exact match first (handles both ISO codes and full names)
+  if (flags[nationality]) {
+    return flags[nationality];
+  }
+  
+  // Try case-insensitive match
+  const lowerNationality = nationality.toLowerCase();
+  for (const [key, flag] of Object.entries(flags)) {
+    if (key.toLowerCase() === lowerNationality) {
+      return flag;
+    }
+  }
+  
+  // Try partial match
+  for (const [key, flag] of Object.entries(flags)) {
+    if (key.toLowerCase().includes(lowerNationality) || lowerNationality.includes(key.toLowerCase())) {
+      return flag;
+    }
+  }
+  
+  // Fallback to F1 flag
+  return '🏁';
+};
 
 const Constructors = () => {
   const toast = useToast();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth0();
   const [constructors, setConstructors] = useState<ApiConstructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active');
+  const [statusFilter, setStatusFilter] = useState<FilterOption>('active');
+  const [selectedSeason] = useState<number>(new Date().getFullYear());
+  
+  // Get real constructor standings data (skip when logged out)
+  const { standings: constructorStandings, loading: standingsLoading, error: standingsError } = useConstructorStandings(selectedSeason, { enabled: isAuthenticated });
 
   const publicFetch = useCallback(async (url: string) => {
     const response = await fetch(url);
@@ -83,14 +170,6 @@ const Constructors = () => {
     fetchConstructors();
   }, [publicFetch, toast]);
 
-
-
-  const statusOptions: Option[] = [
-    { value: 'active', label: 'Active Teams' },
-    { value: 'inactive', label: 'Inactive Teams' },
-    { value: 'all', label: 'All Teams' },
-  ];
-
   // Apply filters based on authentication status
   const filteredConstructors = useMemo(() => {
     if (!isAuthenticated) {
@@ -98,12 +177,8 @@ const Constructors = () => {
       return constructors.filter(c => c.is_active);
     }
     
-    // Logged-in users: apply search and status filters
+    // Logged-in users: apply status filters
     return constructors.filter((c) => {
-      const matchesSearch =
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.nationality.toLowerCase().includes(searchTerm.toLowerCase());
-
       const matchesStatus =
         statusFilter === 'all'
           ? true
@@ -111,9 +186,37 @@ const Constructors = () => {
           ? c.is_active
           : !c.is_active;
 
-      return matchesSearch && matchesStatus;
+      return matchesStatus;
     });
-  }, [constructors, searchTerm, statusFilter, isAuthenticated]);
+  }, [constructors, statusFilter, isAuthenticated]);
+
+  // Calculate max points for progress bars from real data
+  const maxPoints = useMemo(() => {
+    if (constructorStandings.length > 0) {
+      return Math.max(...constructorStandings.map(s => s.seasonPoints), 1);
+    }
+    return 100; // fallback
+  }, [constructorStandings]);
+
+  // Create a map of constructor standings for easy lookup
+  const standingsMap = useMemo(() => {
+    const map = new Map();
+    constructorStandings.forEach(standing => {
+      map.set(standing.constructorName, standing);
+    });
+    return map;
+  }, [constructorStandings]);
+
+  // Sort constructors by points (descending) using standings data
+  const sortedConstructors = useMemo(() => {
+    const arr = [...filteredConstructors];
+    arr.sort((a, b) => {
+      const pa = standingsMap.get(a.name)?.seasonPoints ?? 0;
+      const pb = standingsMap.get(b.name)?.seasonPoints ?? 0;
+      return pb - pa;
+    });
+    return arr;
+  }, [filteredConstructors, standingsMap]);
 
   return (
     <Box>
@@ -198,7 +301,7 @@ const Constructors = () => {
           {loading && <F1LoadingSpinner text="Loading Constructors..." />}
           {error && (
             <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">
-              {error}
+              {error || standingsError}
             </Text>
           )}
 
@@ -212,10 +315,18 @@ const Constructors = () => {
                 const carImage = teamCarImages[constructor.name];
 
                 return (
-                  <Link
+                  <Box
                     key={constructor.id}
-                    to={`/constructors/${constructor.id}`}
-                    state={{ constructorId: constructor.id }}
+                    onClick={() => navigate(`/constructors/${constructor.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/constructors/${constructor.id}`);
+                      }
+                    }}
+                    cursor="pointer"
                   >
                     <Flex
                       position="relative"
@@ -243,6 +354,9 @@ const Constructors = () => {
                       <Box textAlign="left" zIndex={1}>
                         <Text fontWeight="bold" fontSize="lg" color="white" fontFamily="heading">
                           {constructor.name}
+                        </Heading>
+                        <Text color={fallbackMeta.textOn} opacity={0.8}>
+                          {getFlagEmoji(constructor.nationality)} {constructor.nationality}
                         </Text>
                         <Text fontSize="sm" color="whiteAlpha.800" fontFamily="body">
                           {constructor.nationality}
@@ -284,10 +398,8 @@ const Constructors = () => {
                 );
               })}
             </SimpleGrid>
-            </>
           )}
-        </Container>
-      </Box>
+      </LayoutContainer>
     </Box>
   );
 };

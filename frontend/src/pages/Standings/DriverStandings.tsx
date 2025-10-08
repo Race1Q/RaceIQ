@@ -5,7 +5,7 @@ import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 // import { useNavigate } from 'react-router-dom';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 // import { teamColors } from '../../lib/teamColors';
 import DriverStandingCard from '../../components/Standings/DriverStandingCard';
 import { useDriverStandings } from '../../hooks/useDriverStandings';
@@ -68,7 +68,7 @@ const DriverStandingsPage: React.FC = () => {
         </Box>
       </Flex>
 
-      {loading && <F1LoadingSpinner text="Loading Driver Standings..." />}
+  {loading && <PageLoadingOverlay text="Loading Driver Standings..." />}
 
       {!loading && standings.length > 0 && (
         <Flex flexDirection="column" gap={3}>

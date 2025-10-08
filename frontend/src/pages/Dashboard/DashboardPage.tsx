@@ -6,7 +6,7 @@ import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useThemeColor } from '../../context/ThemeColorContext';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
 import NextRaceWidget from './widgets/NextRaceWidget';
@@ -156,12 +156,7 @@ function DashboardPage() {
         {isFallback && <FallbackBanner accentColor={accentColor} />} {/* Render banner when using fallback data */}
         
         {loading ? (
-          <Box textAlign="center" py="xl">
-            <F1LoadingSpinner text="Loading your personalized dashboard..." />
-            <Text mt={4} color="text-secondary" fontSize="sm">
-              Setting up your F1 experience...
-            </Text>
-          </Box>
+          <PageLoadingOverlay text="Loading your personalized dashboard..." />
         ) : (
           <ResponsiveGridLayout
             layouts={(() => {
