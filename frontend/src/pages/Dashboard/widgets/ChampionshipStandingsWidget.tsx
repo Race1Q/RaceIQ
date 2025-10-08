@@ -5,15 +5,18 @@ import WidgetCard from './WidgetCard';
 import { teamColors } from '../../../lib/teamColors';
 import { Trophy } from 'lucide-react';
 import { driverHeadshots } from '../../../lib/driverHeadshots';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; year?: number }) => {
   // Fix: Use dark text for 1st position in light mode
   const firstPlaceTextColor = useColorModeValue('#1a1a1a', 'white');
+  const { accentColorWithHash } = useThemeColor();
+  
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
         <HStack justify="space-between" align="center" w="full">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Driver Standings
           </Heading>
           {year !== undefined && (

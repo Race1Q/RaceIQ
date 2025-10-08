@@ -2,6 +2,7 @@
 import { FormControl, FormLabel } from '@chakra-ui/react';
 import { Select } from 'chakra-react-select';
 import type { GroupBase, Props as SelectProps } from 'chakra-react-select';
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 // Define a standard option type for reusability
 export interface SelectOption {
@@ -10,7 +11,7 @@ export interface SelectOption {
 }
 
 // Define the custom styles object inside the component file to keep it self-contained
-const customSelectStyles = {
+const getCustomSelectStyles = (accentColor: string) => ({
   control: (provided: any) => ({
     ...provided,
     bg: 'bg-surface-raised',
@@ -27,7 +28,7 @@ const customSelectStyles = {
   option: (provided: any, state: { isSelected: boolean; isFocused: boolean }) => ({
     ...provided,
     bg: state.isFocused ? 'bg-surface' : 'transparent',
-    color: state.isSelected ? 'brand.red' : 'text-primary',
+    color: state.isSelected ? accentColor : 'text-primary',
     '&:active': {
       bg: 'bg-surface',
     },
@@ -40,7 +41,7 @@ const customSelectStyles = {
     ...provided,
     color: 'text-primary',
   }),
-};
+});
 
 // Define the props for our reusable component
 interface SearchableSelectProps extends SelectProps<SelectOption, false, GroupBase<SelectOption>> {
@@ -58,6 +59,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   isDisabled = false,
   ...rest
 }) => {
+  const { accentColorWithHash } = useThemeColor();
   return (
     <FormControl>
       <FormLabel color="text-primary">{label}</FormLabel>
@@ -69,8 +71,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         isClearable={isClearable}
         isLoading={isLoading}
         isDisabled={isDisabled || isLoading}
-        chakraStyles={customSelectStyles}
-        focusBorderColor="brand.red"
+        chakraStyles={getCustomSelectStyles(accentColorWithHash)}
+        focusBorderColor={accentColorWithHash}
         {...rest}
       />
     </FormControl>

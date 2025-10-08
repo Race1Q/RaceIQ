@@ -10,11 +10,13 @@ import {
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
+import { useThemeColor } from '../../context/ThemeColorContext';
 import ThemeToggleButton from '../ThemeToggleButton/ThemeToggleButton';
 
 // --- Sub-component for Navigation Links ---
 const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: () => void }) => {
   const { isAuthenticated } = useAuth0();
+  const { accentColorWithHash } = useThemeColor();
   
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -36,20 +38,20 @@ const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: ()
           as={Link}
           to={path}
           variant="ghost"
-          color={useActiveRoute(path) ? 'brand.red' : 'text-primary'}
+          color={useActiveRoute(path) ? accentColorWithHash : 'text-primary'}
           fontFamily="heading"
           justifyContent={isExpanded ? "flex-start" : "center"}
           h="48px"
           minH="48px"
-          _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}
+          _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}
           isActive={useActiveRoute(path)}
-          _active={{ bg: 'bg-surface-raised', color: 'brand.red' }}
+          _active={{ bg: 'bg-surface-raised', color: accentColorWithHash }}
           position="relative"
           onClick={onClose}
           _after={{
             content: '""', position: 'absolute',
             width: useActiveRoute(path) ? '3px' : '0',
-            height: '100%', left: 0, bgColor: 'brand.red',
+            height: '100%', left: 0, bgColor: accentColorWithHash,
             transition: 'width 0.3s ease',
           }}
         >
@@ -76,6 +78,7 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimerRef = useRef<number | null>(null);
   const { logout } = useAuth0();
+  const { accentColorWithHash } = useThemeColor();
   const toast = useToast();
 
   const isExpanded = isPinned || isHovered;
@@ -124,12 +127,12 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
           boxShadow="0 8px 32px var(--chakra-colors-shadow-color-lg)"
         >
           <HStack spacing="3" align="start">
-            <Icon as={LogOut} boxSize={5} color="brand.red" />
+            <Icon as={LogOut} boxSize={5} color={accentColorWithHash} />
             <VStack align="start" spacing="2" flex="1">
-              <Text fontWeight="bold" fontSize="md" color="brand.red">Sign Out</Text>
+              <Text fontWeight="bold" fontSize="md" color={accentColorWithHash}>Sign Out</Text>
               <Text fontSize="sm" color="text-secondary">Are you sure you want to sign out?</Text>
               <HStack spacing="2" mt="2">
-                <Button size="sm" colorScheme="red"
+                <Button size="sm" bg={accentColorWithHash} color="white" _hover={{ opacity: 0.9 }}
                   onClick={() => {
                     logout({ logoutParams: { returnTo: window.location.origin } });
                     onClose();
@@ -173,13 +176,13 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
 
               {/* User Controls */}
               <VStack spacing="sm" align="stretch">
-                <Button as={Link} to="/profile" variant="ghost" color="text-primary" fontFamily="heading" justifyContent="flex-start" h="48px" _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }} onClick={onClose}>
+                <Button as={Link} to="/profile" variant="ghost" color="text-primary" fontFamily="heading" justifyContent="flex-start" h="48px" _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }} onClick={onClose}>
                   <HStack spacing="sm">
                     <Icon as={UserCircle} boxSize={5} />
                     <Text>My Profile</Text>
                   </HStack>
                 </Button>
-                <Button variant="ghost" color="text-muted" fontFamily="heading" justifyContent="flex-start" h="48px" onClick={handleLogout} _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}>
+                <Button variant="ghost" color="text-muted" fontFamily="heading" justifyContent="flex-start" h="48px" onClick={handleLogout} _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}>
                   <HStack spacing="sm">
                     <Icon as={LogOut} boxSize={5} />
                     <Text>Sign Out</Text>
@@ -235,13 +238,13 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
 
         {/* User Controls */}
         <VStack spacing="sm" align="stretch">
-          <Button as={Link} to="/profile" variant="ghost" color="text-primary" fontFamily="heading" justifyContent={isExpanded ? "flex-start" : "center"} h="48px" _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}>
+          <Button as={Link} to="/profile" variant="ghost" color="text-primary" fontFamily="heading" justifyContent={isExpanded ? "flex-start" : "center"} h="48px" _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}>
             <HStack spacing="sm">
               <Icon as={UserCircle} boxSize={5} />
               {isExpanded && <Text>My Profile</Text>}
             </HStack>
           </Button>
-          <Button variant="ghost" color="text-muted" fontFamily="heading" justifyContent={isExpanded ? "flex-start" : "center"} h="48px" onClick={handleLogout} _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}>
+          <Button variant="ghost" color="text-muted" fontFamily="heading" justifyContent={isExpanded ? "flex-start" : "center"} h="48px" onClick={handleLogout} _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}>
             <HStack spacing="sm">
               <Icon as={LogOut} boxSize={5} />
               {isExpanded && <Text>Sign Out</Text>}
@@ -251,7 +254,7 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
 
         {/* Pin and Theme Toggle */}
         <HStack mt="md" justify={isExpanded ? "space-between" : "center"} align="center">
-          <Button variant="ghost" color="text-muted" size="sm" onClick={() => setIsPinned(!isPinned)} _hover={{ color: 'brand.red', bg: 'bg-surface-raised' }}>
+          <Button variant="ghost" color="text-muted" size="sm" onClick={() => setIsPinned(!isPinned)} _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}>
             <HStack spacing="sm">
               <Icon as={isPinned ? Pin : PinOff} boxSize={4} />
               {isExpanded && <Text fontSize="sm">{isPinned ? 'Unpin' : 'Pin'}</Text>}

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Flex, Text, Button, useToast, Image, SimpleGrid } from '@chakra-ui/react';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
@@ -219,7 +219,7 @@ const ConstructorDetails: React.FC = () => {
     [pointsPerSeason]
   );
 
-  if (loading) return <F1LoadingSpinner text="Loading Constructor Details..." />;
+  if (loading) return <PageLoadingOverlay text="Loading Constructor Details..." />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;

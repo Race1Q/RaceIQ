@@ -4,20 +4,21 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text, SimpleGrid, VStack, HStack, Button, Icon, Alert, AlertIcon, AlertTitle } from '@chakra-ui/react';
 import { ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import DriversSkeleton from './DriversSkeleton';
 import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileCard';
 import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
 import { useDriversData } from '../../hooks/useDriversData';
+import { useThemeColor } from '../../context/ThemeColorContext';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
 
 // New component for the fallback banner
-const FallbackBanner = () => (
+const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
   <Alert
     status="warning"
     variant="solid"
-    bg="brand.red"
+    bg={`#${accentColor}`}
     color="white"
     borderRadius="md"
     mb="lg"
@@ -29,6 +30,7 @@ const FallbackBanner = () => (
 
 const Drivers = () => {
   const { loading, error, isFallback, orderedTeamNames, groupedDrivers } = useDriversData(2025);
+  const { accentColor, accentColorLight, accentColorRgba } = useThemeColor();
   const [selectedTeam, setSelectedTeam] = useState<string>('All');
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -81,10 +83,10 @@ const Drivers = () => {
         subtitle="Explore F1 drivers and their teams"
       />
       <LayoutContainer maxW="1600px">
-        {isFallback && <FallbackBanner />}
-        {loading && <F1LoadingSpinner text="Loading Drivers..." />}
+        {isFallback && <FallbackBanner accentColor={accentColor} />}
+  {loading && <DriversSkeleton />}
         {!loading && error && !isFallback && (
-          <Text color="brand.redLight" textAlign="center" fontSize="1.2rem" p="xl">{error}</Text>
+          <Text color={`#${accentColorLight}`} textAlign="center" fontSize="1.2rem" p="xl">{error}</Text>
         )}
         {!loading && (!error || isFallback) && (
           <>
@@ -120,9 +122,9 @@ const Drivers = () => {
                           _hover={{ color: isActive ? 'text-on-accent' : 'text-primary' }}
                           _active={{}}
                           transition="color .25s ease"
-                          bg={isActive ? 'brand.red' : 'transparent'}
+                          bg={isActive ? `#${accentColor}` : 'transparent'}
                           borderRadius="full"
-                          boxShadow={isActive ? '0 6px 24px rgba(225, 6, 0, 0.35), 0 0 0 1px rgba(225, 6, 0, 0.35) inset' : 'none'}
+                          boxShadow={isActive ? `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset` : 'none'}
                           sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
                           isDisabled={isFallback}
                         >
@@ -206,7 +208,7 @@ const Drivers = () => {
                         teamName={teamName}
                         teamColor={teamColors[teamName] || teamColors['Default']}
                       />
-                      <SimpleGrid columns={{ base: 1, sm: 1, md: 2 }} gap={{ base: 4, md: 6 }}>
+                      <SimpleGrid columns={{ base: 2, sm: 2, md: 2 }} gap={{ base: 3, md: 6 }}>
                         {driversInTeam.map(driver => {
                           const driverCardData = {
                             id: driver.id.toString(),

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Box, VStack, Heading, Text, Circle } from '@chakra-ui/react';
+import { useThemeColor } from '../../context/ThemeColorContext';
 
 interface FeatureCardProps {
   icon: React.ReactElement;
@@ -10,6 +11,8 @@ interface FeatureCardProps {
 }
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) => {
+  const { accentColorWithHash } = useThemeColor();
+  
   return (
     <VStack
       bg="bg-surface"
@@ -23,14 +26,14 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) =
       transition="all 0.3s ease"
       _hover={{
         boxShadow: '0 12px 30px rgba(0, 0, 0, 0.3)',
-        borderColor: 'brand.red',
+        borderColor: accentColorWithHash,
       }}
     >
       {/* Circle component is perfect for the icon background */}
       <Circle
         size={{ base: '60px', md: '80px' }}
         bg="bg-surface-raised"
-        color="brand.red"
+        color={accentColorWithHash}
       >
         {/* Clone the icon to apply a new size */}
         {React.cloneElement(icon, { size: 40 })}

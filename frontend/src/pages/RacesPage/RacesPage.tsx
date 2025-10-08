@@ -6,7 +6,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
-import HeroSection from '../../components/HeroSection/HeroSection';
+import PageHeader from '../../components/layout/PageHeader';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
 import type { Race } from '../../types/races';
 import { apiFetch } from '../../lib/api';
@@ -107,7 +107,7 @@ const NotAuthenticatedView = () => {
 };
 
 const LoadingView = () => (
-  <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+  <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
     {Array.from({ length: 12 }).map((_, idx) => (
       <Box key={idx} p={4} borderRadius="lg" bg="bg-surface" borderWidth="1px" borderColor="border-primary">
         <Skeleton height="150px" borderRadius="md" mb={4} />
@@ -190,7 +190,7 @@ const RacesPage: React.FC = () => {
         {upcomingRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Upcoming races</Heading>
-            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
               {upcomingRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />
@@ -203,7 +203,7 @@ const RacesPage: React.FC = () => {
         {pastRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Past Races</Heading>
-            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
               {pastRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />
@@ -217,19 +217,27 @@ const RacesPage: React.FC = () => {
   };
 
   return (
-    <Box bg="bg-primary">
-      <HeroSection title="Races" subtitle={`Season ${season}`} />
-      <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
-        {/* Season filter */}
-        <HStack mb={6} justify="flex-end">
+    <Box bg="bg-primary" minH="100vh">
+      <PageHeader 
+        title="Races" 
+        subtitle={`Season ${season} - Track every race of the F1 season`}
+        rightContent={
           <HStack>
-            <Text color="text-secondary">Season:</Text>
-            <Select size="sm" w="fit-content" value={season} onChange={(e) => setSeason(Number(e.target.value))}>
+            <Text color="text-secondary" fontSize="sm">Season:</Text>
+            <Select 
+              size="sm" 
+              w="fit-content" 
+              value={season} 
+              onChange={(e) => setSeason(Number(e.target.value))}
+              bg="bg-surface"
+              borderColor="border-subtle"
+            >
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </Select>
           </HStack>
-        </HStack>
-
+        }
+      />
+      <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
         {renderContent()}
       </Container>
     </Box>

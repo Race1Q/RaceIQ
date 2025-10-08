@@ -5,9 +5,11 @@ import WidgetCard from './WidgetCard';
 import { useUserProfile } from '../../../hooks/useUserProfile';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
+import { useThemeColor } from '../../../context/ThemeColorContext';
 
 function FavoriteTeamSnapshotWidget() {
   const { favoriteConstructor, loading, error } = useUserProfile();
+  const { accentColorWithHash } = useThemeColor();
   
   // Debug logging
   console.log('🏎️ [FavoriteTeamWidget] State:', { favoriteConstructor, loading, error });
@@ -16,11 +18,11 @@ function FavoriteTeamSnapshotWidget() {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Favorite Team
           </Heading>
           <HStack spacing="md" align="center" justify="center" w="full" h="100px">
-            <Spinner color="brand.red" size="md" />
+            <Spinner color={accentColorWithHash} size="md" />
             <Text color="text-muted" fontSize="sm">Loading...</Text>
           </HStack>
         </VStack>
@@ -32,7 +34,7 @@ function FavoriteTeamSnapshotWidget() {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
-          <Heading color="brand.red" size="md" fontFamily="heading">
+          <Heading color={accentColorWithHash} size="md" fontFamily="heading">
             Favorite Team
           </Heading>
           
@@ -53,7 +55,7 @@ function FavoriteTeamSnapshotWidget() {
               <Text color="text-muted" fontSize="sm" textAlign="center">
                 No favorite team set
               </Text>
-              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
                 Select Constructor
               </Button>
             </VStack>
@@ -70,7 +72,7 @@ function FavoriteTeamSnapshotWidget() {
   return (
     <WidgetCard>
       <VStack align="start" spacing="md">
-        <Heading color="brand.red" size="md" fontFamily="heading">
+        <Heading color={accentColorWithHash} size="md" fontFamily="heading">
           Favorite Team
         </Heading>
         
@@ -104,7 +106,7 @@ function FavoriteTeamSnapshotWidget() {
               <Text color="text-secondary" fontSize="sm">
                 Constructor's Championship
               </Text>
-            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="brand.red" color="brand.red" _hover={{ bg: 'brand.red', color: 'white' }}>
+            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
               Select Constructor
             </Button>
             </VStack>
@@ -112,7 +114,7 @@ function FavoriteTeamSnapshotWidget() {
           
           <VStack align="start" spacing="xs" w="full">
             <HStack spacing="md" justify="space-between" w="full">
-              <Text color="brand.red" fontSize="lg" fontWeight="bold" fontFamily="mono">
+              <Text color={accentColorWithHash} fontSize="lg" fontWeight="bold" fontFamily="mono">
                 600 pts
               </Text>
               <Text color="text-muted" fontSize="sm">

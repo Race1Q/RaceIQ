@@ -5,7 +5,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
 import KeyInfoBar from '../../components/KeyInfoBar/KeyInfoBar';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import ReactCountryFlag from 'react-country-flag';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
 import { teamCarImages } from '../../lib/teamCars';
@@ -20,7 +20,7 @@ const DriverDetailPage: React.FC = () => {
   // --- DEBUG STEP 3: Log the data as it's received by the page component ---
   console.log("%c3. Data Received by Page Component:", "color: orange; font-weight: bold;", driverDetails);
 
-  if (loading) return <F1LoadingSpinner text="Loading Driver Details..." />;
+  if (loading) return <PageLoadingOverlay text="Loading Driver Details..." />;
   if (error || !driverDetails) return <Text p="lg">Error: {error || 'Driver data could not be loaded.'}</Text>;
 
   const teamColor = teamColors[driverDetails.teamName] || '#333333';

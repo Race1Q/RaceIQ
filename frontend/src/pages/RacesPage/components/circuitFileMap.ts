@@ -1,34 +1,33 @@
 // src/pages/RacesPage/components/circuitFileMap.ts
 // Map your DB circuit_id -> file slug (without extension).
-// Add/adjust as you grow your dataset.
+// UPDATED with actual circuit IDs from database console output
 export const circuitFileMap: Record<number, string> = {
-    // Common F1 circuits - you'll need to verify these IDs match your database
-    1: "bahrain-international-circuit",
-    2: "jeddah-corniche", 
-    3: "albert-park",
-    4: "albert-park", // Australian GP (your dataset uses this slug)
-    5: "autodromo-enzo-e-dino-ferrari", // Imola
-    6: "circuit-de-monaco", // Monaco
-    7: "circuit-de-barcelona-catalunya", // Spanish GP
-    8: "circuit-gilles-villeneuve", // Canadian GP
-    9: "red-bull-ring", // Austrian GP
-    10: "silverstone", // British GP
-    11: "hungaroring", // Hungarian GP
-    12: "circuit-de-spa-francorchamps", // Belgian GP
-    13: "circuit-park-zandvoort", // Dutch GP
-    14: "autodromo-nazionale-di-monza", // Italian GP
-    15: "baku-city-circuit", // Azerbaijan GP
-    16: "marina-bay-street-circuit", // Singapore GP
-    17: "suzuka", // Japanese GP
-    18: "losail", // Qatar GP
-    19: "circuit-of-the-americas", // US GP
-    20: "miami", // Miami GP
-    21: "aut-dromo-hermanos-rodr-guez", // Mexican GP
-    22: "aut-dromo-jos-carlos-pace", // Brazilian GP
-    23: "las-vegas-street-circuit", // Las Vegas GP
-    24: "yas-marina", // Abu Dhabi GP
-    
-    // Keep the original mapping
-    297: "hungaroring",
-  };
+  // Updated with actual circuit IDs from your database
+  4: "albert-park",                    // Australian Grand Prix
+  5: "circuit-of-the-americas",        // United States Grand Prix (Austin)
+  8: "bahrain-international-circuit",  // Bahrain Grand Prix
+  9: "baku-city-circuit",              // Azerbaijan Grand Prix
+  14: "circuit-de-barcelona-catalunya", // Spanish Grand Prix
+  26: "hungaroring",                   // Hungarian Grand Prix
+  27: "autodromo-enzo-e-dino-ferrari", // Emilia Romagna Grand Prix (Imola)
+  29: "aut-dromo-jos-carlos-pace",     // São Paulo Grand Prix
+  33: "jeddah-corniche",               // Saudi Arabian Grand Prix
+  39: "losail",                        // Qatar Grand Prix
+  41: "marina-bay-street-circuit",     // Singapore Grand Prix
+  42: "miami",                         // Miami Grand Prix
+  43: "circuit-de-monaco",             // Monaco Grand Prix
+  46: "autodromo-nazionale-di-monza",  // Italian Grand Prix (Monza)
+  56: "red-bull-ring",                 // Austrian Grand Prix
+  60: "aut-dromo-hermanos-rodr-guez",  // Mexico City Grand Prix
+  63: "shanghai-international-circuit", // Chinese Grand Prix
+  64: "silverstone",                   // British Grand Prix
+  66: "circuit-de-spa-francorchamps",  // Belgian Grand Prix (Spa)
+  67: "suzuka",                        // Japanese Grand Prix
+  70: "las-vegas-street-circuit",      // Las Vegas Grand Prix
+  71: "circuit-gilles-villeneuve",     // Canadian Grand Prix
+  73: "yas-marina",                    // Abu Dhabi Grand Prix
+  75: "circuit-park-zandvoort",        // Dutch Grand Prix
   
+  // Keep the original mapping as fallback
+  297: "hungaroring",
+};
