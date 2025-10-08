@@ -17,7 +17,7 @@ import { CloseIcon } from '@chakra-ui/icons';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select'; // Assuming 'react-select' is used for the custom styled select
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner'; // Assuming this path
+import ConstructorsSkeleton from './ConstructorsSkeleton';
 import { buildApiUrl } from '../../lib/api';
 import { getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
@@ -274,7 +274,7 @@ const Constructors = () => {
       <Box bg="bg-primary" color="text-primary" py={{ base: 'md', md: 'lg' }}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
           {loading || (standingsLoading && isAuthenticated) ? (
-            <F1LoadingSpinner text="Loading Constructors..." />
+            <ConstructorsSkeleton />
           ) : error || standingsError ? (
             <Text
               color="brand.redLight"
