@@ -31,13 +31,14 @@ const StatCard: React.FC<StatCardProps> = ({
     >
       <HStack spacing={4} align="center">
         <Box
-          p={2}
+          p={3}
           borderRadius="md"
           bg={`${color}20`}
           border="1px solid"
           borderColor={`${color}40`}
+          flexShrink={0}
         >
-          <Icon as={icon} boxSize={5} color={color} />
+          <Icon as={icon} boxSize={6} color={color} />
         </Box>
         <VStack align="flex-start" spacing={0} flex="1">
           <Text

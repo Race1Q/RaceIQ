@@ -9,7 +9,7 @@ import {
 import { useThemeColor } from '../../context/ThemeColorContext';
 import ResponsiveTable from '../../components/layout/ResponsiveTable';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, RotateCcw, CornerUpRight, Zap } from 'lucide-react';
+import { ArrowLeft, MapPin, RotateCcw, CornerUpRight, Zap, TrendingUp, TrendingDown } from 'lucide-react';
 import type { Race } from '../../types/races';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
@@ -307,6 +307,9 @@ const RaceDetailPage: React.FC = () => {
   const [driverFilter, setDriverFilter] = useState<string[]>([]);
   const [qualiPhase, setQualiPhase] = useState<'all' | 'q1' | 'q2' | 'q3'>('all');
   // const [lapFilter, setLapFilter] = useState<number | 'all'>('all'); // not currently used in UI
+  
+  // Position change chart interactivity
+  const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
 
   // base race
   useEffect(() => {
@@ -1045,130 +1048,323 @@ const RaceDetailPage: React.FC = () => {
               </VStack>
             </TabPanel>
 
-{/* QUALI → RACE (improved SVG) */}
+{/* QUALI → RACE (Enhanced Interactive SVG) */}
 <TabPanel p={{ base: 2, md: 4 }}>
   <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
     <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="text-primary">Grid to Finish</Text>
+    <Text fontSize="sm" color="gray.400" mb={2}>
+      Debug: Hovered driver = {hoveredDriver || 'None'}
+    </Text>
 
-    <Box
-      overflow="hidden"
-      border="1px solid"
-      borderColor="border-subtle"
-      borderRadius="lg"
-      bg="bg-elevated"
-      p={{ base: 1, md: 3 }}
-      minH={{ base: '500px', md: '400px' }}
-      w="full"
-    >
-      {(() => {
-        const rowHeight = 32;
-        const W = 1600;
-        const LEFT_X = 300;
-        const RIGHT_X = 1300;
-        const NAME_LEFT_X = LEFT_X - 20;
-        const NAME_RIGHT_X = RIGHT_X + 40;
-        const TOP = 60;
-        const BASE_Y = 80;
-        const bottomPad = 60; // breathing room below the lowest element
+    {(() => {
+      // Calculate position changes and key stories
+      const leftOrdered = filteredRaceResults
+        .slice()
+        .sort((a, b) => (a.grid ?? 99) - (b.grid ?? 99));
 
-        // Sort once by grid to define left column order
-        const leftOrdered = filteredRaceResults
-          .slice()
-          .sort((a, b) => (a.grid ?? 99) - (b.grid ?? 99));
+      const finishOrder = filteredRaceResults
+        .slice()
+        .sort((a, b) => (a.position ?? 99) - (b.position ?? 99));
 
-        // Build a quick lookup by driver_id for finish order index
-        // (fallback to grid order index when position is missing/duplicated)
-        const finishOrder = filteredRaceResults
-          .slice()
-          .sort((a, b) => (a.position ?? 99) - (b.position ?? 99));
+      const finishIndexByDriver: Record<string | number, number> = {};
+      finishOrder.forEach((rr, idx) => {
+        const key = rr.driver_id ?? rr.driver_code ?? `${idx}`;
+        finishIndexByDriver[key] = idx;
+      });
 
-        const finishIndexByDriver: Record<string | number, number> = {};
-        finishOrder.forEach((rr, idx) => {
-          const key = rr.driver_id ?? rr.driver_code ?? `${idx}`;
-          finishIndexByDriver[key] = idx;
-        });
+      // Calculate position changes and find key stories
+      const positionChanges = leftOrdered.map((r, i) => {
+        const key = r.driver_id ?? r.driver_code ?? `${i}`;
+        const gridPos = r.grid ?? 99;
+        const finishPos = r.position ?? 99;
+        const change = gridPos - finishPos; // positive = gained positions
+        const driverLabel = r.driver_name ?? r.driver_code ?? r.driver_id;
+        
+        return {
+          driver: driverLabel,
+          gridPos,
+          finishPos,
+          change,
+          key
+        };
+      });
 
-        // Precompute all positions and track the true max Y across both sides
-        const items = leftOrdered.map((r, i) => {
-          const key = r.driver_id ?? r.driver_code ?? `${i}`;
-          const y1 = BASE_Y + i * rowHeight;
-          const idx2 = finishIndexByDriver[key] ?? i;
-          const y2 = BASE_Y + idx2 * rowHeight;
+      // Find biggest gainer, biggest loser, and hard charger
+      const biggestGainer = positionChanges.reduce((max, curr) => 
+        curr.change > max.change ? curr : max, positionChanges[0] || { change: 0, driver: '', gridPos: 0, finishPos: 0 });
+      
+      const biggestLoser = positionChanges.reduce((min, curr) => 
+        curr.change < min.change ? curr : min, positionChanges[0] || { change: 0, driver: '', gridPos: 0, finishPos: 0 });
+      
+      const hardCharger = positionChanges
+        .filter(p => p.gridPos >= 10) // Started from 10th or lower
+        .reduce((max, curr) => curr.change > max.change ? curr : max, 
+          positionChanges.find(p => p.gridPos >= 10) || { change: 0, driver: '', gridPos: 0, finishPos: 0 });
 
-          const constructor = r.constructor_name ?? r.constructor_id;
-          const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
-          let color = teamColors[constructorKey] || teamColors["Default"];
-          if (!color && typeof constructorKey === "string") {
-            const k = Object.keys(teamColors).find(t => constructorKey.toLowerCase().includes(t.toLowerCase()));
-            color = k ? teamColors[k] : teamColors["Default"];
-          }
-          color = `#${color}`;
+      return (
+        <>
+          {/* Key Story Stat Cards */}
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
+            <StatCard
+              icon={TrendingUp}
+              value={`${biggestGainer.driver} (+${biggestGainer.change})`}
+              label="Biggest Gainer"
+              color="#10B981"
+            />
+            <StatCard
+              icon={TrendingDown}
+              value={`${biggestLoser.driver} (${biggestLoser.change})`}
+              label="Biggest Drop"
+              color="#EF4444"
+            />
+            <StatCard
+              icon={Zap}
+              value={`${hardCharger.driver} (P${hardCharger.gridPos}→P${hardCharger.finishPos})`}
+              label="Hard Charger"
+              color="#F59E0B"
+            />
+          </SimpleGrid>
 
-          const driverLabel = r.driver_name ?? r.driver_code ?? r.driver_id;
+          <Box
+            overflow="hidden"
+            border="1px solid"
+            borderColor="border-subtle"
+            borderRadius="lg"
+            bg="bg-elevated"
+            p={{ base: 1, md: 3 }}
+            minH={{ base: '500px', md: '400px' }}
+            w="full"
+            position="relative"
+          >
+            {(() => {
+              const rowHeight = 32;
+              const W = 1600;
+              const LEFT_X = 300;
+              const RIGHT_X = 1300;
+              const NAME_LEFT_X = LEFT_X - 20;
+              const NAME_RIGHT_X = RIGHT_X + 40;
+              const TOP = 60;
+              const BASE_Y = 80;
+              const bottomPad = 60;
 
-          return { y1, y2, color, driverLabel };
-        });
+              // Precompute all positions with enhanced data
+              const items = leftOrdered.map((r, i) => {
+                const key = r.driver_id ?? r.driver_code ?? `${i}`;
+                const y1 = BASE_Y + i * rowHeight;
+                const idx2 = finishIndexByDriver[key] ?? i;
+                const y2 = BASE_Y + idx2 * rowHeight;
 
-        const maxY = items.length
-          ? Math.max(...items.map(it => Math.max(it.y1, it.y2)))
-          : BASE_Y; // safe default if list is empty
+                const constructor = r.constructor_name ?? r.constructor_id;
+                const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
+                let color = teamColors[constructorKey] || teamColors["Default"];
+                if (!color && typeof constructorKey === "string") {
+                  const k = Object.keys(teamColors).find(t => constructorKey.toLowerCase().includes(t.toLowerCase()));
+                  color = k ? teamColors[k] : teamColors["Default"];
+                }
+                color = `#${color}`;
 
-        const lastY = maxY; // where vertical lines should end
-        const height = lastY + bottomPad;
+                const driverLabel = r.driver_name ?? r.driver_code ?? r.driver_id;
+                const gridPos = r.grid ?? 99;
+                const finishPos = r.position ?? 99;
+                const change = gridPos - finishPos;
 
-        return (
-          <Box overflowX="auto" w="full" h="full">
-            <svg
-              viewBox={`0 0 ${W + 100} ${height}`}
-              width="100%"
-              height="450px"
-              preserveAspectRatio="xMidYMid meet"
-              style={{ minHeight: '450px', minWidth: '100%' }}
-            >
-            {/* Vertical rails end exactly at lastY */}
-            <line x1={LEFT_X}  y1={TOP} x2={LEFT_X}  y2={lastY} stroke="currentColor" strokeWidth={3} />
-            <line x1={RIGHT_X} y1={TOP} x2={RIGHT_X} y2={lastY} stroke="currentColor" strokeWidth={3} />
+                return { 
+                  y1, y2, color, driverLabel, key, gridPos, finishPos, change,
+                  isHovered: hoveredDriver === key
+                };
+              });
 
-            <text x={NAME_LEFT_X - 100} y={45} fontSize="32" fontWeight="bold" fill="currentColor">Grid</text>
-            <text x={RIGHT_X + 20} y={45} fontSize="32" fontWeight="bold" fill="currentColor">Finish</text>
+              const maxY = items.length
+                ? Math.max(...items.map(it => Math.max(it.y1, it.y2)))
+                : BASE_Y;
 
-            {items.map((it, i) => (
-              <g key={i}>
-                {/* Left name & node */}
-                <text
-                  x={NAME_LEFT_X}
-                  y={it.y1 + 8}
-                  fontSize="22"
-                  fontWeight="bold"
-                  fill={it.color}
-                  textAnchor="end"
-                >
-                  {typeof it.driverLabel === 'string' && it.driverLabel.length > 12 ? it.driverLabel.split(' ')[0] : it.driverLabel}
-                </text>
-                <circle cx={LEFT_X} cy={it.y1} r={12} fill={it.color} />
+              const lastY = maxY;
+              const height = lastY + bottomPad;
 
-                {/* Right node & name */}
-                <circle cx={RIGHT_X} cy={it.y2} r={12} fill={it.color} />
-                <text
-                  x={NAME_RIGHT_X}
-                  y={it.y2 + 8}
-                  fontSize="22"
-                  fontWeight="bold"
-                  fill={it.color}
-                  textAnchor="start"
-                >
-                  {typeof it.driverLabel === 'string' && it.driverLabel.length > 12 ? it.driverLabel.split(' ')[0] : it.driverLabel}
-                </text>
+              return (
+                <Box overflowX="auto" w="full" h="full">
+                  <svg
+                    viewBox={`0 0 ${W + 100} ${height}`}
+                    width="100%"
+                    height="450px"
+                    preserveAspectRatio="xMidYMid meet"
+                    style={{ minHeight: '450px', minWidth: '100%' }}
+                  >
+                    {/* Defs for glow effects */}
+                    <defs>
+                      <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge> 
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    </defs>
 
-                {/* Connecting line */}
-                <line x1={LEFT_X} y1={it.y1} x2={RIGHT_X} y2={it.y2} stroke={it.color} strokeWidth={8} />
-              </g>
-            ))}
-          </svg>
+                    {/* Vertical rails */}
+                    <line x1={LEFT_X} y1={TOP} x2={LEFT_X} y2={lastY} stroke="currentColor" strokeWidth={3} />
+                    <line x1={RIGHT_X} y1={TOP} x2={RIGHT_X} y2={lastY} stroke="currentColor" strokeWidth={3} />
+
+                    {/* Headers */}
+                    <text x={NAME_LEFT_X - 100} y={45} fontSize="32" fontWeight="bold" fill="currentColor">Grid</text>
+                    <text x={RIGHT_X + 20} y={45} fontSize="32" fontWeight="bold" fill="currentColor">Finish</text>
+
+                    {/* Driver lines and labels */}
+                    {items.map((it, i) => {
+                      const isHovered = hoveredDriver === String(it.key);
+                      const opacity = hoveredDriver && !isHovered ? 0.15 : 1;
+                      const strokeWidth = isHovered ? 12 : 8;
+                      const filter = isHovered ? "url(#glow)" : "none";
+
+                      return (
+                        <g key={i}>
+                          {/* Transparent overlay for better hover detection */}
+                          <rect
+                            x={LEFT_X - 50}
+                            y={Math.min(it.y1, it.y2) - 20}
+                            width={RIGHT_X - LEFT_X + 100}
+                            height={Math.max(Math.abs(it.y2 - it.y1), 40) + 40}
+                            fill="transparent"
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={() => setHoveredDriver(String(it.key))}
+                            onMouseLeave={() => setHoveredDriver(null)}
+                          />
+
+                          {/* Left name & node */}
+                          <text
+                            x={NAME_LEFT_X}
+                            y={it.y1 + 8}
+                            fontSize="22"
+                            fontWeight="bold"
+                            fill={it.color}
+                            textAnchor="end"
+                            opacity={opacity}
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={() => setHoveredDriver(String(it.key))}
+                            onMouseLeave={() => setHoveredDriver(null)}
+                          >
+                            {typeof it.driverLabel === 'string' && it.driverLabel.length > 12 ? it.driverLabel.split(' ')[0] : it.driverLabel}
+                          </text>
+                          <circle 
+                            cx={LEFT_X} 
+                            cy={it.y1} 
+                            r={isHovered ? 16 : 12} 
+                            fill={it.color}
+                            stroke="white"
+                            strokeWidth={isHovered ? 3 : 2}
+                            opacity={opacity}
+                            filter={filter}
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={() => setHoveredDriver(String(it.key))}
+                            onMouseLeave={() => setHoveredDriver(null)}
+                          />
+
+                          {/* Right node & name with position change indicator */}
+                          <circle 
+                            cx={RIGHT_X} 
+                            cy={it.y2} 
+                            r={isHovered ? 16 : 12} 
+                            fill={it.color}
+                            stroke="white"
+                            strokeWidth={isHovered ? 3 : 2}
+                            opacity={opacity}
+                            filter={filter}
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={() => setHoveredDriver(String(it.key))}
+                            onMouseLeave={() => setHoveredDriver(null)}
+                          />
+                          
+                          {/* Driver name */}
+                          <text
+                            x={NAME_RIGHT_X}
+                            y={it.y2 + 8}
+                            fontSize="22"
+                            fontWeight="bold"
+                            fill={it.color}
+                            textAnchor="start"
+                            opacity={opacity}
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={() => setHoveredDriver(String(it.key))}
+                            onMouseLeave={() => setHoveredDriver(null)}
+                          >
+                            {typeof it.driverLabel === 'string' && it.driverLabel.length > 12 ? it.driverLabel.split(' ')[0] : it.driverLabel}
+                          </text>
+
+                          {/* Position change indicator */}
+                          {it.change !== 0 && (
+                            <text
+                              x={NAME_RIGHT_X + 120}
+                              y={it.y2 + 8}
+                              fontSize="18"
+                              fontWeight="bold"
+                              fill={it.change > 0 ? "#10B981" : it.change < 0 ? "#EF4444" : "#6B7280"}
+                              textAnchor="start"
+                              opacity={opacity}
+                              style={{ cursor: 'pointer' }}
+                              onMouseEnter={() => setHoveredDriver(String(it.key))}
+                              onMouseLeave={() => setHoveredDriver(null)}
+                            >
+                              {it.change > 0 ? `▲ ${it.change}` : it.change < 0 ? `▼ ${Math.abs(it.change)}` : '▬'}
+                            </text>
+                          )}
+
+                          {/* Connecting line */}
+                          <line 
+                            x1={LEFT_X} 
+                            y1={it.y1} 
+                            x2={RIGHT_X} 
+                            y2={it.y2} 
+                            stroke={it.color} 
+                            strokeWidth={strokeWidth}
+                            opacity={opacity}
+                            filter={filter}
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={() => setHoveredDriver(String(it.key))}
+                            onMouseLeave={() => setHoveredDriver(null)}
+                          />
+                        </g>
+                      );
+                    })}
+                  </svg>
+
+                  {/* Tooltip */}
+                  {hoveredDriver && (() => {
+                    const driver = items.find(item => String(item.key) === hoveredDriver);
+                    if (!driver) return null;
+                    
+                    return (
+                      <Box
+                        position="absolute"
+                        top="10px"
+                        right="10px"
+                        bg="blackAlpha.900"
+                        color="white"
+                        p={3}
+                        borderRadius="md"
+                        border="1px solid"
+                        borderColor="whiteAlpha.300"
+                        backdropFilter="blur(8px)"
+                        zIndex={100}
+                        boxShadow="0 4px 12px rgba(0,0,0,0.3)"
+                        maxW="250px"
+                      >
+                        <Text fontWeight="bold" fontSize="lg" mb={1}>
+                          {driver.driverLabel}
+                        </Text>
+                        <Text fontSize="sm" color="gray.200">
+                          P{driver.gridPos} → P{driver.finishPos} 
+                          {driver.change > 0 ? ` (+${driver.change})` : driver.change < 0 ? ` (${driver.change})` : ' (No change)'}
+                        </Text>
+                      </Box>
+                    );
+                  })()}
+                </Box>
+              );
+            })()}
           </Box>
-        );
-      })()}
-    </Box>
+        </>
+      );
+    })()}
   </VStack>
 </TabPanel>
 
