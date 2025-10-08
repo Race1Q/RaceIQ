@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Flex, Heading, HStack, Icon, Text, VStack } from '@chakra-ui/react';
+import { Box, Flex, Heading, HStack, Icon, Text, VStack, useColorModeValue } from '@chakra-ui/react';
 import type { ConstructorStandingsItem } from '../../../types';
 import WidgetCard from './WidgetCard';
 import { teamColors } from '../../../lib/teamColors';
@@ -8,6 +8,8 @@ import TeamLogo from '../../../components/TeamLogo/TeamLogo';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandingsItem[] | undefined; year?: number }) => {
+  // Fix: Use dark text for 1st position in light mode
+  const firstPlaceTextColor = useColorModeValue('#1a1a1a', 'white');
   const { accentColorWithHash } = useThemeColor();
   
   return (
@@ -38,7 +40,7 @@ const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandings
                 transition="all 0.2s ease-in-out"
               >
                 <Flex align="center" flex={1}>
-                  <Text w="1.5em" color={isLeader ? 'white' : '{accentColorWithHash}'} fontWeight="bold" fontSize="xs">{item.position}.</Text>
+                  <Text w="2em" color={isLeader ? firstPlaceTextColor : 'brand.red'} fontWeight="bold">{item.position}.</Text>
                   <Box
                     mr={2}
                     w="24px"
@@ -53,10 +55,10 @@ const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandings
                   >
                     <TeamLogo teamName={item.constructorName} />
                   </Box>
-                  <Text fontWeight="bold" color={isLeader ? 'white' : 'text-primary'} fontSize="xs" noOfLines={1}>{item.constructorName}</Text>
+                  <Text fontWeight="bold" color={isLeader ? firstPlaceTextColor : 'text-primary'}>{item.constructorName}</Text>
                 </Flex>
-                {isLeader && <Icon as={Trophy} color="white" mr={2} boxSize="14px" />}
-                <Text fontWeight="bold" color={isLeader ? 'white' : '{accentColorWithHash}'} fontSize="2xs">{item.points} pts</Text>
+                {isLeader && <Icon as={Trophy} color="white" mr={3} />}
+                <Text fontWeight="bold" color={isLeader ? firstPlaceTextColor : 'brand.red'}>{item.points} pts</Text>
               </Flex>
             );
           })
