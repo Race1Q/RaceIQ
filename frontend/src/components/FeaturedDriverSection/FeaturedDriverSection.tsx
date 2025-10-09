@@ -57,7 +57,7 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
           mb={6}
           textAlign="left"
         >
-          Featured Driver
+          Featured Driver - Best recent form
         </Heading>
         <Grid templateColumns={{ base: '1fr', md: '1fr', lg: '0.4fr 0.6fr' }} gap={{ base: 4, md: 6, lg: 8 }} alignItems="stretch">
           {/* Left: Driver Card */}

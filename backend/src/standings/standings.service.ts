@@ -75,35 +75,145 @@ export class StandingsService {
 
     const latestYear = latestYearResult.latestYear;
 
-    const topDriver = await this.standingsViewRepository.findOne({
+    // Get all drivers from the latest season
+    const allDrivers = await this.standingsViewRepository.find({
       where: { seasonYear: latestYear },
       order: { seasonPoints: 'DESC' as const },
     });
 
-    if (!topDriver) {
-      throw new NotFoundException('Could not find the top driver for the latest season.');
+    if (!allDrivers || allDrivers.length === 0) {
+      throw new NotFoundException('Could not find any drivers for the latest season.');
+    }
+
+    // Calculate recent form for each driver and find the best
+    let bestDriver: any = null;
+    let bestFormScore = Infinity; // Start with highest possible average (worst form)
+    let bestDriverRanking = Infinity;
+
+    console.log(`\n=== FEATURED DRIVER CALCULATION DEBUG ===`);
+    console.log(`Total drivers found: ${allDrivers.length}`);
+    
+    for (const driver of allDrivers) {
+      try {
+        const recentForm = await this.driversService.getDriverRecentForm(driver.driverId);
+        
+        // Calculate form score: lower average position = better form
+        // Only consider last 5 races
+        const last5Races = recentForm.slice(0, 5);
+        if (last5Races.length === 0) {
+          console.log(`${driver.driverFullName}: No recent form data`);
+          continue;
+        }
+        
+        const averagePosition = last5Races.reduce((sum, race) => sum + race.position, 0) / last5Races.length;
+        const driverRanking = allDrivers.findIndex(d => d.driverId === driver.driverId) + 1;
+        
+        console.log(`${driver.driverFullName}: Last 5 races = [${last5Races.map(r => `P${r.position}`).join(', ')}] → Avg: ${averagePosition.toFixed(2)}, Ranking: ${driverRanking}`);
+        
+        if (averagePosition < bestFormScore || (averagePosition === bestFormScore && driverRanking < bestDriverRanking)) {
+          bestFormScore = averagePosition;
+          bestDriver = driver;
+          bestDriverRanking = driverRanking;
+          console.log(`  → NEW BEST: ${driver.driverFullName} (avg: ${averagePosition.toFixed(2)})`);
+        }
+      } catch (error) {
+        // Skip drivers with no recent form data
+        console.warn(`Could not get recent form for driver ${driver.driverId}:`, error);
+        continue;
+      }
+    }
+    
+    console.log(`\n=== FINAL RESULT ===`);
+    console.log(`Best driver: ${bestDriver?.driverFullName}`);
+    console.log(`Best average position: ${bestFormScore.toFixed(2)}`);
+    console.log(`Driver ranking: ${bestDriverRanking}`);
+    console.log(`==========================================\n`);
+
+    if (!bestDriver) {
+      throw new NotFoundException('Could not find a driver with recent form data.');
     }
 
     const [careerStats, recentForm] = await Promise.all([
-      this.careerStatsViewRepo.findOne({ where: { driverId: topDriver.driverId } }),
-      this.driversService.getDriverRecentForm(topDriver.driverId),
+      this.careerStatsViewRepo.findOne({ where: { driverId: bestDriver.driverId } }),
+      this.driversService.getDriverRecentForm(bestDriver.driverId),
     ]);
 
     return {
-      id: topDriver.driverId,
-      fullName: topDriver.driverFullName,
-      driverNumber: topDriver.driverNumber ?? null,
-      countryCode: topDriver.countryCode ?? null,
-      teamName: topDriver.constructorName,
-      seasonPoints: Number(topDriver.seasonPoints),
-      seasonWins: topDriver.seasonWins,
-      position: 1,
+      id: bestDriver.driverId,
+      fullName: bestDriver.driverFullName,
+      driverNumber: bestDriver.driverNumber ?? null,
+      countryCode: bestDriver.countryCode ?? null,
+      teamName: bestDriver.constructorName,
+      seasonPoints: Number(bestDriver.seasonPoints),
+      seasonWins: bestDriver.seasonWins,
+      position: bestDriverRanking,
       careerStats: {
         wins: (careerStats as any)?.totalWins ?? 0,
         podiums: (careerStats as any)?.totalPodiums ?? 0,
         poles: 0,
       },
       recentForm,
+    };
+  }
+
+  async getFeaturedDriverDebug(): Promise<any> {
+    const latestYearResult = await this.standingsViewRepository
+      .createQueryBuilder('ds')
+      .select('MAX(ds.seasonYear)', 'latestYear')
+      .getRawOne<{ latestYear: number }>();
+
+    if (!latestYearResult?.latestYear) {
+      throw new NotFoundException('No standings data available to determine featured driver.');
+    }
+
+    const latestYear = latestYearResult.latestYear;
+
+    // Get all drivers from the latest season
+    const allDrivers = await this.standingsViewRepository.find({
+      where: { seasonYear: latestYear },
+      order: { seasonPoints: 'DESC' as const },
+    });
+
+    if (!allDrivers || allDrivers.length === 0) {
+      throw new NotFoundException('Could not find any drivers for the latest season.');
+    }
+
+    const driverFormData: any[] = [];
+
+    for (const driver of allDrivers) {
+      try {
+        const recentForm = await this.driversService.getDriverRecentForm(driver.driverId);
+        const last5Races = recentForm.slice(0, 5);
+        
+        if (last5Races.length > 0) {
+          const averagePosition = last5Races.reduce((sum, race) => sum + race.position, 0) / last5Races.length;
+          const driverRanking = allDrivers.findIndex(d => d.driverId === driver.driverId) + 1;
+          
+          driverFormData.push({
+            driverName: driver.driverFullName,
+            driverId: driver.driverId,
+            championshipRanking: driverRanking,
+            seasonPoints: driver.seasonPoints,
+            last5Races: last5Races.map(r => `P${r.position}`),
+            averagePosition: parseFloat(averagePosition.toFixed(2)),
+            recentForm: last5Races
+          });
+        }
+      } catch (error) {
+        console.warn(`Could not get recent form for driver ${driver.driverId}:`, error);
+        continue;
+      }
+    }
+
+    // Sort by average position (best form first)
+    driverFormData.sort((a, b) => a.averagePosition - b.averagePosition);
+
+    return {
+      season: latestYear,
+      totalDrivers: allDrivers.length,
+      driversWithFormData: driverFormData.length,
+      driverFormRankings: driverFormData,
+      bestDriver: driverFormData[0] || null
     };
   }
 

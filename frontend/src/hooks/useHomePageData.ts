@@ -71,6 +71,57 @@ export function useHomePageData(): HomePageData {
 
                 const driverData: FeaturedDriver = await driverRes.json();
                 const scheduleData: Race[] = await scheduleRes.json();
+                
+                // Debug logging
+                console.log('=== FRONTEND FEATURED DRIVER DEBUG ===');
+                console.log('Received driver data:', driverData);
+                console.log('Driver name:', driverData.fullName);
+                console.log('Driver position:', driverData.position);
+                console.log('Recent form:', driverData.recentForm);
+                if (driverData.recentForm && driverData.recentForm.length > 0) {
+                    const last5 = driverData.recentForm.slice(0, 5);
+                    const avgPos = last5.reduce((sum, race) => sum + race.position, 0) / last5.length;
+                    console.log('Last 5 races:', last5.map(r => `P${r.position}`).join(', '));
+                    console.log('Average position:', avgPos.toFixed(2));
+                }
+                console.log('=====================================');
+
+                // Check if we're getting the old logic (championship leader) or new logic (best form)
+                console.log('=== LOGIC ANALYSIS ===');
+                console.log('Driver position in response:', driverData.position);
+                console.log('Is this the championship leader?', driverData.position === 1);
+                
+                if (driverData.position === 1) {
+                    console.log('⚠️  WARNING: Still getting championship leader (position 1)');
+                    console.log('This suggests the backend changes are NOT deployed yet.');
+                    console.log('Oscar Piastri is being selected as championship leader, not best form.');
+                } else {
+                    console.log('✅ Getting driver by form (position != 1)');
+                    console.log('Backend changes appear to be deployed.');
+                }
+                
+                // Try to fetch debug data (will fail if backend not deployed)
+                try {
+                    const debugRes = await fetch(buildApiUrl('/api/standings/featured-driver-debug'));
+                    if (debugRes.ok) {
+                        const debugData = await debugRes.json();
+                        console.log('=== ALL DRIVERS FORM DEBUG ===');
+                        console.log('Season:', debugData.season);
+                        console.log('Total drivers:', debugData.totalDrivers);
+                        console.log('Drivers with form data:', debugData.driversWithFormData);
+                        console.log('Form rankings (best to worst):');
+                        debugData.driverFormRankings.forEach((driver: any, index: number) => {
+                            console.log(`${index + 1}. ${driver.driverName}: ${driver.last5Races.join(', ')} → Avg: ${driver.averagePosition} (Championship: P${driver.championshipRanking})`);
+                        });
+                        console.log('Best driver by form:', debugData.bestDriver?.driverName);
+                        console.log('=====================================');
+                    }
+                } catch (debugError) {
+                    console.warn('❌ Debug endpoint not available - backend changes not deployed yet');
+                    console.log('Current featured driver is likely the championship leader, not best form.');
+                }
+                console.log('=====================================');
+                
                 setFeaturedDriver(driverData);
                 setSeasonSchedule(Array.isArray(scheduleData) ? scheduleData : []);
             } catch (err) {

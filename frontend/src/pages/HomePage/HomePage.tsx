@@ -2,9 +2,9 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect } from 'react';
 import { Box, Container, VStack, Heading, Text } from '@chakra-ui/react';
 import { RaceSlider } from '../../components/RaceSlider/RaceSlider';
-import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import HeroSection from '../../components/HeroSection/HeroSection';
 import FeaturedDriverSection from '../../components/FeaturedDriverSection/FeaturedDriverSection';
+import FeaturedDriverSkeleton from '../../components/FeaturedDriverSection/FeaturedDriverSkeleton';
 import ComparePreviewSection from '../../components/ComparePreviewSection/ComparePreviewSection';
 import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper/ScrollAnimationWrapper';
 import SectionConnector from '../../components/SectionConnector/SectionConnector';
@@ -12,7 +12,7 @@ import LoginButton from '../../components/LoginButton/LoginButton';
 import { useHomePageData } from '../../hooks/useHomePageData';
 
 function HomePage() {
-  const { isAuthenticated, isLoading, user } = useAuth0();
+  const { isAuthenticated, user } = useAuth0();
   const { featuredDriver, seasonSchedule, loading: dataLoading, error } = useHomePageData();
 
   // Ensure page loads at top
@@ -20,9 +20,7 @@ function HomePage() {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
-  if (isLoading || dataLoading) {
-    return <PageLoadingOverlay text="Loading RaceIQ" />;
-  }
+  // Show hero section immediately, load data in background
 
   return (
     <Box w="100%" minH="100vh" bg="bg-primary">
@@ -31,7 +29,11 @@ function HomePage() {
       {!isAuthenticated && (
         <>
           <ScrollAnimationWrapper position="relative">
-            <FeaturedDriverSection featuredDriver={featuredDriver} isError={!!error} />
+            {dataLoading ? (
+              <FeaturedDriverSkeleton />
+            ) : (
+              <FeaturedDriverSection featuredDriver={featuredDriver} isError={!!error} />
+            )}
             <SectionConnector />
           </ScrollAnimationWrapper>
           
