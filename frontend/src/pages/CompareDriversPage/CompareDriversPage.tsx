@@ -10,6 +10,8 @@ import { DriverSelectionPanel } from './components/DriverSelectionPanel';
 import { ComparisonTable } from './components/ComparisonTable';
 import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import PageHeader from '../../components/layout/PageHeader';
+import LayoutContainer from '../../components/layout/LayoutContainer';
+import CompareTabs from '../../components/compare/CompareTabs';
 import PdfComparisonCard from '../../components/compare/PdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 import { driverHeadshots } from '../../lib/driverHeadshots';
@@ -171,8 +173,6 @@ const CompareDriversPage = () => {
     handleSelectDriver,
     // NEW: Comparison features
     years,
-    selection1,
-    selection2,
     stats1,
     stats2,
     enabledMetrics,
@@ -1163,7 +1163,9 @@ const CompareDriversPage = () => {
         title="Driver Comparison" 
         subtitle="Compare F1 drivers head-to-head"
       />
-      <Box p={{ base: 'md', md: 'xl' }}>
+      <LayoutContainer>
+        <CompareTabs active="drivers" />
+        <Box p={{ base: 'md', md: 'xl' }}>
         {error && <Text color="border-accent" textAlign="center" fontSize="lg" p="xl">{error}</Text>}
 
         {/* Progress Indicator */}
@@ -1206,7 +1208,8 @@ const CompareDriversPage = () => {
         <SlideFade in={currentStep === 'results'} offsetY="20px" unmountOnExit>
           {currentStep === 'results' && <Step3Results />}
         </SlideFade>
-      </Box>
+        </Box>
+      </LayoutContainer>
     </Box>
   );
 };

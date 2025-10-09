@@ -30,6 +30,7 @@ import Constructors from '../pages/Constructors/Constructors';
 import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
 import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
 import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
+import CompareConstructorsPage from '../pages/CompareConstructorsPage/CompareConstructorsPage';
 import ComparisonLoginPrompt from '../pages/ComparisonLoginPrompt/ComparisonLoginPrompt';
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
@@ -250,6 +251,7 @@ function AppContent() {
             <Route path="/standings/analytics" element={<AnalyticsStandings />} />
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
+            <Route path="/compare/constructors" element={<CompareConstructorsPage />} />
             <Route path="/races" element={<RacesPage />} />
             <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
             <Route path="/about" element={<AboutUs />} />
@@ -323,6 +325,7 @@ function AppContent() {
           } 
         />
         <Route path="/compare" element={<CompareDriversPage />} />
+        <Route path="/compare/constructors" element={<CompareConstructorsPage />} />
         <Route path="/compare-login" element={<ComparisonLoginPrompt />} />
       </Routes>
 
