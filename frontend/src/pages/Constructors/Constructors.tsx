@@ -23,7 +23,7 @@ import { buildApiUrl } from '../../lib/api';
 import { teamCarImages } from '../../lib/teamCars';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import PageHeader from '../../components/layout/PageHeader';
-import { SegmentTabs } from '../../components/SegmentTabs/SegmentTabs';
+import FilterTabs from '../../components/FilterTabs/FilterTabs';
 import { TeamCard } from '../../components/TeamCard/TeamCard';
 import { TEAM_META } from '../../theme/teamTokens';
 
@@ -214,18 +214,10 @@ const Constructors = () => {
       {isAuthenticated && (
         <LayoutContainer>
           <VStack spacing={6} align="stretch">
-            {/* Broadcast-style stat bar */}
-            <HStack justify="center" spacing={8} color="text-muted" fontSize="sm" fontFamily="heading">
-              <Text>2025 Season</Text>
-              <Box w="1px" h="4" bg="border-primary" />
-              <Text>10 Teams</Text>
-              <Box w="1px" h="4" bg="border-primary" />
-              <Text>24 Races</Text>
-            </HStack>
-
-            {/* Premium segment tabs */}
-            <Flex justify="center">
-              <SegmentTabs 
+            {/* Filter and info bar */}
+            <Flex justify="space-between" align="center" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
+              {/* Filter tabs - left aligned */}
+              <FilterTabs 
                 value={statusFilter} 
                 onChange={(newFilter) => {
                   setStatusFilter(newFilter);
@@ -234,11 +226,20 @@ const Constructors = () => {
                   }
                 }} 
               />
+              
+              {/* Broadcast-style stat bar - right aligned */}
+              <HStack spacing={8} color="text-muted" fontSize="sm" fontFamily="heading">
+                <Text>2025 Season</Text>
+                <Box w="1px" h="4" bg="border-primary" />
+                <Text>10 Teams</Text>
+                <Box w="1px" h="4" bg="border-primary" />
+                <Text>24 Races</Text>
+              </HStack>
             </Flex>
 
             {/* Search bar for historical/all */}
             {(statusFilter === 'all' || statusFilter === 'historical') && (
-              <Flex justify="center">
+              <Flex justify="flex-start">
                 <Box maxW="400px" w="100%">
                   <InputGroup>
                     <Input
