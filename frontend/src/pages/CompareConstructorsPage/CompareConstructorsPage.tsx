@@ -1,17 +1,16 @@
 // frontend/src/pages/CompareConstructorsPage/CompareConstructorsPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, IconButton, useDisclosure, Fade, SlideFade, Progress, CircularProgress, CircularProgressLabel, Image, Badge, Skeleton, SkeletonText, Tooltip, ScaleFade, useColorModeValue } from '@chakra-ui/react';
-import { useRef, useMemo, useState } from 'react';
-import { ChevronRight, ChevronLeft, ArrowRight, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Skeleton, SkeletonText, ScaleFade } from '@chakra-ui/react';
+import { useState } from 'react';
+import { ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { useConstructorComparison } from '../../hooks/useConstructorComparison';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { ConstructorSelectionPanel } from './components/ConstructorSelectionPanel';
 import { ConstructorComparisonTable } from './components/ConstructorComparisonTable';
-import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
-import CompareTabs from '../../components/Compare/CompareTabs';
+import CompareTabs from '../../components/compare/CompareTabs';
 import { ConstructorPdfComparisonCard } from '../../components/compare/ConstructorPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 
@@ -41,7 +40,6 @@ const CompareConstructorsPage = () => {
     selectConstructor,
     selectConstructorForYears,
     toggleMetric,
-    clearSelection,
   } = useConstructorComparison();
   
   // Year selection state - allow multiple years per constructor
@@ -49,7 +47,7 @@ const CompareConstructorsPage = () => {
   const [selectedYears2, setSelectedYears2] = useState<string[]>([]);
 
   // Step navigation helpers
-  const canProceedToParameters = constructor1 && constructor2;
+  const canProceedToParameters = !!(constructor1 && constructor2);
   const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
   const canProceedToResults = canProceedToParameters && enabledMetricsArray.length > 0 && selectedYears1.length > 0 && selectedYears2.length > 0;
 
