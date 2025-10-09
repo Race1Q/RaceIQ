@@ -1,6 +1,6 @@
 // src/pages/Standings/Standings.tsx
 import React, { useEffect, useState } from 'react';
-import { Box, Flex, Heading, Text, Button } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, Button, VStack } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import {
   LineChart,
@@ -113,156 +113,158 @@ const Standings: React.FC = () => {
       {loading ? (
         <StandingsSkeleton />
       ) : (
-        <Flex gap={6} flexDirection={['column', 'row']}>
+        <VStack spacing={6} align="stretch">
+          <Flex gap={6} flexDirection={['column', 'row']}>
+            {/* Left Side: Boxes stacked vertically */}
+            <Box flex={1} display="flex" flexDirection="column" gap={6}>
+              <Box
+                flex={1}
+                p={6}
+                borderRadius="2xl"
+                bg="gray.800"
+                color="white"
+                boxShadow="xl"
+                _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
+              >
+                <Heading size="md" mb={3}>
+                  Drivers Standings
+                </Heading>
+                <Text mb={4} color="gray.300">
+                  View all drivers ranked by points, wins, and positions for each season.
+                </Text>
+                <Button as={Link} to="/standings/drivers" colorScheme="red">
+                  View Drivers
+                </Button>
+              </Box>
 
-          {/* Left Side: Boxes stacked vertically */}
-          <Box flex={1} display="flex" flexDirection="column" gap={6}>
-            <Box
-              flex={1}
-              p={6}
-              borderRadius="2xl"
-              bg="gray.800"
-              color="white"
-              boxShadow="xl"
-              _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
-            >
-              <Heading size="md" mb={3}>
-                Drivers Standings
-              </Heading>
-              <Text mb={4} color="gray.300">
-                View all drivers ranked by points, wins, and positions for each season.
-              </Text>
-              <Button as={Link} to="/standings/drivers" colorScheme="red">
-                View Drivers
-              </Button>
+              <Box
+                flex={1}
+                p={6}
+                borderRadius="2xl"
+                bg="gray.800"
+                color="white"
+                boxShadow="xl"
+                _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
+              >
+                <Heading size="md" mb={3}>
+                  Constructors Standings
+                </Heading>
+                <Text mb={4} color="gray.300">
+                  Explore constructor rankings, team performance, and championship points.
+                </Text>
+                <Button as={Link} to="/standings/constructors" colorScheme="blue">
+                  View Constructors
+                </Button>
+              </Box>
             </Box>
 
-            <Box
-              flex={1}
-              p={6}
-              borderRadius="2xl"
-              bg="gray.800"
-              color="white"
-              boxShadow="xl"
-              _hover={{ transform: 'translateY(-4px)', boxShadow: '2xl', transition: 'all 0.2s ease-in-out' }}
-            >
-              <Heading size="md" mb={3}>
-                Constructors Standings
-              </Heading>
-              <Text mb={4} color="gray.300">
-                Explore constructor rankings, team performance, and championship points.
-              </Text>
-              <Button as={Link} to="/standings/constructors" colorScheme="blue">
-                View Constructors
-              </Button>
+            {/* Right Side: Charts stacked vertically */}
+            <Box flex={3} display="flex" flexDirection="column" gap={6}>
+              {/* Drivers Chart */}
+              {driversProgression.length > 0 && (
+                <Box h="400px" bg="gray.700" p={4} borderRadius="md">
+                  <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
+                    2025 Drivers Points Progression
+                  </Text>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <LineChart data={driversChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                      <XAxis dataKey="round" stroke="white" />
+                      <YAxis stroke="white" />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || !payload.length) return null;
+
+                          const raceEntry = driversChartData.find((d) => d.round === label);
+                          const raceName = raceEntry ? raceEntry.raceName : '';
+
+                          const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+
+                          return (
+                            <Box bg="gray.800" p={2} borderRadius="md" color="white">
+                              <Text fontWeight="bold">Round {label}: {raceName}</Text>
+                              {sortedPayload.map((entry, index) => (
+                                <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+                                  <Text>{entry.name}</Text>
+                                  <Text>{entry.value}</Text>
+                                </Flex>
+                              ))}
+                            </Box>
+                          );
+                        }}
+                      />
+                      {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => (
+                        <Line
+                          key={name}
+                          type="monotone"
+                          dataKey={name}
+                          stroke={`#${driverColorsMap[name]}` || '#ff0000'}
+                          strokeWidth={2}
+                          dot={false}
+                          isAnimationActive={true}
+                          name={name}
+                          connectNulls
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+
+              {/* Constructors Chart */}
+              {constructorsProgression.length > 0 && (
+                <Box h="400px" bg="gray.700" p={4} borderRadius="md">
+                  <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
+                    2025 Constructors Points Progression
+                  </Text>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <LineChart data={constructorsChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="gray" />
+                      <XAxis dataKey="round" stroke="white" />
+                      <YAxis stroke="white" />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || !payload.length) return null;
+
+                          const raceEntry = constructorsChartData.find((d) => d.round === label);
+                          const raceName = raceEntry ? raceEntry.raceName : '';
+
+                          const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+
+                          return (
+                            <Box bg="gray.800" p={2} borderRadius="md" color="white">
+                              <Text fontWeight="bold">Round {label}: {raceName}</Text>
+                              {sortedPayload.map((entry, index) => (
+                                <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+                                  <Text>{entry.name}</Text>
+                                  <Text>{entry.value}</Text>
+                                </Flex>
+                              ))}
+                            </Box>
+                          );
+                        }}
+                      />
+                      {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => (
+                        <Line
+                          key={name}
+                          type="monotone"
+                          dataKey={name}
+                          stroke={`#${constructorColors[name]}` || '#ff0000'}
+                          strokeWidth={2}
+                          dot={false}
+                          isAnimationActive={true}
+                          name={name}
+                          connectNulls
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
             </Box>
-          </Box>
+          </Flex>
 
-          {/* Right Side: Charts stacked vertically */}
-          <Box flex={3} display="flex" flexDirection="column" gap={6}>
-            {/* Drivers Chart */}
-            {driversProgression.length > 0 && (
-              <Box h="400px" bg="gray.700" p={4} borderRadius="md">
-                <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                  2025 Drivers Points Progression
-                </Text>
-                <ResponsiveContainer width="100%" height="90%">
-                  <LineChart data={driversChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-                    <XAxis dataKey="round" stroke="white" />
-                    <YAxis stroke="white" />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload || !payload.length) return null;
-
-                        const raceEntry = driversChartData.find((d) => d.round === label);
-                        const raceName = raceEntry ? raceEntry.raceName : '';
-
-                        const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
-
-                        return (
-                          <Box bg="gray.800" p={2} borderRadius="md" color="white">
-                            <Text fontWeight="bold">Round {label}: {raceName}</Text>
-                            {sortedPayload.map((entry, index) => (
-                              <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
-                                <Text>{entry.name}</Text>
-                                <Text>{entry.value}</Text>
-                              </Flex>
-                            ))}
-                          </Box>
-                        );
-                      }}
-                    />
-                    {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => (
-                      <Line
-                        key={name}
-                        type="monotone"
-                        dataKey={name}
-                        stroke={`#${driverColorsMap[name]}` || '#ff0000'}
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={true}
-                        name={name}
-                        connectNulls
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
-
-            {/* Constructors Chart */}
-            {constructorsProgression.length > 0 && (
-              <Box h="400px" bg="gray.700" p={4} borderRadius="md">
-                <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                  2025 Constructors Points Progression
-                </Text>
-                <ResponsiveContainer width="100%" height="90%">
-                  <LineChart data={constructorsChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-                    <XAxis dataKey="round" stroke="white" />
-                    <YAxis stroke="white" />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload || !payload.length) return null;
-
-                        const raceEntry = constructorsChartData.find((d) => d.round === label);
-                        const raceName = raceEntry ? raceEntry.raceName : '';
-
-                        const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
-
-                        return (
-                          <Box bg="gray.800" p={2} borderRadius="md" color="white">
-                            <Text fontWeight="bold">Round {label}: {raceName}</Text>
-                            {sortedPayload.map((entry, index) => (
-                              <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
-                                <Text>{entry.name}</Text>
-                                <Text>{entry.value}</Text>
-                              </Flex>
-                            ))}
-                          </Box>
-                        );
-                      }}
-                    />
-                    {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => (
-                      <Line
-                        key={name}
-                        type="monotone"
-                        dataKey={name}
-                        stroke={`#${constructorColors[name]}` || '#ff0000'}
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={true}
-                        name={name}
-                        connectNulls
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
-          </Box>
-        </Flex>
+        </VStack>
       )}
     </Box>
   );

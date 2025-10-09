@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
-  Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, SimpleGrid, Table,
+  Tabs, TabList, TabPanels, Tab, TabPanel, SimpleGrid,
   Thead, Tbody, Tr, Th, Td, Button, Heading,
 } from '@chakra-ui/react';
 import { useThemeColor } from '../../context/ThemeColorContext';
@@ -22,6 +22,7 @@ import Podium from '../../components/RaceDetails/Podium';
 import FastestLapWidget from '../../components/RaceDetails/FastestLapWidget';
 import RaceEventsWidget from '../../components/RaceDetails/RaceEventsWidget';
 import RaceDetailSkeleton from './RaceDetailSkeleton';
+import AIPreviewTab from '../../components/AIPreviewTab/AIPreviewTab';
 
 const MotionBox = motion.create(Box);
 
@@ -91,28 +92,6 @@ type QualiResult = {
   q2_time_ms?: number | null;
   q3_time_ms?: number | null;
 };
-type PitStop = {
-  race_id: number | string;
-  driver_id: number | string;
-  driver_code?: string;
-  stop_number: number;
-  lap_number: number;
-  total_duration_in_pit_ms?: number | null;
-  stationary_duration_ms?: number | null;
-};
-type Lap = {
-  id?: number;
-  race_id: number | string;
-  driver_id: number | string;
-  driver_code?: string;
-  lap_number: number;
-  position?: number | null;
-  time_ms?: number | null;
-  sector_1_ms?: number | null;
-  sector_2_ms?: number | null;
-  sector_3_ms?: number | null;
-  is_pit_out_lap?: boolean | null;
-};
 
 // Flexible endpoints for by-race lookups
 function candidates(base: string, raceId: string | number) {
@@ -137,10 +116,6 @@ const fetchRaceResultsByRaceId = (raceId: string | number) =>
   tryGet<RaceResult[]>(candidates('race-results', raceId));
 const fetchQualifyingResultsByRaceId = (raceId: string | number) =>
   getJSON<QualiResult[]>(`/qualifying-results?race_id=${encodeURIComponent(String(raceId))}`);
-const fetchPitStopsByRaceId = (raceId: string | number) =>
-  tryGet<PitStop[]>(candidates('pit-stops', raceId));
-const fetchLapsByRaceId = (raceId: string | number) =>
-  tryGet<Lap[]>(candidates('laps', raceId));
 
 // ---------- utils ----------
 const fmtMs = (ms?: number | null) => {
@@ -260,13 +235,12 @@ const RaceDetailPage: React.FC = () => {
 
   const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
   const [qualiResults, setQualiResults] = useState<QualiResult[]>([]);
-  const [pitStops, setPitStops] = useState<PitStop[]>([]);
-  const [laps, setLaps] = useState<Lap[]>([]);
   // UX: 3D track affordance state
   const [hasInteracted3D, setHasInteracted3D] = useState(false);
   const [isDragging3D, setIsDragging3D] = useState(false);
   const [show3DHint, setShow3DHint] = useState(false); // appear after swirl
   const [autoRotateSpeed, setAutoRotateSpeed] = useState(0.0);
+
 
   // On load: do a quick swirl, then slow down and show hint if no interaction
   useEffect(() => {
@@ -339,8 +313,6 @@ const RaceDetailPage: React.FC = () => {
     let alive = true;
     fetchRaceResultsByRaceId(raceId).then(d => { if (alive) setRaceResults(d); });
     fetchQualifyingResultsByRaceId(raceId).then(d => { if (alive) setQualiResults(d); });
-    fetchPitStopsByRaceId(raceId).then(d => { if (alive) setPitStops(d); });
-    fetchLapsByRaceId(raceId).then(d => { if (alive) setLaps(d); });
     // Fetch summary
     setSummaryLoading(true);
     setSummaryError(null);
@@ -380,16 +352,6 @@ const RaceDetailPage: React.FC = () => {
     [qualiResults, showDrivers, qualiPhase]
   );
 
-  const lapsByDriver = useMemo(() => {
-    const m = new Map<string, Lap[]>();
-    for (const l of laps) {
-      const key = l.driver_code ?? String(l.driver_id);
-      if (!m.has(key)) m.set(key, []);
-      m.get(key)!.push(l);
-    }
-    for (const arr of m.values()) arr.sort((a, b) => a.lap_number - b.lap_number);
-    return m;
-  }, [laps]);
 
   if (loading) {
     return (
@@ -641,6 +603,7 @@ const RaceDetailPage: React.FC = () => {
           </Box>
         </MotionBox>
 
+
         {/* Tabs - Mobile Responsive */}
         <Tabs colorScheme="red" variant="unstyled" mb={{ base: 4, md: 8 }}>
           <Box overflowX="auto" pb={2}>
@@ -731,6 +694,25 @@ const RaceDetailPage: React.FC = () => {
             >
               <Text display={{ base: "none", sm: "inline" }}>Qualifying → Race</Text>
               <Text display={{ base: "inline", sm: "none" }}>Q→R</Text>
+            </Tab>
+            <Tab
+              px={{ base: 3, md: 6 }}
+              h={{ base: "32px", md: "44px" }}
+              fontWeight={600}
+              fontFamily="heading"
+              color="text-secondary"
+              fontSize={{ base: "xs", md: "md" }}
+              _hover={{ color: "text-primary" }}
+              _selected={{
+                color: "text-on-accent",
+                bg: accentColorWithHash,
+                borderRadius: "full",
+                boxShadow: `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset`,
+              }}
+              transition="all 0.25s ease"
+              whiteSpace="nowrap"
+            >
+              Track Info
             </Tab>
             {/* <Tab
               px={6}
@@ -1369,131 +1351,21 @@ const RaceDetailPage: React.FC = () => {
 </TabPanel>
 
 
-                <TabPanel>
-                {/* Lap Time Analysis Graph */}
-                <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated" p={4}>
-                  <Text fontWeight="bold" mb={2}>Lap Time Comparison</Text>
-                  {/* Simple SVG line graph: lap vs lap time for selected drivers */}
-                  <svg width={1200} height={400}>
-                    {/* Axes */}
-                    <line x1={60} y1={40} x2={60} y2={360} stroke="#888" />
-                    <line x1={60} y1={360} x2={1150} y2={360} stroke="#888" />
-                    {/* Axis labels */}
-                    <text x={20} y={30} fontSize={16}>Lap Time (s)</text>
-                    <text x={1150} y={390} fontSize={16}>Lap</text>
-                    {/* Driver lines */}
-                    {driverFilter.length ? driverFilter : driversInRace.map((d) => {
-                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
-                      if (!driverLaps.length) return null;
-                      // Find constructor name or id for this driver from raceResults or qualiResults
-                      const driverKey = driverLaps[0]?.driver_code ?? String(driverLaps[0]?.driver_id);
-                      const driverResult = raceResults.find(r => (r.driver_code ?? String(r.driver_id)) === driverKey)
-                        || qualiResults.find(q => (q.driver_code ?? String(q.driver_id)) === driverKey);
-                      const constructor =
-                        driverResult?.constructor_name ?? driverResult?.constructor_id ?? "Default";
-                      const constructorKey = typeof constructor === "string" ? constructor : String(constructor ?? "Default");
-                      const color = teamColors[constructorKey] || teamColors["Default"];
-                      // Find min/max lap time for scaling
-                      const minLap = Math.min(...driverLaps.map(l => l.lap_number));
-                      const maxLap = Math.max(...driverLaps.map(l => l.lap_number));
-                      const minTime = Math.min(...driverLaps.map(l => l.time_ms ?? 0));
-                      const maxTime = Math.max(...driverLaps.map(l => l.time_ms ?? 0));
-                      // Map laps to SVG points
-                      const points = driverLaps.map(l => {
-                        const x = 60 + ((l.lap_number - minLap) * ((1150 - 60) / Math.max(1, maxLap - minLap)));
-                        const y = 360 - ((l.time_ms ?? minTime) - minTime) * (320 / Math.max(1, maxTime - minTime));
-                        return `${x},${y}`;
-                      }).join(' ');
-                      return (
-                        <polyline
-                          key={d}
-                          points={points}
-                          fill="none"
-                          stroke={`#${color}`}
-                          strokeWidth={3}
-                        />
-                      );
-                    })}
-              
-                    {/* Driver labels at last lap */}
-                    {driverFilter.length ? driverFilter : driversInRace.map((d) => {
-                      const driverLaps = laps.filter(l => (l.driver_code ?? String(l.driver_id)) === d);
-                      if (!driverLaps.length) return null;
-                      const lastLap = driverLaps[driverLaps.length - 1];
-                      const x = 60 + ((lastLap.lap_number - 1) * ((1150 - 60) / Math.max(1, laps.length - 1)));
-                      const y = 360 - ((lastLap.time_ms ?? 0) - Math.min(...driverLaps.map(l => l.time_ms ?? 0))) * (320 / Math.max(1, Math.max(...driverLaps.map(l => l.time_ms ?? 0)) - Math.min(...driverLaps.map(l => l.time_ms ?? 0))));
-                      return (
-                        <text key={d} x={x + 5} y={y} fontSize={14} fill="#222">{d}</text>
-                      );
-                    })}
-                  </svg>
-                </Box>
-            </TabPanel>
 
           
+            {/* AI Preview Tab */}
             <TabPanel>
-              <VStack align="stretch" spacing={4}>
-                <Text fontSize="xl" fontWeight="bold" color="text-primary">Lap Times & Pit Stops</Text>
-
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
-                    <HStack justify="space-between" mb={2}>
-                      <Text fontWeight="bold">Lap Times</Text>
-                      <HStack>
-                        keep UI consistent with other tabs
-                        <Checkbox
-                          isChecked={driverFilter.length === 0}
-                          onChange={(e) => setDriverFilter(e.target.checked ? [] : driversInRace)}
-                        >
-                          Select all
-                        </Checkbox>
-                      </HStack>
-                    </HStack>
-                    <Table size="sm" variant="simple">
-                      <Thead>
-                        <Tr><Th>Driver</Th><Th isNumeric>Lap</Th><Th isNumeric>Time</Th></Tr>
-                      </Thead>
-                      <Tbody>
-                        {Array.from(lapsByDriver.keys()).slice(0, 6).flatMap((d) =>
-                          (lapsByDriver.get(d) ?? []).slice(0, 6).map((l, i) => (
-                            <Tr key={`${d}-lap-${i}`}>
-                              <Td>{d}</Td><Td isNumeric>{l.lap_number}</Td><Td isNumeric>{fmtMs(l.time_ms)}</Td>
-                            </Tr>
-                          ))
-                        )}
-                      </Tbody>
-                    </Table>
-                  </Box>
-
-                  {/* Pit Stops */}
-                  <Box p={4} border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
-                    <Text fontWeight="bold" mb={2}>Pit Stops</Text>
-                    <Table size="sm" variant="simple">
-                      <Thead>
-                        <Tr>
-                          <Th>Driver</Th><Th isNumeric>Lap</Th><Th isNumeric>Stop #</Th>
-                          <Th isNumeric>Total</Th><Th isNumeric>Stationary</Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {pitStops
-                          .filter(p => (driverFilter.length ? driverFilter : driversInRace).includes(p.driver_code ?? String(p.driver_id)))
-                          .sort((a, b) => a.lap_number - b.lap_number)
-                          .slice(0, 30)
-                          .map((p, i) => (
-                            <Tr key={i}>
-                              <Td>{p.driver_code ?? p.driver_id}</Td>
-                              <Td isNumeric>{p.lap_number}</Td>
-                              <Td isNumeric>{p.stop_number}</Td>
-                              <Td isNumeric>{fmtMs(p.total_duration_in_pit_ms)}</Td>
-                              <Td isNumeric>{fmtMs(p.stationary_duration_ms)}</Td>
-                            </Tr>
-                          ))}
-                      </Tbody>
-                    </Table>
-                  </Box>
-                </SimpleGrid>
-              </VStack>
+              <AIPreviewTab
+                circuitId={race.circuit_id}
+                circuitName={circuitName}
+                raceId={race.id}
+                trackStats={{
+                  length: circuitBackground.keyStats.length,
+                  laps: circuitBackground.keyStats.laps,
+                  corners: circuitBackground.keyStats.corners,
+                  drsZones: circuitBackground.keyStats.drsZones,
+                }}
+              />
             </TabPanel>
           </TabPanels>
         </Tabs>

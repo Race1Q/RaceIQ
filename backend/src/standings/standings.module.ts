@@ -28,6 +28,7 @@ import { DriversModule } from '../drivers/drivers.module';
   ],
   controllers: [StandingsController],
   providers: [StandingsService],
+  exports: [StandingsService],
 })
 export class StandingsModule {}
 

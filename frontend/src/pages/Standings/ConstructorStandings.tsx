@@ -138,6 +138,7 @@ const ConstructorStandings: React.FC = () => {
         </Flex>
       )}
 
+
       {/* Show non-fatal error message */}
       {error && error.includes("No constructor data found") && (
         <Text

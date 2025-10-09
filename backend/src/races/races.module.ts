@@ -35,7 +35,7 @@ import { RaceResultsController } from './races.controller';
   ],
   controllers: [RacesController, RaceSummaryController,RaceResultsController],
   providers: [RacesService],
-  exports: [TypeOrmModule],
+  exports: [RacesService, TypeOrmModule],
 })
 export class RacesModule {}
 
