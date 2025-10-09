@@ -9,8 +9,8 @@ import type { SelectOption } from '../../components/DropDownSearch/SearchableSel
 import { DriverSelectionPanel } from './components/DriverSelectionPanel';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
-import CompareTabs from '../../components/Compare/CompareTabs';
-import PdfComparisonCard from '../../components/compare/PdfComparisonCard';
+import CompareTabs from '../../components/compare/CompareTabs';
+import { DriverPdfComparisonCard } from '../../components/compare/DriverPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import { driverTeamMapping } from '../../lib/driverTeamMapping';
@@ -273,10 +273,6 @@ const CompareDriversPage = () => {
     }
   }, [canProceedToStats, currentPhase]);
 
-  const exportPdf = async () => {
-    // PDF export logic would go here
-    console.log('Exporting PDF...');
-  };
   
   const nextStep = () => {
     if (currentStep === 'parameters' && currentPhase === 'stats' && canProceedToResults) {
@@ -316,35 +312,28 @@ const CompareDriversPage = () => {
 
   // PDF export functionality
   const handleExportPDF = async () => {
-    if (!driver1 || !driver2) {
-      alert('Please select both drivers before exporting.');
+    if (!driver1 || !driver2 || !stats1 || !stats2) {
+      alert('Please select both drivers and complete the comparison before exporting.');
       return;
     }
 
     try {
       const teamColor1 = getTeamColor(driver1.teamName || 'Default');
       const teamColor2 = getTeamColor(driver2.teamName || 'Default');
-      
-      const headshot1 = driverHeadshots[driver1.fullName] || '';
-      const headshot2 = driverHeadshots[driver2.fullName] || '';
 
-      await PdfComparisonCard({
+      await DriverPdfComparisonCard({
         driver1: {
           ...driver1,
-          teamColor: teamColor1,
-          headshot: headshot1,
+          teamColorHex: teamColor1,
         },
         driver2: {
           ...driver2,
-          teamColor: teamColor2,
-          headshot: headshot2,
+          teamColorHex: teamColor2,
         },
-        comparisonData: {
-          stats1,
-          stats2,
-          enabledMetrics,
-          score,
-        },
+        stats1: stats1.yearStats || stats1.career,
+        stats2: stats2.yearStats || stats2.career,
+        enabledMetrics,
+        score,
       });
     } catch (error) {
       console.error('Failed to export PDF:', error);
@@ -1089,7 +1078,7 @@ const CompareDriversPage = () => {
           
           <Button
             leftIcon={<Download size={20} />}
-            onClick={exportPdf}
+            onClick={handleExportPDF}
             bg="border-accent"
             _hover={{ 
               bg: 'border-accentDark',
