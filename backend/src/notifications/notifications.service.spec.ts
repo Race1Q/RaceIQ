@@ -127,12 +127,17 @@ describe('NotificationsService', () => {
 
       it('should include race details in mock email body', async () => {
         const logSpy = jest.spyOn(service['logger'], 'log');
-        const raceDetails = 'Monaco GP - Circuit de Monaco';
+        const raceJson = JSON.stringify({
+          username: 'Racer',
+          races: [
+            { countryCode: 'MC', round: 1, grandPrix: 'Monaco GP - Circuit de Monaco', date: '2025-05-25' }
+          ]
+        });
         
-        await service.sendRaceUpdateEmail('test@example.com', raceDetails);
+        await service.sendRaceUpdateEmail('test@example.com', raceJson);
 
         expect(logSpy).toHaveBeenCalledWith(
-          expect.stringContaining(raceDetails)
+          expect.stringContaining('Monaco GP - Circuit de Monaco')
         );
       });
     });
@@ -177,13 +182,15 @@ describe('NotificationsService', () => {
 
         await service.sendRaceUpdateEmail('recipient@test.com', 'Test message');
 
-        expect(mockTransporter.sendMail).toHaveBeenCalledWith({
-          from: 'sender@raceiq.com',
-          to: 'recipient@test.com',
-          subject: 'RaceIQ Upcoming Races',
-          text: 'Test message',
-          html: '<pre style="font-family:monospace;white-space:pre-wrap">Test message</pre>'
-        });
+        expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            from: 'sender@raceiq.com',
+            to: 'recipient@test.com',
+            subject: 'RaceIQ Upcoming Races',
+            text: expect.stringContaining('Here are the next 3 Formula 1 races'),
+            html: expect.stringContaining('<title>RaceIQ Upcoming Races</title>')
+          })
+        );
       });
 
       it('should handle SMTP send failure', async () => {
