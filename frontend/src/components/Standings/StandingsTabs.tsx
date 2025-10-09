@@ -4,16 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { useThemeColor } from '../../context/ThemeColorContext';
 
 interface StandingsTabsProps {
-  active: 'drivers' | 'constructors';
+  active: 'drivers' | 'constructors' | 'analytics';
 }
 
 // A pill-style toggle bar for switching standings views
 const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
   const navigate = useNavigate();
   const { accentColorWithHash, accentColorRgba } = useThemeColor();
-  const tabs: { key: 'drivers' | 'constructors'; label: string; path: string }[] = [
+  const tabs: { key: 'drivers' | 'constructors' | 'analytics'; label: string; path: string }[] = [
     { key: 'drivers', label: 'Drivers', path: '/standings' },
     { key: 'constructors', label: 'Constructors', path: '/standings/constructors' },
+    { key: 'analytics', label: 'Analytics', path: '/standings/analytics' },
   ];
 
   return (

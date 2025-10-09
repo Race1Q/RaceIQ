@@ -32,6 +32,7 @@ import ComparisonLoginPrompt from '../pages/ComparisonLoginPrompt/ComparisonLogi
 import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import DriverStandings from '../pages/Standings/DriverStandings';
+import AnalyticsStandings from '../pages/Standings/AnalyticsStandings';
 
 
 
@@ -49,6 +50,7 @@ function Navbar() {
       { path: '/standings', label: 'Standings' },
       { path: '/standings/constructors', label: 'ConstructorStandings' },
       { path: '/standings/drivers', label: 'DriverStandings' },
+      { path: '/standings/analytics', label: 'Analytics' },
       { path: '/compare', label: 'Compare' },
       { path: '/races', label: 'Races' },
       // Admin removed from visible nav
@@ -242,6 +244,7 @@ function AppContent() {
             {/* Standings: default to drivers; constructors available via tab/deep link */}
             <Route path="/standings" element={<DriverStandings />} />
             <Route path="/standings/constructors" element={<ConstructorsStandings />} />
+            <Route path="/standings/analytics" element={<AnalyticsStandings />} />
             <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
