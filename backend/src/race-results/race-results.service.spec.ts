@@ -5,6 +5,7 @@ import { RaceResultsService } from './race-results.service';
 import { RaceResult } from './race-results.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { Season } from '../seasons/seasons.entity';
+import { Race } from '../races/races.entity';
 import { SupabaseService } from '../supabase/supabase.service';
 
 describe('RaceResultsService', () => {
@@ -13,6 +14,7 @@ describe('RaceResultsService', () => {
   let driverStandingsRepo: jest.Mocked<Repository<DriverStandingMaterialized>>;
   let raceResultRepository: jest.Mocked<Repository<RaceResult>>;
   let seasonRepository: jest.Mocked<Repository<Season>>;
+  let raceRepository: jest.Mocked<Repository<Race>>;
   let dataSource: jest.Mocked<DataSource>;
 
   const mockRaceResult: RaceResult = {
@@ -61,6 +63,12 @@ describe('RaceResultsService', () => {
       createQueryBuilder: jest.fn(),
     };
 
+    const mockRaceRepo = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      createQueryBuilder: jest.fn(),
+    };
+
     const mockDataSource = {
       query: jest.fn(),
       createQueryBuilder: jest.fn(),
@@ -86,6 +94,10 @@ describe('RaceResultsService', () => {
           useValue: mockSeasonRepo,
         },
         {
+          provide: getRepositoryToken(Race),
+          useValue: mockRaceRepo,
+        },
+        {
           provide: DataSource,
           useValue: mockDataSource,
         },
@@ -97,6 +109,7 @@ describe('RaceResultsService', () => {
     driverStandingsRepo = module.get(getRepositoryToken(DriverStandingMaterialized));
     raceResultRepository = module.get(getRepositoryToken(RaceResult));
     seasonRepository = module.get(getRepositoryToken(Season));
+    raceRepository = module.get(getRepositoryToken(Race));
     dataSource = module.get(DataSource);
   });
 
