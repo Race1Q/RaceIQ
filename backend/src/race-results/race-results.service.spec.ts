@@ -328,10 +328,7 @@ describe('RaceResultsService', () => {
         } else if (table === 'races') {
           return {
             select: jest.fn().mockReturnValue({
-              in: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-                then: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-              })),
+              in: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
             }),
           };
         }
@@ -422,10 +419,7 @@ describe('RaceResultsService', () => {
         } else if (table === 'races') {
           return {
             select: jest.fn().mockReturnValue({
-              in: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-                then: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-              })),
+              in: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
             }),
           };
         }
@@ -513,10 +507,9 @@ describe('RaceResultsService', () => {
         } else if (table === 'races') {
           return {
             select: jest.fn().mockReturnValue({
-              in: jest.fn().mockImplementation(() => ({
+              in: jest.fn().mockReturnValue({
                 eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-                then: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-              })),
+              }),
             }),
           };
         }
@@ -677,10 +670,9 @@ describe('RaceResultsService', () => {
         } else if (table === 'races') {
           return {
             select: jest.fn().mockReturnValue({
-              in: jest.fn().mockImplementation(() => ({
+              in: jest.fn().mockReturnValue({
                 eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-                then: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-              })),
+              }),
             }),
           };
         }
@@ -759,10 +751,9 @@ describe('RaceResultsService', () => {
         } else if (table === 'races') {
           return {
             select: jest.fn().mockReturnValue({
-              in: jest.fn().mockImplementation(() => ({
+              in: jest.fn().mockReturnValue({
                 eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-                then: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-              })),
+              }),
             }),
           };
         }
@@ -926,10 +917,7 @@ describe('RaceResultsService', () => {
         } else if (table === 'races') {
           return {
             select: jest.fn().mockReturnValue({
-              in: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-                then: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-              })),
+              in: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
             }),
           };
         }
