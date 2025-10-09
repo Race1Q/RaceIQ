@@ -12,6 +12,11 @@ export class StandingsController {
     return this.standingsService.getFeaturedDriver();
   }
 
+  @Get('featured-driver-debug')
+  async getFeaturedDriverDebug(): Promise<any> {
+    return this.standingsService.getFeaturedDriverDebug();
+  }
+
   @Get(':year/:round')
   async getStandings(
     @Param('year', ParseIntPipe) year: number,
