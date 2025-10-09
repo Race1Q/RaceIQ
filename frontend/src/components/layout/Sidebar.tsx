@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, TrendingUp
+  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut
 } from 'lucide-react';
 import {
   Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton
@@ -27,7 +27,6 @@ const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: ()
     { path: '/standings', label: 'Standings', icon: Users },
     { path: '/compare', label: 'Compare', icon: GitCompareArrows },
     { path: '/races', label: 'Races', icon: Flag },
-    { path: '/predictions', label: 'Predictions', icon: TrendingUp },
     { path: '/about', label: 'About', icon: Info },
     // Admin link removed from sidebar
   ];

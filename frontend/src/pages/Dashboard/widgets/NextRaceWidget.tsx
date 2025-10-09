@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Heading, Text, VStack, HStack, Icon } from '@chakra-ui/react';
+import { Heading, Text, VStack, HStack, Icon, Avatar, SimpleGrid, Box } from '@chakra-ui/react';
 import { MapPin, Clock } from 'lucide-react';
 import type { NextRace } from '../../../types';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 import WidgetCard from './WidgetCard';
+import { computePredictions } from '../../../lib/predictions';
 
 interface NextRaceWidgetProps {
   data?: NextRace;
@@ -18,6 +19,7 @@ interface Countdown {
 function NextRaceWidget({ data }: NextRaceWidgetProps) {
   const { accentColorWithHash } = useThemeColor();
   const [countdown, setCountdown] = useState<Countdown | null>(null);
+  const [podium, setPodium] = useState<Array<{ driverFullName: string; headshotUrl: string | null; team: string }>>([]);
 
   useEffect(() => {
     if (!data) return;
@@ -39,6 +41,22 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
 
     return () => clearInterval(interval);
   }, [data]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const season = new Date(data?.raceDate ?? Date.now()).getFullYear();
+        const preds = await computePredictions(season);
+        if (!alive) return;
+        setPodium(preds.slice(0, 3).map(p => ({ driverFullName: p.driverFullName, headshotUrl: p.headshotUrl, team: p.team })));
+      } catch {
+        if (!alive) return;
+        setPodium([]);
+      }
+    })();
+    return () => { alive = false; };
+  }, [data?.raceDate]);
 
   if (!data) {
     return (
@@ -90,6 +108,27 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
             </Text>
           )}
         </VStack>
+
+        {podium.length > 0 && (
+          <VStack align="start" spacing="xs" mt="sm" w="full">
+            <Text color="text-muted" fontSize="xs" textTransform="uppercase" letterSpacing="wide">Predicted Podium</Text>
+            <SimpleGrid columns={{ base: 3 }} spacing={2} w="full">
+              {podium.map((p, idx) => {
+                const label = idx === 0 ? 'P1' : idx === 1 ? 'P2' : 'P3';
+                const medalHex = idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32';
+                return (
+                  <HStack key={idx} spacing={2} p={2} border="1px solid" borderColor="border-subtle" borderRadius="md" bg={`${medalHex}1A`}>
+                    <Avatar size="sm" name={p.driverFullName} src={p.headshotUrl || undefined} />
+                    <Box>
+                      <Text fontSize="sm" fontWeight="semibold">{label}</Text>
+                      <Text fontSize="xs" color="text-secondary" noOfLines={1}>{p.driverFullName}</Text>
+                    </Box>
+                  </HStack>
+                );
+              })}
+            </SimpleGrid>
+          </VStack>
+        )}
       </VStack>
     </WidgetCard>
   );

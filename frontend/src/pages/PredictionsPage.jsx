@@ -362,12 +362,15 @@ export default function PredictionsPage() {
                 <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={4}>
                   {podium.map((p, idx) => {
                     const label = idx === 0 ? '1st' : idx === 1 ? '2nd' : '3rd';
-                    const teamHex = getTeamColor(p.team, { hash: true });
-                    const chipBg = `${teamHex}33`; // ~20% opacity
-                    const chipColor = '#fff';
+                    // Medal colors: Gold, Silver, Bronze
+                    const medalHex = idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32';
+                    const cardBg = `${medalHex}1A`; // ~10% opacity for subtle highlight
+                    const borderCol = medalHex;
+                    const avatarBg = medalHex;
+                    const avatarColor = idx === 1 ? 'black' : 'white';
                     return (
-                      <Flex key={p.driverId} direction="column" align="center" bg="bg-surface-raised" borderWidth="1px" borderColor="border-subtle" rounded="md" p={4} gap={2}>
-                        <Avatar size="lg" name={p.driverFullName} src={p.headshotUrl || undefined} bg={chipBg} color={chipColor} />
+                      <Flex key={p.driverId} direction="column" align="center" bg={cardBg} borderWidth="1px" borderColor={borderCol} rounded="md" p={4} gap={2}>
+                        <Avatar size="lg" name={p.driverFullName} src={p.headshotUrl || undefined} bg={avatarBg} color={avatarColor} />
                         <Text fontWeight="semibold">{label} • {p.driverFullName}</Text>
                         <Text color="text-secondary" fontSize="sm">{p.team}</Text>
                       </Flex>

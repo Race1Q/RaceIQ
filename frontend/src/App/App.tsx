@@ -3,7 +3,7 @@
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Flex, HStack, Button, Text, Container, Spinner, IconButton, useDisclosure, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, VStack } from '@chakra-ui/react';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
@@ -35,7 +35,7 @@ import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import DriverStandings from '../pages/Standings/DriverStandings';
 import AnalyticsStandings from '../pages/Standings/AnalyticsStandings';
-import PredictionsPage from '../pages/PredictionsPage.jsx';
+// import PredictionsPage from '../pages/PredictionsPage.jsx';
 
 
 
@@ -253,7 +253,7 @@ function AppContent() {
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
             <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
-            <Route path="/predictions" element={<PredictionsPage />} />
+            {/* Predictions moved into Race Details tab */}
             <Route path="/about" element={<AboutUs />} />
             <Route
               path="/profile"
@@ -312,7 +312,7 @@ function AppContent() {
         />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
-  <Route path="/predictions" element={<PredictionsPage />} />
+    {/* Predictions moved into Race Details tab */}
         <Route path="/constructors" element={<Constructors />} />
         <Route 
           path="/constructors/:constructorId" 
