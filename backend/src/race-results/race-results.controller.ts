@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Post, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { RaceResultsService } from './race-results.service';
-import { Scopes } from 'src/auth/scopes.decorator';
+import { Scopes } from '../auth/scopes.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScopesGuard } from '../auth/scopes.guard';
 
