@@ -291,12 +291,16 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const lines = upcoming.map((r: any) => {
-        const date = new Date(r.date);
-        const dateStr = date.toISOString().slice(0, 10);
-        return `• Round ${r.round}: ${r.name} on ${dateStr}`;
+      // Build raceDetails as JSON for backend
+      const raceDetails = JSON.stringify({
+        username: user?.name || 'Racer',
+        races: upcoming.map((r: any) => ({
+          countryCode: r.countryCode || r.country_code || '',
+          round: r.round,
+          grandPrix: r.name,
+          date: new Date(r.date).toISOString().slice(0, 10),
+        })),
       });
-      const message = `Next ${upcoming.length} Upcoming Race${upcoming.length > 1 ? 's' : ''}:\n\n${lines.join('\n')}`;
 
       // Acquire token for protected notifications endpoint
       const token = await getAccessTokenSilently({
@@ -305,11 +309,11 @@ const ProfilePage: React.FC = () => {
           scope: 'read:drivers read:constructors read:standings update:users',
         },
       });
-      
+
       console.log('Auth0 audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
       console.log('Token (first 50 chars):', token.substring(0, 50) + '...');
-      
-      await sendRaceUpdate({ raceDetails: message }, token);
+
+      await sendRaceUpdate({ raceDetails }, token);
 
       toast({
         title: 'Email sent',
