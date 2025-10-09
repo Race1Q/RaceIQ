@@ -3,10 +3,10 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, X
+  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, TrendingUp
 } from 'lucide-react';
 import {
-  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, useDisclosure
+  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
@@ -16,7 +16,7 @@ import ThemeToggleButton from '../ThemeToggleButton/ThemeToggleButton';
 
 // --- Sub-component for Navigation Links ---
 const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: () => void }) => {
-  const { isAuthenticated } = useAuth0();
+  // const { isAuthenticated } = useAuth0(); // not used in current sidebar
   const { accentColorWithHash } = useThemeColor();
   
   const navLinks = [
@@ -27,6 +27,7 @@ const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: ()
     { path: '/standings', label: 'Standings', icon: Users },
     { path: '/compare', label: 'Compare', icon: GitCompareArrows },
     { path: '/races', label: 'Races', icon: Flag },
+    { path: '/predictions', label: 'Predictions', icon: TrendingUp },
     { path: '/about', label: 'About', icon: Info },
     // Admin link removed from sidebar
   ];
@@ -153,7 +154,7 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
   // Mobile Drawer
   if (isMobile) {
     return (
-      <Drawer isOpen={isOpen} onClose={onClose} placement="left" size="xs">
+      <Drawer isOpen={isOpen} onClose={onClose ?? (() => {})} placement="left" size="xs">
         <DrawerOverlay />
         <DrawerContent bg="bg-glassmorphism" backdropFilter="blur(10px)">
           <DrawerHeader>

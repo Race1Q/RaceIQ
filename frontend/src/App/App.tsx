@@ -35,6 +35,7 @@ import AppLayout from '../components/layout/AppLayout';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import DriverStandings from '../pages/Standings/DriverStandings';
 import AnalyticsStandings from '../pages/Standings/AnalyticsStandings';
+import PredictionsPage from '../pages/PredictionsPage.jsx';
 
 
 
@@ -252,6 +253,7 @@ function AppContent() {
             <Route path="/compare" element={<CompareDriversPage />} />
             <Route path="/races" element={<RacesPage />} />
             <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
+            <Route path="/predictions" element={<PredictionsPage />} />
             <Route path="/about" element={<AboutUs />} />
             <Route
               path="/profile"
@@ -310,6 +312,7 @@ function AppContent() {
         />
         <Route path="/races" element={<RacesPage />} />
         <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
+  <Route path="/predictions" element={<PredictionsPage />} />
         <Route path="/constructors" element={<Constructors />} />
         <Route 
           path="/constructors/:constructorId" 
