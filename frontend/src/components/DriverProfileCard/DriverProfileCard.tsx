@@ -62,12 +62,16 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
       border="1px solid"
       borderColor="border-primary"
       transition="transform 0.3s ease, box-shadow 0.3s ease"
+      transform={`perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`}
       _hover={{
-        transform: 'translateY(-5px)',
+        transform: `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-5px)`,
         boxShadow: 'xl',
       }}
       role="group" // Add role group for child _groupHover effects
       position="relative"
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <VStack spacing={0} height="100%" align="stretch">
         <Box
@@ -80,6 +84,20 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           overflow="hidden"
           borderTopRadius="24px" // Match the outer container's border radius
         >
+          {/* Shine/sweep effect overlay */}
+          <Box
+            position="absolute"
+            top="-50%"
+            left="-50%"
+            w="200%"
+            h="200%"
+            bgGradient="linear(135deg, transparent 0%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 55%, transparent 100%)"
+            transform={isHovered ? 'translateX(50%) translateY(25%)' : 'translateX(-100%) translateY(-50%)'}
+            transition="transform 0.8s ease"
+            pointerEvents="none"
+            zIndex={2}
+          />
+          
           {/* Ghosted Driver Number Overlay */}
           {isNumberAvailable && (
             <Box
