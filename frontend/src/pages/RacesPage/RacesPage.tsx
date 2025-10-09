@@ -223,7 +223,7 @@ const RacesPage: React.FC = () => {
         {upcomingRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Upcoming races</Heading>
-            <SimpleGrid columns={2} spacing={{ base: 3, md: 6 }}>
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
               {upcomingRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />
@@ -236,7 +236,7 @@ const RacesPage: React.FC = () => {
         {pastRaces.length > 0 && (
           <Box>
             <Heading size="md" fontFamily="heading" mb={4}>Past Races</Heading>
-            <SimpleGrid columns={2} spacing={{ base: 3, md: 6 }}>
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={{ base: 3, md: 6 }}>
               {pastRaces.map((race) => (
                 <Link key={race.id} to={`/races/${race.id}`}>
                   <RaceProfileCard race={race} />
