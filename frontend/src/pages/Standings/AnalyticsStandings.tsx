@@ -108,6 +108,44 @@ const AnalyticsStandings: React.FC = () => {
     driverColorsMap[driver.driverName] = teamColors[driver.driverTeam] || '#ff0000';
   });
 
+  // Find the leading driver (highest cumulative points in the last race)
+  const getLeadingDriver = () => {
+    if (driversChartData.length === 0) return null;
+    const lastRace = driversChartData[driversChartData.length - 1];
+    let leadingDriver = '';
+    let maxPoints = 0;
+    
+    Object.keys(lastRace).forEach(key => {
+      if (key !== 'round' && key !== 'raceName' && lastRace[key] > maxPoints) {
+        maxPoints = lastRace[key];
+        leadingDriver = key;
+      }
+    });
+    
+    return leadingDriver;
+  };
+
+  const leadingDriver = getLeadingDriver();
+
+  // Find the leading constructor (highest cumulative points in the last race)
+  const getLeadingConstructor = () => {
+    if (constructorsChartData.length === 0) return null;
+    const lastRace = constructorsChartData[constructorsChartData.length - 1];
+    let leadingConstructor = '';
+    let maxPoints = 0;
+    
+    Object.keys(lastRace).forEach(key => {
+      if (key !== 'round' && key !== 'raceName' && lastRace[key] > maxPoints) {
+        maxPoints = lastRace[key];
+        leadingConstructor = key;
+      }
+    });
+    
+    return leadingConstructor;
+  };
+
+  const leadingConstructor = getLeadingConstructor();
+
   return (
     <Box>
       <PageHeader 
@@ -123,7 +161,7 @@ const AnalyticsStandings: React.FC = () => {
           <Flex gap={6} flexDirection="column">
             {/* Drivers Chart */}
             {driversProgression.length > 0 && (
-              <Box h="400px" bg="gray.700" p={4} borderRadius="md">
+              <Box h="400px" bg="gray.900" p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
                   2025 Drivers Points Progression
                 </Text>
@@ -154,19 +192,29 @@ const AnalyticsStandings: React.FC = () => {
                         );
                       }}
                     />
-                    {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => (
-                      <Line
-                        key={name}
-                        type="monotone"
-                        dataKey={name}
-                        stroke={`#${driverColorsMap[name]}` || '#ff0000'}
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={true}
-                        name={name}
-                        connectNulls
-                      />
-                    ))}
+                    {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => {
+                      const isLeading = name === leadingDriver;
+                      const teamColor = `#${driverColorsMap[name]}` || '#ff0000';
+                      
+                      return (
+                        <Line
+                          key={name}
+                          type="monotone"
+                          dataKey={name}
+                          stroke={teamColor}
+                          strokeWidth={isLeading ? 4 : 2}
+                          dot={false}
+                          isAnimationActive={true}
+                          name={name}
+                          connectNulls
+                          style={isLeading ? {
+                            filter: `drop-shadow(0 0 8px ${teamColor}80) drop-shadow(0 0 16px ${teamColor}40) drop-shadow(0 0 24px ${teamColor}20)`,
+                            strokeLinecap: 'round',
+                            strokeLinejoin: 'round'
+                          } : {}}
+                        />
+                      );
+                    })}
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
@@ -174,7 +222,7 @@ const AnalyticsStandings: React.FC = () => {
 
             {/* Constructors Chart */}
             {constructorsProgression.length > 0 && (
-              <Box h="400px" bg="gray.700" p={4} borderRadius="md">
+              <Box h="400px" bg="gray.900" p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
                   2025 Constructors Points Progression
                 </Text>
@@ -205,19 +253,29 @@ const AnalyticsStandings: React.FC = () => {
                         );
                       }}
                     />
-                    {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => (
-                      <Line
-                        key={name}
-                        type="monotone"
-                        dataKey={name}
-                        stroke={`#${constructorColors[name]}` || '#ff0000'}
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={true}
-                        name={name}
-                        connectNulls
-                      />
-                    ))}
+                    {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => {
+                      const isLeading = name === leadingConstructor;
+                      const teamColor = `#${constructorColors[name]}` || '#ff0000';
+                      
+                      return (
+                        <Line
+                          key={name}
+                          type="monotone"
+                          dataKey={name}
+                          stroke={teamColor}
+                          strokeWidth={isLeading ? 4 : 2}
+                          dot={false}
+                          isAnimationActive={true}
+                          name={name}
+                          connectNulls
+                          style={isLeading ? {
+                            filter: `drop-shadow(0 0 8px ${teamColor}80) drop-shadow(0 0 16px ${teamColor}40) drop-shadow(0 0 24px ${teamColor}20)`,
+                            strokeLinecap: 'round',
+                            strokeLinejoin: 'round'
+                          } : {}}
+                        />
+                      );
+                    })}
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
