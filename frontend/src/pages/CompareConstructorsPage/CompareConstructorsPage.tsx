@@ -1,30 +1,32 @@
 // frontend/src/pages/CompareConstructorsPage/CompareConstructorsPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Skeleton, SkeletonText, ScaleFade } from '@chakra-ui/react';
-import { useState } from 'react';
-import { ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Download } from 'lucide-react';
-import { useConstructorComparison } from '../../hooks/useConstructorComparison';
+import { useConstructorComparison, type ConstructorDetails } from '../../hooks/useConstructorComparison';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { ConstructorSelectionPanel } from './components/ConstructorSelectionPanel';
 import { ConstructorComparisonTable } from './components/ConstructorComparisonTable';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
-import CompareTabs from '../../components/compare/CompareTabs';
+import CompareTabs from '../../components/Compare/CompareTabs';
 import { ConstructorPdfComparisonCard } from '../../components/compare/ConstructorPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 
 // Step types for progressive disclosure
-type ComparisonStep = 'constructors' | 'parameters' | 'results';
+type ComparisonStep = 'parameters' | 'results';
+type ParameterPhase = 'constructors' | 'time' | 'stats';
 
 const CompareConstructorsPage = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
   
   // Progressive disclosure state
-  const [currentStep, setCurrentStep] = useState<ComparisonStep>('constructors');
+  const [currentStep, setCurrentStep] = useState<ComparisonStep>('parameters');
+  const [currentPhase, setCurrentPhase] = useState<ParameterPhase>('constructors');
 
   // Enhanced hook with new comparison features
-  const { 
+  const {
     allConstructors, 
     constructor1, 
     constructor2, 
@@ -46,10 +48,53 @@ const CompareConstructorsPage = () => {
   const [selectedYears1, setSelectedYears1] = useState<string[]>([]);
   const [selectedYears2, setSelectedYears2] = useState<string[]>([]);
 
+  // Simple mapping of constructor names to their debut years (frontend-only solution)
+  const constructorDebutYears: Record<string, number> = {
+    'Red Bull Racing': 2005,
+    'Mercedes': 2010,
+    'Ferrari': 1950,
+    'McLaren': 1966,
+    'Aston Martin': 2021,
+    'Alpine': 2021,
+    'Williams': 1977,
+    'AlphaTauri': 2006,
+    'Alfa Romeo': 1993,
+    'Haas F1 Team': 2016,
+    'Kick Sauber': 1993,
+    'RB F1 Team': 2006,
+    // Add more as needed
+  };
+
+  // Filter years based on constructor's debut year
+  const getFilteredYears = (constructor: ConstructorDetails | null) => {
+    if (!constructor?.name) return years;
+    const debutYear = constructorDebutYears[constructor.name] || 1950;
+    return years.filter(year => year >= debutYear);
+  };
+
   // Step navigation helpers
   const canProceedToParameters = !!(constructor1 && constructor2);
   const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
   const canProceedToResults = canProceedToParameters && enabledMetricsArray.length > 0 && selectedYears1.length > 0 && selectedYears2.length > 0;
+
+  // Auto-progress through phases (matching drivers behavior)
+  useEffect(() => {
+    if (canProceedToParameters && currentPhase === 'constructors') {
+      const timer = setTimeout(() => {
+        setCurrentPhase('time');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [canProceedToParameters, currentPhase]);
+
+  useEffect(() => {
+    if (selectedYears1.length > 0 && selectedYears2.length > 0 && currentPhase === 'time') {
+      const timer = setTimeout(() => {
+        setCurrentPhase('stats');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedYears1, selectedYears2, currentPhase]);
 
   const exportPdf = async () => {
     if (!constructor1 || !constructor2 || !stats1 || !stats2) {
@@ -82,27 +127,40 @@ const CompareConstructorsPage = () => {
   };
   
   const nextStep = () => {
-    if (currentStep === 'constructors' && canProceedToParameters) {
-      setCurrentStep('parameters');
-    } else if (currentStep === 'parameters' && canProceedToResults) {
-      // Aggregate data for selected years before showing results
-      if (constructor1 && constructor2 && selectedYears1.length > 0 && selectedYears2.length > 0) {
-        const years1 = selectedYears1.map(y => parseInt(y, 10));
-        const years2 = selectedYears2.map(y => parseInt(y, 10));
-        
-        // Fetch aggregated stats for both constructors
-        selectConstructorForYears(1, constructor1.id.toString(), years1);
-        selectConstructorForYears(2, constructor2.id.toString(), years2);
+    if (currentStep === 'parameters') {
+      if (currentPhase === 'constructors' && canProceedToParameters) {
+        setCurrentPhase('time');
+      } else if (currentPhase === 'time' && selectedYears1.length > 0 && selectedYears2.length > 0) {
+        setCurrentPhase('stats');
+      } else if (currentPhase === 'stats' && canProceedToResults) {
+        // Aggregate data for selected years before showing results
+        if (constructor1 && constructor2 && selectedYears1.length > 0 && selectedYears2.length > 0) {
+          const years1 = selectedYears1.map(y => parseInt(y, 10));
+          const years2 = selectedYears2.map(y => parseInt(y, 10));
+          
+          // Fetch aggregated stats for both constructors
+          selectConstructorForYears(1, constructor1.id.toString(), years1);
+          selectConstructorForYears(2, constructor2.id.toString(), years2);
+        }
+        setCurrentStep('results');
       }
-      setCurrentStep('results');
     }
   };
+
   
   const prevStep = () => {
     if (currentStep === 'parameters') {
-      setCurrentStep('constructors');
+      if (currentPhase === 'constructors') {
+        // Already at first phase, do nothing
+        return;
+      } else if (currentPhase === 'time') {
+        setCurrentPhase('constructors');
+      } else if (currentPhase === 'stats') {
+        setCurrentPhase('time');
+      }
     } else if (currentStep === 'results') {
       setCurrentStep('parameters');
+      setCurrentPhase('stats'); // Go back to stats phase
     }
   };
 
@@ -131,13 +189,18 @@ const CompareConstructorsPage = () => {
     );
   }
 
-  // Step 1: Constructor Selection Component
-  const Step1ConstructorSelection = () => (
+  // Phase 1: Constructor Selection Component (within parameters step)
+  const Phase1ConstructorSelection = () => (
     <VStack spacing="xl" align="stretch">
       <VStack spacing="md" textAlign="center">
         <Heading size="lg" fontFamily="heading">Choose Your Constructors</Heading>
         <Text color="text-muted" fontSize="lg">
-          Select two constructors to compare their performance
+          {constructor1?.id && constructor2?.id 
+            ? "Both constructors selected - ready to proceed" 
+            : constructor1?.id 
+            ? "Select the second constructor to compare" 
+            : "Select two constructors to compare their performance"
+          }
         </Text>
       </VStack>
       
@@ -151,14 +214,13 @@ const CompareConstructorsPage = () => {
         <ConstructorSelectionPanel
           title="Constructor 1"
           allConstructors={constructorOptions}
-          onChange={(option) => {
-            if (option) {
-              const constructorId = String(option.value);
-              // Use the new selectConstructor function for live stats
-              selectConstructor(1, constructorId, 'career');
-              // Also update legacy data for backward compatibility
-              handleSelectConstructor(1, constructorId);
-            }
+          selectedConstructorData={constructor1}
+          onConstructorSelect={(id) => {
+            const constructorId = String(id);
+            // Use the new selectConstructor function for live stats
+            selectConstructor(1, constructorId, 'career');
+            // Also update legacy data for backward compatibility
+            handleSelectConstructor(1, constructorId);
           }}
           isLoading={loading}
           extraControl={null}
@@ -177,72 +239,33 @@ const CompareConstructorsPage = () => {
         <ConstructorSelectionPanel
           title="Constructor 2"
           allConstructors={constructorOptions}
-          onChange={(option) => {
-            if (option) {
-              const constructorId = String(option.value);
-              // Use the new selectConstructor function for live stats
-              selectConstructor(2, constructorId, 'career');
-              // Also update legacy data for backward compatibility
-              handleSelectConstructor(2, constructorId);
-            }
+          selectedConstructorData={constructor2}
+          onConstructorSelect={(id) => {
+            const constructorId = String(id);
+            // Use the new selectConstructor function for live stats
+            selectConstructor(2, constructorId, 'career');
+            // Also update legacy data for backward compatibility
+            handleSelectConstructor(2, constructorId);
           }}
           isLoading={loading}
           extraControl={null}
         />
       </Grid>
       
-      {canProceedToParameters && (
-        <ScaleFade in={canProceedToParameters} initialScale={0.9}>
-          <Flex justify="center" mt="xl">
-            <Button
-              rightIcon={<ChevronRight size={20} />}
-              onClick={nextStep}
-              size="lg"
-              bg="border-accent"
-              _hover={{ 
-                bg: 'border-accentDark',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
-              }}
-              _active={{
-                transform: 'translateY(0px)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-              }}
-              color="white"
-              fontFamily="heading"
-              transition="all 0.2s ease"
-              boxShadow="0 4px 15px rgba(0,0,0,0.1)"
-            >
-              Continue to Parameters
-            </Button>
-          </Flex>
-        </ScaleFade>
-      )}
     </VStack>
   );
 
-  // Step 2: Parameters Selection Component
-  const Step2Parameters = () => {
-    // Available metrics for comparison
-    const availableMetrics = {
-      wins: 'Wins',
-      podiums: 'Podiums',
-      poles: 'Pole Positions',
-      fastestLaps: 'Fastest Laps',
-      points: 'Points',
-      races: 'Races',
-      dnf: 'DNFs',
-    };
-
-    // Ensure years is an array
-    const yearsArray = Array.isArray(years) ? years : [];
+  // Phase 2: Time Selection Component (within parameters step)
+  const Phase2TimeSelection = () => {
+    const constructor1Years = getFilteredYears(constructor1);
+    const constructor2Years = getFilteredYears(constructor2);
 
     return (
       <VStack spacing="xl" align="stretch">
         <VStack spacing="md" textAlign="center">
-          <Heading size="lg" fontFamily="heading">Set Comparison Parameters</Heading>
+          <Heading size="lg" fontFamily="heading">Select Time Period</Heading>
           <Text color="text-muted" fontSize="lg">
-            Choose the statistics and time period for your comparison
+            Choose the years for each constructor's comparison data
           </Text>
         </VStack>
         
@@ -289,12 +312,31 @@ const CompareConstructorsPage = () => {
             <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap="lg" w="full">
               {/* Constructor 1 Year Selection */}
               <VStack spacing="sm" align="stretch">
-                <Text fontSize="sm" fontFamily="heading" color="text-primary" textAlign="center">
-                  {constructor1?.name || 'Constructor 1'} - Years
-                </Text>
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="sm" fontFamily="heading" color="text-primary">
+                    {constructor1?.name || 'Constructor 1'} - Years
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="border-accent"
+                    _hover={{ bg: "border-accent", color: "white" }}
+                    onClick={() => {
+                      if (selectedYears1.length === constructor1Years.length) {
+                        setSelectedYears1([]);
+                      } else {
+                        setSelectedYears1(constructor1Years.map(y => y.toString()));
+                      }
+                    }}
+                    fontFamily="heading"
+                    fontSize="xs"
+                  >
+                    {selectedYears1.length === constructor1Years.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </HStack>
                 <Flex gap="sm" flexWrap="wrap" justify="center">
-                  {yearsArray.length > 0 ? (
-                    yearsArray.map((year) => {
+                  {constructor1Years.length > 0 ? (
+                    constructor1Years.map((year) => {
                       const isSelected = selectedYears1.includes(year.toString());
                       return (
                         <Button
@@ -349,12 +391,31 @@ const CompareConstructorsPage = () => {
 
               {/* Constructor 2 Year Selection */}
               <VStack spacing="sm" align="stretch">
-                <Text fontSize="sm" fontFamily="heading" color="text-primary" textAlign="center">
-                  {constructor2?.name || 'Constructor 2'} - Years
-                </Text>
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="sm" fontFamily="heading" color="text-primary">
+                    {constructor2?.name || 'Constructor 2'} - Years
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="border-accent"
+                    _hover={{ bg: "border-accent", color: "white" }}
+                    onClick={() => {
+                      if (selectedYears2.length === constructor2Years.length) {
+                        setSelectedYears2([]);
+                      } else {
+                        setSelectedYears2(constructor2Years.map(y => y.toString()));
+                      }
+                    }}
+                    fontFamily="heading"
+                    fontSize="xs"
+                  >
+                    {selectedYears2.length === constructor2Years.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </HStack>
                 <Flex gap="sm" flexWrap="wrap" justify="center">
-                  {yearsArray.length > 0 ? (
-                    yearsArray.map((year) => {
+                  {constructor2Years.length > 0 ? (
+                    constructor2Years.map((year) => {
                       const isSelected = selectedYears2.includes(year.toString());
                       return (
                         <Button
@@ -427,13 +488,68 @@ const CompareConstructorsPage = () => {
           </VStack>
         </Box>
 
+        
+      </VStack>
+    );
+  };
+
+  // Phase 3: Stats Selection Component (within parameters step)
+  const Phase3StatsSelection = () => {
+    // Available metrics for comparison
+    const availableMetrics = {
+      wins: 'Wins',
+      podiums: 'Podiums',
+      poles: 'Pole Positions',
+      fastest_laps: 'Fastest Laps',
+      points: 'Points',
+      races: 'Races',
+      dnf: 'DNFs',
+    };
+
+    const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+
+    return (
+      <VStack spacing="xl" align="stretch">
+        <VStack spacing="md" textAlign="center">
+          <Heading size="lg" fontFamily="heading">Select Statistics</Heading>
+          <Text color="text-muted" fontSize="lg">
+            Choose the metrics you want to compare
+          </Text>
+        </VStack>
+        
         {/* Statistics Selection */}
         <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
-            <Heading size="md" fontFamily="heading" color="text-primary">Statistics to Compare</Heading>
+            <HStack justify="space-between" align="center">
+              <Heading size="md" fontFamily="heading" color="text-primary">Statistics to Compare</Heading>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="border-accent"
+                _hover={{ bg: "border-accent", color: "white" }}
+                onClick={() => {
+                  const allMetricKeys = Object.keys(availableMetrics);
+                  const allSelected = allMetricKeys.every(key => enabledMetricsArray.includes(key));
+                  
+                  if (allSelected) {
+                    allMetricKeys.forEach(key => toggleMetric(key as any));
+                  } else {
+                    allMetricKeys.forEach(key => {
+                      if (!enabledMetricsArray.includes(key)) {
+                        toggleMetric(key as any);
+                      }
+                    });
+                  }
+                }}
+                fontFamily="heading"
+              >
+                {Object.keys(availableMetrics).every(key => enabledMetricsArray.includes(key)) ? 'Deselect All' : 'Select All'}
+              </Button>
+            </HStack>
             <Text fontSize="sm" color="text-muted">
               Select the metrics you want to compare. Choose at least one statistic.
             </Text>
+            
             <Flex gap="sm" flexWrap="wrap" justify="center">
               {Object.entries(availableMetrics).map(([key, label]) => (
                 <Button
@@ -452,9 +568,7 @@ const CompareConstructorsPage = () => {
                     transform: 'scale(1.05)',
                     boxShadow: enabledMetricsArray.includes(key) ? "0 0 15px rgba(225, 6, 0, 0.5)" : "0 4px 15px rgba(0,0,0,0.1)"
                   }}
-                  _active={{
-                    transform: 'scale(0.95)'
-                  }}
+                  _active={{ transform: 'scale(0.95)' }}
                   onClick={() => toggleMetric(key as any)}
                   fontFamily="heading"
                   transition="all 0.2s ease"
@@ -488,41 +602,61 @@ const CompareConstructorsPage = () => {
                 Please select at least one statistic to compare
               </Text>
             )}
-            {(!selectedYears1.length || !selectedYears2.length) && (
-              <Text fontSize="xs" color="border-accent" textAlign="center" mt="sm">
-                Please select at least one year for both constructors to enable comparison
-              </Text>
-            )}
           </VStack>
         </Box>
-        
-        <Flex justify="space-between" mt="xl">
-          <Button
-            leftIcon={<ChevronLeft size={20} />}
-            onClick={prevStep}
-            variant="outline"
-            fontFamily="heading"
-          >
-            Back to Constructors
-          </Button>
-          
-          {canProceedToResults && (
-            <Button
-              rightIcon={<ArrowRight size={20} />}
-              onClick={nextStep}
-              size="lg"
-              bg="border-accent"
-              _hover={{ bg: 'border-accentDark' }}
-              color="white"
-              fontFamily="heading"
-            >
-              View Comparison
-            </Button>
-          )}
-        </Flex>
+
+        {canProceedToResults && (
+          <ScaleFade in={canProceedToResults} initialScale={0.9}>
+            <Flex justify="flex-end" mt="xl">
+              <Button
+                rightIcon={<ChevronRight size={20} />}
+                onClick={nextStep}
+                size="lg"
+                bg="border-accent"
+                _hover={{ 
+                  bg: 'border-accentDark',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+                }}
+                _active={{
+                  transform: 'translateY(0px)',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                }}
+                color="white"
+                fontFamily="heading"
+                transition="all 0.2s ease"
+                boxShadow="0 4px 15px rgba(0,0,0,0.1)"
+              >
+                View Comparison
+              </Button>
+            </Flex>
+          </ScaleFade>
+        )}
       </VStack>
     );
   };
+
+  // Step 1: Progressive Parameters Selection (matching drivers structure)
+  const Step1Parameters = () => (
+    <VStack spacing="xl" align="stretch">
+      {/* Phase 1: Constructor Selection - Always visible */}
+      <Phase1ConstructorSelection />
+      
+      {/* Phase 2: Time Period Selection - Appears after constructors selected */}
+      {(currentPhase === 'time' || currentPhase === 'stats') && (
+        <SlideFade in={currentPhase === 'time' || currentPhase === 'stats'} offsetY="20px">
+          <Phase2TimeSelection />
+        </SlideFade>
+      )}
+      
+      {/* Phase 3: Statistics Selection - Appears after time period selected */}
+      {currentPhase === 'stats' && (
+        <SlideFade in={currentPhase === 'stats'} offsetY="20px">
+          <Phase3StatsSelection />
+        </SlideFade>
+      )}
+    </VStack>
+  );
 
   // Step 3: Results Display Component
   const Step3Results = () => {
@@ -644,7 +778,7 @@ const CompareConstructorsPage = () => {
           {/* Progress Indicator */}
           <Box mb="xl" maxW="400px" mx="auto">
             <HStack spacing="sm" justify="center">
-              {['constructors', 'parameters', 'results'].map((step, index) => (
+              {['parameters', 'results'].map((step, index) => (
                 <HStack key={step} spacing="sm">
                   <Box
                     w="8px"
@@ -653,11 +787,11 @@ const CompareConstructorsPage = () => {
                     bg={currentStep === step ? 'border-accent' : 'border-subtle'}
                     transition="all 0.3s ease"
                   />
-                  {index < 2 && (
+                  {index < 1 && (
                     <Box
                       w="20px"
                       h="2px"
-                      bg={['constructors', 'parameters'].indexOf(currentStep) > index ? 'border-accent' : 'border-subtle'}
+                      bg={currentStep === 'results' ? 'border-accent' : 'border-subtle'}
                       transition="all 0.3s ease"
                     />
                   )}
@@ -665,18 +799,18 @@ const CompareConstructorsPage = () => {
               ))}
             </HStack>
             <Text fontSize="xs" color="text-muted" textAlign="center" mt="sm">
-              Step {['constructors', 'parameters', 'results'].indexOf(currentStep) + 1} of 3
+              {currentStep === 'parameters' ? (
+                currentPhase === 'constructors' ? 'Step 1 of 2 - Select Constructors' :
+                currentPhase === 'time' ? 'Step 1 of 2 - Select Time Period' :
+                'Step 1 of 2 - Select Statistics'
+              ) : 'Step 2 of 2 - View Results'}
             </Text>
           </Box>
 
           {/* Progressive Disclosure: Render current step with animations */}
-          <Fade in={currentStep === 'constructors'} unmountOnExit>
-            {currentStep === 'constructors' && <Step1ConstructorSelection />}
+          <Fade in={currentStep === 'parameters'} unmountOnExit>
+            {currentStep === 'parameters' && <Step1Parameters />}
           </Fade>
-          
-          <SlideFade in={currentStep === 'parameters'} offsetY="20px" unmountOnExit>
-            {currentStep === 'parameters' && <Step2Parameters />}
-          </SlideFade>
           
           <SlideFade in={currentStep === 'results'} offsetY="20px" unmountOnExit>
             {currentStep === 'results' && <Step3Results />}

@@ -1,17 +1,15 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, IconButton, useDisclosure, Fade, SlideFade, Progress, CircularProgress, CircularProgressLabel, Image, Badge, Skeleton, SkeletonText, Tooltip, ScaleFade, useColorModeValue } from '@chakra-ui/react';
-import { useRef, useMemo, useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, ArrowRight, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Image, Badge, Skeleton, SkeletonText, ScaleFade } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { useDriverComparison } from '../../hooks/useDriverComparison';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import { DriverSelectionPanel } from './components/DriverSelectionPanel';
-import { ComparisonTable } from './components/ComparisonTable';
-import PageLoadingOverlay from '../../components/loaders/PageLoadingOverlay';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
-import CompareTabs from '../../components/compare/CompareTabs';
+import CompareTabs from '../../components/Compare/CompareTabs';
 import PdfComparisonCard from '../../components/compare/PdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 import { driverHeadshots } from '../../lib/driverHeadshots';
@@ -180,7 +178,6 @@ const CompareDriversPage = () => {
     selectDriver,
     selectDriverForYears,
     toggleMetric,
-    clearSelection,
   } = useDriverComparison();
   
   // Year selection state - allow multiple years per driver
@@ -257,17 +254,32 @@ const CompareDriversPage = () => {
   const canProceedToStats = canProceedToTime && selectedYears1.length > 0 && selectedYears2.length > 0;
   const canProceedToResults = canProceedToStats && enabledMetricsArray.length > 0;
 
+  // Auto-progress through phases (matching constructors behavior)
+  useEffect(() => {
+    if (canProceedToTime && currentPhase === 'drivers') {
+      const timer = setTimeout(() => {
+        setCurrentPhase('time');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [canProceedToTime, currentPhase]);
+
+  useEffect(() => {
+    if (canProceedToStats && currentPhase === 'time') {
+      const timer = setTimeout(() => {
+        setCurrentPhase('stats');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [canProceedToStats, currentPhase]);
+
   const exportPdf = async () => {
     // PDF export logic would go here
     console.log('Exporting PDF...');
   };
   
-  const nextPhase = () => {
-    if (currentPhase === 'drivers' && canProceedToTime) {
-      setCurrentPhase('time');
-    } else if (currentPhase === 'time' && canProceedToStats) {
-      setCurrentPhase('stats');
-    } else if (currentPhase === 'stats' && canProceedToResults) {
+  const nextStep = () => {
+    if (currentStep === 'parameters' && currentPhase === 'stats' && canProceedToResults) {
       // Aggregate data for selected years before showing results
       if (driver1 && driver2 && selectedYears1.length > 0 && selectedYears2.length > 0) {
         const years1 = selectedYears1.map(y => parseInt(y, 10));
@@ -281,13 +293,10 @@ const CompareDriversPage = () => {
     }
   };
   
-  const prevPhase = () => {
-    if (currentPhase === 'time') {
-      setCurrentPhase('drivers');
-    } else if (currentPhase === 'stats') {
-      setCurrentPhase('time');
-    } else if (currentStep === 'results') {
+  const prevStep = () => {
+    if (currentStep === 'results') {
       setCurrentStep('parameters');
+      setCurrentPhase('drivers');
     }
   };
 
@@ -424,33 +433,6 @@ const CompareDriversPage = () => {
         />
       </Grid>
       
-      {canProceedToTime && (
-        <ScaleFade in={canProceedToTime} initialScale={0.9}>
-          <Flex justify="flex-end" mt="xl">
-            <Button
-              rightIcon={<ChevronRight size={20} />}
-              onClick={nextPhase}
-              size="lg"
-              bg="border-accent"
-              _hover={{ 
-                bg: 'border-accentDark',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
-              }}
-              _active={{
-                transform: 'translateY(0px)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-              }}
-              color="white"
-              fontFamily="heading"
-              transition="all 0.2s ease"
-              boxShadow="0 4px 15px rgba(0,0,0,0.1)"
-            >
-              Select Time Period
-            </Button>
-          </Flex>
-        </ScaleFade>
-      )}
     </VStack>
   );
 
@@ -637,33 +619,6 @@ const CompareDriversPage = () => {
           </VStack>
         </Box>
 
-        {canProceedToStats && (
-          <ScaleFade in={canProceedToStats} initialScale={0.9}>
-            <Flex justify="flex-end" mt="xl">
-              <Button
-                rightIcon={<ChevronRight size={20} />}
-                onClick={nextPhase}
-                size="lg"
-                bg="border-accent"
-                _hover={{ 
-                  bg: 'border-accentDark',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
-                }}
-                _active={{
-                  transform: 'translateY(0px)',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-                }}
-                color="white"
-                fontFamily="heading"
-                transition="all 0.2s ease"
-                boxShadow="0 4px 15px rgba(0,0,0,0.1)"
-              >
-                Select Statistics
-              </Button>
-            </Flex>
-          </ScaleFade>
-        )}
       </VStack>
     );
   };
@@ -783,7 +738,7 @@ const CompareDriversPage = () => {
             <Flex justify="flex-end" mt="xl">
               <Button
                 rightIcon={<ChevronRight size={20} />}
-                onClick={nextPhase}
+                onClick={nextStep}
                 size="lg"
                 bg="border-accent"
                 _hover={{ 
@@ -816,8 +771,8 @@ const CompareDriversPage = () => {
       <Phase1DriverSelection />
       
       {/* Phase 2: Time Period Selection - Appears after drivers selected */}
-      {currentPhase !== 'drivers' && (
-        <SlideFade in={currentPhase !== 'drivers'} offsetY="20px">
+      {(currentPhase === 'time' || currentPhase === 'stats') && (
+        <SlideFade in={currentPhase === 'time' || currentPhase === 'stats'} offsetY="20px">
           <Phase2TimeSelection />
         </SlideFade>
       )}
@@ -1120,7 +1075,7 @@ const CompareDriversPage = () => {
         <Flex justify="space-between" mt="xl">
           <Button
             leftIcon={<ChevronLeft size={20} />}
-            onClick={prevPhase}
+            onClick={prevStep}
             variant="outline"
             fontFamily="heading"
             _hover={{

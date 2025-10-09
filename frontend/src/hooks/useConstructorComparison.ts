@@ -108,6 +108,7 @@ async function fetchConstructorStats(constructorId: string, year?: number | 'car
   return getJSON<ConstructorComparisonStats>(`/constructors/${constructorId}/stats${yearParam}`);
 }
 
+
 // NEW: Aggregate multiple years of stats
 async function fetchConstructorStatsForYears(constructorId: string, years: number[]): Promise<ConstructorComparisonStats> {
   if (years.length === 0) {
@@ -308,6 +309,7 @@ export function useConstructorComparison(): HookState {
     
     return () => { alive = false; };
   }, []);
+
   
   const getListItem = useCallback(
     (id: string) => allConstructors.find(c => String(c.id) === String(id)),
