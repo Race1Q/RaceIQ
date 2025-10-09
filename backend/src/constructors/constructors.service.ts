@@ -3,14 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { ConstructorEntity } from './constructors.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
-<<<<<<< Updated upstream
-import { RaceResult } from '../race-results/race-results.entity';
-import { Race } from '../races/races.entity'; 
-=======
 import { RaceResult } from 'src/race-results/race-results.entity';
 import { Race } from 'src/races/races.entity';
-import { ConstructorComparisonStatsResponseDto, ConstructorStatsDto } from './dto/constructor-stats.dto'; 
->>>>>>> Stashed changes
+import { ConstructorComparisonStatsResponseDto, ConstructorStatsDto } from './dto/constructor-stats.dto';
 
 @Injectable()
 export class ConstructorsService {

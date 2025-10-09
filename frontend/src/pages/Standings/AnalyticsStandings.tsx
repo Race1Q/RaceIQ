@@ -223,11 +223,7 @@ const AnalyticsStandings: React.FC = () => {
         {loading ? (
           <StandingsSkeleton text="Loading Standings Analytics" />
         ) : (
-<<<<<<< Updated upstream
-          <Flex gap={6} flexDirection="column" mt={8}>
-=======
           <Flex gap={6} flexDirection="column" mt={4}>
->>>>>>> Stashed changes
             {/* Drivers Chart */}
             {driversProgression.length > 0 && (
               <Box h="400px" bg="gray.900" p={4} borderRadius="md">
