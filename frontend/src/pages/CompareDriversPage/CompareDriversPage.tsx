@@ -1,7 +1,7 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, IconButton, useDisclosure, Fade, SlideFade, Progress, CircularProgress, CircularProgressLabel, Image, Badge, Skeleton, SkeletonText, Tooltip, ScaleFade, useColorModeValue } from '@chakra-ui/react';
-import { useRef, useMemo, useState } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, ArrowRight, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { useDriverComparison } from '../../hooks/useDriverComparison';
@@ -16,7 +16,8 @@ import { driverHeadshots } from '../../lib/driverHeadshots';
 import { driverTeamMapping } from '../../lib/driverTeamMapping';
 
 // Step types for progressive disclosure
-type ComparisonStep = 'drivers' | 'parameters' | 'results';
+type ComparisonStep = 'parameters' | 'results';
+type ParameterPhase = 'drivers' | 'time' | 'stats';
 
 // A new, reusable component for a single stat card
 const StatCard = ({ label, value, icon, teamColor }: { 
@@ -154,10 +155,11 @@ const DriverStatsColumn = ({
 };
 
 const CompareDriversPage = () => {
-  const { isAuthenticated, loginWithRedirect } = useAuth0();
+  const { isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0();
   
   // Progressive disclosure state
-  const [currentStep, setCurrentStep] = useState<ComparisonStep>('drivers');
+  const [currentStep, setCurrentStep] = useState<ComparisonStep>('parameters');
+  const [currentPhase, setCurrentPhase] = useState<ParameterPhase>('drivers');
 
   // Enhanced hook with new comparison features
   const { 
@@ -184,21 +186,88 @@ const CompareDriversPage = () => {
   // Year selection state - allow multiple years per driver
   const [selectedYears1, setSelectedYears1] = useState<string[]>([]);
   const [selectedYears2, setSelectedYears2] = useState<string[]>([]);
+  
+  // Driver career info for filtering years
+  const [driver1CareerInfo, setDriver1CareerInfo] = useState<{ firstRaceYear: number } | null>(null);
+  const [driver2CareerInfo, setDriver2CareerInfo] = useState<{ firstRaceYear: number } | null>(null);
+
+  // Function to fetch driver career info
+  const fetchDriverCareerInfo = async (driverId: string) => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await fetch(`/api/drivers/${driverId}/career-stats`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const firstRaceYear = data.careerStats?.firstRace?.year;
+        if (firstRaceYear) {
+          return { firstRaceYear: parseInt(firstRaceYear, 10) };
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch driver career info:', error);
+    }
+    return null;
+  };
+
+  // Filter years based on driver's first race year
+  const getFilteredYears = (driverCareerInfo: { firstRaceYear: number } | null) => {
+    if (!driverCareerInfo) return years;
+    return years.filter(year => year >= driverCareerInfo.firstRaceYear);
+  };
+
+  // Fetch career info when drivers are selected
+  useEffect(() => {
+    if (driver1?.id) {
+      fetchDriverCareerInfo(driver1.id.toString()).then(info => {
+        setDriver1CareerInfo(info);
+        // Clear selected years if they're now invalid
+        if (info) {
+          setSelectedYears1(prev => prev.filter(year => parseInt(year, 10) >= info.firstRaceYear));
+        }
+      });
+    } else {
+      setDriver1CareerInfo(null);
+      setSelectedYears1([]);
+    }
+  }, [driver1?.id]);
+
+  useEffect(() => {
+    if (driver2?.id) {
+      fetchDriverCareerInfo(driver2.id.toString()).then(info => {
+        setDriver2CareerInfo(info);
+        // Clear selected years if they're now invalid
+        if (info) {
+          setSelectedYears2(prev => prev.filter(year => parseInt(year, 10) >= info.firstRaceYear));
+        }
+      });
+    } else {
+      setDriver2CareerInfo(null);
+      setSelectedYears2([]);
+    }
+  }, [driver2?.id]);
 
   // Step navigation helpers
-  const canProceedToParameters = driver1 && driver2;
+  const canProceedToTime = driver1 && driver2;
   const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
-  const canProceedToResults = canProceedToParameters && enabledMetricsArray.length > 0 && selectedYears1.length > 0 && selectedYears2.length > 0;
+  const canProceedToStats = canProceedToTime && selectedYears1.length > 0 && selectedYears2.length > 0;
+  const canProceedToResults = canProceedToStats && enabledMetricsArray.length > 0;
 
   const exportPdf = async () => {
     // PDF export logic would go here
     console.log('Exporting PDF...');
   };
   
-  const nextStep = () => {
-    if (currentStep === 'drivers' && canProceedToParameters) {
-      setCurrentStep('parameters');
-    } else if (currentStep === 'parameters' && canProceedToResults) {
+  const nextPhase = () => {
+    if (currentPhase === 'drivers' && canProceedToTime) {
+      setCurrentPhase('time');
+    } else if (currentPhase === 'time' && canProceedToStats) {
+      setCurrentPhase('stats');
+    } else if (currentPhase === 'stats' && canProceedToResults) {
       // Aggregate data for selected years before showing results
       if (driver1 && driver2 && selectedYears1.length > 0 && selectedYears2.length > 0) {
         const years1 = selectedYears1.map(y => parseInt(y, 10));
@@ -212,9 +281,11 @@ const CompareDriversPage = () => {
     }
   };
   
-  const prevStep = () => {
-    if (currentStep === 'parameters') {
-      setCurrentStep('drivers');
+  const prevPhase = () => {
+    if (currentPhase === 'time') {
+      setCurrentPhase('drivers');
+    } else if (currentPhase === 'stats') {
+      setCurrentPhase('time');
     } else if (currentStep === 'results') {
       setCurrentStep('parameters');
     }
@@ -290,12 +361,18 @@ const CompareDriversPage = () => {
   }
 
   // Step 1: Driver Selection Component
-  const Step1DriverSelection = () => (
+  // Phase 1: Driver Selection
+  const Phase1DriverSelection = () => (
     <VStack spacing="xl" align="stretch">
       <VStack spacing="md" textAlign="center">
         <Heading size="lg" fontFamily="heading">Choose Your Drivers</Heading>
         <Text color="text-muted" fontSize="lg">
-          Select two drivers to compare their performance
+          {driver1?.id && driver2?.id 
+            ? "Both drivers selected - ready to proceed" 
+            : driver1?.id 
+            ? "Select the second driver to compare" 
+            : "Select two drivers to compare their performance"
+          }
         </Text>
       </VStack>
       
@@ -347,96 +424,50 @@ const CompareDriversPage = () => {
         />
       </Grid>
       
-             {canProceedToParameters && (
-               <ScaleFade in={canProceedToParameters} initialScale={0.9}>
-                 <Flex justify="center" mt="xl">
-                   <Button
-                     rightIcon={<ChevronRight size={20} />}
-                     onClick={nextStep}
-                     size="lg"
-                     bg="border-accent"
-                     _hover={{ 
-                       bg: 'border-accentDark',
-                       transform: 'translateY(-2px)',
-                       boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
-                     }}
-                     _active={{
-                       transform: 'translateY(0px)',
-                       boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-                     }}
-                     color="white"
-                     fontFamily="heading"
-                     transition="all 0.2s ease"
-                     boxShadow="0 4px 15px rgba(0,0,0,0.1)"
-                   >
-                     Continue to Parameters
-                   </Button>
-                 </Flex>
-               </ScaleFade>
-             )}
+      {canProceedToTime && (
+        <ScaleFade in={canProceedToTime} initialScale={0.9}>
+          <Flex justify="flex-end" mt="xl">
+            <Button
+              rightIcon={<ChevronRight size={20} />}
+              onClick={nextPhase}
+              size="lg"
+              bg="border-accent"
+              _hover={{ 
+                bg: 'border-accentDark',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+              }}
+              _active={{
+                transform: 'translateY(0px)',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+              }}
+              color="white"
+              fontFamily="heading"
+              transition="all 0.2s ease"
+              boxShadow="0 4px 15px rgba(0,0,0,0.1)"
+            >
+              Select Time Period
+            </Button>
+          </Flex>
+        </ScaleFade>
+      )}
     </VStack>
   );
 
-  // Step 2: Parameters Selection Component
-  const Step2Parameters = () => {
-    // Available metrics for comparison
-    const availableMetrics = {
-      wins: 'Wins',
-      podiums: 'Podiums',
-      poles: 'Pole Positions',
-      fastest_laps: 'Fastest Laps',
-      points: 'Points',
-      races: 'Races',
-      dnf: 'DNFs',
-      avg_finish: 'Average Finish',
-    };
-
-    // Ensure years is an array
-    const yearsArray = Array.isArray(years) ? years : [];
+  // Phase 2: Time Period Selection
+  const Phase2TimeSelection = () => {
+    const driver1Years = getFilteredYears(driver1CareerInfo);
+    const driver2Years = getFilteredYears(driver2CareerInfo);
 
     return (
       <VStack spacing="xl" align="stretch">
         <VStack spacing="md" textAlign="center">
-          <Heading size="lg" fontFamily="heading">Set Comparison Parameters</Heading>
+          <Heading size="lg" fontFamily="heading">Select Time Period</Heading>
           <Text color="text-muted" fontSize="lg">
-            Choose the statistics and time period for your comparison
+            Choose the years for each driver's comparison data
           </Text>
         </VStack>
         
-        {/* Selected Drivers Preview */}
-        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
-          <VStack spacing="md">
-            <Heading size="md" fontFamily="heading" color="text-primary">Selected Drivers</Heading>
-            <Grid templateColumns={{ base: '1fr', md: '1fr auto 1fr' }} gap="md" w="full" maxW="600px" mx="auto">
-              <Box textAlign="center" p="md" bg="bg-glassmorphism" borderRadius="md">
-                <Text fontSize="sm" color="text-muted" mb="xs">Driver 1</Text>
-                <Text fontFamily="heading" fontWeight="bold">{driver1?.fullName || 'Not Selected'}</Text>
-                {driver1?.teamName && (
-                  <Text fontSize="xs" color="text-muted">{driver1.teamName}</Text>
-                )}
-                {driver1?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{driver1.id}</Text>
-                )}
-              </Box>
-              
-              <Flex align="center" justify="center">
-                <Text fontSize="lg" color="border-accent" fontFamily="heading">VS</Text>
-              </Flex>
-              
-              <Box textAlign="center" p="md" bg="bg-glassmorphism" borderRadius="md">
-                <Text fontSize="sm" color="text-muted" mb="xs">Driver 2</Text>
-                <Text fontFamily="heading" fontWeight="bold">{driver2?.fullName || 'Not Selected'}</Text>
-                {driver2?.teamName && (
-                  <Text fontSize="xs" color="text-muted">{driver2.teamName}</Text>
-                )}
-                {driver2?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{driver2.id}</Text>
-                )}
-              </Box>
-            </Grid>
-          </VStack>
-        </Box>
-
         {/* Year Selection */}
         <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
@@ -446,12 +477,31 @@ const CompareDriversPage = () => {
             <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap="lg" w="full">
               {/* Driver 1 Year Selection */}
               <VStack spacing="sm" align="stretch">
-                <Text fontSize="sm" fontFamily="heading" color="text-primary" textAlign="center">
-                  {driver1?.fullName || 'Driver 1'} - Years
-                </Text>
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="sm" fontFamily="heading" color="text-primary">
+                    {driver1?.fullName || 'Driver 1'} - Years
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="border-accent"
+                    _hover={{ bg: "border-accent", color: "white" }}
+                    onClick={() => {
+                      if (selectedYears1.length === driver1Years.length) {
+                        setSelectedYears1([]);
+                      } else {
+                        setSelectedYears1(driver1Years.map(y => y.toString()));
+                      }
+                    }}
+                    fontFamily="heading"
+                    fontSize="xs"
+                  >
+                    {selectedYears1.length === driver1Years.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </HStack>
                 <Flex gap="sm" flexWrap="wrap" justify="center">
-                  {yearsArray.length > 0 ? (
-                    yearsArray.map((year) => {
+                  {driver1Years.length > 0 ? (
+                    driver1Years.map((year) => {
                       const isSelected = selectedYears1.includes(year.toString());
                       return (
                         <Button
@@ -465,29 +515,21 @@ const CompareDriversPage = () => {
                           _hover={{
                             bg: isSelected ? "border-accentDark" : "border-accent",
                             color: "white",
-                            transform: 'scale(1.05)',
                             boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                           }}
-                          _active={{
-                            transform: 'scale(0.95)'
-                          }}
+                          _active={{}}
                           onClick={() => {
                             const yearStr = year.toString();
                             if (isSelected) {
-                              // Remove year
                               setSelectedYears1(prev => prev.filter(y => y !== yearStr));
                             } else {
-                              // Add year
                               setSelectedYears1(prev => [...prev, yearStr]);
-                              // Note: We'll aggregate multiple years in the results display
-                              // For now, just fetch the most recent year for immediate display
                               if (driver1) {
                                 selectDriver(1, driver1.id.toString(), year);
                               }
                             }
                           }}
                           fontFamily="heading"
-                          transition="all 0.2s ease"
                         >
                           {year}
                         </Button>
@@ -506,12 +548,31 @@ const CompareDriversPage = () => {
 
               {/* Driver 2 Year Selection */}
               <VStack spacing="sm" align="stretch">
-                <Text fontSize="sm" fontFamily="heading" color="text-primary" textAlign="center">
-                  {driver2?.fullName || 'Driver 2'} - Years
-                </Text>
+                <HStack justify="space-between" align="center">
+                  <Text fontSize="sm" fontFamily="heading" color="text-primary">
+                    {driver2?.fullName || 'Driver 2'} - Years
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="border-accent"
+                    _hover={{ bg: "border-accent", color: "white" }}
+                    onClick={() => {
+                      if (selectedYears2.length === driver2Years.length) {
+                        setSelectedYears2([]);
+                      } else {
+                        setSelectedYears2(driver2Years.map(y => y.toString()));
+                      }
+                    }}
+                    fontFamily="heading"
+                    fontSize="xs"
+                  >
+                    {selectedYears2.length === driver2Years.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </HStack>
                 <Flex gap="sm" flexWrap="wrap" justify="center">
-                  {yearsArray.length > 0 ? (
-                    yearsArray.map((year) => {
+                  {driver2Years.length > 0 ? (
+                    driver2Years.map((year) => {
                       const isSelected = selectedYears2.includes(year.toString());
                       return (
                         <Button
@@ -525,29 +586,21 @@ const CompareDriversPage = () => {
                           _hover={{
                             bg: isSelected ? "border-accentDark" : "border-accent",
                             color: "white",
-                            transform: 'scale(1.05)',
                             boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                           }}
-                          _active={{
-                            transform: 'scale(0.95)'
-                          }}
+                          _active={{}}
                           onClick={() => {
                             const yearStr = year.toString();
                             if (isSelected) {
-                              // Remove year
                               setSelectedYears2(prev => prev.filter(y => y !== yearStr));
                             } else {
-                              // Add year
                               setSelectedYears2(prev => [...prev, yearStr]);
-                              // Note: We'll aggregate multiple years in the results display
-                              // For now, just fetch the most recent year for immediate display
                               if (driver2) {
                                 selectDriver(2, driver2.id.toString(), year);
                               }
                             }
                           }}
                           fontFamily="heading"
-                          transition="all 0.2s ease"
                         >
                           {year}
                         </Button>
@@ -584,10 +637,89 @@ const CompareDriversPage = () => {
           </VStack>
         </Box>
 
+        {canProceedToStats && (
+          <ScaleFade in={canProceedToStats} initialScale={0.9}>
+            <Flex justify="flex-end" mt="xl">
+              <Button
+                rightIcon={<ChevronRight size={20} />}
+                onClick={nextPhase}
+                size="lg"
+                bg="border-accent"
+                _hover={{ 
+                  bg: 'border-accentDark',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+                }}
+                _active={{
+                  transform: 'translateY(0px)',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                }}
+                color="white"
+                fontFamily="heading"
+                transition="all 0.2s ease"
+                boxShadow="0 4px 15px rgba(0,0,0,0.1)"
+              >
+                Select Statistics
+              </Button>
+            </Flex>
+          </ScaleFade>
+        )}
+      </VStack>
+    );
+  };
+
+  // Phase 3: Statistics Selection
+  const Phase3StatisticsSelection = () => {
+    const availableMetrics = {
+      wins: 'Wins',
+      podiums: 'Podiums',
+      poles: 'Pole Positions',
+      fastest_laps: 'Fastest Laps',
+      points: 'Points',
+      races: 'Races',
+      dnf: 'DNFs',
+      avg_finish: 'Average Finish',
+    };
+
+    return (
+      <VStack spacing="xl" align="stretch">
+        <VStack spacing="md" textAlign="center">
+          <Heading size="lg" fontFamily="heading">Select Statistics</Heading>
+          <Text color="text-muted" fontSize="lg">
+            Choose the metrics you want to compare
+          </Text>
+        </VStack>
+        
         {/* Statistics Selection */}
         <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
-            <Heading size="md" fontFamily="heading" color="text-primary">Statistics to Compare</Heading>
+            <HStack justify="space-between" align="center">
+              <Heading size="md" fontFamily="heading" color="text-primary">Statistics to Compare</Heading>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="border-accent"
+                _hover={{ bg: "border-accent", color: "white" }}
+                onClick={() => {
+                  const allMetricKeys = Object.keys(availableMetrics);
+                  const allSelected = allMetricKeys.every(key => enabledMetricsArray.includes(key));
+                  
+                  if (allSelected) {
+                    allMetricKeys.forEach(key => toggleMetric(key as any));
+                  } else {
+                    allMetricKeys.forEach(key => {
+                      if (!enabledMetricsArray.includes(key)) {
+                        toggleMetric(key as any);
+                      }
+                    });
+                  }
+                }}
+                fontFamily="heading"
+                fontSize="sm"
+              >
+                {Object.keys(availableMetrics).every(key => enabledMetricsArray.includes(key)) ? 'Deselect All' : 'Select All'}
+              </Button>
+            </HStack>
             <Text fontSize="sm" color="text-muted">
               Select the metrics you want to compare. Choose at least one statistic.
             </Text>
@@ -609,9 +741,7 @@ const CompareDriversPage = () => {
                     transform: 'scale(1.05)',
                     boxShadow: enabledMetricsArray.includes(key) ? "0 0 15px rgba(225, 6, 0, 0.5)" : "0 4px 15px rgba(0,0,0,0.1)"
                   }}
-                  _active={{
-                    transform: 'scale(0.95)'
-                  }}
+                  _active={{ transform: 'scale(0.95)' }}
                   onClick={() => toggleMetric(key as any)}
                   fontFamily="heading"
                   transition="all 0.2s ease"
@@ -645,74 +775,62 @@ const CompareDriversPage = () => {
                 Please select at least one statistic to compare
               </Text>
             )}
-            {(!selectedYears1.length || !selectedYears2.length) && (
-              <Text fontSize="xs" color="border-accent" textAlign="center" mt="sm">
-                Please select at least one year for both drivers to enable comparison
-              </Text>
-            )}
           </VStack>
         </Box>
 
-        {/* Composite Score Preview */}
-        {score && enabledMetricsArray.length > 0 && selectedYears1.length > 0 && selectedYears2.length > 0 && (
-          <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
-            <VStack spacing="md" align="stretch">
-              <Heading size="md" fontFamily="heading" color="text-primary">Composite Score Preview</Heading>
-              <Text fontSize="sm" color="text-muted" textAlign="center">
-                Based on selected statistics for {selectedYears1.join(', ')} vs {selectedYears2.join(', ')}
-              </Text>
-              <Grid templateColumns={{ base: '1fr', md: '1fr auto 1fr' }} gap="md" w="full" maxW="500px" mx="auto">
-                <Box textAlign="center" p="md" bg="bg-glassmorphism" borderRadius="md">
-                  <Text fontSize="sm" color="text-muted" mb="xs">{driver1?.fullName}</Text>
-                  <Text fontSize="xs" color="border-accent" mb="xs">({selectedYears1.join(', ')})</Text>
-                  <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="border-accent">
-                    {score.d1?.toFixed(1) || '0.0'}
-                  </Text>
-                </Box>
-                
-                <Flex align="center" justify="center">
-                  <Text fontSize="sm" color="text-muted" fontFamily="heading">Score</Text>
-                </Flex>
-                
-                <Box textAlign="center" p="md" bg="bg-glassmorphism" borderRadius="md">
-                  <Text fontSize="sm" color="text-muted" mb="xs">{driver2?.fullName}</Text>
-                  <Text fontSize="xs" color="border-accent" mb="xs">({selectedYears2.join(', ')})</Text>
-                  <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="border-accent">
-                    {score.d2?.toFixed(1) || '0.0'}
-                  </Text>
-                </Box>
-              </Grid>
-            </VStack>
-          </Box>
+        {canProceedToResults && (
+          <ScaleFade in={canProceedToResults} initialScale={0.9}>
+            <Flex justify="flex-end" mt="xl">
+              <Button
+                rightIcon={<ChevronRight size={20} />}
+                onClick={nextPhase}
+                size="lg"
+                bg="border-accent"
+                _hover={{ 
+                  bg: 'border-accentDark',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+                }}
+                _active={{
+                  transform: 'translateY(0px)',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                }}
+                color="white"
+                fontFamily="heading"
+                transition="all 0.2s ease"
+                boxShadow="0 4px 15px rgba(0,0,0,0.1)"
+              >
+                View Comparison
+              </Button>
+            </Flex>
+          </ScaleFade>
         )}
-        
-        <Flex justify="space-between" mt="xl">
-          <Button
-            leftIcon={<ChevronLeft size={20} />}
-            onClick={prevStep}
-            variant="outline"
-            fontFamily="heading"
-          >
-            Back to Drivers
-          </Button>
-          
-          {canProceedToResults && (
-            <Button
-              rightIcon={<ArrowRight size={20} />}
-              onClick={nextStep}
-              size="lg"
-              bg="border-accent"
-              _hover={{ bg: 'border-accentDark' }}
-              color="white"
-              fontFamily="heading"
-            >
-              View Comparison
-            </Button>
-          )}
-        </Flex>
       </VStack>
     );
   };
+
+  // New Step 1: Progressive Parameters Selection
+  const Step1Parameters = () => (
+    <VStack spacing="xl" align="stretch">
+      {/* Phase 1: Driver Selection - Always visible */}
+      <Phase1DriverSelection />
+      
+      {/* Phase 2: Time Period Selection - Appears after drivers selected */}
+      {currentPhase !== 'drivers' && (
+        <SlideFade in={currentPhase !== 'drivers'} offsetY="20px">
+          <Phase2TimeSelection />
+        </SlideFade>
+      )}
+      
+      {/* Phase 3: Statistics Selection - Appears after time period selected */}
+      {currentPhase === 'stats' && (
+        <SlideFade in={currentPhase === 'stats'} offsetY="20px">
+          <Phase3StatisticsSelection />
+        </SlideFade>
+      )}
+    </VStack>
+  );
+
 
   // Step 3: Results Display Component
   const Step3Results = () => {
@@ -1002,7 +1120,7 @@ const CompareDriversPage = () => {
         <Flex justify="space-between" mt="xl">
           <Button
             leftIcon={<ChevronLeft size={20} />}
-            onClick={prevStep}
+            onClick={prevPhase}
             variant="outline"
             fontFamily="heading"
             _hover={{
@@ -1051,7 +1169,7 @@ const CompareDriversPage = () => {
         {/* Progress Indicator */}
         <Box mb="xl" maxW="400px" mx="auto">
           <HStack spacing="sm" justify="center">
-            {['drivers', 'parameters', 'results'].map((step, index) => (
+            {['parameters', 'results'].map((step, index) => (
               <HStack key={step} spacing="sm">
                 <Box
                   w="8px"
@@ -1060,11 +1178,11 @@ const CompareDriversPage = () => {
                   bg={currentStep === step ? 'border-accent' : 'border-subtle'}
                   transition="all 0.3s ease"
                 />
-                {index < 2 && (
+                {index < 1 && (
                   <Box
                     w="20px"
                     h="2px"
-                    bg={['drivers', 'parameters'].indexOf(currentStep) > index ? 'border-accent' : 'border-subtle'}
+                    bg={currentStep === 'results' ? 'border-accent' : 'border-subtle'}
                     transition="all 0.3s ease"
                   />
                 )}
@@ -1072,18 +1190,18 @@ const CompareDriversPage = () => {
             ))}
           </HStack>
           <Text fontSize="xs" color="text-muted" textAlign="center" mt="sm">
-            Step {['drivers', 'parameters', 'results'].indexOf(currentStep) + 1} of 3
+            {currentStep === 'parameters' ? (
+              currentPhase === 'drivers' ? 'Step 1 of 2 - Select Drivers' :
+              currentPhase === 'time' ? 'Step 1 of 2 - Select Time Period' :
+              'Step 1 of 2 - Select Statistics'
+            ) : 'Step 2 of 2 - View Results'}
           </Text>
         </Box>
 
         {/* Progressive Disclosure: Render current step with animations */}
-        <Fade in={currentStep === 'drivers'} unmountOnExit>
-          {currentStep === 'drivers' && <Step1DriverSelection />}
+        <Fade in={currentStep === 'parameters'} unmountOnExit>
+          {currentStep === 'parameters' && <Step1Parameters />}
         </Fade>
-        
-        <SlideFade in={currentStep === 'parameters'} offsetY="20px" unmountOnExit>
-          {currentStep === 'parameters' && <Step2Parameters />}
-        </SlideFade>
         
         <SlideFade in={currentStep === 'results'} offsetY="20px" unmountOnExit>
           {currentStep === 'results' && <Step3Results />}
