@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { Season } from '../seasons/seasons.entity';
+import { Race } from '../races/races.entity';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -22,6 +23,9 @@ export class RaceResultsService {
 
     @InjectRepository(Season)
     private readonly seasonRepository: Repository<Season>,
+
+    @InjectRepository(Race)
+    private readonly raceRepository: Repository<Race>,
 
     private readonly dataSource: DataSource,
   ) {}
@@ -500,14 +504,15 @@ async getDriversPointsProgression3() {
   const driverIds = drivers.map(d => d.driverId);
   //console.log('Drivers in latest season:', drivers);
 
+// Step 3: Fetch race results for these drivers in the latest season ONLY
+const { data: raceResults, error: resultsError } = await this.supabaseService.client
+  .from('race_results')
+  .select('driver_id, points, session_id, sessions!inner(race_id, races!inner(season_id))')
+  .in('driver_id', driverIds)
+  .eq('sessions.races.season_id', latestSeasonId); // Filter by season
 
-  // Step 3: Fetch all race_results for these drivers in the latest season
-  const { data: raceResults, error: resultsError } = await this.supabaseService.client
-    .from('race_results')
-    .select('driver_id, points, session_id')
-    .in('driver_id', driverIds);
-
-  if (resultsError || !raceResults?.length) return [];
+if (resultsError || !raceResults?.length) return [];
+//console.log('Race results fetched for drivers:', raceResults);
   
 
 
@@ -519,17 +524,30 @@ async getDriversPointsProgression3() {
     .in('id', sessionIds);
 
   if (sessionsError) throw new Error(sessionsError.message);
+  //console.log('Sessions fetched for season:', sessions);
+  //console.log('Race IDs from sessions:', raceIds);
 
-  // Step 5: Fetch races in the latest season
-  const raceIds = sessions.map(s => s.race_id);
-  const { data: races, error: racesError } = await this.supabaseService.client
-    .from('races')
-    .select('id, round, name')
-    .in('id', raceIds)
-    .eq('season_id', latestSeasonId);
+  // Step 5: Debug and fetch races
+const raceIds = sessions.map(s => s.race_id);
+//console.log('Race IDs to check:', raceIds.slice(0, 10));
+//console.log('Latest season ID we\'re looking for:', latestSeasonId);
 
-  if (racesError) throw new Error(racesError.message);
-  //console.log('Races fetched for season:', races);
+// Debug query - check what season_id values actually exist
+const { data: debugRaces, error: debugError } = await this.supabaseService.client
+  .from('races')
+  .select('id, season_id, name')
+  .in('id', raceIds);
+
+
+// Now fetch all races (temporarily remove season filter)
+const { data: races, error: racesError } = await this.supabaseService.client
+  .from('races')
+  .select('id, round, name, season_id')
+  .in('id', raceIds);
+  // .eq('season_id', latestSeasonId); // Commented out for debugging
+
+if (racesError) throw new Error(racesError.message);
+//console.log('Races fetched (no season filter):', races);
 
 
   // Step 6: Map session -> race
