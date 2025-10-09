@@ -5,15 +5,8 @@ import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { NotFoundException } from '@nestjs/common';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
-
-// Mock the problematic imports
-jest.mock('src/race-results/race-results.entity', () => ({
-  RaceResult: 'RaceResult',
-}), { virtual: true });
-
-jest.mock('src/races/races.entity', () => ({
-  Race: 'Race',
-}), { virtual: true });
+import { RaceResult } from '../race-results/race-results.entity';
+import { Race } from '../races/races.entity';
 
 describe('ConstructorsService', () => {
   let service: ConstructorsService;
@@ -72,11 +65,11 @@ describe('ConstructorsService', () => {
           useValue: mockConstructorRepo,
         },
         {
-          provide: getRepositoryToken('RaceResult'),
+          provide: getRepositoryToken(RaceResult),
           useValue: mockRaceResultRepo,
         },
         {
-          provide: getRepositoryToken('Race'),
+          provide: getRepositoryToken(Race),
           useValue: mockRaceRepo,
         },
         {
@@ -88,8 +81,8 @@ describe('ConstructorsService', () => {
 
     service = module.get<ConstructorsService>(ConstructorsService);
     constructorRepository = module.get(getRepositoryToken(ConstructorEntity));
-    raceResultRepository = module.get(getRepositoryToken('RaceResult'));
-    raceRepository = module.get(getRepositoryToken('Race'));
+    raceResultRepository = module.get(getRepositoryToken(RaceResult));
+    raceRepository = module.get(getRepositoryToken(Race));
     standingsViewRepository = module.get(getRepositoryToken(DriverStandingMaterialized));
   });
 
