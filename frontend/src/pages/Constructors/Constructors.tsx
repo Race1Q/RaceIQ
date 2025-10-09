@@ -7,24 +7,25 @@ import {
   SimpleGrid,
   Container,
   Flex,
-  Image,
   Input,
   InputGroup,
   InputRightElement,
   IconButton,
+  HStack,
+  VStack,
 } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
-import { Select } from 'chakra-react-select';
 import ConstructorsSkeleton from './ConstructorsSkeleton';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import { buildApiUrl } from '../../lib/api';
-import { getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import PageHeader from '../../components/layout/PageHeader';
-import { useThemeColor } from '../../context/ThemeColorContext';
+import { SegmentTabs } from '../../components/SegmentTabs/SegmentTabs';
+import { TeamCard } from '../../components/TeamCard/TeamCard';
+import { TEAM_META } from '../../theme/teamTokens';
 
 // Interfaces
 interface ApiConstructor {
@@ -35,12 +36,36 @@ interface ApiConstructor {
   is_active: boolean;
 }
 
-interface Option {
-  value: string;
-  label: string;
-}
+
 
 type FilterOption = 'active' | 'historical' | 'all';
+
+// Map constructor names to team keys
+const getTeamKey = (constructorName: string): keyof typeof TEAM_META => {
+  console.log(`🔍 Mapping constructor: "${constructorName}"`);
+  
+  const nameMap: Record<string, keyof typeof TEAM_META> = {
+    'Red Bull Racing': 'red_bull',
+    'Red Bull': 'red_bull',
+    'Ferrari': 'ferrari',
+    'Mercedes': 'mercedes',
+    'McLaren': 'mclaren',
+    'Aston Martin': 'aston_martin',
+    'Alpine F1 Team': 'alpine',
+    'Alpine': 'alpine',
+    'RB F1 Team': 'rb',
+    'Racing Bulls': 'rb',
+    'Sauber': 'sauber',
+    'Kick Sauber': 'sauber',
+    'Williams': 'williams',
+    'Haas F1 Team': 'haas',
+    'Haas': 'haas',
+  };
+  
+  const teamKey = nameMap[constructorName] || 'haas'; // fallback
+  console.log(`✅ Mapped to team key: ${teamKey}`);
+  return teamKey;
+};
 
 // Country flag emoji mapping
 const getFlagEmoji = (nationality: string): string => {
@@ -85,50 +110,11 @@ const getFlagEmoji = (nationality: string): string => {
   return flags[nationality] || '🏁';
 };
 
-const statusOptions: Option[] = [
-  { value: 'active', label: 'Active Teams' },
-  { value: 'historical', label: 'Historical Teams' },
-  { value: 'all', label: 'All Teams' },
-];
-
-// Custom styles to match SearchableSelect
-const getCustomSelectStyles = (accentColor: string) => ({
-  control: (provided: any) => ({
-    ...provided,
-    bg: 'bg-surface-raised',
-    borderColor: 'border-primary',
-    '&:hover': {
-      borderColor: 'border-primary',
-    },
-  }),
-  menu: (provided: any) => ({
-    ...provided,
-    bg: 'bg-surface-raised',
-    zIndex: 10,
-  }),
-  option: (provided: any, state: { isSelected: boolean; isFocused: boolean }) => ({
-    ...provided,
-    bg: state.isFocused ? 'bg-surface' : 'transparent',
-    color: state.isSelected ? accentColor : 'text-primary',
-    '&:active': {
-      bg: 'bg-surface',
-    },
-  }),
-  placeholder: (provided: any) => ({
-    ...provided,
-    color: 'text-muted',
-  }),
-  singleValue: (provided: any) => ({
-    ...provided,
-    color: 'text-primary',
-  }),
-});
 
 const Constructors = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth0();
-  const { accentColorWithHash } = useThemeColor();
   const [constructors, setConstructors] = useState<ApiConstructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -227,10 +213,33 @@ const Constructors = () => {
 
       {isAuthenticated && (
         <LayoutContainer>
-          <Flex mb={4} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
-            <Box>
-              {(statusFilter === 'all' || statusFilter === 'historical') && (
-                <Box maxW={{ base: 'full', md: '260px' }} w="100%" mb={{ base: 4, md: 0 }}>
+          <VStack spacing={6} align="stretch">
+            {/* Broadcast-style stat bar */}
+            <HStack justify="center" spacing={8} color="text-muted" fontSize="sm" fontFamily="heading">
+              <Text>2025 Season</Text>
+              <Box w="1px" h="4" bg="border-primary" />
+              <Text>10 Teams</Text>
+              <Box w="1px" h="4" bg="border-primary" />
+              <Text>24 Races</Text>
+            </HStack>
+
+            {/* Premium segment tabs */}
+            <Flex justify="center">
+              <SegmentTabs 
+                value={statusFilter} 
+                onChange={(newFilter) => {
+                  setStatusFilter(newFilter);
+                  if (newFilter === 'active') {
+                    setSearchTerm('');
+                  }
+                }} 
+              />
+            </Flex>
+
+            {/* Search bar for historical/all */}
+            {(statusFilter === 'all' || statusFilter === 'historical') && (
+              <Flex justify="center">
+                <Box maxW="400px" w="100%">
                   <InputGroup>
                     <Input
                       placeholder="Search by name"
@@ -252,28 +261,9 @@ const Constructors = () => {
                     )}
                   </InputGroup>
                 </Box>
-              )}
-            </Box>
-            <Box maxW={{ base: 'full', md: '220px' }} w="full">
-              <Select
-                options={statusOptions}
-                value={
-                  statusOptions.find((o) => o.value === statusFilter) || null
-                }
-                onChange={(option) => {
-                  const newStatus = (option as Option).value as FilterOption;
-                  setStatusFilter(newStatus);
-                  if (newStatus === 'active') {
-                    setSearchTerm('');
-                  }
-                }}
-                placeholder="Filter by Status"
-                isClearable={false}
-                chakraStyles={getCustomSelectStyles(accentColorWithHash)}
-                focusBorderColor={accentColorWithHash}
-              />
-            </Box>
-          </Flex>
+              </Flex>
+            )}
+          </VStack>
         </LayoutContainer>
       )}
 
@@ -293,110 +283,24 @@ const Constructors = () => {
           ) : (
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
               {sortedConstructors.map((constructor) => {
-                const teamColor = getTeamColor(constructor.name);
-                const gradientBg = `linear-gradient(135deg, #${teamColor} 0%, rgba(0,0,0,0.75) 100%)`;
+                const teamKey = getTeamKey(constructor.name);
                 const carImage = teamCarImages[constructor.name];
                 const standing = standingsMap.get(constructor.name);
+                const flagEmoji = getFlagEmoji(constructor.nationality);
 
                 return (
-                  <Box
+                  <TeamCard
                     key={constructor.id}
+                    teamKey={teamKey}
+                    countryName={constructor.nationality}
+                    countryFlagEmoji={flagEmoji}
+                    points={standing?.seasonPoints ?? 0}
+                    maxPoints={500} // Max points for progress bar
+                    wins={standing?.seasonWins ?? 0}
+                    podiums={standing?.seasonPodiums ?? 0}
+                    carImage={carImage || '/assets/default-car.png'}
                     onClick={() => navigate(`/constructors/${constructor.id}`)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        navigate(`/constructors/${constructor.id}`);
-                      }
-                    }}
-                    cursor="pointer"
-                  >
-                    <Flex
-                      position="relative"
-                      bgGradient={gradientBg}
-                      borderRadius="lg"
-                      p={6}
-                      overflow="hidden"
-                      transition="all 0.2s ease-in-out"
-                      _hover={{
-                        transform: 'translateY(-4px)',
-                        boxShadow: 'lg',
-                      }}
-                      align="center"
-                      justify="space-between"
-                      _before={{
-                        content: '""',
-                        position: 'absolute',
-                        inset: 0,
-                        pointerEvents: 'none',
-                        background:
-                          'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
-                      }}
-                    >
-                      <Box textAlign="left" zIndex={1}>
-                        <Text
-                          fontWeight="bold"
-                          fontSize="lg"
-                          color="white"
-                          fontFamily="heading"
-                        >
-                          {constructor.name}
-                        </Text>
-                        <Text color="white" opacity={0.8}>
-                          {getFlagEmoji(constructor.nationality)}{' '}
-                          {constructor.nationality}
-                        </Text>
-                        <Flex
-                          mt={3}
-                          gap={4}
-                          color="whiteAlpha.900"
-                          fontFamily="heading"
-                          fontSize="sm"
-                        >
-                          <Box>
-                            <Text opacity={0.8}>Position</Text>
-                            <Text fontWeight="bold">
-                              {standing?.position ?? '—'}
-                            </Text>
-                          </Box>
-                          <Box>
-                            <Text opacity={0.8}>Points</Text>
-                            <Text fontWeight="bold">
-                              {standing?.seasonPoints ?? '—'}
-                            </Text>
-                          </Box>
-                        </Flex>
-                      </Box>
-
-                      {carImage && (
-                        <Image
-                          src={carImage}
-                          alt={`${constructor.name} car`}
-                          position="relative"
-                          maxH={{ base: '90px', md: '140px' }}
-                          maxW={{ base: '200px', md: '320px' }}
-                          w="auto"
-                          h="auto"
-                          objectFit="contain"
-                          ml={{ base: 2, md: 4 }}
-                          flexShrink={0}
-                          zIndex={1}
-                        />
-                      )}
-
-                      <Box
-                        position="absolute"
-                        right={-20}
-                        top={-20}
-                        w={'220px'}
-                        h={'220px'}
-                        borderRadius="full"
-                        bg="whiteAlpha.100"
-                        filter="blur(30px)"
-                      />
-                    </Flex>
-                  </Box>
+                  />
                 );
               })}
             </SimpleGrid>

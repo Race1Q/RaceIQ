@@ -26,11 +26,6 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) =
       transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
       position="relative"
       overflow="hidden"
-      _hover={{
-        transform: 'translateY(-8px)',
-        boxShadow: `0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px ${accentColorWithHash}50`,
-        borderColor: accentColorWithHash,
-      }}
       _before={{
         content: '""',
         position: 'absolute',
