@@ -64,14 +64,14 @@ const AboutUsPage: React.FC = () => {
     },
     { 
       name: 'Umayr', 
-      role: 'Discord Co-ordinator',
+      role: 'Discord Manager',
       avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=150&h=150&fit=crop&crop=face',
       github: 'https://github.com/umayr',
       linkedin: 'https://linkedin.com/in/umayr'
     },
     { 
       name: 'MA', 
-      role: 'Machine Learning Engineer',
+      role: 'Project Lead',
       avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face',
       github: 'https://github.com/ma',
       linkedin: 'https://linkedin.com/in/ma'
