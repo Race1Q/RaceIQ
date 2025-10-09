@@ -16,6 +16,7 @@ import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import StandingsAnalysisCard from '../../components/StandingsAnalysisCard/StandingsAnalysisCard';
 
 // Interfaces from the original Standings.tsx
 interface ProgressionEntry {
@@ -158,7 +159,7 @@ const AnalyticsStandings: React.FC = () => {
         {loading ? (
           <F1LoadingSpinner text="Loading Analytics..." />
         ) : (
-          <Flex gap={6} flexDirection="column">
+          <Flex gap={6} flexDirection="column" mt={8}>
             {/* Drivers Chart */}
             {driversProgression.length > 0 && (
               <Box h="400px" bg="gray.900" p={4} borderRadius="md">
@@ -280,6 +281,9 @@ const AnalyticsStandings: React.FC = () => {
                 </ResponsiveContainer>
               </Box>
             )}
+
+            {/* AI Championship Analysis */}
+            <StandingsAnalysisCard season={2025} />
           </Flex>
         )}
       </LayoutContainer>

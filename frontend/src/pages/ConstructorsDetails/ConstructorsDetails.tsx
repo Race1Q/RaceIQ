@@ -11,6 +11,7 @@ import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
 import type { Stat } from '../../types';
+import ConstructorInfoCard from '../../components/ConstructorInfoCard/ConstructorInfoCard';
 import {
   LineChart,
   Line,
@@ -448,6 +449,11 @@ const ConstructorDetails: React.FC = () => {
           <Text fontSize="xl" mt={2} textAlign="left">Points: {topRace.points}</Text>
         </Box>
       )}
+
+      {/* AI Team Analysis - moved below all stats and graphs */}
+      <Box mb={6}>
+        <ConstructorInfoCard constructorId={constructor.id} season={latestSeasonYear} />
+      </Box>
       </Container>
     </Box>
   );

@@ -13,6 +13,7 @@ import { teamColors } from '../../lib/teamColors';
 import StatSection from '../../components/DriverDetails/StatSection';
 import WinsPerSeasonChart from '../../components/WinsPerSeasonChart/WinsPerSeasonChart';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
+import DriverBioCard from '../../components/DriverBioCard/DriverBioCard';
 
 const DriverDetailPage: React.FC = () => {
   const { driverId } = useParams<{ driverId: string }>();
@@ -174,6 +175,12 @@ const DriverDetailPage: React.FC = () => {
           <Box bg="bg-surface" p="lg" borderRadius="lg" border="1px solid" borderColor="border-primary">
             <WinsPerSeasonChart data={driverDetails.winsPerSeason} teamColor={teamColor} />
           </Box>
+        </Box>
+
+        {/* --- AI-GENERATED BIO SECTION --- */}
+        <Box mt="xl">
+          <Heading size="md" fontFamily="heading" mb="md">Driver Biography</Heading>
+          <DriverBioCard driverId={Number(driverId)} season={2025} />
         </Box>
       </Container>
     </Box>
