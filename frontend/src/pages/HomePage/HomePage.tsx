@@ -11,6 +11,7 @@ import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper/Scro
 import SectionConnector from '../../components/SectionConnector/SectionConnector';
 import LoginButton from '../../components/LoginButton/LoginButton';
 import { useHomePageData } from '../../hooks/useHomePageData';
+import RecentRacesSkeleton from '../../components/RaceSlider/RecentRacesSkeleton';
 
 function HomePage() {
   const { isAuthenticated, user } = useAuth0();
@@ -67,12 +68,16 @@ function HomePage() {
               >
                 Recent Races
               </Heading>
-              {/* Render slider only if we have schedule data available */}
-              <Suspense fallback={null}>
-                {!dataLoading && Array.isArray(seasonSchedule) && seasonSchedule.length > 0 && (
-                  <RaceSlider seasonSchedule={seasonSchedule} />
-                )}
-              </Suspense>
+              {/* Render skeleton while loading; slider when data is ready */}
+              {dataLoading ? (
+                <RecentRacesSkeleton />
+              ) : (
+                <Suspense fallback={<RecentRacesSkeleton />}>
+                  {Array.isArray(seasonSchedule) && seasonSchedule.length > 0 && (
+                    <RaceSlider seasonSchedule={seasonSchedule} />
+                  )}
+                </Suspense>
+              )}
             </VStack>
           </VStack>
         </Container>
