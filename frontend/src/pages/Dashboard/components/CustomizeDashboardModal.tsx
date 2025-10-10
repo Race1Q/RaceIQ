@@ -7,31 +7,27 @@ import {
   ModalHeader,
   ModalBody,
   ModalCloseButton,
+  ModalFooter,
   VStack,
   HStack,
   Text,
   Switch,
   Box,
   Divider,
+  Icon,
+  Spinner,
+  Button,
 } from '@chakra-ui/react';
-
-interface WidgetVisibility {
-  nextRace: boolean;
-  standings: boolean;
-  constructorStandings: boolean;
-  lastPodium: boolean;
-  fastestLap: boolean;
-  favoriteDriver: boolean;
-  favoriteTeam: boolean;
-  headToHead: boolean;
-  f1News: boolean;
-}
+import { CheckCircle, AlertCircle } from 'lucide-react';
+import type { WidgetVisibility } from '../../../hooks/useDashboardPreferences';
 
 interface CustomizeDashboardModalProps {
   isOpen: boolean;
   onClose: () => void;
   widgetVisibility: WidgetVisibility;
   setWidgetVisibility: (visibility: WidgetVisibility) => void;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  onSave?: () => void;
 }
 
 function CustomizeDashboardModal({
@@ -39,6 +35,8 @@ function CustomizeDashboardModal({
   onClose,
   widgetVisibility,
   setWidgetVisibility,
+  saveStatus = 'idle',
+  onSave,
 }: CustomizeDashboardModalProps) {
   const widgets = [
     { key: 'nextRace' as keyof WidgetVisibility, label: 'Next Race', description: 'Upcoming race information and countdown' },
@@ -71,7 +69,7 @@ function CustomizeDashboardModal({
         <ModalBody pb={{ base: 'md', md: 'lg' }}>
           <VStack spacing="md" align="stretch">
             <Text color="text-secondary" fontSize="sm" mb="sm">
-              Choose which widgets to display on your dashboard
+              Choose which widgets to display on your dashboard. Click "Save Changes" to apply your preferences.
             </Text>
             
             <Divider borderColor="whiteAlpha.200" />
@@ -103,6 +101,47 @@ function CustomizeDashboardModal({
             ))}
           </VStack>
         </ModalBody>
+        
+        <ModalFooter>
+          <HStack spacing={3} justify="space-between" w="full">
+            <Box /> {/* Empty spacer to push content to the right */}
+            <HStack spacing={3}>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                size="sm"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={onSave}
+                isLoading={saveStatus === 'saving'}
+                loadingText="Saving..."
+                colorScheme="red"
+                size="sm"
+                isDisabled={!onSave}
+              >
+                Save Changes
+              </Button>
+              {(saveStatus === 'saved' || saveStatus === 'error') && (
+                <HStack spacing={2} fontSize="xs" color="text-muted">
+                  {saveStatus === 'saved' && (
+                    <>
+                      <Icon as={CheckCircle} color="green.400" />
+                      <Text>Saved</Text>
+                    </>
+                  )}
+                  {saveStatus === 'error' && (
+                    <>
+                      <Icon as={AlertCircle} color="red.400" />
+                      <Text>Save failed</Text>
+                    </>
+                  )}
+                </HStack>
+              )}
+            </HStack>
+          </HStack>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );
