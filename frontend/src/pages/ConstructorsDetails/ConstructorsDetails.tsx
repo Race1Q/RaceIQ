@@ -12,6 +12,7 @@ import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
 import type { Stat } from '../../types';
 import ConstructorInfoCard from '../../components/ConstructorInfoCard/ConstructorInfoCard';
+import F1CockpitXR from '../../experiences/xr/F1CockpitXR';
 import {
   LineChart,
   Line,
@@ -454,6 +455,30 @@ const ConstructorDetails: React.FC = () => {
       <Box mb={6}>
         <ConstructorInfoCard constructorId={constructor.id} season={latestSeasonYear} />
       </Box>
+
+      {/* 3D Cockpit Viewer - Only for Red Bull Racing */}
+      {constructor.name === "Red Bull" && (
+        <Box mb={6}>
+          <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
+            <Heading as="h2" size="lg" fontFamily="heading" textTransform="uppercase">
+              Explore the RB16B Cockpit
+            </Heading>
+            <Text fontSize="sm" color="gray.500">
+              Interactive 3D Model
+            </Text>
+          </Flex>
+          <Box 
+            bg="gray.900" 
+            borderRadius="md" 
+            overflow="hidden"
+            border="1px solid"
+            borderColor="border-primary"
+            boxShadow="0 4px 20px rgba(0,0,0,0.5)"
+          >
+            <F1CockpitXR />
+          </Box>
+        </Box>
+      )}
       </Container>
     </Box>
   );
