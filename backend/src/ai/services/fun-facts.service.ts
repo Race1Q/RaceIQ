@@ -21,7 +21,7 @@ export class FunFactsService {
   ) {
     // Get TTL from config, default to 24 hours (shorter than bio since fun facts are more dynamic)
     // TEMPORARY: Set to 1 minute for testing
-    const ttlHours = this.config.get<number>('AI_FUN_FACTS_TTL_H') || 0.017; // 1 minute
+    const ttlHours = this.config.get<number>('AI_FUN_FACTS_TTL_H') || 24; // 24 hours default
     this.funFactsTTL = ttlHours * 3600; // Convert hours to seconds
   }
 

@@ -36,8 +36,8 @@ export class DriversController {
     return this.driversService.findAll({ year: yearNumber });
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get a single driver by ID' })
+  @Public()
+  @ApiOperation({ summary: 'Get a single driver by ID (public)' })
   @ApiOkResponse({ type: Driver })
   @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id')
@@ -60,8 +60,8 @@ export class DriversController {
     return this.driversService.getDriverStats(id, yearNumber);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get driver aggregated career stats' })
+  @Public()
+  @ApiOperation({ summary: 'Get driver aggregated career stats (public)' })
   @ApiOkResponse({ type: DriverStatsResponseDto })
   @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/career-stats')
@@ -71,8 +71,8 @@ export class DriversController {
     return this.driversService.getDriverCareerStats(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: "Get a driver's recent race form (last 5 races)" })
+  @Public()
+  @ApiOperation({ summary: "Get a driver's recent race form (last 5 races) (public)" })
   @ApiOkResponse({ description: 'An array of recent race results.' })
   @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/recent-form')
