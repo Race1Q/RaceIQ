@@ -10,9 +10,11 @@ REQUIREMENTS:
 - If information is unclear or missing, omit that claim rather than guess
 - Use neutral, professional tone
 - Use British English spelling (e.g., "tyre", "kerb", "favourite", "analyse")
+- When quoting words or phrases, use single quotes (') instead of double quotes (")
+- Ensure all text in strings uses only single quotes for emphasis or quoting
 
 OUTPUT FORMAT:
-Return a JSON object with this exact structure:
+Return a JSON object with this exact structure (use ONLY single quotes for any quoted text):
 {
   "summary": "2-3 sentence overview...",
   "bullets": [
@@ -27,7 +29,9 @@ Return a JSON object with this exact structure:
       "source": "Source name (e.g., BBC Sport)"
     }
   ]
-}`;
+}
+
+CRITICAL: Do not use double quotes (") within any string values. Use single quotes (') for emphasis or quotations.`;
 
 export const NEWS_USER_TEMPLATE = (newsData: any[]): string => {
   return `Summarize these F1 news articles:

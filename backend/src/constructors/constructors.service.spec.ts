@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -23,6 +24,7 @@ describe('ConstructorsService', () => {
     is_active: true,
     raceResults: [],
     qualifyingResults: [],
+    constructorDriverEntries: [],
   } as ConstructorEntity;
 
   const mockConstructors: ConstructorEntity[] = [
@@ -35,6 +37,7 @@ describe('ConstructorsService', () => {
       is_active: true,
       raceResults: [],
       qualifyingResults: [],
+      constructorDriverEntries: [],
     } as ConstructorEntity,
   ];
 
@@ -95,14 +98,14 @@ describe('ConstructorsService', () => {
       // Mock the standings view query to return latest year
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
-      };
+        getRawOne: (jest.fn() as any).mockResolvedValue({ max: 2024 }),
+      } as any;
       standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       
       // Mock standings data
       standingsViewRepository.find.mockResolvedValue([
-        { constructorName: 'Mercedes' },
-        { constructorName: 'Ferrari' },
+        { constructorName: 'Mercedes' } as any,
+        { constructorName: 'Ferrari' } as any,
       ]);
       
       // Mock constructor repository
@@ -125,8 +128,8 @@ describe('ConstructorsService', () => {
     it('should return constructors for specific year', async () => {
       // Mock standings data for specific year
       standingsViewRepository.find.mockResolvedValue([
-        { constructorName: 'Mercedes' },
-        { constructorName: 'Ferrari' },
+        { constructorName: 'Mercedes' } as any,
+        { constructorName: 'Ferrari' } as any,
       ]);
       
       // Mock constructor repository
@@ -152,13 +155,13 @@ describe('ConstructorsService', () => {
       // Mock fallback query
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn().mockResolvedValue({ max: 2023 }),
-      };
+        getRawOne: (jest.fn() as any).mockResolvedValue({ max: 2023 }),
+      } as any;
       standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       
       // Mock standings for fallback year
       standingsViewRepository.find.mockResolvedValueOnce([
-        { constructorName: 'Mercedes' },
+        { constructorName: 'Mercedes' } as any,
       ]);
       
       // Mock constructor repository
@@ -174,8 +177,8 @@ describe('ConstructorsService', () => {
       // Mock no latest year found
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn().mockResolvedValue({ max: null }),
-      };
+        getRawOne: (jest.fn() as any).mockResolvedValue({ max: null }),
+      } as any;
       standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       
       // Mock constructor repository fallback
@@ -259,11 +262,11 @@ describe('ConstructorsService', () => {
         where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue([
+        getRawMany: (jest.fn() as any).mockResolvedValue([
           { season: 2023, points: '409' },
           { season: 2024, points: '523' },
         ]),
-      };
+      } as any;
 
       raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -291,8 +294,8 @@ describe('ConstructorsService', () => {
         where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue([]),
-      };
+        getRawMany: (jest.fn() as any).mockResolvedValue([]),
+      } as any;
 
       raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -312,8 +315,8 @@ describe('ConstructorsService', () => {
         where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockRejectedValue(new Error('Query failed')),
-      };
+        getRawMany: (jest.fn() as any).mockRejectedValue(new Error('Query failed')),
+      } as any;
 
       raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -331,10 +334,10 @@ describe('ConstructorsService', () => {
         where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue([
+        getRawMany: (jest.fn() as any).mockResolvedValue([
           { season: 2023, points: '300' },
         ]),
-      };
+      } as any;
 
       raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -355,8 +358,8 @@ describe('ConstructorsService', () => {
         where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue([]),
-      };
+        getRawMany: (jest.fn() as any).mockResolvedValue([]),
+      } as any;
 
       raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -377,8 +380,8 @@ describe('ConstructorsService', () => {
         where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue([]),
-      };
+        getRawMany: (jest.fn() as any).mockResolvedValue([]),
+      } as any;
 
       raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -458,14 +461,14 @@ describe('ConstructorsService', () => {
       // Mock the standings view query to return latest year
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
-        getRawOne: jest.fn().mockResolvedValue({ max: 2024 }),
-      };
+        getRawOne: (jest.fn() as any).mockResolvedValue({ max: 2024 }),
+      } as any;
       standingsViewRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       
       // Mock standings data
       standingsViewRepository.find.mockResolvedValue([
-        { constructorName: 'Mercedes' },
-        { constructorName: 'Ferrari' },
+        { constructorName: 'Mercedes' } as any,
+        { constructorName: 'Ferrari' } as any,
       ]);
       
       // Mock constructor repository
@@ -501,10 +504,10 @@ describe('ConstructorsService', () => {
         where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue([
+        getRawMany: (jest.fn() as any).mockResolvedValue([
           { season: 2023, points: '409' },
         ]),
-      };
+      } as any;
 
       raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       
