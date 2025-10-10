@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { teamColors } from '../../lib/teamColors';
 import { buildApiUrl } from '../../lib/api';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import AnalyticsStandingsSkeleton from './AnalyticsStandingsSkeleton';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
@@ -157,7 +157,7 @@ const AnalyticsStandings: React.FC = () => {
         <StandingsTabs active="analytics" />
 
         {loading ? (
-          <F1LoadingSpinner text="Loading Analytics..." />
+          <AnalyticsStandingsSkeleton />
         ) : (
           <Flex gap={6} flexDirection="column" mt={8}>
             {/* Drivers Chart */}

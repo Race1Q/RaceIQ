@@ -4,7 +4,7 @@ import {
 } from "@chakra-ui/react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { TEAM_META } from "../../theme/teamTokens";
-import React from "react";
+import React, { useRef, useState } from "react";
 
 type Props = {
   teamKey: keyof typeof TEAM_META;
@@ -24,8 +24,21 @@ export function TeamCard({
   const meta = TEAM_META[teamKey];
   const reduce = usePrefersReducedMotion();
 
-  // Simple hover state
-  const [isHovered, setIsHovered] = React.useState(false);
+  // 3D Hover Effect State (matching DriverProfileCard)
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+  const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const tiltX = (mousePosition.y - 0.5) * -15; // -7.5 to +7.5 degrees
+  const tiltY = (mousePosition.x - 0.5) * 15;  // -7.5 to +7.5 degrees
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setMousePosition({ x, y });
+  };
 
   const handleEnter = () => {
     setIsHovered(true);
@@ -33,13 +46,16 @@ export function TeamCard({
 
   const handleLeave = () => {
     setIsHovered(false);
+    setMousePosition({ x: 0.5, y: 0.5 });
   };
 
   return (
     <Box
+      ref={cardRef}
       as={motion.div}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
+      onMouseMove={handleMouseMove}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -62,8 +78,12 @@ export function TeamCard({
         ? `0 12px 40px rgba(0,0,0,0.6), 0 0 20px ${meta.hex}30` 
         : "0 8px 30px rgba(0,0,0,0.45)"
       }
-      whileHover={reduce ? {} : { scale: 1.02 }}
-      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+      transform={`perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`}
+      _hover={{
+        transform: `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-5px)`,
+        boxShadow: `0 20px 50px rgba(0,0,0,0.7), 0 0 30px ${meta.hex}40`,
+      }}
+      transition="transform 0.3s ease, box-shadow 0.3s ease"
     >
       {/* subtle broadcast scanlines */}
       <Box

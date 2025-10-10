@@ -117,19 +117,6 @@ const KeyInfoBarSkeleton = () => (
     boxShadow="xl"
     overflow="hidden"
   >
-    {/* Team logo section */}
-    <Flex
-      align="center"
-      justify="center"
-      p="lg"
-      borderRight={{ base: 'none', lg: '1px solid' }}
-      borderBottom={{ base: '1px solid', lg: 'none' }}
-      borderColor="border-primary"
-      minW={{ lg: '220px' }}
-    >
-      <SkeletonCircle size="60px" />
-    </Flex>
-
     {/* Career stats section */}
     <Box p={{ base: 'md', md: 'lg' }} flexGrow={1}>
       <SkeletonLine w="100px" h="12px" mb="sm" />
@@ -147,6 +134,26 @@ const KeyInfoBarSkeleton = () => (
           </Flex>
         ))}
       </Grid>
+    </Box>
+
+    {/* Fun facts section skeleton */}
+    <Box 
+      p={{ base: 'md', md: 'lg' }} 
+      borderLeft={{ base: 'none', lg: '1px solid' }}
+      borderTop={{ base: '1px solid', lg: 'none' }}
+      borderColor="border-primary"
+      minW={{ lg: '300px' }}
+      maxW={{ lg: '400px' }}
+    >
+      <SkeletonLine w="80px" h="12px" mb="sm" />
+      <VStack spacing={2} align="stretch">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Box key={i} p={2} bg="bg-secondary" borderRadius="md" border="1px solid" borderColor="border-secondary">
+            <SkeletonLine w="100%" h="14px" mb={1} />
+            <SkeletonLine w="80%" h="14px" />
+          </Box>
+        ))}
+      </VStack>
     </Box>
   </Flex>
 );

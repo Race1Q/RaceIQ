@@ -7,17 +7,19 @@
 **File:** `backend/src/ai/cache/persistent-cache.service.ts`
 
 **Change:**
+
 ```typescript
 // BEFORE (only worked locally):
 private readonly cacheDir = join(process.cwd(), '.cache');
 
 // AFTER (works locally AND on Azure):
-private readonly cacheDir = process.env.NODE_ENV === 'production' 
+private readonly cacheDir = process.env.NODE_ENV === 'production'
   ? join('/home', '.cache')  // Azure persistent storage
   : join(process.cwd(), '.cache');  // Local development
 ```
 
-**Why:** 
+**Why:**
+
 - Azure App Service provides persistent storage at `/home/*`
 - `process.cwd()` points to ephemeral container storage that gets wiped on redeploys
 - This change ensures your cache survives restarts and redeployments
@@ -27,6 +29,7 @@ private readonly cacheDir = process.env.NODE_ENV === 'production'
 ## 🚀 How It Works
 
 ### Local Development (Your Machine)
+
 ```
 Environment: NODE_ENV = development (or undefined)
 Cache Path: ./backend/.cache/ai-cache.json
@@ -35,6 +38,7 @@ Git: Ignored (in .gitignore)
 ```
 
 ### Production (Azure App Service)
+
 ```
 Environment: NODE_ENV = production
 Cache Path: /home/.cache/ai-cache.json
@@ -94,17 +98,19 @@ curl https://your-app.azurewebsites.net/api/ai/driver/609/bio
 ## 🎯 Benefits of This Change
 
 ### Before (Not Production-Ready):
+
 ❌ Cache stored in container's working directory  
 ❌ Cache lost on every redeploy  
 ❌ Every deployment = fresh start = more API calls  
-❌ Wastes your free tier quota  
+❌ Wastes your free tier quota
 
 ### After (Production-Ready):
+
 ✅ Cache stored in Azure persistent storage  
 ✅ Cache survives redeploys and restarts  
 ✅ Minimal API calls (only when cache expires)  
 ✅ Maximizes free tier efficiency  
-✅ Faster response times for users  
+✅ Faster response times for users
 
 ---
 
@@ -113,6 +119,7 @@ curl https://your-app.azurewebsites.net/api/ai/driver/609/bio
 ### Scenario: Deploy New Backend Version
 
 **Before this change:**
+
 ```
 1. Deploy new version → Container rebuilds
 2. Cache is lost
@@ -122,6 +129,7 @@ curl https://your-app.azurewebsites.net/api/ai/driver/609/bio
 ```
 
 **After this change:**
+
 ```
 1. Deploy new version → Container rebuilds
 2. Cache persists at /home/.cache/
@@ -133,11 +141,13 @@ curl https://your-app.azurewebsites.net/api/ai/driver/609/bio
 ### Scenario: App Restart (Azure maintenance, etc.)
 
 **Before this change:**
+
 ```
 App restarts → Cache lost → Fresh API calls needed
 ```
 
 **After this change:**
+
 ```
 App restarts → Cache loaded from /home/.cache/ → No API calls needed
 ```
@@ -189,12 +199,13 @@ If second request is < 200ms, cache is working! 🎉
 The cache path selection depends on `NODE_ENV`:
 
 ```typescript
-process.env.NODE_ENV === 'production' 
-  ? '/home/.cache'  // Azure
-  : '.cache'        // Local
+process.env.NODE_ENV === 'production'
+  ? '/home/.cache' // Azure
+  : '.cache'; // Local
 ```
 
 **Make sure** you have this in Azure Application Settings:
+
 ```
 NODE_ENV=production
 ```
@@ -202,6 +213,7 @@ NODE_ENV=production
 ### 2. Don't Commit .env Files
 
 Your `.gitignore` already includes:
+
 ```
 .env
 .env.*
@@ -213,6 +225,7 @@ Keep it that way! API keys should never be in Git.
 ### 3. Cache is Shared Across All Users
 
 This is intentional and good:
+
 - ✅ News is the same for everyone
 - ✅ Driver bios are the same for everyone
 - ✅ Track previews are the same for everyone
@@ -224,11 +237,13 @@ One user's request benefits all subsequent users!
 If you ever need to force fresh AI content:
 
 **Option A:** Delete via SSH:
+
 ```bash
 rm /home/.cache/ai-cache.json
 ```
 
 **Option B:** Create an admin endpoint:
+
 ```typescript
 @Delete('cache/clear')
 async clearCache() {
@@ -242,16 +257,19 @@ async clearCache() {
 ## 📈 Expected Production Performance
 
 ### First Request (Cache Miss):
+
 - Response time: 2-5 seconds
 - Gemini API call: Yes (1 call)
 - Logged: `Cache MISS: news:f1`
 
 ### Subsequent Requests (Cache Hit):
+
 - Response time: 50-150ms
 - Gemini API call: No
 - Logged: `Cache HIT: news:f1`
 
 ### Daily API Usage:
+
 - News: ~24 calls/day (60 min TTL)
 - Driver Bios: ~10 calls/day (48 hour TTL)
 - Track Previews: ~10 calls/day (24 hour TTL)
@@ -282,7 +300,6 @@ With this change, your AI features are **production-ready** and will:
 ✅ Persist cache across redeploys  
 ✅ Maximize free tier efficiency  
 ✅ Provide fast responses to all users  
-✅ Scale to handle thousands of users  
+✅ Scale to handle thousands of users
 
 **Next Step:** Follow the deployment guide in `DEPLOYMENT-AI.md`!
-
