@@ -1,5 +1,5 @@
 // src/pages/Standings/AnalyticsStandings.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import {
   LineChart,
@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { teamColors } from '../../lib/teamColors';
 import { buildApiUrl } from '../../lib/api';
-import F1LoadingSpinner from '../../components/F1LoadingSpinner/F1LoadingSpinner';
+import StandingsSkeleton from './StandingsSkeleton';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
@@ -70,47 +70,57 @@ const AnalyticsStandings: React.FC = () => {
     fetchProgressions();
   }, []);
 
-  // Chart data processing (same logic from original Standings.tsx)
-  const constructorsChartData: any[] = [];
-  constructorsProgression.forEach((c) =>
-    c.progression.forEach((p) => {
-      let entry = constructorsChartData.find((d) => d.round === p.round);
-      if (!entry) {
-        entry = { round: p.round, raceName: p.raceName };
-        constructorsChartData.push(entry);
-      }
-      entry[c.constructorName] = p.cumulativePoints;
-    })
-  );
-  constructorsChartData.sort((a, b) => a.round - b.round);
+  // Memoized chart data processing for better performance
+  const constructorsChartData = useMemo(() => {
+    const chartData: any[] = [];
+    constructorsProgression.forEach((c) =>
+      c.progression.forEach((p) => {
+        let entry = chartData.find((d) => d.round === p.round);
+        if (!entry) {
+          entry = { round: p.round, raceName: p.raceName };
+          chartData.push(entry);
+        }
+        entry[c.constructorName] = p.cumulativePoints;
+      })
+    );
+    return chartData.sort((a, b) => a.round - b.round);
+  }, [constructorsProgression]);
 
-  const driversChartData: any[] = [];
-  driversProgression.forEach((d) =>
-    d.progression.forEach((p) => {
-      let entry = driversChartData.find((e) => e.round === p.round);
-      if (!entry) {
-        entry = { round: p.round, raceName: p.raceName };
-        driversChartData.push(entry);
-      }
-      entry[d.driverName] = p.cumulativePoints;
-    })
-  );
-  driversChartData.sort((a, b) => a.round - b.round);
+  const driversChartData = useMemo(() => {
+    const chartData: any[] = [];
+    driversProgression.forEach((d) =>
+      d.progression.forEach((p) => {
+        let entry = chartData.find((e) => e.round === p.round);
+        if (!entry) {
+          entry = { round: p.round, raceName: p.raceName };
+          chartData.push(entry);
+        }
+        entry[d.driverName] = p.cumulativePoints;
+      })
+    );
+    return chartData.sort((a, b) => a.round - b.round);
+  }, [driversProgression]);
 
-  // Color mapping (same logic from original Standings.tsx)
-  const constructorColors: Record<string, string> = {};
-  constructorsProgression.forEach((c) => {
-    constructorColors[c.constructorName] =
-      teamColors[c.constructorName] || `#${Math.floor(Math.random() * 16777215).toString(16)}`;
-  });
+  // Memoized color mappings for better performance
+  const constructorColors = useMemo(() => {
+    const colors: Record<string, string> = {};
+    constructorsProgression.forEach((c) => {
+      colors[c.constructorName] =
+        teamColors[c.constructorName] || `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+    });
+    return colors;
+  }, [constructorsProgression]);
 
-  const driverColorsMap: Record<string, string> = {};
-  driversProgression.forEach((driver) => {
-    driverColorsMap[driver.driverName] = teamColors[driver.driverTeam] || '#ff0000';
-  });
+  const driverColorsMap = useMemo(() => {
+    const colors: Record<string, string> = {};
+    driversProgression.forEach((driver) => {
+      colors[driver.driverName] = teamColors[driver.driverTeam] || '#ff0000';
+    });
+    return colors;
+  }, [driversProgression]);
 
-  // Find the leading driver (highest cumulative points in the last race)
-  const getLeadingDriver = () => {
+  // Memoized leading driver calculation
+  const leadingDriver = useMemo(() => {
     if (driversChartData.length === 0) return null;
     const lastRace = driversChartData[driversChartData.length - 1];
     let leadingDriver = '';
@@ -124,12 +134,10 @@ const AnalyticsStandings: React.FC = () => {
     });
     
     return leadingDriver;
-  };
+  }, [driversChartData]);
 
-  const leadingDriver = getLeadingDriver();
-
-  // Find the leading constructor (highest cumulative points in the last race)
-  const getLeadingConstructor = () => {
+  // Memoized leading constructor calculation
+  const leadingConstructor = useMemo(() => {
     if (constructorsChartData.length === 0) return null;
     const lastRace = constructorsChartData[constructorsChartData.length - 1];
     let leadingConstructor = '';
@@ -143,9 +151,65 @@ const AnalyticsStandings: React.FC = () => {
     });
     
     return leadingConstructor;
-  };
+  }, [constructorsChartData]);
 
-  const leadingConstructor = getLeadingConstructor();
+  // Memoized unique names for chart rendering
+  const uniqueDriverNames = useMemo(() => 
+    [...new Set(driversProgression.map((d) => d.driverName))], 
+    [driversProgression]
+  );
+
+  const uniqueConstructorNames = useMemo(() => 
+    [...new Set(constructorsProgression.map((c) => c.constructorName))], 
+    [constructorsProgression]
+  );
+
+  // Memoized tooltip content for better performance
+  const driversTooltipContent = useMemo(() => 
+    ({ active, payload, label }: any) => {
+      if (!active || !payload || !payload.length) return null;
+
+      const raceEntry = driversChartData.find((d) => d.round === label);
+      const raceName = raceEntry ? raceEntry.raceName : '';
+
+      const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+
+      return (
+        <Box bg="gray.800" p={2} borderRadius="md" color="white">
+          <Text fontWeight="bold">Round {label}: {raceName}</Text>
+          {sortedPayload.map((entry, index) => (
+            <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+              <Text>{entry.name}</Text>
+              <Text>{entry.value}</Text>
+            </Flex>
+          ))}
+        </Box>
+      );
+    }, [driversChartData]
+  );
+
+  const constructorsTooltipContent = useMemo(() => 
+    ({ active, payload, label }: any) => {
+      if (!active || !payload || !payload.length) return null;
+
+      const raceEntry = constructorsChartData.find((d) => d.round === label);
+      const raceName = raceEntry ? raceEntry.raceName : '';
+
+      const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
+
+      return (
+        <Box bg="gray.800" p={2} borderRadius="md" color="white">
+          <Text fontWeight="bold">Round {label}: {raceName}</Text>
+          {sortedPayload.map((entry, index) => (
+            <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
+              <Text>{entry.name}</Text>
+              <Text>{entry.value}</Text>
+            </Flex>
+          ))}
+        </Box>
+      );
+    }, [constructorsChartData]
+  );
 
   return (
     <Box>
@@ -157,9 +221,9 @@ const AnalyticsStandings: React.FC = () => {
         <StandingsTabs active="analytics" />
 
         {loading ? (
-          <F1LoadingSpinner text="Loading Analytics..." />
+          <StandingsSkeleton text="Loading Standings Analytics" />
         ) : (
-          <Flex gap={6} flexDirection="column" mt={8}>
+          <Flex gap={6} flexDirection="column" mt={4}>
             {/* Drivers Chart */}
             {driversProgression.length > 0 && (
               <Box h="400px" bg="gray.900" p={4} borderRadius="md">
@@ -171,29 +235,8 @@ const AnalyticsStandings: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="gray" />
                     <XAxis dataKey="round" stroke="white" />
                     <YAxis stroke="white" />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload || !payload.length) return null;
-
-                        const raceEntry = driversChartData.find((d) => d.round === label);
-                        const raceName = raceEntry ? raceEntry.raceName : '';
-
-                        const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
-
-                        return (
-                          <Box bg="gray.800" p={2} borderRadius="md" color="white">
-                            <Text fontWeight="bold">Round {label}: {raceName}</Text>
-                            {sortedPayload.map((entry, index) => (
-                              <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
-                                <Text>{entry.name}</Text>
-                                <Text>{entry.value}</Text>
-                              </Flex>
-                            ))}
-                          </Box>
-                        );
-                      }}
-                    />
-                    {[...new Set(driversProgression.map((d) => d.driverName))].map((name) => {
+                    <Tooltip content={driversTooltipContent} />
+                    {uniqueDriverNames.map((name) => {
                       const isLeading = name === leadingDriver;
                       const teamColor = `#${driverColorsMap[name]}` || '#ff0000';
                       
@@ -205,7 +248,7 @@ const AnalyticsStandings: React.FC = () => {
                           stroke={teamColor}
                           strokeWidth={isLeading ? 4 : 2}
                           dot={false}
-                          isAnimationActive={true}
+                          isAnimationActive={false}
                           name={name}
                           connectNulls
                           style={isLeading ? {
@@ -232,29 +275,8 @@ const AnalyticsStandings: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="gray" />
                     <XAxis dataKey="round" stroke="white" />
                     <YAxis stroke="white" />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload || !payload.length) return null;
-
-                        const raceEntry = constructorsChartData.find((d) => d.round === label);
-                        const raceName = raceEntry ? raceEntry.raceName : '';
-
-                        const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
-
-                        return (
-                          <Box bg="gray.800" p={2} borderRadius="md" color="white">
-                            <Text fontWeight="bold">Round {label}: {raceName}</Text>
-                            {sortedPayload.map((entry, index) => (
-                              <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
-                                <Text>{entry.name}</Text>
-                                <Text>{entry.value}</Text>
-                              </Flex>
-                            ))}
-                          </Box>
-                        );
-                      }}
-                    />
-                    {[...new Set(constructorsProgression.map((c) => c.constructorName))].map((name) => {
+                    <Tooltip content={constructorsTooltipContent} />
+                    {uniqueConstructorNames.map((name) => {
                       const isLeading = name === leadingConstructor;
                       const teamColor = `#${constructorColors[name]}` || '#ff0000';
                       
@@ -266,7 +288,7 @@ const AnalyticsStandings: React.FC = () => {
                           stroke={teamColor}
                           strokeWidth={isLeading ? 4 : 2}
                           dot={false}
-                          isAnimationActive={true}
+                          isAnimationActive={false}
                           name={name}
                           connectNulls
                           style={isLeading ? {

@@ -95,7 +95,35 @@ const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? 
 
 // Fetch functions
 async function fetchDriversList(): Promise<DriverListItem[]> {
-  return getJSON<DriverListItem[]>('/drivers');
+  // Use the same endpoint as the drivers page to get team information
+  const response = await fetch(`/api/standings/2025/99`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch driver standings: ${response.status}`);
+  }
+  const data = await response.json();
+  
+  const driverStandings = (data as any)?.driverStandings || [];
+  
+  // Transform standings data to match DriverListItem format
+  return driverStandings.map((standing: any) => {
+    if (!standing || !standing.driverId) return null;
+    
+    const teamName = standing.constructorName || 'Unknown Team';
+    const fullName = standing.driverFullName || `${standing.driverFirstName || ''} ${standing.driverLastName || ''}`.trim();
+    
+    return {
+      id: standing.driverId as number,
+      full_name: fullName,
+      given_name: standing.driverFirstName || '',
+      family_name: standing.driverLastName || '',
+      code: standing.driverCode || null,
+      current_team_name: teamName, // This is the key fix!
+      image_url: standing.driverProfileImageUrl || null,
+      team_color: null, // Will be populated later if needed
+      country_code: standing.driverCountryCode || null,
+      driver_number: standing.driverNumber || null,
+    };
+  }).filter(Boolean);
 }
 
 async function fetchYears(): Promise<number[]> {
@@ -333,6 +361,17 @@ export function useDriverComparison(): HookState {
       setSelection1(selection);
     } else {
       setSelection2(selection);
+    }
+    
+    // Also set driver details for UI display
+    const base = getListItem(driverId);
+    if (base) {
+      const details = mapStatsToDetails(driverId, base, null);
+      if (slot === 1) {
+        setDriver1(details);
+      } else {
+        setDriver2(details);
+      }
     }
     
     // Fetch comparison stats

@@ -104,7 +104,7 @@ function DashboardPage() {
   const widgetComponents: { [key: string]: React.ReactNode } = {
     nextRace: <NextRaceWidget data={dashboardData?.nextRace} />,
     standings: (
-      <Link to="/standings/drivers">
+      <Link to="/standings">
         <ChampionshipStandingsWidget data={dashboardData?.championshipStandings || []} year={dashboardData?.standingsYear as number} />
       </Link>
     ),
