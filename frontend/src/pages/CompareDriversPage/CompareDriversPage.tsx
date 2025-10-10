@@ -230,40 +230,46 @@ const DriverStatsColumn = ({
 
       {/* List of Stat Cards */}
       <VStack spacing={3} align="stretch" w="100%">
-        {enabledMetrics.map(metric => {
-          // Map metric names to the correct property names
-          const metricMap: Record<string, string> = {
-            'wins': 'wins',
-            'podiums': 'podiums', 
-            'poles': 'poles',
-            'fastest_laps': 'fastestLaps',
-            'points': 'points',
-            'races': 'races',
-            'dnf': 'dnfs',
-            'avg_finish': 'avgFinish'
-          };
-          
-          const statKey = metricMap[metric] || metric;
-          const value = (statData as any)[statKey] ?? 0;
-          const opponentValue = (opponentStatData as any)?.[statKey] ?? 0;
-          const label = availableMetrics[metric as keyof typeof availableMetrics];
-          const icon = metricIconMap[metric] || Star; // Default to Star icon
-          
-          // Determine if this driver wins this metric
-          const isWinner = determineWinner(value, opponentValue, metric);
-          
-          return (
-            <StatCard 
-              key={metric} 
-              label={label} 
-              value={value} 
-              icon={icon} 
-              teamColor={teamColor}
-              isWinner={isWinner}
-              metric={metric}
-            />
-          );
-        })}
+        {enabledMetrics
+          .filter(metric => {
+            // Only show metrics that have a valid label in availableMetrics
+            const label = availableMetrics[metric as keyof typeof availableMetrics];
+            return label && label.trim() !== '';
+          })
+          .map(metric => {
+            // Map metric names to the correct property names
+            const metricMap: Record<string, string> = {
+              'wins': 'wins',
+              'podiums': 'podiums', 
+              'poles': 'poles',
+              'fastest_laps': 'fastestLaps',
+              'points': 'points',
+              'races': 'races',
+              'dnf': 'dnfs',
+              'avg_finish': 'avgFinish'
+            };
+            
+            const statKey = metricMap[metric] || metric;
+            const value = (statData as any)[statKey] ?? 0;
+            const opponentValue = (opponentStatData as any)?.[statKey] ?? 0;
+            const label = availableMetrics[metric as keyof typeof availableMetrics];
+            const icon = metricIconMap[metric] || Star; // Default to Star icon
+            
+            // Determine if this driver wins this metric
+            const isWinner = determineWinner(value, opponentValue, metric);
+            
+            return (
+              <StatCard 
+                key={metric} 
+                label={label} 
+                value={value} 
+                icon={icon} 
+                teamColor={teamColor}
+                isWinner={isWinner}
+                metric={metric}
+              />
+            );
+          })}
       </VStack>
     </VStack>
   );
