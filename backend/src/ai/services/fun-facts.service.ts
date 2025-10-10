@@ -20,7 +20,8 @@ export class FunFactsService {
     private readonly config: ConfigService,
   ) {
     // Get TTL from config, default to 24 hours (shorter than bio since fun facts are more dynamic)
-    const ttlHours = this.config.get<number>('AI_FUN_FACTS_TTL_H') || 24;
+    // TEMPORARY: Set to 1 minute for testing
+    const ttlHours = this.config.get<number>('AI_FUN_FACTS_TTL_H') || 0.017; // 1 minute
     this.funFactsTTL = ttlHours * 3600; // Convert hours to seconds
   }
 
@@ -86,6 +87,7 @@ export class FunFactsService {
         facts: aiResponse.facts,
         generatedAt: new Date().toISOString(),
         isFallback: false,
+        aiAttribution: 'Powered by Gemini AI',
       };
 
       // Cache the response
@@ -123,6 +125,7 @@ export class FunFactsService {
       ],
       generatedAt: new Date().toISOString(),
       isFallback: true,
+      aiAttribution: 'Powered by Gemini AI',
     };
   }
 }

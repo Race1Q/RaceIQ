@@ -8,6 +8,7 @@ export interface AiDriverFunFactsData {
   facts: string[];
   generatedAt: string;
   isFallback?: boolean;
+  aiAttribution?: string;
 }
 
 export const useAiDriverFunFacts = (driverId?: number, season?: number) => {

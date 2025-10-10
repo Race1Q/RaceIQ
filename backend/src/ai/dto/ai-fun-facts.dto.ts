@@ -25,4 +25,7 @@ export class AiDriverFunFactsDto {
 
   @ApiProperty({ description: 'Whether this is fallback content', required: false })
   isFallback?: boolean;
+
+  @ApiProperty({ description: 'AI attribution note', required: false })
+  aiAttribution?: string;
 }
