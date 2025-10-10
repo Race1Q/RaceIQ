@@ -94,6 +94,8 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
                   objectFit="contain"
                   objectPosition="center"
                   borderRadius="lg"
+                  loading="lazy"
+                  decoding="async"
                   fallbackSrc="https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png"
                 />
               </Box>

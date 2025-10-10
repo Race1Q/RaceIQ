@@ -18,6 +18,7 @@ import { CircuitsModule } from '../circuits/circuits.module';
 import { ConstructorsModule } from '../constructors/constructors.module';
 import { ConstructorInfoService } from './services/constructor-info.service';
 import { StandingsAnalysisService } from './services/standings-analysis.service';
+import { FunFactsService } from './services/fun-facts.service';
 import { StandingsModule } from '../standings/standings.module';
 
 @Module({
@@ -41,11 +42,12 @@ import { StandingsModule } from '../standings/standings.module';
     PreviewService,
     ConstructorInfoService,
     StandingsAnalysisService,
+    FunFactsService,
     NewsFeedAdapter,
     DriverStatsAdapter,
     TrackDataAdapter,
   ],
-  exports: [NewsService, BioService, PreviewService],
+  exports: [NewsService, BioService, PreviewService, FunFactsService],
 })
 export class AiModule {}
 

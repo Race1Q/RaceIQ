@@ -195,6 +195,8 @@ export interface DriverDetailsData {
   podiums: number;
   points: number;
   championshipStanding: string;
+  worldChampionships: number;
+  grandsPrixEntered: number;
   firstRace: { year: string; event: string };
   currentSeasonStats: Stat[];
   careerStats: Stat[];

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common'; // 1. IMPORT Param & ParseIntPipe
+import { Controller, Get, Param, ParseIntPipe, Header } from '@nestjs/common'; // 1. IMPORT Param & ParseIntPipe
 import { SeasonsService } from './seasons.service';
 import { Season } from './seasons.entity';
 import { Race } from '../races/races.entity'; // 2. IMPORT RACE
@@ -14,6 +14,7 @@ export class SeasonsController {
 
   // 3. UNCOMMENT THIS ENDPOINT
   @Get(':year/races')
+  @Header('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400')
   async getRacesForYear(
     @Param('year', ParseIntPipe) year: number,
   ): Promise<Race[]> {

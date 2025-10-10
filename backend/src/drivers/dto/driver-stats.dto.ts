@@ -25,6 +25,7 @@ class CareerStatsDto {
   grandsPrixEntered: number;
   dnfs: number;
   highestRaceFinish: number;
+  worldChampionships: number;
   firstRace: FirstRaceDto;
   winsPerSeason: WinsPerSeasonDto[];
 }

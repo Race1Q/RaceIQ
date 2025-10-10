@@ -50,7 +50,7 @@ describe('KeyInfoBar', () => {
   it('renders without crashing', () => {
     renderWithChakra(<KeyInfoBar driver={mockDriver} />);
     
-    expect(screen.getByText('Career Stats')).toBeInTheDocument();
+    expect(screen.getByText('Key Stats')).toBeInTheDocument();
   });
 
   it('renders team logo with correct team name', () => {
@@ -199,7 +199,7 @@ describe('KeyInfoBar', () => {
     expect(screen.getByTestId('team-logo-red-bull-racing')).toBeInTheDocument();
     
     // Check stats section exists
-    expect(screen.getByText('Career Stats')).toBeInTheDocument();
+    expect(screen.getByText('Key Stats')).toBeInTheDocument();
   });
 
   it('renders all InfoBlock components with correct structure', () => {
@@ -270,11 +270,11 @@ describe('KeyInfoBar', () => {
   it('handles component unmounting gracefully', () => {
     const { unmount } = renderWithChakra(<KeyInfoBar driver={mockDriver} />);
     
-    expect(screen.getByText('Career Stats')).toBeInTheDocument();
+    expect(screen.getByText('Key Stats')).toBeInTheDocument();
     
     unmount();
     
-    expect(screen.queryByText('Career Stats')).not.toBeInTheDocument();
+    expect(screen.queryByText('Key Stats')).not.toBeInTheDocument();
   });
 
   it('displays correct number of stat blocks', () => {

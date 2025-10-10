@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
@@ -58,6 +58,10 @@ describe('DriversService', () => {
     count: jest.fn(),
   };
 
+  const mockDataSource = {
+    query: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -91,6 +95,10 @@ describe('DriversService', () => {
         {
           provide: getRepositoryToken(RaceFastestLapMaterialized),
           useValue: mockFastestLapViewRepo,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
         },
       ],
     }).compile();
@@ -498,6 +506,63 @@ describe('DriversService', () => {
 
       expect(result.careerStats.firstRace.year).toBe(0);
       expect(result.careerStats.firstRace.event).toBe('N/A');
+    });
+
+    it('should include world championships in career stats', async () => {
+      // Mock all the repository calls
+      mockCareerStatsViewRepo.findOne.mockResolvedValue({
+        ...mockCareerStats,
+        championships: 3, // Mock Max Verstappen's championships
+      });
+      mockStandingsViewRepo.findOne.mockResolvedValue(mockCurrentSeason);
+      mockWinsPerSeasonViewRepo.find.mockResolvedValue(mockWinsPerSeason);
+      mockRaceResultRepository.findOne.mockResolvedValue(mockFirstRace);
+      mockFastestLapViewRepo.count.mockResolvedValue(5);
+      mockStandingsViewRepo.find.mockResolvedValue(mockStandings);
+
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ teamName: 'Red Bull Racing' }),
+      };
+
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const result = await service.getDriverCareerStats(1);
+
+      expect(result.careerStats.worldChampionships).toBe(3);
+    });
+
+    it('should fallback to calculation when world championships not in materialized view', async () => {
+      // Mock career stats without world championships
+      mockCareerStatsViewRepo.findOne.mockResolvedValue({
+        ...mockCareerStats,
+        championships: undefined,
+      });
+      mockStandingsViewRepo.findOne.mockResolvedValue(mockCurrentSeason);
+      mockWinsPerSeasonViewRepo.find.mockResolvedValue(mockWinsPerSeason);
+      mockRaceResultRepository.findOne.mockResolvedValue(mockFirstRace);
+      mockFastestLapViewRepo.count.mockResolvedValue(5);
+      mockStandingsViewRepo.find.mockResolvedValue(mockStandings);
+
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ teamName: 'Red Bull Racing' }),
+        getMany: jest.fn().mockResolvedValue([]), // No seasons found
+      };
+
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const result = await service.getDriverCareerStats(1);
+
+      expect(result.careerStats.worldChampionships).toBe(0);
     });
   });
 

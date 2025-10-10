@@ -1,9 +1,11 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
+import { useDriverSeasonStats } from '../../hooks/useDriverSeasonStats';
+import { useDriverSeasonProgression } from '../../hooks/useDriverSeasonProgression';
 import KeyInfoBar from '../../components/KeyInfoBar/KeyInfoBar';
 import DriverDetailSkeleton from './DriverDetailSkeleton';
 import ReactCountryFlag from 'react-country-flag';
@@ -11,13 +13,22 @@ import { countryCodeMap } from '../../lib/countryCodeUtils';
 import { teamCarImages } from '../../lib/teamCars';
 import { teamColors } from '../../lib/teamColors';
 import StatSection from '../../components/DriverDetails/StatSection';
-import WinsPerSeasonChart from '../../components/WinsPerSeasonChart/WinsPerSeasonChart';
+import {
+  PointsBySeasonChart,
+  WinsBySeasonChart,
+  PodiumsBySeasonChart,
+  PolesBySeasonChart,
+  CumulativeProgressionChart,
+  ChartSkeleton
+} from '../../components/DriverCharts';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import DriverBioCard from '../../components/DriverBioCard/DriverBioCard';
 
 const DriverDetailPage: React.FC = () => {
   const { driverId } = useParams<{ driverId: string }>();
   const { driverDetails, loading, error } = useDriverDetails(driverId);
+  const { seasonStats, loading: seasonStatsLoading } = useDriverSeasonStats(driverId);
+  const { progressionData, loading: progressionLoading } = useDriverSeasonProgression(driverId);
 
   // --- DEBUG STEP 3: Log the data as it's received by the page component ---
   console.log("%c3. Data Received by Page Component:", "color: orange; font-weight: bold;", driverDetails);
@@ -88,16 +99,24 @@ const DriverDetailPage: React.FC = () => {
                 >
                   {driverDetails.firstName}
                 </Text>
-                <Text
-                  fontFamily="heading"
-                  textTransform="uppercase"
-                  fontWeight="900"
-                  letterSpacing={{ base: '0.01em', md: '0.02em' }}
-                  fontSize={{ base: '5xl', md: '8xl', xl: '9xl' }}
-                  lineHeight={0.95}
-                >
-                  {driverDetails.lastName}
-                </Text>
+                <Box w="100%">
+                  <Text
+                    fontFamily="heading"
+                    textTransform="uppercase"
+                    fontWeight="900"
+                    letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                    fontSize={{ 
+                      base: driverDetails.lastName.length > 12 ? '2xl' : driverDetails.lastName.length > 8 ? '3xl' : '4xl',
+                      md: driverDetails.lastName.length > 12 ? '4xl' : driverDetails.lastName.length > 8 ? '5xl' : '6xl', 
+                      xl: driverDetails.lastName.length > 12 ? '5xl' : driverDetails.lastName.length > 8 ? '6xl' : '7xl'
+                    }}
+                    lineHeight={0.95}
+                    wordBreak="break-word"
+                    whiteSpace="normal"
+                  >
+                    {driverDetails.lastName}
+                  </Text>
+                </Box>
               </Heading>
               <Box
                 mt={{ base: 2, md: 3 }}
@@ -159,7 +178,7 @@ const DriverDetailPage: React.FC = () => {
         </Container>
       </Box>
 
-      <KeyInfoBar driver={driverDetails} />
+      <KeyInfoBar driver={driverDetails} teamColor={teamColor} />
 
       <Container maxW="container.2xl" py="xl" px={{ base: 4, md: 6 }}>
         
@@ -169,13 +188,43 @@ const DriverDetailPage: React.FC = () => {
           <StatSection title="Career" stats={driverDetails.careerStats} />
         </VStack>
 
-        {/* --- NEW GRAPH SECTION --- */}
+        {/* --- PERFORMANCE TREND CHARTS (2x2 Grid) --- */}
         <Box mt="xl">
-          <Heading size="md" fontFamily="heading" mb="md">Wins Per Season (Last 5 Years)</Heading>
-          <Box bg="bg-surface" p="lg" borderRadius="lg" border="1px solid" borderColor="border-primary">
-            <WinsPerSeasonChart data={driverDetails.winsPerSeason} teamColor={teamColor} />
-          </Box>
+          <Heading size="md" fontFamily="heading" mb="md" color="white">Performance Trends</Heading>
+          <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} mb={6}>
+            {seasonStatsLoading ? (
+              <>
+                <ChartSkeleton title="Points by Season" />
+                <ChartSkeleton title="Wins by Season" />
+                <ChartSkeleton title="Podiums by Season" />
+                <ChartSkeleton title="Poles by Season" />
+              </>
+            ) : (
+              <>
+                <PointsBySeasonChart data={seasonStats} teamColor={teamColor} />
+                <WinsBySeasonChart data={seasonStats} />
+                <PodiumsBySeasonChart data={seasonStats} />
+                <PolesBySeasonChart data={seasonStats} teamColor={teamColor} />
+              </>
+            )}
+          </SimpleGrid>
         </Box>
+
+        {/* --- CURRENT SEASON PROGRESSION CHART (Full Width) --- */}
+        {progressionData.length > 0 && (
+          <Box mb={6}>
+            {progressionLoading ? (
+              <ChartSkeleton title="Cumulative Points Progression" height="400px" />
+            ) : (
+              <CumulativeProgressionChart 
+                data={progressionData} 
+                teamColor={teamColor} 
+                season={progressionData[0]?.year || new Date().getFullYear()}
+              />
+            )}
+          </Box>
+        )}
+
 
         {/* --- AI-GENERATED BIO SECTION --- */}
         <Box mt="xl">

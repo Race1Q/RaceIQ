@@ -1,7 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect } from 'react';
 import { Box, Container, VStack, Heading, Text } from '@chakra-ui/react';
-import { RaceSlider } from '../../components/RaceSlider/RaceSlider';
+import React, { Suspense } from 'react';
+const RaceSlider = React.lazy(() => import('../../components/RaceSlider/RaceSlider').then(m => ({ default: m.RaceSlider })));
 import HeroSection from '../../components/HeroSection/HeroSection';
 import FeaturedDriverSection from '../../components/FeaturedDriverSection/FeaturedDriverSection';
 import FeaturedDriverSkeleton from '../../components/FeaturedDriverSection/FeaturedDriverSkeleton';
@@ -67,9 +68,11 @@ function HomePage() {
                 Recent Races
               </Heading>
               {/* Render slider only if we have schedule data available */}
-              {!dataLoading && Array.isArray(seasonSchedule) && seasonSchedule.length > 0 && (
-                <RaceSlider seasonSchedule={seasonSchedule} />
-              )}
+              <Suspense fallback={null}>
+                {!dataLoading && Array.isArray(seasonSchedule) && seasonSchedule.length > 0 && (
+                  <RaceSlider seasonSchedule={seasonSchedule} />
+                )}
+              </Suspense>
             </VStack>
           </VStack>
         </Container>

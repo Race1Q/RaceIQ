@@ -6,6 +6,8 @@ import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkRespons
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
 import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
+import { DriverSeasonStatsDto } from './dto/driver-season-stats.dto';
+import { DriverSeasonProgressionDto } from './dto/driver-season-progression.dto';
 import { Public } from '../auth/public.decorator';
 import { ErrorResponse } from '../common/dto/error-response.dto';
 
@@ -34,8 +36,8 @@ export class DriversController {
     return this.driversService.findAll({ year: yearNumber });
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get a single driver by ID' })
+  @Public()
+  @ApiOperation({ summary: 'Get a single driver by ID (public)' })
   @ApiOkResponse({ type: Driver })
   @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id')
@@ -58,8 +60,8 @@ export class DriversController {
     return this.driversService.getDriverStats(id, yearNumber);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Get driver aggregated career stats' })
+  @Public()
+  @ApiOperation({ summary: 'Get driver aggregated career stats (public)' })
   @ApiOkResponse({ type: DriverStatsResponseDto })
   @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/career-stats')
@@ -69,8 +71,8 @@ export class DriversController {
     return this.driversService.getDriverCareerStats(id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: "Get a driver's recent race form (last 5 races)" })
+  @Public()
+  @ApiOperation({ summary: "Get a driver's recent race form (last 5 races) (public)" })
   @ApiOkResponse({ description: 'An array of recent race results.' })
   @ApiNotFoundResponse({ type: ErrorResponse })
   @Get(':id/recent-form')
@@ -89,5 +91,33 @@ export class DriversController {
     @Param('season', ParseIntPipe) season: number,
   ) {
     return this.driversService.getDriverStandings(season);
+  }
+
+  @Public()
+  @ApiOperation({ 
+    summary: 'Get driver season statistics for trend graphs',
+    description: 'Returns year-by-year performance data for driver trend analysis charts (Points by Season, Wins by Season, etc.)'
+  })
+  @ApiOkResponse({ type: [DriverSeasonStatsDto] })
+  @ApiNotFoundResponse({ type: ErrorResponse })
+  @Get(':id/season-stats')
+  async getDriverSeasonStats(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<DriverSeasonStatsDto[]> {
+    return this.driversService.findDriverSeasonStats(id);
+  }
+
+  @Public()
+  @ApiOperation({ 
+    summary: 'Get driver current season progression',
+    description: 'Returns race-by-race points progression for the current season cumulative chart'
+  })
+  @ApiOkResponse({ type: [DriverSeasonProgressionDto] })
+  @ApiNotFoundResponse({ type: ErrorResponse })
+  @Get(':id/current-season-progression')
+  async getDriverCurrentSeasonProgression(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<DriverSeasonProgressionDto[]> {
+    return this.driversService.findCurrentSeasonProgression(id);
   }
 }

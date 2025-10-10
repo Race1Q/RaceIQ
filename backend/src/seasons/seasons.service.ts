@@ -34,7 +34,7 @@ export class SeasonsService {
     });
   }
 
-  // Replace the existing getRacesForYear method with this one
+  // Optimized to avoid N+1 queries for podiums by batching all podium lookups into one query.
   async getRacesForYear(year: number): Promise<RaceWithPodium[]> {
     const season = await this.seasonRepository.findOne({ where: { year } });
     if (!season) {
@@ -47,36 +47,41 @@ export class SeasonsService {
       order: { round: 'ASC' },
     });
 
-    const racesWithPodiums = await Promise.all(
-      races.map(async (race) => {
-        // Check if the race date is in the past
-        if (new Date(race.date) < new Date()) {
-          // If it is, find the results for P1, P2, and P3
-          const podiumResults = await this.raceResultRepository.find({
-            where: {
-              session: { race: { id: race.id }, type: 'RACE' },
-              position: In([1, 2, 3]),
-            },
-            relations: ['driver'],
-            order: { position: 'ASC' },
-          });
+    // Preload podiums for all races (single query)
+    const now = new Date();
+    const pastRaceIds = races.filter(r => new Date(r.date) < now).map(r => r.id);
 
-          // Map the full result objects to our simpler PodiumResult shape
-          const podium: PodiumResult[] = podiumResults.map((result) => ({
-            position: result.position,
-            driverName: `${result.driver.first_name} ${result.driver.last_name}`,
-            countryCode: result.driver?.country_code ?? undefined,
-          }));
+    let podiumByRaceId = new Map<number, PodiumResult[]>();
+    if (pastRaceIds.length > 0) {
+      const allPodiums = await this.raceResultRepository.find({
+        where: {
+          session: { race: { id: In(pastRaceIds) }, type: 'RACE' },
+          position: In([1, 2, 3]),
+        },
+        relations: ['driver', 'session', 'session.race'],
+        order: { position: 'ASC' },
+      });
 
-          return { ...race, podium: podium.length ? podium : null } as RaceWithPodium;
-        }
-        
-        // If the race is in the future, return it with a null podium
-        return { ...race, podium: null } as RaceWithPodium;
-      }),
-    );
+      podiumByRaceId = allPodiums.reduce((map, rr) => {
+        const rid = rr.session.race.id;
+        const list = map.get(rid) || [];
+        list.push({
+          position: rr.position,
+          driverName: `${rr.driver.first_name} ${rr.driver.last_name}`,
+          countryCode: rr.driver?.country_code ?? undefined,
+        });
+        map.set(rid, list);
+        return map;
+      }, new Map<number, PodiumResult[]>());
+    }
 
-    return racesWithPodiums;
+    // Stitch results
+    return races.map(race => {
+      const podium = podiumByRaceId.get(race.id) || null;
+      // Only include podiums for past races
+      const value = new Date(race.date) < now ? (podium && podium.length ? podium : null) : null;
+      return { ...race, podium: value } as RaceWithPodium;
+    });
   }
 }
 
