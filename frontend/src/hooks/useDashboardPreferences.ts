@@ -18,9 +18,18 @@ export interface WidgetVisibility {
   f1News: boolean;
 }
 
+export interface WidgetSettings {
+  headToHead?: {
+    driver1Id?: number;
+    driver2Id?: number;
+  };
+  // Add other widget settings as needed
+}
+
 export interface DashboardPreferences {
   dashboard_visibility?: WidgetVisibility;
   dashboard_layouts?: Layouts;
+  widget_settings?: WidgetSettings;
 }
 
 export interface UseDashboardPreferencesReturn {
@@ -28,6 +37,8 @@ export interface UseDashboardPreferencesReturn {
   setWidgetVisibility: (visibility: WidgetVisibility) => void;
   layouts: Layouts;
   setLayouts: (layouts: Layouts) => void;
+  widgetSettings: WidgetSettings;
+  setWidgetSettings: (settings: WidgetSettings | ((prev: WidgetSettings) => WidgetSettings)) => void;
   isLoading: boolean;
   isSaving: boolean;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
@@ -66,6 +77,7 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
   const { getAccessTokenSilently } = useAuth0();
   const [widgetVisibility, setWidgetVisibility] = useState<WidgetVisibility>(DEFAULT_VISIBILITY);
   const [layouts, setLayouts] = useState<Layouts>(DEFAULT_LAYOUTS);
+  const [widgetSettings, setWidgetSettings] = useState<WidgetSettings>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -105,6 +117,9 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
         if (profile.dashboard_layouts) {
           setLayouts(profile.dashboard_layouts);
         }
+        if (profile.widget_settings) {
+          setWidgetSettings(profile.widget_settings);
+        }
         
         setHasLoadedFromServer(true);
       } catch (err) {
@@ -130,7 +145,7 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
   }, [toast, getAccessTokenSilently]);
 
   // Save preferences with debouncing
-  const savePreferences = useCallback(async (visibility: WidgetVisibility, layouts: Layouts) => {
+  const savePreferences = useCallback(async () => {
     try {
       setIsSaving(true);
       setSaveStatus('saving');
@@ -145,8 +160,9 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          dashboard_visibility: visibility,
+          dashboard_visibility: widgetVisibility,
           dashboard_layouts: layouts,
+          widget_settings: widgetSettings,
         }),
       });
 
@@ -178,7 +194,7 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
     } finally {
       setIsSaving(false);
     }
-  }, [toast, getAccessTokenSilently]);
+  }, [widgetVisibility, layouts, widgetSettings, getAccessTokenSilently, toast]);
 
   // Debounced save effect - DISABLED for now, using manual save button instead
   // useEffect(() => {
@@ -214,14 +230,16 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
 
   // Manual save function for save button
   const manualSave = useCallback(async () => {
-    await savePreferences(widgetVisibility, layouts);
-  }, [widgetVisibility, layouts, savePreferences]);
+    await savePreferences();
+  }, [savePreferences]);
 
   return {
     widgetVisibility,
     setWidgetVisibility,
     layouts,
     setLayouts,
+    widgetSettings,
+    setWidgetSettings,
     isLoading,
     isSaving,
     saveStatus,

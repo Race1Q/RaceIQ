@@ -6,7 +6,8 @@ import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useThemeColor } from '../../context/ThemeColorContext';
-import { useDashboardPreferences, type WidgetVisibility } from '../../hooks/useDashboardPreferences';
+import { useDashboardPreferences, type WidgetVisibility, type WidgetSettings } from '../../hooks/useDashboardPreferences';
+import { useDriversData } from '../../hooks/useDriversData';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import DashboardSkeleton from './DashboardSkeleton';
 import DashboardHeader from './components/DashboardHeader';
@@ -65,14 +66,28 @@ function DashboardPage() {
     setWidgetVisibility,
     layouts,
     setLayouts,
+    widgetSettings,
+    setWidgetSettings,
     isLoading: preferencesLoading,
     saveStatus,
     hasLoadedFromServer,
     savePreferences,
   } = useDashboardPreferences();
+
+  // Get current year for driver data
+  const currentYear = new Date().getFullYear();
+  const { drivers: allDrivers } = useDriversData(currentYear);
   
   // Track previous visibility state to detect when widgets are re-added
   const prevVisibilityRef = useRef<WidgetVisibility>(widgetVisibility);
+
+  // Handle head-to-head widget preference changes
+  const handleHeadToHeadChange = (newPref: { driver1Id?: number; driver2Id?: number }) => {
+    setWidgetSettings((prevSettings: WidgetSettings) => ({
+      ...prevSettings,
+      headToHead: newPref,
+    }));
+  };
 
   // Only show a full-page error if the API fails AND we have no fallback data
   if (error && !dashboardData) {
@@ -103,7 +118,18 @@ function DashboardPage() {
     fastestLap: <FastestLapWidget data={dashboardData?.lastRaceFastestLap} />,
     favoriteDriver: <FavoriteDriverSnapshotWidget />,
     favoriteTeam: <FavoriteTeamSnapshotWidget />,
-    headToHead: <HeadToHeadQuickCompareWidget data={dashboardData?.headToHead} />,
+    headToHead: (
+      <HeadToHeadQuickCompareWidget
+        preference={widgetSettings.headToHead}
+        onPreferenceChange={handleHeadToHeadChange}
+        allDrivers={allDrivers.map(driver => ({
+          id: driver.id,
+          name: driver.fullName,
+          teamName: driver.teamName,
+          headshotUrl: driver.headshotUrl,
+        }))}
+      />
+    ),
     f1News: <LatestF1NewsWidget />,
   };
 

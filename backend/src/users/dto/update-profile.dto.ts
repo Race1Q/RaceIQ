@@ -29,4 +29,8 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsObject()
   dashboard_layouts?: object;
+
+  @IsOptional()
+  @IsObject()
+  widget_settings?: Record<string, any>;
 }
