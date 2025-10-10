@@ -10,7 +10,7 @@ import { ConstructorSelectionPanel } from './components/ConstructorSelectionPane
 import { ConstructorComparisonTable } from './components/ConstructorComparisonTable';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
-import CompareTabs from '../../components/Compare/CompareTabs';
+import CompareTabs from '../../components/compare/CompareTabs';
 import { ConstructorPdfComparisonCard } from '../../components/compare/ConstructorPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 
