@@ -12,7 +12,6 @@ import LayoutContainer from '../../components/layout/LayoutContainer';
 import CompareTabs from '../../components/compare/CompareTabs';
 import { DriverPdfComparisonCard } from '../../components/compare/DriverPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
-import { getTeamLogo } from '../../lib/teamAssets';
 import { TEAM_META } from '../../theme/teamTokens';
 import { driverHeadshots } from '../../lib/driverHeadshots';
 import { driverTeamMapping } from '../../lib/driverTeamMapping';
@@ -53,15 +52,13 @@ const StatCard = ({
   value, 
   icon, 
   teamColor, 
-  isWinner = false,
-  metric 
+  isWinner = false
 }: { 
   label: string; 
   value: number; 
   icon: any; 
   teamColor: string;
   isWinner?: boolean;
-  metric?: string;
 }) => (
   <Flex
     justify="space-between"
@@ -131,8 +128,7 @@ const DriverStatsColumn = ({
   teamColor, 
   enabledMetrics, 
   availableMetrics,
-  opponentStats,
-  isDriver1
+  opponentStats
 }: {
   driver: any;
   stats: any;
@@ -141,7 +137,6 @@ const DriverStatsColumn = ({
   enabledMetrics: string[];
   availableMetrics: any;
   opponentStats: any;
-  isDriver1: boolean;
 }) => {
   if (!driver || !stats) return null;
 
@@ -266,7 +261,6 @@ const DriverStatsColumn = ({
                 icon={icon} 
                 teamColor={teamColor}
                 isWinner={isWinner}
-                metric={metric}
               />
             );
           })}
@@ -980,7 +974,6 @@ const CompareDriversPage = () => {
                     enabledMetrics={enabledMetricsArray}
                     availableMetrics={availableMetrics}
                     opponentStats={stats2}
-                    isDriver1={true}
                   />
 
                   {/* VS Divider */}
@@ -1000,7 +993,6 @@ const CompareDriversPage = () => {
                     enabledMetrics={enabledMetricsArray}
                     availableMetrics={availableMetrics}
                     opponentStats={stats1}
-                    isDriver1={false}
                   />
                 </Grid>
               </Box>
@@ -1022,12 +1014,12 @@ const CompareDriversPage = () => {
                     fontSize="lg" 
                     fontFamily="heading" 
                     fontWeight="bold" 
-                    color={score.d1 > score.d2 ? driver1TeamColor : driver2TeamColor}
+                    color={(score.d1 ?? 0) > (score.d2 ?? 0) ? driver1TeamColor : driver2TeamColor}
                   >
-                    {score.d1 > score.d2 ? driver1?.fullName : driver2?.fullName}
+                    {(score.d1 ?? 0) > (score.d2 ?? 0) ? driver1?.fullName : driver2?.fullName}
                   </Text>
                   <Text fontSize="xs" color="text-muted">
-                    {Math.abs(score.d1 - score.d2).toFixed(1)} point difference
+                    {Math.abs((score.d1 ?? 0) - (score.d2 ?? 0)).toFixed(1)} point difference
                   </Text>
                 </Box>
 
@@ -1037,14 +1029,14 @@ const CompareDriversPage = () => {
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color="text-primary">
                     {(() => {
                       const driver1Wins = enabledMetricsArray.filter(metric => {
-                        const val1 = stats1?.[metric] || 0;
-                        const val2 = stats2?.[metric] || 0;
+                        const val1 = (stats1 as any)?.[metric] || 0;
+                        const val2 = (stats2 as any)?.[metric] || 0;
                         return val1 > val2;
                       }).length;
                       
                       const driver2Wins = enabledMetricsArray.filter(metric => {
-                        const val1 = stats1?.[metric] || 0;
-                        const val2 = stats2?.[metric] || 0;
+                        const val1 = (stats1 as any)?.[metric] || 0;
+                        const val2 = (stats2 as any)?.[metric] || 0;
                         return val2 > val1;
                       }).length;
 
@@ -1070,8 +1062,8 @@ const CompareDriversPage = () => {
                     let biggestDiff = 0;
                     let biggestDiffMetric = '';
                     enabledMetricsArray.forEach(metric => {
-                      const val1 = stats1?.[metric] || 0;
-                      const val2 = stats2?.[metric] || 0;
+                      const val1 = (stats1 as any)?.[metric] || 0;
+                      const val2 = (stats2 as any)?.[metric] || 0;
                       const diff = Math.abs(val1 - val2);
                       if (diff > biggestDiff) {
                         biggestDiff = diff;
