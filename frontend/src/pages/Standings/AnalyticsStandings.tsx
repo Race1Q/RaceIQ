@@ -14,9 +14,13 @@ import { teamColors } from '../../lib/teamColors';
 import { buildApiUrl } from '../../lib/api';
 import StandingsSkeleton from './StandingsSkeleton';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
+import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
+import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
 import StandingsAnalysisCard from '../../components/StandingsAnalysisCard/StandingsAnalysisCard';
+
+type SeasonOption = SelectOption & { value: number };
 
 // Interfaces from the original Standings.tsx
 interface ProgressionEntry {
@@ -43,13 +47,34 @@ const AnalyticsStandings: React.FC = () => {
   const [constructorsProgression, setConstructorsProgression] = useState<ConstructorProgression[]>([]);
   const [driversProgression, setDriversProgression] = useState<DriverProgression[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSeason, setSelectedSeason] = useState<number>(2025);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<number>(26); // Default to 2025 season ID
+  const [seasonChanging, setSeasonChanging] = useState(false);
 
+  // Generate season options from 2025 → 1950 (same as other standings pages)
+  const seasonOptions: SeasonOption[] = useMemo(() => {
+    const options: SeasonOption[] = [];
+    for (let year = 2025; year >= 1950; year--) {
+      options.push({ value: year, label: year.toString() });
+    }
+    return options;
+  }, []);
+
+  // Set default season ID for 2025
+  useEffect(() => {
+    setSelectedSeasonId(26); // 2025 season ID
+  }, []);
+
+  // Fetch progression data for selected season
   useEffect(() => {
     const fetchProgressions = async () => {
       try {
+        setLoading(true);
+        setSeasonChanging(true);
+        
         const [constructorsRes, driversRes] = await Promise.all([
-          fetch(buildApiUrl(`/api/race-results/constructors/26/progression`)),
-          fetch(buildApiUrl(`/api/race-results/drivers/progression`)),
+          fetch(buildApiUrl(`/api/race-results/constructors/${selectedSeasonId}/progression`)),
+          fetch(buildApiUrl(`/api/race-results/drivers/${selectedSeasonId}/progression3`)),
         ]);
         if (!constructorsRes.ok || !driversRes.ok) throw new Error('Failed to fetch progressions');
 
@@ -59,16 +84,61 @@ const AnalyticsStandings: React.FC = () => {
         setConstructorsProgression(constructorsData);
         setDriversProgression(driversData);
         //console.log(constructorsData);
-        console.log(driversData);
+        //console.log(driversData);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
+        setSeasonChanging(false);
       }
     };
 
-    fetchProgressions();
-  }, []);
+    if (selectedSeasonId) {
+      fetchProgressions();
+    }
+  }, [selectedSeasonId]);
+
+  // Handle season change
+  const handleSeasonChange = async (newSeason: number) => {
+    setSeasonChanging(true);
+    setSelectedSeason(newSeason);
+    
+    // Map year to season ID (this is a simplified mapping - in production you might want to fetch this from API)
+    const seasonIdMapping: Record<number, number> = {
+      2025: 26,
+      2024: 25,
+      2023: 24,
+      2022: 23,
+      2021: 22,
+      2020: 21,
+      2019: 20,
+      2018: 19,
+      2017: 18,
+      2016: 17,
+      2015: 16,
+      2014: 15,
+      2013: 14,
+      2012: 13,
+      2011: 12,
+      2010: 11,
+      2009: 10,
+      2008: 9,
+      2007: 8,
+      2006: 7,
+      2005: 6,
+      2004: 5,
+      2003: 4,
+      2002: 3,
+      2001: 2,
+      2000: 1,
+    };
+    
+    const seasonId = seasonIdMapping[newSeason];
+    if (seasonId) {
+      setSelectedSeasonId(seasonId);
+    }
+    // The useEffect will handle the data fetching
+  };
 
   // Memoized chart data processing for better performance
   const constructorsChartData = useMemo(() => {
@@ -218,17 +288,35 @@ const AnalyticsStandings: React.FC = () => {
         subtitle="Points progression and championship trends"
       />
       <LayoutContainer>
-        <StandingsTabs active="analytics" />
+        <Flex 
+          mb={12} 
+          alignItems="flex-end" 
+          justifyContent="space-between" 
+          flexDirection={{ base: 'column', md: 'row' }} 
+          gap={4}
+        >
+          <StandingsTabs active="analytics" />
+          <Box maxW={{ base: 'full', md: '220px' }} w="full">
+            <SearchableSelect
+              label="Select Season"
+              options={seasonOptions}
+              value={seasonOptions.find(o => o.value === selectedSeason) || null}
+              onChange={(option) => handleSeasonChange(Number((option as SeasonOption).value))}
+              isClearable={false}
+              isLoading={loading || seasonChanging}
+            />
+          </Box>
+        </Flex>
 
         {loading ? (
           <StandingsSkeleton text="Loading Standings Analytics" />
         ) : (
-          <Flex gap={6} flexDirection="column" mt={4}>
+          <Flex gap={6} flexDirection="column" mt={8}>
             {/* Drivers Chart */}
             {driversProgression.length > 0 && (
               <Box h="400px" bg="gray.900" p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                  2025 Drivers Points Progression
+                  {selectedSeason} Drivers Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={driversChartData}>
@@ -268,7 +356,7 @@ const AnalyticsStandings: React.FC = () => {
             {constructorsProgression.length > 0 && (
               <Box h="400px" bg="gray.900" p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                  2025 Constructors Points Progression
+                  {selectedSeason} Constructors Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={constructorsChartData}>
@@ -305,7 +393,7 @@ const AnalyticsStandings: React.FC = () => {
             )}
 
             {/* AI Championship Analysis */}
-            <StandingsAnalysisCard season={2025} />
+            <StandingsAnalysisCard season={selectedSeason} />
           </Flex>
         )}
       </LayoutContainer>

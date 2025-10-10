@@ -435,81 +435,128 @@ async getDriversProgression(seasonId: number) {
     return [];
   }
 
-  // 3. Query race results progression for only those drivers
-  const progressionData = await this.dataSource.query(
-    `
-      SELECT 
-  d.id AS "driverId",
-  CONCAT(d.forename, ' ', d.surname) AS "driverName",
-  r.round,
-  r.name AS "raceName",
-  SUM(dr.points) OVER (PARTITION BY d.id ORDER BY r.round) AS "cumulativePoints",
-  dr.points AS "racePoints"
-FROM race_results dr
-JOIN drivers d ON d.id = dr.driver_id
-JOIN sessions s ON s.id = dr.session_id
-JOIN races r ON r.id = s.race_id
-WHERE d.id = ANY($1)
-  AND r.season_year = $2
-ORDER BY d.id, r.round;
+  // 3. Use Supabase approach but filter by season properly
+  const { data: raceResults, error: resultsError } = await this.supabaseService.client
+    .from('race_results')
+    .select('driver_id, points, session_id')
+    .in('driver_id', driverIds);
 
-    `,
-    [driverIds, seasonYear],
-  );
+  if (resultsError) throw new Error(resultsError.message);
+  if (!raceResults?.length) return [];
 
-  // 4. Group by driver
-  const grouped = progressionData.reduce((acc, row) => {
-    if (!acc[row.driverId]) {
-      acc[row.driverId] = {
-        driverId: row.driverId,
-        driverName: row.driverName,
-        progression: [],
-      };
-    }
-    acc[row.driverId].progression.push({
-      round: row.round,
-      raceName: row.raceName,
-      racePoints: row.racePoints,
-      cumulativePoints: row.cumulativePoints,
+  // 4. Fetch sessions for these race results
+  const sessionIds = raceResults.map(r => r.session_id);
+  const { data: sessions, error: sessionsError } = await this.supabaseService.client
+    .from('sessions')
+    .select('id, race_id')
+    .in('id', sessionIds);
+
+  if (sessionsError) throw new Error(sessionsError.message);
+
+  // 5. Fetch races in the specific season
+  const raceIds = sessions.map(s => s.race_id);
+  const { data: races, error: racesError } = await this.supabaseService.client
+    .from('races')
+    .select('id, season_id, round, name')
+    .in('id', raceIds)
+    .eq('season_id', seasonId);
+
+  if (racesError) throw new Error(racesError.message);
+
+  // 6. Map session -> race
+  const sessionToRace: Record<number, { round: number; name: string }> = {};
+  sessions.forEach(s => {
+    const race = races.find(r => r.id === s.race_id);
+    if (race) sessionToRace[s.id] = { round: race.round, name: race.name };
+  });
+
+  // 7. Aggregate points per driver per race
+  const driverProgression: Array<{
+    driverId: number;
+    driverName: string;
+    progression: { round: number; raceName: string; racePoints: number; cumulativePoints: number }[];
+  }> = [];
+
+  activeDrivers.forEach(d => {
+    const driverResults = raceResults.filter(r => r.driver_id === d.driverId);
+    const progression: { round: number; raceName: string; racePoints: number; cumulativePoints: number }[] = [];
+
+    driverResults.forEach(r => {
+      const raceInfo = sessionToRace[r.session_id];
+      if (!raceInfo) return;
+      let entry = progression.find(e => e.round === raceInfo.round);
+      if (!entry) {
+        entry = { round: raceInfo.round, raceName: raceInfo.name, racePoints: 0, cumulativePoints: 0 };
+        progression.push(entry);
+      }
+      entry.racePoints += Number(r.points || 0);
     });
-    return acc;
-  }, {} as Record<number, any>);
 
-  return Object.values(grouped);
+    // Compute cumulative points
+    progression.sort((a, b) => a.round - b.round);
+    let cumulative = 0;
+    progression.forEach(p => {
+      cumulative += p.racePoints;
+      p.cumulativePoints = cumulative;
+    });
+
+    driverProgression.push({
+      driverId: d.driverId,
+      driverName: d.driverFullName,
+      progression,
+    });
+  });
+
+  return driverProgression;
 }
 
-async getDriversPointsProgression3() {
-  // Step 1: Get the latest season
-  const { data: latestSeasonData, error: seasonError } = await this.supabaseService.client
-    .from('seasons')
-    .select('id, year')
-    .order('year', { ascending: false })
-    .limit(1)
-    .single();
+async getDriversPointsProgression3(seasonId?: number) {
+  let seasonData;
+  
+  if (seasonId) {
+    // Use the provided season ID
+    const { data: season, error: seasonError } = await this.supabaseService.client
+      .from('seasons')
+      .select('id, year')
+      .eq('id', seasonId)
+      .single();
 
-  if (seasonError || !latestSeasonData) throw new Error(seasonError?.message || 'Latest season not found');
+    if (seasonError || !season) throw new Error(seasonError?.message || `Season with ID ${seasonId} not found`);
+    seasonData = season;
+  } else {
+    // Get the latest season
+    const { data: latestSeasonData, error: seasonError } = await this.supabaseService.client
+      .from('seasons')
+      .select('id, year')
+      .order('year', { ascending: false })
+      .limit(1)
+      .single();
 
-  const latestSeasonId = latestSeasonData.id;
-  //console.log('Latest season:', latestSeasonData);
+    if (seasonError || !latestSeasonData) throw new Error(seasonError?.message || 'Latest season not found');
+    seasonData = latestSeasonData;
+  }
 
+  const seasonIdToUse = seasonData.id;
+  const seasonYear = seasonData.year;
+  //console.log('Using season:', seasonData);
 
-  // Step 2: Get all drivers with standings in the latest season
+  // Step 2: Get all drivers with standings in the specified season
   const { data: drivers, error: driversError } = await this.supabaseService.client
     .from('driver_standings_materialized')
     .select('driverId, driverFullName, constructorName')
-    .eq('seasonYear', latestSeasonData.year);
+    .eq('seasonYear', seasonYear);
 
   if (driversError || !drivers?.length) return [];
 
   const driverIds = drivers.map(d => d.driverId);
-  //console.log('Drivers in latest season:', drivers);
+  //console.log('Drivers in season:', drivers);
 
-// Step 3: Fetch race results for these drivers in the latest season ONLY
+// Step 3: Fetch race results for these drivers in the specified season ONLY
 const { data: raceResults, error: resultsError } = await this.supabaseService.client
   .from('race_results')
   .select('driver_id, points, session_id, sessions!inner(race_id, races!inner(season_id))')
   .in('driver_id', driverIds)
-  .eq('sessions.races.season_id', latestSeasonId); // Filter by season
+  .eq('sessions.races.season_id', seasonIdToUse); // Filter by season
 
 if (resultsError || !raceResults?.length) return [];
 //console.log('Race results fetched for drivers:', raceResults);
