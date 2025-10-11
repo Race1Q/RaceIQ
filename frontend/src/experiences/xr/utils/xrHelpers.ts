@@ -4,7 +4,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-export async function loadGLTF(url: string, dracoPath = "/draco/"): Promise<THREE.Group> {
+export async function loadGLTF(url: string, dracoPath = "/draco/gltf/"): Promise<THREE.Group> {
   const loader = new GLTFLoader();
   try {
     const draco = new DRACOLoader();

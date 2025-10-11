@@ -5,9 +5,15 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { loadGLTF, centerAndScaleTo } from "./utils/xrHelpers";
 
-type Props = { modelUrl?: string };
+type Props = { 
+  modelUrl?: string;
+  teamName?: string;
+};
 
-export default function F1CockpitXR({ modelUrl = "/assets/f1-2021-red-bull-rb16b/source/F1 2021 RedBull RB16b.glb" }: Props) {
+export default function F1CockpitXR({ 
+  modelUrl = "/assets/f1-2021-red-bull-rb16b/source/F1 2021 RedBull RB16b.glb",
+  teamName = "Red Bull"
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showHints, setShowHints] = useState(true);
@@ -15,7 +21,7 @@ export default function F1CockpitXR({ modelUrl = "/assets/f1-2021-red-bull-rb16b
   useEffect(() => {
     const container = containerRef.current!;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0b0b0c");
+    
 
     const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 100);
     camera.position.set(0, 1.1, 0.8); // approx; will be refined after model load
@@ -28,9 +34,25 @@ export default function F1CockpitXR({ modelUrl = "/assets/f1-2021-red-bull-rb16b
     renderer.xr.enabled = true;
     container.appendChild(renderer.domElement);
 
-    // Lighting & env
+    // Create gradient background (garage/showroom feel)
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+    const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+    gradient.addColorStop(0, '#000000');    // Pure black (top)
+    gradient.addColorStop(0.5, '#1a1a1a');  // Dark gray (middle)
+    gradient.addColorStop(1, '#2a2a2a');    // Lighter gray (bottom/floor)
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 2, 512);
+    
+    const bgTexture = new THREE.CanvasTexture(canvas);
+    bgTexture.colorSpace = THREE.SRGBColorSpace;
+    scene.background = bgTexture;
+    
+    // Simple environment for reflections (without background override)
     const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.08).texture;
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.02).texture;
     scene.add(new THREE.AmbientLight(0xffffff, 0.25));
     const hemi = new THREE.HemisphereLight(0xffffff, 0x111122, 0.5);
     scene.add(hemi);
@@ -243,7 +265,7 @@ export default function F1CockpitXR({ modelUrl = "/assets/f1-2021-red-bull-rb16b
             fontSize: "14px",
             fontFamily: "monospace"
           }}>
-            Loading RB16B Cockpit...
+            Loading {teamName} Cockpit...
           </p>
           <style>{`
             @keyframes spin {

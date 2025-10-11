@@ -457,8 +457,8 @@ const ConstructorDetails: React.FC = () => {
         <ConstructorInfoCard constructorId={constructor.id} season={latestSeasonYear} />
       </Box>
 
-      {/* 3D Cockpit Viewer - Available for select teams */}
-      {["Red Bull", "Mercedes", "Ferrari", "McLaren"].includes(constructor.name) && (
+      {/* 3D Cockpit Viewer - Available for all teams */}
+      {["Red Bull", "Mercedes", "Ferrari", "McLaren", "Aston Martin", "Alpine F1 Team", "Williams", "RB F1 Team", "Sauber", "Haas F1 Team"].includes(constructor.name) && (
         <Box mb={6}>
           <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
             <Heading as="h2" size="lg" fontFamily="heading" textTransform="uppercase">
@@ -476,7 +476,7 @@ const ConstructorDetails: React.FC = () => {
             borderColor="border-primary"
             boxShadow="0 4px 20px rgba(0,0,0,0.5)"
           >
-            <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} />
+            <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} teamName={constructor.name} />
           </Box>
         </Box>
       )}
