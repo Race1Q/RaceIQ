@@ -7,6 +7,7 @@ import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Headin
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
+import { getTeamCarModel } from '../../lib/teamCarModels';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
@@ -456,12 +457,12 @@ const ConstructorDetails: React.FC = () => {
         <ConstructorInfoCard constructorId={constructor.id} season={latestSeasonYear} />
       </Box>
 
-      {/* 3D Cockpit Viewer - Only for Red Bull Racing */}
-      {constructor.name === "Red Bull" && (
+      {/* 3D Cockpit Viewer - Available for select teams */}
+      {["Red Bull", "Mercedes", "Ferrari", "McLaren"].includes(constructor.name) && (
         <Box mb={6}>
           <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
             <Heading as="h2" size="lg" fontFamily="heading" textTransform="uppercase">
-              Explore the RB16B Cockpit
+              Explore the {constructor.name} Cockpit
             </Heading>
             <Text fontSize="sm" color="gray.500">
               Interactive 3D Model
@@ -475,7 +476,7 @@ const ConstructorDetails: React.FC = () => {
             borderColor="border-primary"
             boxShadow="0 4px 20px rgba(0,0,0,0.5)"
           >
-            <F1CockpitXR />
+            <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} />
           </Box>
         </Box>
       )}

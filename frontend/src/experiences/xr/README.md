@@ -61,7 +61,7 @@ If these objects aren't named in your model, the viewer will still work but may 
 ## Integration
 
 Currently integrated in:
-- **Red Bull Constructor Details Page** (`/constructors/:id`) - Shows the RB16B cockpit viewer when viewing Red Bull's team page
+- **Constructor Details Page** (`/constructors/:id`) - Shows the team's cockpit viewer for Red Bull, Mercedes, Ferrari, and McLaren
 
 ## Technical Details
 
@@ -129,17 +129,26 @@ const dir = new THREE.DirectionalLight(0xffffff, 0.6); // directional intensity
 
 To add cockpit viewers for other teams:
 
-1. Place the GLB model in `/public/assets/[team-folder]/`
-2. In the constructor details page, add a conditional:
+1. Place the GLB model in `/public/assets/f1-[year]-[team]-[model]/source/[model-name].glb`
+2. Add textures in `/public/assets/f1-[year]-[team]-[model]/textures/`
+3. Update the team car models mapping in `frontend/src/lib/teamCarModels.ts`:
 
 ```tsx
-{constructor.name === "Ferrari" && (
-  <Box mb={6}>
-    <Heading as="h2" size="lg" mb={4}>
-      Explore the SF-24 Cockpit
-    </Heading>
-    <F1CockpitXR modelUrl="/assets/ferrari-sf24/source/ferrari.glb" />
-  </Box>
+export const teamCarModels: { [key: string]: string } = {
+  "Red Bull": "/assets/f1-2021-red-bull-rb16b/source/F1 2021 RedBull RB16b.glb",
+  "Mercedes": "/assets/f1-2023-mercedes-w14/source/mercedes_amg_petronas__w14_2023.glb",
+  "Ferrari": "/assets/f1-2023-ferrari-sf23/source/F1 2023 Ferrari SF23 S2.glb",
+  "McLaren": "/assets/f1-2024-mclaren-mcl38/source/F1 2024 Mclaren MCL38.glb",
+  // Add your new team here
+  "Aston Martin": "/assets/f1-[year]-aston-martin-[model]/source/[model-name].glb",
+};
+```
+
+4. Add the team name to the conditional in `ConstructorsDetails.tsx`:
+
+```tsx
+{["Red Bull", "Mercedes", "Ferrari", "McLaren", "Aston Martin"].includes(constructor.name) && (
+  <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} />
 )}
 ```
 
@@ -179,7 +188,11 @@ Potential improvements:
 
 ## Credits
 
-- **Model**: Red Bull RB16B (2021)
+- **Models**: 
+  - Red Bull RB16B (2021)
+  - Mercedes W14 (2023)
+  - Ferrari SF23 (2023)
+  - McLaren MCL38 (2024)
 - **Three.js**: 3D rendering engine
 - **WebXR**: VR/AR API
 
