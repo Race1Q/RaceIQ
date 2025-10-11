@@ -7,11 +7,13 @@ import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Headin
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
+import { getTeamCarModel } from '../../lib/teamCarModels';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
 import type { Stat } from '../../types';
 import ConstructorInfoCard from '../../components/ConstructorInfoCard/ConstructorInfoCard';
+import F1CockpitXR from '../../experiences/xr/F1CockpitXR';
 import {
   LineChart,
   Line,
@@ -454,6 +456,30 @@ const ConstructorDetails: React.FC = () => {
       <Box mb={6}>
         <ConstructorInfoCard constructorId={constructor.id} season={latestSeasonYear} />
       </Box>
+
+      {/* 3D Cockpit Viewer - Available for all teams */}
+      {["Red Bull", "Mercedes", "Ferrari", "McLaren", "Aston Martin", "Alpine F1 Team", "Williams", "RB F1 Team", "Sauber", "Haas F1 Team"].includes(constructor.name) && (
+        <Box mb={6}>
+          <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
+            <Heading as="h2" size="lg" fontFamily="heading" textTransform="uppercase">
+              Explore the {constructor.name} Cockpit
+            </Heading>
+            <Text fontSize="sm" color="gray.500">
+              Interactive 3D Model
+            </Text>
+          </Flex>
+          <Box 
+            bg="gray.900" 
+            borderRadius="md" 
+            overflow="hidden"
+            border="1px solid"
+            borderColor="border-primary"
+            boxShadow="0 4px 20px rgba(0,0,0,0.5)"
+          >
+            <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} teamName={constructor.name} />
+          </Box>
+        </Box>
+      )}
       </Container>
     </Box>
   );
