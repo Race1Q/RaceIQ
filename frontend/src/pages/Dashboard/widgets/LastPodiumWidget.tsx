@@ -1,4 +1,4 @@
-import { Heading, Text, VStack, HStack, Box, Avatar, Flex } from '@chakra-ui/react';
+import { Heading, Text, VStack, HStack, Box, Avatar, Flex, useColorModeValue } from '@chakra-ui/react';
 import type { LastRacePodium } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import WidgetCard from './WidgetCard';
@@ -11,6 +11,10 @@ interface LastPodiumWidgetProps {
 
 function LastPodiumWidget({ data }: LastPodiumWidgetProps) {
   const { accentColorWithHash } = useThemeColor();
+  
+  // Use semantic tokens for winner text colors that work on team color backgrounds
+  const winnerTextColor = useColorModeValue('gray.900', 'white');
+  const winnerSecondaryColor = useColorModeValue('gray.700', 'whiteAlpha.800');
   
   if (!data) {
     return (
@@ -56,14 +60,14 @@ function LastPodiumWidget({ data }: LastPodiumWidgetProps) {
                 transition="all 0.2s ease-in-out"
               >
                 <Flex align="center" flex={1}>
-                  <Text w="2em" color={isWinner ? 'white' : '{accentColorWithHash}'} fontWeight="bold">{item.position}.</Text>
+                  <Text w="2em" color={isWinner ? winnerTextColor : accentColorWithHash} fontWeight="bold">{item.position}.</Text>
                   <Avatar size="sm" src={headshot} mr={3} />
                   <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold" color={isWinner ? 'white' : 'text-primary'}>{item.driverFullName}</Text>
-                    <Text fontSize="sm" color={isWinner ? 'whiteAlpha.800' : 'text-muted'}>{item.constructorName}</Text>
+                    <Text fontWeight="bold" color={isWinner ? winnerTextColor : 'text-primary'}>{item.driverFullName}</Text>
+                    <Text fontSize="sm" color={isWinner ? winnerSecondaryColor : 'text-muted'}>{item.constructorName}</Text>
                   </VStack>
                 </Flex>
-                <Text fontWeight="bold" color={isWinner ? 'white' : '{accentColorWithHash}'}>{getMedal(item.position)}</Text>
+                <Text fontWeight="bold" color={isWinner ? winnerTextColor : accentColorWithHash}>{getMedal(item.position)}</Text>
               </Flex>
             );
           })}

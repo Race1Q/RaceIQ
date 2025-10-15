@@ -132,7 +132,7 @@ const KeyInfoBarSkeleton = () => (
           gap={4}
         >
           {Array.from({ length: 5 }).map((_, i) => (
-            <Box key={i} p={4} bg="blackAlpha.100" borderRadius="md" border="1px solid" borderColor="whiteAlpha.200">
+            <Box key={i} p={4} bg="bg-surface" borderRadius="md" border="1px solid" borderColor="border-primary">
               <Flex align="center" gap={4}>
                 <SkeletonCircle size="48px" />
                 <Box flex="1">

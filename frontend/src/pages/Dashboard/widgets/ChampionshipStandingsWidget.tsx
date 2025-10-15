@@ -8,8 +8,9 @@ import { driverHeadshots } from '../../../lib/driverHeadshots';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; year?: number }) => {
-  // Fix: Use dark text for 1st position in light mode
-  const firstPlaceTextColor = useColorModeValue('#1a1a1a', 'white');
+  // Use semantic tokens for text colors
+  const firstPlaceTextColor = useColorModeValue('gray.900', 'white');
+  const leaderSecondaryColor = useColorModeValue('gray.700', 'whiteAlpha.800');
   const { accentColorWithHash } = useThemeColor();
   
   return (
@@ -53,14 +54,14 @@ const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; ye
                     </Text>
                     <Text 
                       fontSize={{ base: 'xs', md: 'sm' }} 
-                      color={isLeader ? 'whiteAlpha.800' : 'text-muted'}
+                      color={isLeader ? leaderSecondaryColor : 'text-muted'}
                       noOfLines={1}
                     >
                       {item.constructorName}
                     </Text>
                   </VStack>
                 </Flex>
-                {isLeader && <Icon as={Trophy} color="white" mr={3} />}
+                {isLeader && <Icon as={Trophy} color={firstPlaceTextColor} mr={3} />}
                 <Text 
                   fontWeight="bold" 
                   color={isLeader ? firstPlaceTextColor : 'brand.red'}

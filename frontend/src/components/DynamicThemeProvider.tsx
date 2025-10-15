@@ -1,6 +1,6 @@
 // frontend/src/components/DynamicThemeProvider.tsx
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { useThemeColor } from '../context/ThemeColorContext';
 import { createTheme } from '../styles/theme';
@@ -12,8 +12,8 @@ interface DynamicThemeProviderProps {
 export const DynamicThemeProvider: React.FC<DynamicThemeProviderProps> = ({ children }) => {
   const { accentColor } = useThemeColor();
   
-  // Create theme with the current accent color
-  const theme = createTheme(accentColor);
+  // Memoize theme to prevent unnecessary re-renders
+  const theme = useMemo(() => createTheme(accentColor), [accentColor]);
   
   return (
     <ChakraProvider theme={theme}>

@@ -37,7 +37,7 @@ export const useDriverSeasonProgression = (driverId?: string) => {
         });
 
         // Sort by round to ensure proper race order
-        const sortedData = data.sort((a, b) => a.round - b.round);
+        const sortedData = [...data].sort((a, b) => a.round - b.round);
         setProgressionData(sortedData);
 
       } catch (err) {

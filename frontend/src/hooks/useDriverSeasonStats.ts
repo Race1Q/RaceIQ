@@ -37,7 +37,7 @@ export const useDriverSeasonStats = (driverId?: string) => {
         });
 
         // Sort by year to ensure proper chronological order
-        const sortedData = data.sort((a, b) => a.year - b.year);
+        const sortedData = [...data].sort((a, b) => a.year - b.year);
         setSeasonStats(sortedData);
 
       } catch (err) {

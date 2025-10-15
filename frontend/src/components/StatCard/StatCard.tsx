@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, HStack, VStack, Text, Icon } from '@chakra-ui/react';
+import { Box, HStack, VStack, Text, Icon, useColorModeValue } from '@chakra-ui/react';
 
 interface StatCardProps {
   icon: React.ComponentType<any>;
@@ -14,18 +14,26 @@ const StatCard: React.FC<StatCardProps> = ({
   label, 
   color = '#dc2626' // Default brand red
 }) => {
+  // Theme-aware colors
+  const backgroundColor = useColorModeValue('white', 'blackAlpha.100');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const hoverBackground = useColorModeValue('gray.50', 'blackAlpha.200');
+  const hoverBorderColor = useColorModeValue('gray.300', 'whiteAlpha.300');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const labelColor = useColorModeValue('gray.600', 'gray.300');
+  
   return (
     <Box
       borderWidth="1px"
-      borderColor="whiteAlpha.200"
+      borderColor={borderColor}
       borderRadius="md"
       p={4}
-      bg="blackAlpha.100"
+      bg={backgroundColor}
       backdropFilter="blur(8px)"
       transition="all 0.2s ease"
       _hover={{
-        bg: 'blackAlpha.200',
-        borderColor: 'whiteAlpha.300',
+        bg: hoverBackground,
+        borderColor: hoverBorderColor,
         transform: 'translateY(-2px)'
       }}
     >
@@ -44,14 +52,14 @@ const StatCard: React.FC<StatCardProps> = ({
           <Text
             fontSize="2xl"
             fontWeight="bold"
-            color="white"
+            color={textColor}
             lineHeight={1}
           >
             {value}
           </Text>
           <Text
             fontSize="sm"
-            color="gray.300"
+            color={labelColor}
             textTransform="uppercase"
             letterSpacing="0.05em"
             fontWeight="500"

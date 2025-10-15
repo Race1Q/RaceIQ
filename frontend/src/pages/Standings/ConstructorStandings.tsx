@@ -136,7 +136,7 @@ const ConstructorStandings: React.FC = () => {
             {teamsToRender.flatMap(teamName => {
               const constructors = groupedConstructors[teamName];
               if (!constructors) return [];
-              return constructors
+              return [...constructors]
                 .sort((a, b) => a.position - b.position)
                 .map(standing => (
                     <ConstructorStandingCard

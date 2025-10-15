@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { useColorModeValue } from "@chakra-ui/react";
 import { loadGLTF, centerAndScaleTo } from "./utils/xrHelpers";
 
 type Props = { 
@@ -15,16 +16,44 @@ export default function F1CockpitXR({
   teamName = "Red Bull"
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showHints, setShowHints] = useState(true);
+  
+  // Theme-aware background colors
+  const topBgColor = useColorModeValue('#f8f9fa', '#000000');
+  const middleBgColor = useColorModeValue('#e9ecef', '#1a1a1a');
+  const bottomBgColor = useColorModeValue('#dee2e6', '#2a2a2a');
+
+  // Separate effect to update background when theme changes
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    
+    // Create new gradient with current theme colors
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+    const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+    gradient.addColorStop(0, topBgColor);
+    gradient.addColorStop(0.5, middleBgColor);
+    gradient.addColorStop(1, bottomBgColor);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 2, 512);
+    
+    const bgTexture = new THREE.CanvasTexture(canvas);
+    bgTexture.colorSpace = THREE.SRGBColorSpace;
+    sceneRef.current.background = bgTexture;
+  }, [topBgColor, middleBgColor, bottomBgColor]);
 
   useEffect(() => {
     const container = containerRef.current!;
     const scene = new THREE.Scene();
+    sceneRef.current = scene; // Store scene reference for theme updates
     
 
     const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 100);
-    camera.position.set(0, 1.1, 0.8); // approx; will be refined after model load
+    camera.position.set(2.5, 1.5, 3.5); // Initial position for full car view; will be refined after model load
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -34,21 +63,7 @@ export default function F1CockpitXR({
     renderer.xr.enabled = true;
     container.appendChild(renderer.domElement);
 
-    // Create gradient background (garage/showroom feel)
-    const canvas = document.createElement('canvas');
-    canvas.width = 2;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d')!;
-    const gradient = ctx.createLinearGradient(0, 0, 0, 512);
-    gradient.addColorStop(0, '#000000');    // Pure black (top)
-    gradient.addColorStop(0.5, '#1a1a1a');  // Dark gray (middle)
-    gradient.addColorStop(1, '#2a2a2a');    // Lighter gray (bottom/floor)
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 2, 512);
-    
-    const bgTexture = new THREE.CanvasTexture(canvas);
-    bgTexture.colorSpace = THREE.SRGBColorSpace;
-    scene.background = bgTexture;
+    // Initial background will be set by the theme effect
     
     // Simple environment for reflections (without background override)
     const pmrem = new THREE.PMREMGenerator(renderer);
@@ -85,15 +100,15 @@ export default function F1CockpitXR({
         const bounds = centerAndScaleTo(car, 5.0); // normalize size
         world.add(car);
 
-        // Position camera at driver's perspective
+        // Position camera for a good overview of the entire car
         const c = new THREE.Vector3();
         bounds.getCenter(c);
-        // Position camera slightly behind and above center for good cockpit view
-        camera.position.set(c.x - 0.2, c.y + 0.5, c.z + 1.2);
-        camera.lookAt(c.x, c.y + 0.3, c.z - 0.5);
+        // Pull camera back and up for full car view
+        camera.position.set(c.x + 2.5, c.y + 1.5, c.z + 3.5);
+        camera.lookAt(c.x, c.y, c.z);
         
-        // Update controls target
-        controls.target.copy(new THREE.Vector3(c.x, c.y + 0.3, c.z - 0.5));
+        // Update controls target to center of car
+        controls.target.copy(new THREE.Vector3(c.x, c.y, c.z));
         controls.update();
         
         setIsLoading(false);
@@ -141,9 +156,9 @@ export default function F1CockpitXR({
       resetBtn.style.borderColor = "#3a3a3a";
     };
     resetBtn.onclick = () => {
-      // Reset camera to initial position
-      camera.position.set(-0.2, 0.5, 1.2);
-      controls.target.set(0, 0.3, -0.5);
+      // Reset camera to initial position (full car view)
+      camera.position.set(2.5, 1.5, 3.5);
+      controls.target.set(0, 0, 0);
       controls.update();
     };
     
@@ -228,6 +243,7 @@ export default function F1CockpitXR({
       if (container.contains(controlsUI)) {
         container.removeChild(controlsUI);
       }
+      sceneRef.current = null; // Clear scene reference on cleanup
     };
   }, [modelUrl]);
 

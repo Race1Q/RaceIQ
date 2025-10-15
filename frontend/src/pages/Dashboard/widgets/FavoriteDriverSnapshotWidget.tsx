@@ -85,7 +85,7 @@ function FavoriteDriverSnapshotWidget() {
               w="60px"
               h="60px"
               borderRadius="full"
-              bg="whiteAlpha.100"
+              bg="bg-subtle"
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -97,7 +97,7 @@ function FavoriteDriverSnapshotWidget() {
               <Text color="text-muted" fontSize="sm" textAlign="center">
                 No favorite driver set
               </Text>
-              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
+              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor={accentColorWithHash} color={accentColorWithHash} _hover={{ bg: accentColorWithHash, color: 'text-on-accent' }}>
                 Select Driver
               </Button>
             </VStack>
@@ -174,8 +174,8 @@ function FavoriteDriverSnapshotWidget() {
               </Text>
             </VStack>
 
-            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
-              Select Driver
+            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor={accentColorWithHash} color={accentColorWithHash} _hover={{ bg: accentColorWithHash, color: 'text-on-accent' }}>
+              Change Driver
             </Button>
           </VStack>
         </HStack>
@@ -193,12 +193,12 @@ function FavoriteDriverSnapshotWidget() {
           <Box
             w="full"
             h="4px"
-            bg="whiteAlpha.200"
+            bg="bg-subtle"
             borderRadius="full"
             overflow="hidden"
           >
             <Box
-              w="75%"
+              w={position ? `${Math.max(10, 100 - (position - 1) * 4)}%` : '0%'}
               h="full"
               bg={teamColorHex}
               borderRadius="full"

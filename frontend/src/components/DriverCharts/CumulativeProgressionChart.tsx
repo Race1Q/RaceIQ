@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text } from '@chakra-ui/react';
+import { Box, Text, useColorModeValue } from '@chakra-ui/react';
 import {
   LineChart,
   Line,
@@ -37,15 +37,25 @@ const CumulativeProgressionChart: React.FC<CumulativeProgressionChartProps> = ({
     cumulative: item.cumulative_points,
   }));
 
+  // Theme-aware colors
+  const backgroundColor = useColorModeValue('white', 'gray.800');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const gridColor = useColorModeValue('#E2E8F0', '#4A5568');
+  const axisColor = useColorModeValue('gray.800', 'white');
+  const borderColor = useColorModeValue('#E2E8F0', '#4A5568');
+  const tooltipBg = useColorModeValue('white', 'rgba(0, 0, 0, 0.8)');
+  const tooltipBorder = useColorModeValue('#E2E8F0', '#333');
+  const tooltipText = useColorModeValue('gray.800', 'white');
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <Box
-          bg="rgba(0, 0, 0, 0.8)"
-          border="1px solid #333"
+          bg={tooltipBg}
+          border={`1px solid ${tooltipBorder}`}
           borderRadius="6px"
           p={3}
-          color="white"
+          color={tooltipText}
         >
           <Text fontWeight="bold">Round {label}</Text>
           <Text>{payload[0].payload.race}</Text>
@@ -58,15 +68,22 @@ const CumulativeProgressionChart: React.FC<CumulativeProgressionChartProps> = ({
   };
 
   return (
-    <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md">
-      <Text fontSize="lg" fontWeight="bold" mb={2}>Cumulative Points Progression ({season})</Text>
+    <Box w="100%" h="400px" bg={backgroundColor} p={4} borderRadius="md" border="1px solid" borderColor={borderColor}>
+      <Text fontSize="lg" fontWeight="bold" mb={2} color={textColor}>Cumulative Points Progression ({season})</Text>
       <ResponsiveContainer width="100%" height="90%">
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-          <XAxis dataKey="round" stroke="white" />
-          <YAxis stroke="white" />
-          <Tooltip />
-          <Line type="monotone" dataKey="cumulative" stroke={teamColor} strokeWidth={3} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+          <XAxis dataKey="round" stroke={axisColor} />
+          <YAxis stroke={axisColor} />
+          <Tooltip content={<CustomTooltip />} />
+          <Line 
+            type="monotone" 
+            dataKey="cumulative" 
+            stroke={teamColor} 
+            strokeWidth={3}
+            dot={{ fill: teamColor, strokeWidth: 2, r: 4, stroke: teamColor }}
+            activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2, fill: teamColor }}
+          />
         </LineChart>
       </ResponsiveContainer>
     </Box>

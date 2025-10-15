@@ -86,7 +86,7 @@ const DriverStandingsPage: React.FC = () => {
             gap={{ base: 2, md: 3 }}
             pb={{ base: 4, md: 0 }} // Extra padding on mobile for better scroll
           >
-            {standings
+            {[...standings]
               .sort((a, b) => a.position - b.position)
               .map(driver => (
                 <DriverStandingCard

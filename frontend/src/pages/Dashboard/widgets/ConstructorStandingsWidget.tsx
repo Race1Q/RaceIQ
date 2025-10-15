@@ -8,8 +8,8 @@ import TeamLogo from '../../../components/TeamLogo/TeamLogo';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandingsItem[] | undefined; year?: number }) => {
-  // Fix: Use dark text for 1st position in light mode
-  const firstPlaceTextColor = useColorModeValue('#1a1a1a', 'white');
+  // Use semantic tokens for text colors
+  const firstPlaceTextColor = useColorModeValue('gray.900', 'white');
   const { accentColorWithHash } = useThemeColor();
   
   return (
@@ -57,7 +57,7 @@ const ConstructorStandingsWidget = ({ data, year }: { data: ConstructorStandings
                   </Box>
                   <Text fontWeight="bold" color={isLeader ? firstPlaceTextColor : 'text-primary'}>{item.constructorName}</Text>
                 </Flex>
-                {isLeader && <Icon as={Trophy} color="white" mr={3} />}
+                {isLeader && <Icon as={Trophy} color={firstPlaceTextColor} mr={3} />}
                 <Text fontWeight="bold" color={isLeader ? firstPlaceTextColor : 'brand.red'}>{item.points} pts</Text>
               </Flex>
             );

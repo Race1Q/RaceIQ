@@ -4,12 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Flex, IconButton, Text, VStack, HStack, Spinner, Container, Alert, AlertIcon,
   Tabs, TabList, TabPanels, Tab, TabPanel, SimpleGrid,
-  Thead, Tbody, Tr, Th, Td, Button, Heading,
+  Thead, Tbody, Tr, Th, Td, Button, Heading, useColorModeValue,
 } from '@chakra-ui/react';
 import { useThemeColor } from '../../context/ThemeColorContext';
 import ResponsiveTable from '../../components/layout/ResponsiveTable';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, RotateCcw, CornerUpRight, Zap, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, MapPin, RotateCcw, CornerUpRight, Zap, TrendingUp, TrendingDown, Trophy } from 'lucide-react';
 import type { Race } from '../../types/races';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
@@ -227,6 +227,19 @@ const RaceDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { accentColorWithHash, accentColorRgba } = useThemeColor();
 
+  // Theme-aware colors - matching other pages for consistency
+  const primaryBg = useColorModeValue('white', '#0a0a0a');
+  const primaryTextColor = useColorModeValue('gray.800', 'white');
+  const surfaceBg = useColorModeValue('gray.50', '#0f0f0f');
+  const elevatedBg = useColorModeValue('white', '#1a1a1a');
+  const borderPrimary = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const borderSubtle = useColorModeValue('gray.100', 'whiteAlpha.100');
+  const secondaryTextColor = useColorModeValue('gray.600', 'gray.300');
+  const headerGradient = useColorModeValue(
+    'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+    'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)'
+  );
+
   const [race, setRace] = useState<Race | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -355,7 +368,7 @@ const RaceDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box bg="bg-primary" minH="100vh">
+      <Box bg={primaryBg} minH="100vh">
         <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
           <RaceDetailSkeleton />
         </Container>
@@ -365,7 +378,7 @@ const RaceDetailPage: React.FC = () => {
 
   if (error) {
     return (
-      <Box bg="bg-primary" minH="100vh">
+      <Box bg={primaryBg} minH="100vh">
         <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
           <Alert status="error"><AlertIcon />{error}</Alert>
         </Container>
@@ -375,10 +388,10 @@ const RaceDetailPage: React.FC = () => {
 
   if (!race) {
     return (
-      <Box bg="bg-primary" minH="100vh">
+      <Box bg={primaryBg} minH="100vh">
         <Container maxW="1400px" py="xl" px={{ base: 'md', lg: 'lg' }}>
           <Flex direction="column" align="center" justify="center" minH="50vh" gap={4}>
-            <Text fontSize="xl" color="text-primary">Race not found</Text>
+            <Text fontSize="xl" color={primaryTextColor}>Race not found</Text>
             <IconButton aria-label="Go back" icon={<ArrowLeft size={18} />} onClick={() => navigate('/races')} />
           </Flex>
         </Container>
@@ -390,15 +403,15 @@ const RaceDetailPage: React.FC = () => {
   const circuitBackground = getCircuitBackground(race.circuit_id) || getDefaultCircuitBackground();
 
   return (
-    <Box bg="bg-primary" color="text-primary" minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+    <Box bg={primaryBg} color={primaryTextColor} minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
       {/* Top Utility Bar */}
-      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary">
+      <Box bg={surfaceBg} borderBottom="1px solid" borderColor={borderPrimary}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
           <Button
             onClick={() => navigate('/races')}
             size={{ base: 'sm', md: 'md' }}
             variant="outline"
-            borderColor="border-primary"
+            borderColor={borderPrimary}
           >
             Back to Races
           </Button>
@@ -417,7 +430,7 @@ const RaceDetailPage: React.FC = () => {
         <Box
           position="absolute"
           inset={0}
-          bg="linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)"
+          bg={headerGradient}
           _before={{
             content: '""',
             position: 'absolute',
@@ -433,7 +446,10 @@ const RaceDetailPage: React.FC = () => {
             content: '""',
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)',
+            background: useColorModeValue(
+              'linear-gradient(to left, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+              'linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+            ),
             zIndex: 2,
           }}
         />
@@ -455,7 +471,7 @@ const RaceDetailPage: React.FC = () => {
               gap={3}
               flex="1"
             >
-              <Heading as="h1" lineHeight={1} color="white" textAlign={{ base: 'center', md: 'left' }}>
+              <Heading as="h1" lineHeight={1} color={primaryTextColor} textAlign={{ base: 'center', md: 'left' }}>
                 <Text
                   fontFamily="heading"
                   textTransform="uppercase"
@@ -471,15 +487,15 @@ const RaceDetailPage: React.FC = () => {
               {/* Date/Round Info */}
               <Box
                 display="inline-block"
-                bg="blackAlpha.300"
+                bg={useColorModeValue('blackAlpha.100', 'blackAlpha.300')}
                 border="1px solid"
-                borderColor="whiteAlpha.200"
+                borderColor={useColorModeValue('gray.300', 'whiteAlpha.200')}
                 borderRadius="full"
                 px={4}
                 py={2}
                 backdropFilter="blur(8px)"
               >
-                <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }} fontWeight="500">
+                <Text color={useColorModeValue('gray.700', 'gray.200')} fontSize={{ base: 'sm', md: 'md' }} fontWeight="500">
                   Round {race.round} • {new Date(race.date).toLocaleDateString()}
                 </Text>
               </Box>
@@ -528,7 +544,7 @@ const RaceDetailPage: React.FC = () => {
             <Alert status="info" variant="left-accent" borderRadius="md" mb={6}>
               <AlertIcon />
               <Text fontFamily="heading" fontWeight="600" mr={2}>Race not started yet.</Text>
-              <Text color="text-secondary">
+              <Text color={secondaryTextColor}>
                 This event is still to happen. Detailed results, laps, and pit stops will appear once the race concludes.
               </Text>
             </Alert>
@@ -537,10 +553,10 @@ const RaceDetailPage: React.FC = () => {
 
         {/* 3D Track Visualization */}
         <MotionBox
-          bg="bg-elevated"
+          bg={elevatedBg}
           borderRadius="lg"
           border="1px solid"
-          borderColor="border-subtle"
+          borderColor={borderSubtle}
           mb={8}
           overflow="hidden"
           initial={{ opacity: 0, y: 20 }}
@@ -549,7 +565,7 @@ const RaceDetailPage: React.FC = () => {
         >
           <Box
             h={{ base: '300px', md: '400px' }}
-            bg="#0b0b0b"
+            bg={useColorModeValue('gray.100', '#0b0b0b')}
             position="relative"
             // Make interactivity obvious via cursor and quick hint
             cursor={isDragging3D ? 'grabbing' : 'grab'}
@@ -586,15 +602,18 @@ const RaceDetailPage: React.FC = () => {
                 bottom={{ base: 2, md: 3 }}
                 left="50%"
                 transform="translateX(-50%)"
-                bg="blackAlpha.700"
-                color="white"
+                bg={useColorModeValue('blackAlpha.300', 'blackAlpha.700')}
+                color={useColorModeValue('gray.800', 'white')}
                 fontSize={{ base: 'xs', md: 'sm' }}
                 px={{ base: 2.5, md: 3.5 }}
                 py={{ base: 1.5, md: 2 }}
                 borderRadius="full"
                 border="1px solid"
-                borderColor="whiteAlpha.300"
-                boxShadow="0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06) inset"
+                borderColor={useColorModeValue('gray.300', 'whiteAlpha.300')}
+                boxShadow={useColorModeValue(
+                  '0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.06) inset',
+                  '0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06) inset'
+                )}
                 pointerEvents="none"
               >
                 Drag to rotate • Scroll to zoom • Right-click to pan
@@ -608,9 +627,9 @@ const RaceDetailPage: React.FC = () => {
         <Tabs colorScheme="red" variant="unstyled" mb={{ base: 4, md: 8 }}>
           <Box overflowX="auto" pb={2}>
             <TabList
-              bg="bg-surface"
+              bg={surfaceBg}
               border="1px solid"
-              borderColor="border-primary"
+              borderColor={borderPrimary}
               borderRadius="full"
               p="6px"
               w="fit-content"
@@ -622,7 +641,7 @@ const RaceDetailPage: React.FC = () => {
               h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
-              color="text-secondary"
+              color={secondaryTextColor}
               fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
@@ -641,7 +660,7 @@ const RaceDetailPage: React.FC = () => {
               h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
-              color="text-secondary"
+              color={secondaryTextColor}
               fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
@@ -660,7 +679,7 @@ const RaceDetailPage: React.FC = () => {
               h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
-              color="text-secondary"
+              color={secondaryTextColor}
               fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
@@ -680,7 +699,7 @@ const RaceDetailPage: React.FC = () => {
               h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
-              color="text-secondary"
+              color={secondaryTextColor}
               fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
@@ -700,7 +719,7 @@ const RaceDetailPage: React.FC = () => {
               h={{ base: "32px", md: "44px" }}
               fontWeight={600}
               fontFamily="heading"
-              color="text-secondary"
+              color={secondaryTextColor}
               fontSize={{ base: "xs", md: "md" }}
               _hover={{ color: "text-primary" }}
               _selected={{
@@ -719,7 +738,7 @@ const RaceDetailPage: React.FC = () => {
               h="44px"
               fontWeight={600}
               fontFamily="heading"
-              color="text-secondary"
+              color={secondaryTextColor}
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
@@ -736,7 +755,7 @@ const RaceDetailPage: React.FC = () => {
               h="44px"
               fontWeight={600}
               fontFamily="heading"
-              color="text-secondary"
+              color={secondaryTextColor}
               _hover={{ color: "text-primary" }}
               _selected={{
                 color: "text-on-accent",
@@ -755,16 +774,16 @@ const RaceDetailPage: React.FC = () => {
             {/* SUMMARY */}
             <TabPanel p={{ base: 2, md: 4 }}>
               <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
-                <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="text-primary">Summary</Text>
+                <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color={primaryTextColor}>Summary</Text>
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 3, md: 4 }}>
                   {/* Full-width Podium */}
                   <Box 
                     p={{ base: 3, md: 4 }} 
                     border="1px solid" 
-                    borderColor="border-subtle" 
+                    borderColor={borderSubtle} 
                     borderRadius="lg" 
-                    bg="bg-elevated" 
+                    bg={elevatedBg} 
                     gridColumn={{ md: 'span 2' }}
                   >
                     <Text fontWeight="bold" mb={{ base: 3, md: 4 }} fontSize={{ base: 'md', md: 'lg' }}>Podium</Text>
@@ -778,7 +797,7 @@ const RaceDetailPage: React.FC = () => {
                   </Box>
 
                   {/* Fastest Lap Widget */}
-                  <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
+                  <Box border="1px solid" borderColor={borderSubtle} borderRadius="lg" bg={elevatedBg}>
                     {summaryLoading ? (
                       <Box p={{ base: 3, md: 4 }}><Spinner size="md" /></Box>
                     ) : summaryError ? (
@@ -789,7 +808,7 @@ const RaceDetailPage: React.FC = () => {
                   </Box>
 
                   {/* Events Widget */}
-                  <Box border="1px solid" borderColor="border-subtle" borderRadius="lg" bg="bg-elevated">
+                  <Box border="1px solid" borderColor={borderSubtle} borderRadius="lg" bg={elevatedBg}>
                     {summaryLoading ? (
                       <Box p={{ base: 3, md: 4 }}><Spinner size="md" /></Box>
                     ) : summaryError ? (
@@ -810,7 +829,7 @@ const RaceDetailPage: React.FC = () => {
             <TabPanel>
               <VStack align="stretch" spacing={4}>
                 <HStack justify="space-between" wrap="wrap" gap={3}>
-                  <Text fontSize="xl" fontWeight="bold" color="text-primary">Race Results</Text>
+                  <Text fontSize="xl" fontWeight="bold" color={primaryTextColor}>Race Results</Text>
                   <HStack wrap="wrap" gap={2}>
                     <Box
                       as="button"
@@ -818,11 +837,11 @@ const RaceDetailPage: React.FC = () => {
                       py={1}
                       borderRadius="md"
                       borderWidth={2}
-                      borderColor={driverFilter.length === 0 ? accentColorWithHash : 'border-subtle'}
+                      borderColor={driverFilter.length === 0 ? accentColorWithHash : borderSubtle}
                       boxShadow={driverFilter.length === 0 ? `0 0 0 2px ${accentColorWithHash}` : undefined}
-                      bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                      bg={driverFilter.length === 0 ? elevatedBg : surfaceBg}
                       fontWeight="bold"
-                      color={driverFilter.length === 0 ? accentColorWithHash : 'text-primary'}
+                      color={driverFilter.length === 0 ? accentColorWithHash : primaryTextColor}
                       onClick={() => setDriverFilter([])}
                       transition="all 0.2s"
                     >
@@ -841,11 +860,11 @@ const RaceDetailPage: React.FC = () => {
                           py={1}
                           borderRadius="md"
                           borderWidth={2}
-                          borderColor={selected ? accentColorWithHash : 'border-subtle'}
+                          borderColor={selected ? accentColorWithHash : borderSubtle}
                           boxShadow={selected ? `0 0 8px 2px ${accentColorWithHash}` : undefined}
-                          bg={selected ? 'bg-elevated' : 'bg-surface'}
+                          bg={selected ? elevatedBg : surfaceBg}
                           fontWeight="bold"
-                          color={selected ? accentColorWithHash : 'text-primary'}
+                          color={selected ? accentColorWithHash : primaryTextColor}
                           cursor="pointer"
                           m={1}
                           transition="all 0.2s"
@@ -886,7 +905,7 @@ const RaceDetailPage: React.FC = () => {
             <TabPanel p={{ base: 2, md: 4 }}>
               <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
                 <VStack align="stretch" spacing={4}>
-                  <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="text-primary">Qualifying</Text>
+                  <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color={primaryTextColor}>Qualifying</Text>
                   
                   {/* Phase filter */}
                   <Box>
@@ -902,11 +921,11 @@ const RaceDetailPage: React.FC = () => {
                             px={3} py={1}
                             borderRadius="md"
                             borderWidth={2}
-                            borderColor={selected ? accentColorWithHash : 'border-subtle'}
+                            borderColor={selected ? accentColorWithHash : borderSubtle}
                             boxShadow={selected ? `0 0 8px 2px ${accentColorWithHash}` : undefined}
-                            bg={selected ? 'bg-elevated' : 'bg-surface'}
+                            bg={selected ? elevatedBg : surfaceBg}
                             fontWeight="bold"
-                            color={selected ? accentColorWithHash : 'text-primary'}
+                            color={selected ? accentColorWithHash : primaryTextColor}
                             cursor="pointer"
                             m={1}
                             transition="all 0.2s"
@@ -928,11 +947,11 @@ const RaceDetailPage: React.FC = () => {
                         px={3} py={1}
                         borderRadius="md"
                         borderWidth={2}
-                        borderColor={driverFilter.length === 0 ? accentColorWithHash : 'border-subtle'}
+                        borderColor={driverFilter.length === 0 ? accentColorWithHash : borderSubtle}
                         boxShadow={driverFilter.length === 0 ? `0 0 0 2px ${accentColorWithHash}` : undefined}
-                        bg={driverFilter.length === 0 ? 'bg-elevated' : 'bg-surface'}
+                        bg={driverFilter.length === 0 ? elevatedBg : surfaceBg}
                         fontWeight="bold"
-                        color={driverFilter.length === 0 ? accentColorWithHash : 'text-primary'}
+                        color={driverFilter.length === 0 ? accentColorWithHash : primaryTextColor}
                         onClick={() => setDriverFilter([])}
                         transition="all 0.2s"
                       >
@@ -950,11 +969,11 @@ const RaceDetailPage: React.FC = () => {
                             px={3} py={1}
                             borderRadius="md"
                             borderWidth={2}
-                            borderColor={selected ? accentColorWithHash : 'border-subtle'}
+                            borderColor={selected ? accentColorWithHash : borderSubtle}
                             boxShadow={selected ? `0 0 8px 2px ${accentColorWithHash}` : undefined}
-                            bg={selected ? 'bg-elevated' : 'bg-surface'}
+                            bg={selected ? elevatedBg : surfaceBg}
                             fontWeight="bold"
-                            color={selected ? accentColorWithHash : 'text-primary'}
+                            color={selected ? accentColorWithHash : primaryTextColor}
                             cursor="pointer"
                             m={1}
                             transition="all 0.2s"
@@ -1033,7 +1052,7 @@ const RaceDetailPage: React.FC = () => {
 {/* QUALI → RACE (Enhanced Interactive SVG) */}
 <TabPanel p={{ base: 2, md: 4 }}>
   <VStack align="stretch" spacing={{ base: 3, md: 4 }}>
-    <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="text-primary">Grid to Finish</Text>
+    <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color={primaryTextColor}>Grid to Finish</Text>
     <Text fontSize="sm" color="gray.400" mb={2}>
       Debug: Hovered driver = {hoveredDriver || 'None'}
     </Text>
@@ -1078,6 +1097,53 @@ const RaceDetailPage: React.FC = () => {
       const biggestLoser = positionChanges.reduce((min, curr) => 
         curr.change < min.change ? curr : min, positionChanges[0] || { change: 0, driver: '', gridPos: 0, finishPos: 0 });
       
+      // Calculate teammate battles - find biggest gap between teammates
+      const teammateBattles = new Map<string, Array<{
+        driver: string;
+        gridPos: number;
+        finishPos: number;
+        constructor_name?: string;
+        driver_id?: number | string;
+      }>>();
+
+      // Group drivers by constructor
+      leftOrdered.forEach((r) => {
+        const constructor = r.constructor_name || 'Unknown';
+        if (!teammateBattles.has(constructor)) {
+          teammateBattles.set(constructor, []);
+        }
+        teammateBattles.get(constructor)!.push({
+          driver: r.driver_name ?? r.driver_code ?? String(r.driver_id),
+          gridPos: r.grid ?? 99,
+          finishPos: r.position ?? 99,
+          constructor_name: r.constructor_name,
+          driver_id: r.driver_id
+        });
+      });
+
+      // Find the biggest teammate gap
+      let biggestTeamBattle = { driver: '', gap: 0, teammate: '', constructor: '' };
+      
+      teammateBattles.forEach((drivers, constructor) => {
+        if (drivers.length >= 2) {
+          // Sort by finish position (lower is better)
+          const sorted = drivers.sort((a, b) => a.finishPos - b.finishPos);
+          const winner = sorted[0];
+          const loser = sorted[sorted.length - 1];
+          const gap = loser.finishPos - winner.finishPos;
+          
+          if (gap > biggestTeamBattle.gap) {
+            biggestTeamBattle = {
+              driver: winner.driver,
+              gap: gap,
+              teammate: loser.driver,
+              constructor: constructor
+            };
+          }
+        }
+      });
+
+      // Fallback to hard charger if no teammate battles found
       const hardCharger = positionChanges
         .filter(p => p.gridPos >= 10) // Started from 10th or lower
         .reduce((max, curr) => curr.change > max.change ? curr : max, 
@@ -1100,9 +1166,11 @@ const RaceDetailPage: React.FC = () => {
               color="#EF4444"
             />
             <StatCard
-              icon={Zap}
-              value={`${hardCharger.driver} (P${hardCharger.gridPos}→P${hardCharger.finishPos})`}
-              label="Hard Charger"
+              icon={biggestTeamBattle.gap > 0 ? Trophy : Zap}
+              value={biggestTeamBattle.gap > 0 
+                ? `${biggestTeamBattle.driver} (+${biggestTeamBattle.gap} positions)` 
+                : `${hardCharger.driver} (P${hardCharger.gridPos}→P${hardCharger.finishPos})`}
+              label={biggestTeamBattle.gap > 0 ? "Team Battle Winner" : "Hard Charger"}
               color="#F59E0B"
             />
           </SimpleGrid>
@@ -1110,9 +1178,9 @@ const RaceDetailPage: React.FC = () => {
           <Box
             overflow="hidden"
             border="1px solid"
-            borderColor="border-subtle"
+            borderColor={borderSubtle}
             borderRadius="lg"
-            bg="bg-elevated"
+            bg={elevatedBg}
             p={{ base: 1, md: 3 }}
             minH={{ base: '500px', md: '400px' }}
             w="full"
@@ -1319,8 +1387,8 @@ const RaceDetailPage: React.FC = () => {
                         position="absolute"
                         top="10px"
                         right="10px"
-                        bg="blackAlpha.900"
-                        color="white"
+                        bg={useColorModeValue('blackAlpha.200', 'blackAlpha.900')}
+                        color={useColorModeValue('gray.800', 'white')}
                         p={3}
                         borderRadius="md"
                         border="1px solid"
@@ -1333,7 +1401,7 @@ const RaceDetailPage: React.FC = () => {
                         <Text fontWeight="bold" fontSize="lg" mb={1}>
                           {driver.driverLabel}
                         </Text>
-                        <Text fontSize="sm" color="gray.200">
+                        <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.200')}>
                           P{driver.gridPos} → P{driver.finishPos} 
                           {driver.change > 0 ? ` (+${driver.change})` : driver.change < 0 ? ` (${driver.change})` : ' (No change)'}
                         </Text>
@@ -1375,12 +1443,18 @@ const RaceDetailPage: React.FC = () => {
 };
 
 
-const RaceDetailPageLayout: React.FC = () => (
-  <Box minH="100vh" display="flex" flexDirection="column" bg="bg-primary" color="text-primary">
-    <Box flex="1" overflow="hidden">
-      <RaceDetailPage />
+const RaceDetailPageLayout: React.FC = () => {
+  // Theme-aware colors for layout - matching other pages for consistency
+  const primaryBg = useColorModeValue('white', '#0a0a0a');
+  const primaryTextColor = useColorModeValue('gray.800', 'white');
+
+  return (
+    <Box minH="100vh" display="flex" flexDirection="column" bg={primaryBg} color={primaryTextColor}>
+      <Box flex="1" overflow="hidden">
+        <RaceDetailPage />
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 export default RaceDetailPageLayout;

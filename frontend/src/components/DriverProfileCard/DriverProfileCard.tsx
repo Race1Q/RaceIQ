@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Box, VStack, Heading, Text, Image, Flex } from '@chakra-ui/react';
+import { Box, VStack, Heading, Text, Image, Flex, useColorModeValue } from '@chakra-ui/react';
 import ReactCountryFlag from 'react-country-flag';
 import userIcon from '../../assets/UserIcon.png';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
@@ -29,6 +29,11 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
 
   const countryCode = countryCodeMap[driver.nationality] || driver.nationality;
   const isNumberAvailable = driver.number && driver.number !== 'N/A';
+
+  // Theme-aware colors for text on team color backgrounds
+  const textColor = useColorModeValue('gray.900', 'white');
+  const textShadow = useColorModeValue('0 1px 4px rgba(255,255,255,0.3)', '0 1px 4px rgba(0,0,0,0.5)');
+  const hoverTextShadow = useColorModeValue('0 4px 12px rgba(255,255,255,0.4), 0 0 18px rgba(255,255,255,0.25)', '0 4px 12px rgba(0,0,0,0.8), 0 0 18px rgba(255,255,255,0.25)');
 
   // 3D Hover Effect State (ported from RaceProfileCard)
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
@@ -123,8 +128,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             zIndex={3} // Increased z-index to appear above ghosted number
             position="relative"
             w="65%"
-            color="white"
-            textShadow="0 1px 4px rgba(0, 0, 0, 0.5)"
+            color={textColor}
+            textShadow={textShadow}
             transform={isHovered ? 'translateZ(18px)' : 'translateZ(0px)'}
             transition="transform 0.3s ease"
           >
@@ -136,7 +141,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
               lineHeight="1"
               textTransform="none"
               mb="-0.2em"
-              textShadow={isHovered ? '0 4px 12px rgba(0,0,0,0.8), 0 0 18px rgba(255,255,255,0.25)' : '0 1px 4px rgba(0,0,0,0.5)'}
+              textShadow={isHovered ? hoverTextShadow : textShadow}
               transition="text-shadow 0.3s ease"
             >
               {firstName}
@@ -148,7 +153,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
               fontWeight="bold"
               lineHeight="1.1"
               textTransform="uppercase"
-              textShadow={isHovered ? '0 4px 12px rgba(0,0,0,0.8), 0 0 18px rgba(255,255,255,0.25)' : '0 1px 4px rgba(0,0,0,0.5)'}
+              textShadow={isHovered ? hoverTextShadow : textShadow}
               transition="text-shadow 0.3s ease"
             >
               {lastName}
@@ -226,7 +231,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
           borderBottomRadius="24px" // Match the outer container's border radius
           _groupHover={{
             bg: teamColor,
-            color: 'white',
+            color: 'text-on-accent',
           }}
         >
           <Text>View Profile</Text>

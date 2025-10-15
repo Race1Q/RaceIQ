@@ -1,6 +1,6 @@
 // frontend/src/components/layout/ResponsiveTable.tsx
 
-import { Box, Table } from '@chakra-ui/react';
+import { Box, Table, useColorModeValue } from '@chakra-ui/react';
 import type { TableProps } from '@chakra-ui/react';
 import { ReactNode } from 'react';
 
@@ -18,6 +18,11 @@ const ResponsiveTable = ({
   enableHorizontalScroll = true,
   ...props 
 }: ResponsiveTableProps) => {
+  // Theme-aware border colors for table rows
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
+  const scrollbarThumb = useColorModeValue('rgba(0, 0, 0, 0.2)', 'rgba(255, 255, 255, 0.2)');
+  const scrollbarThumbHover = useColorModeValue('rgba(0, 0, 0, 0.3)', 'rgba(255, 255, 255, 0.3)');
+  
   return (
     <Box
       overflowX={enableHorizontalScroll ? 'auto' : 'hidden'}
@@ -30,11 +35,22 @@ const ResponsiveTable = ({
           background: 'transparent',
         },
         '&::-webkit-scrollbar-thumb': {
-          background: 'rgba(255, 255, 255, 0.2)',
+          background: scrollbarThumb,
           borderRadius: '3px',
         },
         '&::-webkit-scrollbar-thumb:hover': {
-          background: 'rgba(255, 255, 255, 0.3)',
+          background: scrollbarThumbHover,
+        },
+        // Ensure table row borders are visible
+        'tbody tr': {
+          borderBottom: `1px solid ${borderColor}`,
+        },
+        'thead tr': {
+          borderBottom: `2px solid ${borderColor}`,
+        },
+        // Also style th and td borders
+        'th, td': {
+          borderColor: borderColor,
         },
       }}
     >
