@@ -46,14 +46,14 @@ const StatCard = ({
     bg="bg-glassmorphism"
     borderRadius="md"
     border="2px solid"
-    borderColor={isWinner ? `#${teamColor}` : "border-subtle"}
+    borderColor={isWinner ? teamColor : "border-subtle"}
     w="100%"
     transition="all 0.3s ease"
     position="relative"
     _hover={{
       transform: 'translateY(-2px)',
-      boxShadow: isWinner ? `0 8px 25px #${teamColor}30` : '0 8px 25px rgba(0,0,0,0.1)',
-      borderColor: isWinner ? `#${teamColor}` : "border-primary"
+      boxShadow: isWinner ? `${teamColor}30` : '0 8px 25px rgba(0,0,0,0.1)',
+      borderColor: isWinner ? teamColor : "border-primary"
     }}
     _before={isWinner ? {
       content: '""',
@@ -62,27 +62,27 @@ const StatCard = ({
       top: 0,
       bottom: 0,
       width: '4px',
-      background: `#${teamColor}`,
+      background: teamColor,
       borderRadius: 'md 0 0 md',
     } : undefined}
   >
     <HStack>
-      <Box as={icon} color={isWinner ? `#${teamColor}` : "white"} w="16px" h="16px" />
+      <Box as={icon} color={isWinner ? teamColor : "white"} w="16px" h="16px" />
       <Text fontSize="sm" color="text-muted">{label}</Text>
     </HStack>
     <HStack spacing={2}>
       <Text 
         fontSize="lg" 
         fontFamily="heading" 
-        color={isWinner ? `#${teamColor}` : "white"} 
+        color={isWinner ? teamColor : "white"} 
         fontWeight={isWinner ? "bold" : "normal"}
-        textShadow={isWinner ? `0 0 8px #${teamColor}40` : "none"}
+        textShadow={isWinner ? `0 0 8px ${teamColor}40` : "none"}
         transition="all 0.3s ease"
       >
         {value}
       </Text>
       {isWinner && (
-        <Box as={Trophy} color={`#${teamColor}`} w="16px" h="16px" />
+        <Box as={Trophy} color={teamColor} w="16px" h="16px" />
       )}
     </HStack>
   </Flex>
@@ -182,23 +182,6 @@ const ConstructorStatsColumn = ({
               })()}
             </Box>
           </Box>
-          <Badge
-            position="absolute"
-            top="-8px"
-            right="-8px"
-            bg={teamColor}
-            color="white"
-            borderRadius="full"
-            w="32px"
-            h="32px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            fontSize="sm"
-            fontWeight="bold"
-          >
-            {constructor.id}
-          </Badge>
         </Box>
         <VStack spacing="xs" textAlign="center">
           <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color="text-primary">

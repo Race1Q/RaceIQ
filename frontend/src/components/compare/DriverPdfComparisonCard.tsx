@@ -86,11 +86,6 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
     TXT(footText, pageWidth / 2, footY, { size: 9, color: subtle, align: "center" });
   };
 
-  const ensureSpace = (_needed: number) => {
-    // Single-page export: scaling ensures we fit, so this becomes a no-op
-    return;
-  };
-
   // Header band
   rectF(0, 0, pageWidth, 26, "#0f172a");
   TXT("Driver Comparison", 10, 16, { size: 16, color: "#ffffff", bold: true });
@@ -106,21 +101,62 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   const cardW = (pageWidth - marginX * 2 - 20) / 2;
   const gap = 20;
 
-  // Load team logos (PNG data URLs)
-  const d1LogoUrl = getTeamLogo(driver1.teamName);
-  const d2LogoUrl = getTeamLogo(driver2.teamName);
+  // Load driver images (PNG data URLs) with fallback to team logos
+  let d1Image = null;
+  let d2Image = null;
   
-  let d1Logo = null;
-  let d2Logo = null;
-  
-  if (d1LogoUrl) {
-    const logoData = await loadImageAsDataURL(d1LogoUrl);
-    d1Logo = logoData || null;
+  // Try driver image first
+  if (driver1.imageUrl) {
+    try {
+      const imageData = await loadImageAsDataURL(driver1.imageUrl);
+      if (imageData && imageData.startsWith('data:image/')) {
+        d1Image = imageData;
+      }
+    } catch (error) {
+      console.warn('Failed to load driver1 image, trying team logo:', error);
+    }
   }
   
-  if (d2LogoUrl) {
-    const logoData = await loadImageAsDataURL(d2LogoUrl);
-    d2Logo = logoData || null;
+  // Fallback to team logo if driver image failed
+  if (!d1Image) {
+    try {
+      const teamLogoUrl = getTeamLogo(driver1.teamName);
+      if (teamLogoUrl) {
+        const logoData = await loadImageAsDataURL(teamLogoUrl);
+        if (logoData && logoData.startsWith('data:image/')) {
+          d1Image = logoData;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load driver1 team logo:', error);
+    }
+  }
+  
+  // Try driver image first
+  if (driver2.imageUrl) {
+    try {
+      const imageData = await loadImageAsDataURL(driver2.imageUrl);
+      if (imageData && imageData.startsWith('data:image/')) {
+        d2Image = imageData;
+      }
+    } catch (error) {
+      console.warn('Failed to load driver2 image, trying team logo:', error);
+    }
+  }
+  
+  // Fallback to team logo if driver image failed
+  if (!d2Image) {
+    try {
+      const teamLogoUrl = getTeamLogo(driver2.teamName);
+      if (teamLogoUrl) {
+        const logoData = await loadImageAsDataURL(teamLogoUrl);
+        if (logoData && logoData.startsWith('data:image/')) {
+          d2Image = logoData;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load driver2 team logo:', error);
+    }
   }
 
   // Driver cards: headers
@@ -129,18 +165,37 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
 
   const headerH = 34;
 
+  // Initialize current Y position for content tracking
+  let currentY = topY + headerH + 10;
+  
+  const ensureSpace = (needed: number) => {
+    const availableSpace = pageHeight - 24 - currentY; // Reserve 24mm for footer
+    if (availableSpace < needed) {
+      // Add new page
+      doc.addPage();
+      currentY = 40; // Start position on new page
+      
+      // Redraw header and rails on new page
+      rectF(0, 0, pageWidth, 26, "#0f172a");
+      TXT("Driver Comparison", 10, 16, { size: 16, color: "#ffffff", bold: true });
+      TXT("RaceIQ Analytics", pageWidth - 70, 12, { size: 10, color: "#cbd5e1", align: "left" });
+      TXT(new Date().toLocaleDateString(), pageWidth - 70, 19, { size: 10, color: "#cbd5e1", align: "left" });
+      drawRails();
+    }
+  };
+
   // Left header
   rectF(leftX, topY, cardW, headerH, "#f8fafc");
   doc.setDrawColor(border);
   doc.rect(leftX, topY, cardW, headerH); // border
   
-  if (d1Logo) {
-    doc.addImage(d1Logo, "PNG", leftX + 8, topY + 6, 22, 22);
+  if (d1Image) {
+    doc.addImage(d1Image, "PNG", leftX + 8, topY + 6, 22, 22);
   } else {
     // Fallback: colored circle with initials
     doc.setFillColor(d1Color);
     doc.circle(leftX + 19, topY + 17, 11, "F");
-    const initials = driver1.teamName.split(' ').map(word => word[0]).join('').substring(0, 2);
+    const initials = driver1.fullName.split(' ').map(word => word[0]).join('').substring(0, 2);
     TXT(initials, leftX + 19, topY + 20, { size: 8, color: "#ffffff", bold: true, align: "center" });
   }
   
@@ -153,13 +208,13 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   rectF(rightX, topY, cardW, headerH, "#f8fafc");
   doc.rect(rightX, topY, cardW, headerH);
   
-  if (d2Logo) {
-    doc.addImage(d2Logo, "PNG", rightX + 8, topY + 6, 22, 22);
+  if (d2Image) {
+    doc.addImage(d2Image, "PNG", rightX + 8, topY + 6, 22, 22);
   } else {
     // Fallback: colored circle with initials
     doc.setFillColor(d2Color);
     doc.circle(rightX + 19, topY + 17, 11, "F");
-    const initials = driver2.teamName.split(' ').map(word => word[0]).join('').substring(0, 2);
+    const initials = driver2.fullName.split(' ').map(word => word[0]).join('').substring(0, 2);
     TXT(initials, rightX + 19, topY + 20, { size: 8, color: "#ffffff", bold: true, align: "center" });
   }
   
@@ -178,8 +233,8 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   const enabled = Array.from(new Set(enabledRaw.map(normalizeKey)));
 
   const labelMap: Record<string, string> = {
-    wins: "QUALIFYING",
-    podiums: "RACE",
+    wins: "WINS",
+    podiums: "PODIUMS",
     poles: "POLE POSITIONS",
     fastestLaps: "FASTEST LAPS",
     points: "POINTS",
@@ -205,9 +260,8 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   // Fit-to-one-page sizing based on available height
   const footerReserve = 24;          // space for footer
   const compositeReserve = 40;       // title + bar + labels
-  const startY = topY + headerH + 10;
   const rowsCount = Math.max(enabled.length, 1);
-  const available = pageHeight - footerReserve - compositeReserve - startY;
+  const available = pageHeight - footerReserve - compositeReserve - currentY;
   const baseRowH = 22;               // approx height per row before scaling
   const scale = Math.min(1, available / (rowsCount * baseRowH));
   const rowGap = Math.max(8, Math.round(14 * scale));
@@ -215,7 +269,6 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   const barW = Math.min(230, contentWidth * 0.75);
   const valueFontSize = Math.max(12, Math.round(16 * scale));
   const labelFontSize = Math.max(9, Math.round(10 * scale));
-  let y = startY;
 
   enabled.forEach((metric) => {
     const k = keyMap[metric];
@@ -225,14 +278,14 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
 
     ensureSpace(28);
     // label centered above bar
-    TXT(label, centerX, y, { size: labelFontSize, color: subtle, align: "center", bold: true });
-    y += 5;
+    TXT(label, centerX, currentY, { size: labelFontSize, color: subtle, align: "center", bold: true });
+    currentY += 5;
 
     // numbers and bar
     doc.setFontSize(valueFontSize);
     doc.setTextColor(text);
     const barX = centerX - barW / 2;
-    const barY = y;
+    const barY = currentY;
 
     // values
     doc.text(String(v1), barX - 6, barY + barH - 1, { align: "right" });
@@ -262,7 +315,7 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
     doc.setLineWidth(0.2);
     doc.line(contentMarginX, sepY, pageWidth - contentMarginX, sepY);
 
-    y = sepY + rowGap - 6;
+    currentY = sepY + rowGap - 6;
   });
 
   function hexToRgb(hex: string) {
@@ -277,7 +330,7 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   const maxBarW = Math.min(220, pageWidth - marginX * 2 - 20);
   const scoreBarW = maxBarW;
   const scoreBarH = 10;
-  const scoreTop = y + 10;
+  const scoreTop = currentY + 10;
   // Compute composite score if not provided: average normalized share across enabled metrics
   const computeComposite = () => {
     let s1 = 0;

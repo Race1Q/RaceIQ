@@ -77,8 +77,6 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
     TXT(footText, pageWidth / 2, footY, { size: 9, color: subtle, align: "center" });
   };
 
-  const ensureSpace = (_needed: number) => { return; };
-
   // Header band
   rectF(0, 0, pageWidth, 26, "#0f172a");
   TXT("Constructor Comparison", 10, 16, { size: 16, color: "#ffffff", bold: true });
@@ -116,6 +114,25 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   const rightX = marginX + cardW + gap;
 
   const headerH = 34;
+
+  // Initialize current Y position for content tracking
+  let currentY = topY + headerH + 10;
+  
+  const ensureSpace = (needed: number) => {
+    const availableSpace = pageHeight - 24 - currentY; // Reserve 24mm for footer
+    if (availableSpace < needed) {
+      // Add new page
+      doc.addPage();
+      currentY = 40; // Start position on new page
+      
+      // Redraw header and rails on new page
+      rectF(0, 0, pageWidth, 26, "#0f172a");
+      TXT("Constructor Comparison", 10, 16, { size: 16, color: "#ffffff", bold: true });
+      TXT("RaceIQ Analytics", pageWidth - 70, 12, { size: 10, color: "#cbd5e1", align: "left" });
+      TXT(new Date().toLocaleDateString(), pageWidth - 70, 19, { size: 10, color: "#cbd5e1", align: "left" });
+      drawRails();
+    }
+  };
 
   // Left header
   rectF(leftX, topY, cardW, headerH, "#f8fafc");
@@ -166,8 +183,8 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   const enabled = Array.from(new Set(enabledRaw.map(normalizeKey)));
 
   const labelMap: Record<string, string> = {
-    wins: "QUALIFYING",
-    podiums: "RACE",
+    wins: "WINS",
+    podiums: "PODIUMS",
     poles: "POLE POSITIONS",
     fastestLaps: "FASTEST LAPS",
     points: "POINTS",
@@ -191,9 +208,8 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   // Fit-to-one-page sizing based on available height
   const footerReserve = 24;
   const compositeReserve = 40;
-  const startY = topY + headerH + 10;
   const rowsCount = Math.max(enabled.length, 1);
-  const available = pageHeight - footerReserve - compositeReserve - startY;
+  const available = pageHeight - footerReserve - compositeReserve - currentY;
   const baseRowH = 22;
   const scale = Math.min(1, available / (rowsCount * baseRowH));
   const rowGap = Math.max(8, Math.round(14 * scale));
@@ -201,7 +217,6 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   const barW = Math.min(230, contentWidth * 0.75);
   const valueFontSize = Math.max(12, Math.round(16 * scale));
   const labelFontSize = Math.max(9, Math.round(10 * scale));
-  let y = startY;
 
   enabled.forEach((metric) => {
     const k = keyMap[metric];
@@ -210,13 +225,13 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
     const v2 = (stats2 as any)[k] ?? 0;
 
     ensureSpace(28);
-    TXT(label, centerX, y, { size: labelFontSize, color: subtle, align: "center", bold: true });
-    y += 5;
+    TXT(label, centerX, currentY, { size: labelFontSize, color: subtle, align: "center", bold: true });
+    currentY += 5;
 
     doc.setFontSize(valueFontSize);
     doc.setTextColor(text);
     const barX = centerX - barW / 2;
-    const barY = y;
+    const barY = currentY;
 
     doc.text(String(v1), barX - 6, barY + barH - 1, { align: "right" });
     doc.text(String(v2), barX + barW + 6, barY + barH - 1, { align: "left" });
@@ -242,7 +257,7 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
     doc.setLineWidth(0.2);
     doc.line(contentMarginX, sepY, pageWidth - contentMarginX, sepY);
 
-    y = sepY + rowGap - 6;
+    currentY = sepY + rowGap - 6;
   });
 
   function hexToRgb(hex: string) {
@@ -257,7 +272,7 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   const maxBarW = Math.min(220, pageWidth - marginX * 2 - 20);
   const scoreBarW = maxBarW;
   const scoreBarH = 10;
-  const scoreTop = y + 10;
+  const scoreTop = currentY + 10;
   // Compute composite score if not provided
   const computeComposite = () => {
     let s1 = 0;

@@ -119,6 +119,13 @@ const CompareConstructorsPage = () => {
     }
   }, [selectedYears1, selectedYears2, currentPhase]);
 
+  // Scroll to top when navigating to results step
+  useEffect(() => {
+    if (currentStep === 'results') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
+
   const exportPdf = async () => {
     if (!constructor1 || !constructor2 || !stats1 || !stats2) {
       alert('Please select both constructors and complete the comparison before exporting.');
@@ -320,9 +327,6 @@ const CompareConstructorsPage = () => {
                 {constructor1?.nationality && (
                   <Text fontSize="xs" color="text-muted">{constructor1.nationality}</Text>
                 )}
-                {constructor1?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{constructor1.id}</Text>
-                )}
               </Box>
               
               <Flex align="center" justify="center">
@@ -334,9 +338,6 @@ const CompareConstructorsPage = () => {
                 <Text fontFamily="heading" fontWeight="bold">{constructor2?.name || 'Not Selected'}</Text>
                 {constructor2?.nationality && (
                   <Text fontSize="xs" color="text-muted">{constructor2.nationality}</Text>
-                )}
-                {constructor2?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{constructor2.id}</Text>
                 )}
               </Box>
             </Grid>
@@ -422,11 +423,6 @@ const CompareConstructorsPage = () => {
                     <Text fontSize="sm" color="text-muted">No years available</Text>
                   )}
                 </Flex>
-                {selectedYears1.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears1.join(', ')}
-                  </Text>
-                )}
               </VStack>
 
               {/* Constructor 2 Year Selection */}
@@ -501,11 +497,6 @@ const CompareConstructorsPage = () => {
                     <Text fontSize="sm" color="text-muted">No years available</Text>
                   )}
                 </Flex>
-                {selectedYears2.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears2.join(', ')}
-                  </Text>
-                )}
               </VStack>
             </Grid>
 
@@ -711,8 +702,8 @@ const CompareConstructorsPage = () => {
   // Step 3: Results Display Component
   const Step3Results = () => {
     // Get team colors
-    const constructor1TeamColor = constructor1 ? getTeamColor(constructor1.name || '') : '#e10600';
-    const constructor2TeamColor = constructor2 ? getTeamColor(constructor2.name || '') : '#e10600';
+    const constructor1TeamColor = constructor1 ? getTeamColor(constructor1.name || '', { hash: true }) : '#e10600';
+    const constructor2TeamColor = constructor2 ? getTeamColor(constructor2.name || '', { hash: true }) : '#e10600';
 
     // Available metrics for comparison
     const availableMetrics = {
