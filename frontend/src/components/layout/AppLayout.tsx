@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Box, useBreakpointValue, Flex, IconButton, HStack, Image, Link } from '@chakra-ui/react';
+import { Box, useBreakpointValue, Flex, IconButton, HStack, Image } from '@chakra-ui/react';
 import { Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import PageShell from './PageShell';
 import { useThemeColor } from '../../context/ThemeColorContext';
@@ -44,16 +45,18 @@ function AppLayout({ children }: AppLayoutProps) {
           zIndex="sticky"
         >
           <Flex maxW="1200px" mx="auto" px={4} h="60px" justify="space-between" align="center">
-            <HStack as={Link} to="/dashboard" spacing="sm" textDecor="none">
-              <Image 
-                src="/race_IQ_logo.svg" 
-                alt="RaceIQ Logo" 
-                h="40px"
-                w="auto"
-                objectFit="contain"
-                filter={getLogoFilter(accentColorWithHash)}
-              />
-            </HStack>
+            <Link to="/dashboard" style={{ textDecoration: 'none' }}>
+                <HStack spacing="sm">
+                  <Image 
+                    src="/race_IQ_logo.svg" 
+                    alt="RaceIQ Logo" 
+                    h="40px"
+                    w="auto"
+                    objectFit="contain"
+                    filter={getLogoFilter(accentColorWithHash)}
+                  />
+                </HStack>
+              </Link>
             
             <IconButton
               aria-label="Open menu"
@@ -80,10 +83,32 @@ function AppLayout({ children }: AppLayoutProps) {
       <Box 
         w="full"
         minH="100svh"
-        overflow="auto"
         pl={isDesktop ? `${sidebarWidth}px` : 0}
         transition="padding-left 0.3s ease"
         position="relative"
+        css={{
+          // Mobile-specific scrolling improvements
+          '@media (max-width: 768px)': {
+            // Ensure scrollbar is always visible on mobile
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(255, 255, 255, 0.3)',
+              borderRadius: '4px',
+              '&:hover': {
+                background: 'rgba(255, 255, 255, 0.5)',
+              },
+            },
+            // Improve touch scrolling
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          },
+        }}
       >
         {children}
       </Box>

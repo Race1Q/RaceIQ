@@ -19,6 +19,44 @@
   min-height: 100vh; /* fallback for older browsers */
 }
 
+/* Mobile scrolling improvements */
+@media (max-width: 768px) {
+  /* Ensure consistent scrolling behavior on mobile */
+  body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Make scrollbars more visible on mobile */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Improve touch scrolling for specific containers */
+  .mobile-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
 /* Responsive image defaults */
 img {
   max-width: 100%;

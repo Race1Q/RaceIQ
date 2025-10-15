@@ -195,7 +195,32 @@ function DashboardPage() {
   return (
     <Box>
       <DashboardHeader onCustomizeClick={onOpen} />
-      <Box p={{ base: 'md', md: 'lg' }}>
+      <Box 
+        p={{ base: 'md', md: 'lg' }}
+        css={{
+          // Mobile-specific scrolling improvements without constraining height
+          '@media (max-width: 768px)': {
+            paddingBottom: '40px', // Extra padding to ensure footer is visible
+            // Ensure scrollbar is visible
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '3px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '3px',
+              '&:hover': {
+                background: 'rgba(255, 255, 255, 0.4)',
+              },
+            },
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+          },
+        }}
+      >
         {isFallback && <FallbackBanner accentColor={accentColor} />} {/* Render banner when using fallback data */}
         
         {/* Save status indicator */}
