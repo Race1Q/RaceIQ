@@ -72,9 +72,32 @@ const CompareConstructorsPage = () => {
     return years.filter(year => year >= debutYear);
   };
 
+  // Map UI metric keys to internal hook keys and back
+  const uiToInternal: Record<string, keyof typeof enabledMetrics> = {
+    wins: 'wins',
+    podiums: 'podiums',
+    poles: 'poles',
+    fastest_laps: 'fastestLaps',
+    points: 'points',
+    dnf: 'dnfs',
+    races: 'races',
+  } as any;
+  const internalToUi: Record<string, string> = {
+    wins: 'wins',
+    podiums: 'podiums',
+    poles: 'poles',
+    fastestLaps: 'fastest_laps',
+    points: 'points',
+    dnfs: 'dnf',
+    races: 'races',
+  };
+
   // Step navigation helpers
   const canProceedToParameters = !!(constructor1 && constructor2);
-  const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+  const enabledMetricsArray = Object.keys(enabledMetrics)
+    .filter(key => enabledMetrics[key as keyof typeof enabledMetrics])
+    .map(key => internalToUi[key])
+    .filter(Boolean);
   const canProceedToResults = canProceedToParameters && enabledMetricsArray.length > 0 && selectedYears1.length > 0 && selectedYears2.length > 0;
 
   // Auto-progress through phases (matching drivers behavior)
@@ -106,6 +129,23 @@ const CompareConstructorsPage = () => {
       const teamColor1 = getTeamColor(constructor1.name || '');
       const teamColor2 = getTeamColor(constructor2.name || '');
 
+      // Build an enabled metrics object from what the user selected (start all false)
+      const enabledFromSelection: any = {
+        wins: false,
+        podiums: false,
+        poles: false,
+        fastestLaps: false,
+        points: false,
+        dnfs: false,
+        races: false,
+      };
+      enabledMetricsArray.forEach((uiKey) => {
+        const internal = uiToInternal[uiKey];
+        if (internal && internal in enabledFromSelection) {
+          enabledFromSelection[internal] = true;
+        }
+      });
+
       await ConstructorPdfComparisonCard({
         constructor1: {
           ...constructor1,
@@ -117,7 +157,7 @@ const CompareConstructorsPage = () => {
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
-        enabledMetrics,
+        enabledMetrics: enabledFromSelection,
         score,
       });
     } catch (error) {
@@ -506,7 +546,10 @@ const CompareConstructorsPage = () => {
       dnf: 'DNFs',
     };
 
-    const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+    const enabledMetricsArray = Object.keys(enabledMetrics)
+      .filter(key => enabledMetrics[key as keyof typeof enabledMetrics])
+      .map(key => internalToUi[key])
+      .filter(Boolean);
 
     return (
       <VStack spacing="xl" align="stretch">
@@ -532,11 +575,15 @@ const CompareConstructorsPage = () => {
                   const allSelected = allMetricKeys.every(key => enabledMetricsArray.includes(key));
                   
                   if (allSelected) {
-                    allMetricKeys.forEach(key => toggleMetric(key as any));
+                    allMetricKeys.forEach(key => {
+                      const mapped = uiToInternal[key];
+                      if (mapped) toggleMetric(mapped as any);
+                    });
                   } else {
                     allMetricKeys.forEach(key => {
                       if (!enabledMetricsArray.includes(key)) {
-                        toggleMetric(key as any);
+                        const mapped = uiToInternal[key];
+                        if (mapped) toggleMetric(mapped as any);
                       }
                     });
                   }
@@ -569,7 +616,10 @@ const CompareConstructorsPage = () => {
                     boxShadow: enabledMetricsArray.includes(key) ? "0 0 15px rgba(225, 6, 0, 0.5)" : "0 4px 15px rgba(0,0,0,0.1)"
                   }}
                   _active={{ transform: 'scale(0.95)' }}
-                  onClick={() => toggleMetric(key as any)}
+                  onClick={() => {
+                    const mapped = uiToInternal[key];
+                    if (mapped) toggleMetric(mapped as any);
+                  }}
                   fontFamily="heading"
                   transition="all 0.2s ease"
                   position="relative"
@@ -669,7 +719,7 @@ const CompareConstructorsPage = () => {
       wins: 'Wins',
       podiums: 'Podiums',
       poles: 'Pole Positions',
-      fastestLaps: 'Fastest Laps',
+      fastest_laps: 'Fastest Laps',
       points: 'Points',
       races: 'Races',
       dnf: 'DNFs',

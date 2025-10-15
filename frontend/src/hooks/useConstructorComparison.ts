@@ -277,14 +277,14 @@ export function useConstructorComparison(): HookState {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Default all metrics enabled
+  // Default metrics enabled (matching the UI default selection)
   const [enabledMetrics, setEnabledMetrics] = useState<EnabledMetrics>({
     wins: true,
     podiums: true,
     poles: true,
-    fastestLaps: true,
+    fastestLaps: false,  // Disabled by default
     points: true,
-    dnfs: true,
+    dnfs: false,         // Disabled by default
     races: true,
   });
   
