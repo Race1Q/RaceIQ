@@ -81,7 +81,7 @@ export default function F1CockpitXR({
     (async () => {
       try {
         setIsLoading(true);
-        const car = await loadGLTF(modelUrl);
+        const car = await loadGLTF(modelUrl, "/draco/gltf/", renderer);
         const bounds = centerAndScaleTo(car, 5.0); // normalize size
         world.add(car);
 

@@ -10,8 +10,35 @@ interface ConstructorInfoCardProps {
 }
 
 const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId, season }) => {
-  const { data: info, loading, error } = useAiConstructorInfo(constructorId, season);
+  const { data: rawInfo, loading, error } = useAiConstructorInfo(constructorId, season);
   const { accentColorWithHash } = useThemeColor();
+
+  // Handle malformed data structure where data might be wrapped in a "0" key
+  const info = React.useMemo(() => {
+    if (!rawInfo) return null;
+    
+    // Check if data is malformed (has a "0" key instead of direct properties)
+    if ((rawInfo as any)[0] && typeof (rawInfo as any)[0] === 'object') {
+      const actualData = (rawInfo as any)[0];
+      return {
+        ...actualData,
+        generatedAt: rawInfo.generatedAt || actualData.generatedAt,
+        isFallback: rawInfo.isFallback !== undefined ? rawInfo.isFallback : actualData.isFallback
+      };
+    }
+    
+    return rawInfo;
+  }, [rawInfo]);
+
+  // Debug logging
+  React.useEffect(() => {
+    if (!loading) {
+      console.log('[ConstructorInfoCard] Constructor ID:', constructorId);
+      console.log('[ConstructorInfoCard] Raw info data:', rawInfo);
+      console.log('[ConstructorInfoCard] Processed info:', info);
+      console.log('[ConstructorInfoCard] Error:', error);
+    }
+  }, [loading, rawInfo, info, error, constructorId]);
 
   const formatGeneratedAt = (isoString: string) => {
     const date = new Date(isoString);
@@ -41,16 +68,52 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
     );
   }
 
-  if (error || !info) {
+  if (error) {
     return (
       <Box bg="bg-elevated" p={6} borderRadius="lg" border="1px solid" borderColor="border-subtle">
         <Alert status="warning" borderRadius="md">
           <AlertIcon />
           <VStack align="start">
             <Text fontSize="sm">Unable to load team analysis. Please try again later.</Text>
-            {error && <Text fontSize="xs" color="text-muted">{error.message}</Text>}
+            <Text fontSize="xs" color="text-muted">{error.message}</Text>
           </VStack>
         </Alert>
+      </Box>
+    );
+  }
+
+  if (!info) {
+    return (
+      <Box bg="bg-elevated" p={6} borderRadius="lg" border="1px solid" borderColor="border-subtle">
+        <Alert status="info" borderRadius="md">
+          <AlertIcon />
+          <Text fontSize="sm">Team analysis is not available for this constructor yet.</Text>
+        </Alert>
+      </Box>
+    );
+  }
+
+  // Check if we have any content at all
+  const hasAnyContent = info.overview || info.history || 
+    (info.strengths && info.strengths.length > 0) || 
+    (info.challenges && info.challenges.length > 0) ||
+    (info.notableAchievements && info.notableAchievements.length > 0) ||
+    info.currentSeason;
+
+  if (!hasAnyContent) {
+    return (
+      <Box bg="bg-elevated" p={6} borderRadius="lg" border="1px solid" borderColor="border-subtle">
+        <VStack align="start" spacing={4}>
+          <HStack justify="space-between" w="full">
+            <Heading size="md" color={accentColorWithHash}>
+              Team Analysis
+            </Heading>
+          </HStack>
+          <Alert status="info" borderRadius="md">
+            <AlertIcon />
+            <Text fontSize="sm">Team analysis data is being generated. Please check back later.</Text>
+          </Alert>
+        </VStack>
       </Box>
     );
   }
@@ -67,57 +130,67 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
         </HStack>
 
         {/* Overview */}
-        <Box w="full">
-          <Heading size="md" color={accentColorWithHash} mb={3}>
-            Overview
-          </Heading>
-          <Text color="text-primary" fontSize="md" lineHeight="1.7">
-            {info.overview}
-          </Text>
-        </Box>
+        {info.overview && (
+          <Box w="full">
+            <Heading size="md" color={accentColorWithHash} mb={3}>
+              Overview
+            </Heading>
+            <Text color="text-primary" fontSize="md" lineHeight="1.7">
+              {info.overview}
+            </Text>
+          </Box>
+        )}
 
         {/* History */}
-        <Box w="full">
-          <Heading size="md" color={accentColorWithHash} mb={3}>
-            Team History
-          </Heading>
-          <Text color="text-primary" fontSize="md" lineHeight="1.7">
-            {info.history}
-          </Text>
-        </Box>
+        {info.history && (
+          <Box w="full">
+            <Heading size="md" color={accentColorWithHash} mb={3}>
+              Team History
+            </Heading>
+            <Text color="text-primary" fontSize="md" lineHeight="1.7">
+              {info.history}
+            </Text>
+          </Box>
+        )}
 
         {/* Strengths and Challenges Grid */}
-        <Box w="full">
-          <HStack align="start" spacing={6} flexWrap="wrap">
-            {/* Strengths */}
-            <Box flex="1" minW="300px">
-              <Heading size="md" color={accentColorWithHash} mb={3}>
-                Strengths
-              </Heading>
-              <UnorderedList spacing={2}>
-                {info.strengths.map((strength, index) => (
-                  <ListItem key={index} color="text-primary" fontSize="sm">
-                    {strength}
-                  </ListItem>
-                ))}
-              </UnorderedList>
-            </Box>
+        {(info.strengths || info.challenges) && (
+          <Box w="full">
+            <HStack align="start" spacing={6} flexWrap="wrap">
+              {/* Strengths */}
+              {info.strengths && info.strengths.length > 0 && (
+                <Box flex="1" minW="300px">
+                  <Heading size="md" color={accentColorWithHash} mb={3}>
+                    Strengths
+                  </Heading>
+                  <UnorderedList spacing={2}>
+                    {info.strengths.map((strength: string, index: number) => (
+                      <ListItem key={index} color="text-primary" fontSize="sm">
+                        {strength}
+                      </ListItem>
+                    ))}
+                  </UnorderedList>
+                </Box>
+              )}
 
-            {/* Challenges */}
-            <Box flex="1" minW="300px">
-              <Heading size="md" color={accentColorWithHash} mb={3}>
-                Challenges
-              </Heading>
-              <UnorderedList spacing={2}>
-                {info.challenges.map((challenge, index) => (
-                  <ListItem key={index} color="text-primary" fontSize="sm">
-                    {challenge}
-                  </ListItem>
-                ))}
-              </UnorderedList>
-            </Box>
-          </HStack>
-        </Box>
+              {/* Challenges */}
+              {info.challenges && info.challenges.length > 0 && (
+                <Box flex="1" minW="300px">
+                  <Heading size="md" color={accentColorWithHash} mb={3}>
+                    Challenges
+                  </Heading>
+                  <UnorderedList spacing={2}>
+                    {info.challenges.map((challenge: string, index: number) => (
+                      <ListItem key={index} color="text-primary" fontSize="sm">
+                        {challenge}
+                      </ListItem>
+                    ))}
+                  </UnorderedList>
+                </Box>
+              )}
+            </HStack>
+          </Box>
+        )}
 
         {/* Notable Achievements */}
         {info.notableAchievements && info.notableAchievements.length > 0 && (
@@ -126,7 +199,7 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
               Notable Achievements
             </Heading>
             <UnorderedList spacing={2}>
-              {info.notableAchievements.map((achievement, index) => (
+              {info.notableAchievements.map((achievement: string, index: number) => (
                 <ListItem key={index} color="text-primary" fontSize="sm">
                   {achievement}
                 </ListItem>
@@ -152,7 +225,7 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
                     Season Highlights:
                   </Text>
                   <UnorderedList spacing={1}>
-                    {info.currentSeason.highlights.map((highlight, index) => (
+                    {info.currentSeason.highlights.map((highlight: string, index: number) => (
                       <ListItem key={index} color="text-primary" fontSize="sm">
                         {highlight}
                       </ListItem>
