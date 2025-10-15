@@ -79,9 +79,32 @@ const CompareConstructorsPage = () => {
     return years.filter(year => year >= debutYear);
   };
 
+  // Map UI metric keys to internal hook keys and back
+  const uiToInternal: Record<string, keyof typeof enabledMetrics> = {
+    wins: 'wins',
+    podiums: 'podiums',
+    poles: 'poles',
+    fastest_laps: 'fastestLaps',
+    points: 'points',
+    dnf: 'dnfs',
+    races: 'races',
+  } as any;
+  const internalToUi: Record<string, string> = {
+    wins: 'wins',
+    podiums: 'podiums',
+    poles: 'poles',
+    fastestLaps: 'fastest_laps',
+    points: 'points',
+    dnfs: 'dnf',
+    races: 'races',
+  };
+
   // Step navigation helpers
   const canProceedToParameters = !!(constructor1 && constructor2);
-  const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+  const enabledMetricsArray = Object.keys(enabledMetrics)
+    .filter(key => enabledMetrics[key as keyof typeof enabledMetrics])
+    .map(key => internalToUi[key])
+    .filter(Boolean);
   const canProceedToResults = canProceedToParameters && enabledMetricsArray.length > 0 && selectedYears1.length > 0 && selectedYears2.length > 0;
 
   // Auto-progress through phases (matching drivers behavior)
@@ -103,6 +126,13 @@ const CompareConstructorsPage = () => {
     }
   }, [selectedYears1, selectedYears2, currentPhase]);
 
+  // Scroll to top when navigating to results step
+  useEffect(() => {
+    if (currentStep === 'results') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
+
   const exportPdf = async () => {
     if (!constructor1 || !constructor2 || !stats1 || !stats2) {
       alert('Please select both constructors and complete the comparison before exporting.');
@@ -112,6 +142,23 @@ const CompareConstructorsPage = () => {
     try {
       const teamColor1 = getTeamColor(constructor1.name || '');
       const teamColor2 = getTeamColor(constructor2.name || '');
+
+      // Build an enabled metrics object from what the user selected (start all false)
+      const enabledFromSelection: any = {
+        wins: false,
+        podiums: false,
+        poles: false,
+        fastestLaps: false,
+        points: false,
+        dnfs: false,
+        races: false,
+      };
+      enabledMetricsArray.forEach((uiKey) => {
+        const internal = uiToInternal[uiKey];
+        if (internal && internal in enabledFromSelection) {
+          enabledFromSelection[internal] = true;
+        }
+      });
 
       await ConstructorPdfComparisonCard({
         constructor1: {
@@ -124,7 +171,7 @@ const CompareConstructorsPage = () => {
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
-        enabledMetrics,
+        enabledMetrics: enabledFromSelection,
         score,
       });
     } catch (error) {
@@ -287,9 +334,6 @@ const CompareConstructorsPage = () => {
                 {constructor1?.nationality && (
                   <Text fontSize="xs" color={mutedTextColor}>{constructor1.nationality}</Text>
                 )}
-                {constructor1?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{constructor1.id}</Text>
-                )}
               </Box>
               
               <Flex align="center" justify="center">
@@ -301,9 +345,6 @@ const CompareConstructorsPage = () => {
                 <Text fontFamily="heading" fontWeight="bold">{constructor2?.name || 'Not Selected'}</Text>
                 {constructor2?.nationality && (
                   <Text fontSize="xs" color={mutedTextColor}>{constructor2.nationality}</Text>
-                )}
-                {constructor2?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{constructor2.id}</Text>
                 )}
               </Box>
             </Grid>
@@ -384,11 +425,6 @@ const CompareConstructorsPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears1.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears1.join(', ')}
-                  </Text>
-                )}
               </VStack>
 
               {/* Constructor 2 Year Selection */}
@@ -458,11 +494,6 @@ const CompareConstructorsPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears2.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears2.join(', ')}
-                  </Text>
-                )}
               </VStack>
             </Grid>
 
@@ -503,7 +534,10 @@ const CompareConstructorsPage = () => {
       dnf: 'DNFs',
     };
 
-    const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+    const enabledMetricsArray = Object.keys(enabledMetrics)
+      .filter(key => enabledMetrics[key as keyof typeof enabledMetrics])
+      .map(key => internalToUi[key])
+      .filter(Boolean);
 
     return (
       <VStack spacing="xl" align="stretch">
@@ -529,11 +563,15 @@ const CompareConstructorsPage = () => {
                   const allSelected = allMetricKeys.every(key => enabledMetricsArray.includes(key));
                   
                   if (allSelected) {
-                    allMetricKeys.forEach(key => toggleMetric(key as any));
+                    allMetricKeys.forEach(key => {
+                      const mapped = uiToInternal[key];
+                      if (mapped) toggleMetric(mapped as any);
+                    });
                   } else {
                     allMetricKeys.forEach(key => {
                       if (!enabledMetricsArray.includes(key)) {
-                        toggleMetric(key as any);
+                        const mapped = uiToInternal[key];
+                        if (mapped) toggleMetric(mapped as any);
                       }
                     });
                   }
@@ -566,7 +604,10 @@ const CompareConstructorsPage = () => {
                     boxShadow: enabledMetricsArray.includes(key) ? "0 0 15px rgba(225, 6, 0, 0.5)" : "0 4px 15px rgba(0,0,0,0.1)"
                   }}
                   _active={{ transform: 'scale(0.95)' }}
-                  onClick={() => toggleMetric(key as any)}
+                  onClick={() => {
+                    const mapped = uiToInternal[key];
+                    if (mapped) toggleMetric(mapped as any);
+                  }}
                   fontFamily="heading"
                   transition="all 0.2s ease"
                   position="relative"
@@ -654,15 +695,15 @@ const CompareConstructorsPage = () => {
   // Step 3: Results Display Component
   const Step3Results = () => {
     // Get team colors
-    const constructor1TeamColor = constructor1 ? getTeamColor(constructor1.name || '') : '#e10600';
-    const constructor2TeamColor = constructor2 ? getTeamColor(constructor2.name || '') : '#e10600';
+    const constructor1TeamColor = constructor1 ? getTeamColor(constructor1.name || '', { hash: true }) : '#e10600';
+    const constructor2TeamColor = constructor2 ? getTeamColor(constructor2.name || '', { hash: true }) : '#e10600';
 
     // Available metrics for comparison
     const availableMetrics = {
       wins: 'Wins',
       podiums: 'Podiums',
       poles: 'Pole Positions',
-      fastestLaps: 'Fastest Laps',
+      fastest_laps: 'Fastest Laps',
       points: 'Points',
       races: 'Races',
       dnf: 'DNFs',
@@ -715,6 +756,76 @@ const CompareConstructorsPage = () => {
             )}
           </VStack>
         </Box>
+
+        {/* Composite Score Visualization */}
+        {score && enabledMetricsArray.length > 0 && (() => {
+          const totalScore = score ? (score.c1 || 0) + (score.c2 || 0) : 0;
+          const constructor1Percentage = totalScore > 0 ? ((score.c1 || 0) / totalScore) * 100 : 50;
+          const constructor2Percentage = totalScore > 0 ? ((score.c2 || 0) / totalScore) * 100 : 50;
+          
+          return (
+            <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+              <VStack spacing="md">
+                <Heading size="md" fontFamily="heading" color="text-primary">Composite Score</Heading>
+              
+              {/* Tug-of-War Style Bar */}
+              <Box w="full" maxW="800px" mx="auto">
+                <Flex align="center" justify="space-between" mb="sm">
+                  <Text fontSize="sm" color="text-muted" fontFamily="heading">
+                    {constructor1?.name}
+                  </Text>
+                  <Text fontSize="sm" color="text-muted" fontFamily="heading">
+                    {constructor2?.name}
+                  </Text>
+                </Flex>
+                
+                <Box position="relative" h="8px" bg="border-subtle" borderRadius="full" overflow="hidden">
+                  <Flex h="full">
+                    <Box
+                      h="full"
+                      bg={constructor1TeamColor}
+                      w={`${constructor1Percentage}%`}
+                      transition="width 0.8s ease"
+                    />
+                    <Box
+                      h="full"
+                      bg={constructor2TeamColor}
+                      w={`${constructor2Percentage}%`}
+                      transition="width 0.8s ease"
+                    />
+                  </Flex>
+                </Box>
+                
+                <Flex align="center" justify="space-between" mt="sm">
+                  <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={constructor1TeamColor}>
+                    {score.c1?.toFixed(1) || '0.0'}
+                  </Text>
+                  <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={constructor2TeamColor}>
+                    {score.c2?.toFixed(1) || '0.0'}
+                  </Text>
+                </Flex>
+              </Box>
+
+              <VStack spacing="2" align="center" maxW="900px">
+                <Text fontSize="sm" color="text-primary" fontWeight="bold">How this score works</Text>
+                <Text fontSize="xs" color="text-muted" textAlign="center">
+                  We compare constructors on each enabled metric, normalize to 0–1, then average and scale to 0–100.
+                </Text>
+                <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={2} w="full">
+                  <Box p="sm" bg="bg-glassmorphism" borderRadius="md" textAlign="center">
+                    <Text fontSize="xs" color="text-muted" mb="1">Higher is better</Text>
+                    <Text fontSize="xs" color="text-primary" fontWeight="bold">Wins, Podiums, Points</Text>
+                  </Box>
+                  <Box p="sm" bg="bg-glassmorphism" borderRadius="md" textAlign="center">
+                    <Text fontSize="xs" color="text-muted" mb="1">Lower is better</Text>
+                    <Text fontSize="xs" color="text-primary" fontWeight="bold">DNFs</Text>
+                  </Box>
+                </Grid>
+              </VStack>
+            </VStack>
+          </Box>
+          );
+        })()}
 
         {/* Action Buttons */}
         <Flex justify="space-between" mt="xl">

@@ -77,14 +77,14 @@ const StatCard = ({
       bg={cardBg}
       borderRadius="md"
       border="2px solid"
-      borderColor={isWinner ? `#${teamColor}` : cardBorder}
+      borderColor={isWinner ? `${teamColor}` : cardBorder}
       w="100%"
       transition="all 0.3s ease"
       position="relative"
       _hover={{
         transform: 'translateY(-2px)',
-        boxShadow: isWinner ? `0 8px 25px #${teamColor}30` : `0 8px 25px ${shadowColor}`,
-        borderColor: isWinner ? `#${teamColor}` : cardBorderHover
+        boxShadow: isWinner ? `0 8px 25px ${teamColor}30` : `0 8px 25px ${shadowColor}`,
+        borderColor: isWinner ? `${teamColor}` : cardBorderHover
       }}
       _before={isWinner ? {
         content: '""',
@@ -93,27 +93,27 @@ const StatCard = ({
         top: 0,
         bottom: 0,
         width: '4px',
-        background: `#${teamColor}`,
+        background: `${teamColor}`,
         borderRadius: 'md 0 0 md',
       } : undefined}
     >
       <HStack>
-        <Box as={icon} color={isWinner ? `#${teamColor}` : iconColor} w="16px" h="16px" />
+        <Box as={icon} color={isWinner ? `${teamColor}` : iconColor} w="16px" h="16px" />
         <Text fontSize="sm" color={textColor}>{label}</Text>
       </HStack>
       <HStack spacing={2}>
         <Heading 
           size="md" 
           fontFamily="heading" 
-          color={isWinner ? `#${teamColor}` : valueColor}
+          color={isWinner ? `${teamColor}` : valueColor}
           fontWeight={isWinner ? "bold" : "normal"}
-          textShadow={isWinner ? `0 0 8px #${teamColor}40` : "none"}
+          textShadow={isWinner ? `0 0 8px ${teamColor}40` : "none"}
           transition="all 0.3s ease"
         >
           {value}
         </Heading>
         {isWinner && (
-          <Box as={Trophy} color={`#${teamColor}`} w="16px" h="16px" />
+          <Box as={Trophy} color={`${teamColor}`} w="16px" h="16px" />
         )}
       </HStack>
     </Flex>
@@ -182,7 +182,7 @@ const DriverStatsColumn = ({
             alignItems="center"
             justifyContent="center"
             border="4px solid"
-            borderColor={`#${teamColor}`}
+            borderColor={teamColor}
             boxShadow="lg"
             overflow="hidden"
             position="relative"
@@ -406,6 +406,13 @@ const CompareDriversPage = () => {
     }
   }, [canProceedToStats, currentPhase]);
 
+  // Scroll to top when navigating to results step
+  useEffect(() => {
+    if (currentStep === 'results') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
+
   
   const nextStep = () => {
     if (currentStep === 'parameters' && currentPhase === 'stats' && canProceedToResults) {
@@ -454,18 +461,62 @@ const CompareDriversPage = () => {
       const teamColor1 = getTeamColor(driver1.teamName || 'Default');
       const teamColor2 = getTeamColor(driver2.teamName || 'Default');
 
+      // Map UI metric keys to internal metric keys expected by the PDF (and hook)
+      const uiToInternal: Record<string, string> = {
+        wins: 'wins',
+        podiums: 'podiums',
+        poles: 'poles',
+        fastest_laps: 'fastestLaps',
+        points: 'points',
+        races: 'races', // not used in PDF driver stats but kept for future
+        dnf: 'dnfs',
+        avg_finish: 'avgFinish', // not used in current PDF driver stats
+      };
+
+      // Build an enabled metrics object from what the user selected (start all false)
+      const enabledFromSelection: any = {
+        wins: false,
+        podiums: false,
+        fastestLaps: false,
+        points: false,
+        sprintWins: false,
+        sprintPodiums: false,
+        dnfs: false,
+        poles: false,
+      };
+      enabledMetricsArray.forEach((uiKey) => {
+        const internal = uiToInternal[uiKey];
+        if (internal && internal in enabledFromSelection) {
+          enabledFromSelection[internal] = true;
+        }
+      });
+
+      // Helper function to simplify F1 image URLs for PDF compatibility
+      const simplifyImageUrl = (url: string) => {
+        if (!url) return '';
+        // Remove the complex transformation part and use a simpler URL structure
+        const match = url.match(/https:\/\/media\.formula1\.com\/([^\/]+)\/content\/dam\/fom-website\/drivers\/([^\/]+)\/([^\/]+)\/([^\/]+)\.png/);
+        if (match) {
+          // Try to construct a simpler URL
+          return `https://media.formula1.com/content/dam/fom-website/drivers/${match[2]}/${match[3]}/${match[4]}.png`;
+        }
+        return url;
+      };
+
       await DriverPdfComparisonCard({
         driver1: {
           ...driver1,
           teamColorHex: teamColor1,
+          imageUrl: simplifyImageUrl(driverHeadshots[driver1.fullName] || ''),
         },
         driver2: {
           ...driver2,
           teamColorHex: teamColor2,
+          imageUrl: simplifyImageUrl(driverHeadshots[driver2.fullName] || ''),
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
-        enabledMetrics,
+        enabledMetrics: enabledFromSelection,
         score,
       });
     } catch (error) {
@@ -640,11 +691,6 @@ const CompareDriversPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears1.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears1.join(', ')}
-                  </Text>
-                )}
               </VStack>
 
               {/* Driver 2 Year Selection */}
@@ -708,11 +754,6 @@ const CompareDriversPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears2.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears2.join(', ')}
-                  </Text>
-                )}
               </VStack>
             </Grid>
 
@@ -906,8 +947,8 @@ const CompareDriversPage = () => {
     const driver2Headshot = (stats2 ? driverHeadshots[driver2?.fullName || ''] : driver2 ? driverHeadshots[driver2.fullName] : null);
     
     // Get team colors using proper driver-team mapping
-    const driver1TeamColor = getTeamColor(getDriverTeam(driver1));
-    const driver2TeamColor = getTeamColor(getDriverTeam(driver2));
+    const driver1TeamColor = getTeamColor(getDriverTeam(driver1), { hash: true });
+    const driver2TeamColor = getTeamColor(getDriverTeam(driver2), { hash: true });
 
     // Available metrics for comparison
     const availableMetrics = {
