@@ -221,18 +221,19 @@ function DashboardPage() {
             cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
             rowHeight={120}
             onLayoutChange={handleLayoutChange}
-            isDraggable={true}
             isResizable={false}
             preventCollision={false}
             isBounded={true}
             compactType="vertical"
             margin={[8, 8]}
             containerPadding={[4, 4]}
-            draggableCancel={"button, a, .chakra-button, .no-drag, input, select, textarea"}
+            draggableCancel={"button, a, .chakra-button, .no-drag, input, select, textarea, .scrollable-content, [data-scrollable], .widget-content, .chakra-scroll, .chakra-scroll__view, .chakra-vstack, .chakra-hstack, .chakra-box"}
             useCSSTransforms={true}
             transformScale={1}
             isDroppable={true}
             allowOverlap={false}
+            // Disable dragging on mobile to prevent conflicts with scrolling
+            isDraggable={typeof window !== 'undefined' && window.innerWidth >= 768}
           >
             {Object.keys(widgetVisibility)
               .filter(key => widgetVisibility[key as keyof WidgetVisibility])

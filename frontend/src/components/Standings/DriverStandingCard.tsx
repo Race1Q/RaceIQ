@@ -120,26 +120,32 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
         </HStack>
       </Flex>
 
-      <HStack spacing={{ base: 3, md: 6 }} pr={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
+      {/* Mobile: Stack stats vertically, Desktop: Keep horizontal */}
+      <Flex 
+        direction={{ base: "column", md: "row" }} 
+        pr={2}
+        align={{ base: "flex-end", md: "center" }}
+        gap={{ base: 1, md: 6 }}
+      >
         <Tooltip label="Championship Points" hasArrow>
-          <Stat textAlign="right" minW={{ base: "50px", md: "70px" }}>
-            <StatLabel fontSize={{ base: "0.6rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Points</StatLabel>
-            <StatNumber fontSize={{ base: "md", md: "lg" }} fontWeight="700">{points}</StatNumber>
+          <Stat textAlign="right" minW={{ base: "40px", md: "70px" }}>
+            <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Points</StatLabel>
+            <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="700">{points}</StatNumber>
           </Stat>
         </Tooltip>
         <Tooltip label="Race Wins" hasArrow>
-          <Stat textAlign="right" minW={{ base: "45px", md: "60px" }}>
-            <StatLabel fontSize={{ base: "0.6rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Wins</StatLabel>
-            <StatNumber fontSize={{ base: "md", md: "lg" }} fontWeight="600">{wins}</StatNumber>
+          <Stat textAlign="right" minW={{ base: "35px", md: "60px" }}>
+            <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Wins</StatLabel>
+            <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="600">{wins}</StatNumber>
           </Stat>
         </Tooltip>
         <Tooltip label="Podium Finishes" hasArrow>
-          <Stat textAlign="right" minW={{ base: "55px", md: "72px" }}>
-            <StatLabel fontSize={{ base: "0.6rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Podiums</StatLabel>
-            <StatNumber fontSize={{ base: "md", md: "lg" }} fontWeight="600">{podiums}</StatNumber>
+          <Stat textAlign="right" minW={{ base: "40px", md: "72px" }}>
+            <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Podiums</StatLabel>
+            <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="600">{podiums}</StatNumber>
           </Stat>
         </Tooltip>
-      </HStack>
+      </Flex>
     </Flex>
   );
 };
