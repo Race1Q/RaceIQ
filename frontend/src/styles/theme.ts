@@ -4,8 +4,8 @@ import { extendTheme, type ThemeConfig } from '@chakra-ui/react';
 
 // 1. Color mode configuration - This remains the same.
 const config: ThemeConfig = {
-  initialColorMode: 'dark',
-  useSystemColorMode: true, // Respects the user's OS preference
+  initialColorMode: 'light',
+  useSystemColorMode: false, // Disabled to prevent conflicts
 };
 
 // 2. Dynamic theme creation function

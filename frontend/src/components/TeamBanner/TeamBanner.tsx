@@ -13,7 +13,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
   // Theme-aware colors for the banner
   const textColor = useColorModeValue('gray.900', 'white');
   const textShadow = useColorModeValue('0 2px 8px rgba(255,255,255,0.3)', '0 2px 8px rgba(0,0,0,0.5)');
-  const gradientEnd = useColorModeValue('bg-surface', 'bg-surface-dark');
+  const gradientEnd = useColorModeValue('rgba(248, 250, 252, 0.9)', 'rgba(23, 25, 35, 0.9)');
 
   return (
     <Flex

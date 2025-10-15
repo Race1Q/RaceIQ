@@ -60,9 +60,9 @@ const GeminiBadge: React.FC<GeminiBadgeProps> = ({
   variant = 'subtle' 
 }) => {
   // Theme-aware colors
-  const borderColor = useColorModeValue('border-subtle', 'whiteAlpha.300');
-  const backgroundColor = useColorModeValue('bg-surface', 'blackAlpha.200');
-  const textColor = useColorModeValue('text-primary', 'white');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
+  const backgroundColor = useColorModeValue('white', 'blackAlpha.200');
+  const textColor = useColorModeValue('gray.800', 'white');
   const hoverShadow = useColorModeValue('0 4px 12px rgba(0,0,0,0.1)', '0 4px 12px rgba(0,0,0,0.15)');
   const shimmerColor = useColorModeValue('rgba(0,0,0,0.1)', 'rgba(255,255,255,0.4)');
   

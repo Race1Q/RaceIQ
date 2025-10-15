@@ -30,10 +30,10 @@ const PolesBySeasonChart: React.FC<PolesBySeasonChartProps> = ({ data, teamColor
   }));
 
   // Theme-aware colors
-  const backgroundColor = useColorModeValue('bg-surface', 'gray.800');
-  const textColor = useColorModeValue('text-primary', 'white');
-  const gridColor = useColorModeValue('black', 'gray');
-  const axisColor = useColorModeValue('black', 'white');
+  const backgroundColor = useColorModeValue('white', 'gray.800');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const gridColor = useColorModeValue('#E2E8F0', '#4A5568');
+  const axisColor = useColorModeValue('gray.800', 'white');
 
   return (
     <Box w="100%" h="300px" bg={backgroundColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">

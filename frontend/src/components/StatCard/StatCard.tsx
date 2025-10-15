@@ -15,12 +15,12 @@ const StatCard: React.FC<StatCardProps> = ({
   color = '#dc2626' // Default brand red
 }) => {
   // Theme-aware colors
-  const backgroundColor = useColorModeValue('bg-surface', 'blackAlpha.100');
-  const borderColor = useColorModeValue('border-primary', 'whiteAlpha.200');
-  const hoverBackground = useColorModeValue('bg-surface-raised', 'blackAlpha.200');
-  const hoverBorderColor = useColorModeValue('border-strong', 'whiteAlpha.300');
-  const textColor = useColorModeValue('text-primary', 'white');
-  const labelColor = useColorModeValue('text-muted', 'gray.300');
+  const backgroundColor = useColorModeValue('white', 'blackAlpha.100');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const hoverBackground = useColorModeValue('gray.50', 'blackAlpha.200');
+  const hoverBorderColor = useColorModeValue('gray.300', 'whiteAlpha.300');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const labelColor = useColorModeValue('gray.600', 'gray.300');
   
   return (
     <Box

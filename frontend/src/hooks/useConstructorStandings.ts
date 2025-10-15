@@ -72,8 +72,8 @@ export const useConstructorStandings = (
             .filter(Boolean) as ConstructorStandingRow[];
 
           // 4) Sort and assign positions
-          standingsData.sort((a, b) => (b.seasonPoints || 0) - (a.seasonPoints || 0));
-          const withPositions = standingsData.map((s, idx) => ({ ...s, position: idx + 1 }));
+          const sortedStandings = [...standingsData].sort((a, b) => (b.seasonPoints || 0) - (a.seasonPoints || 0));
+          const withPositions = sortedStandings.map((s, idx) => ({ ...s, position: idx + 1 }));
           setStandings(withPositions);
         } catch (err: any) {
           const message = err?.message || 'Failed to fetch constructor standings.';
@@ -169,8 +169,8 @@ export const useConstructorStandings = (
           }
         });
 
-        const standingsData = (await Promise.all(standingsPromises))
-          .filter(Boolean)
+        const standingsData = [...(await Promise.all(standingsPromises))
+          .filter(Boolean)]
           .sort((a, b) => (b?.seasonPoints || 0) - (a?.seasonPoints || 0))
           .map((standing, index) => ({
             ...standing!,

@@ -30,13 +30,14 @@ const PointsBySeasonChart: React.FC<PointsBySeasonChartProps> = ({ data, teamCol
   }));
 
   // Theme-aware colors
-  const backgroundColor = useColorModeValue('bg-surface', 'gray.800');
-  const textColor = useColorModeValue('text-primary', 'white');
-  const gridColor = useColorModeValue('black', 'gray');
-  const axisColor = useColorModeValue('black', 'white');
+  const backgroundColor = useColorModeValue('white', 'gray.800');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const gridColor = useColorModeValue('#E2E8F0', '#4A5568');
+  const axisColor = useColorModeValue('gray.800', 'white');
+  const borderColor = useColorModeValue('#E2E8F0', '#4A5568');
 
   return (
-    <Box w="100%" h="300px" bg={backgroundColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
+    <Box w="100%" h="300px" bg={backgroundColor} p={4} borderRadius="md" border="1px solid" borderColor={borderColor}>
       <Text fontSize="lg" fontWeight="bold" mb={2} color={textColor}>Points by Season</Text>
       <ResponsiveContainer width="100%" height="90%">
         <LineChart data={chartData}>
@@ -56,8 +57,8 @@ const PointsBySeasonChart: React.FC<PointsBySeasonChartProps> = ({ data, teamCol
             dataKey="points" 
             stroke={teamColor} 
             strokeWidth={3}
-            dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
+            dot={{ fill: teamColor, strokeWidth: 2, r: 4, stroke: teamColor }}
+            activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2, fill: teamColor }}
           />
         </LineChart>
       </ResponsiveContainer>

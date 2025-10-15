@@ -36,7 +36,7 @@ const DriverDetailPage: React.FC = () => {
   if (loading) return <DriverDetailSkeleton />;
   if (error || !driverDetails) return <Text p="lg">Error: {error || 'Driver data could not be loaded.'}</Text>;
 
-  const teamColor = teamColors[driverDetails.teamName] || '#333333';
+  const teamColor = `#${teamColors[driverDetails.teamName] || teamColors.Default}`;
   const twoLetterCountryCode = countryCodeMap[driverDetails.countryCode?.toUpperCase()] || driverDetails.countryCode;
 
   return (

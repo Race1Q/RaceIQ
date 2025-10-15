@@ -312,7 +312,7 @@ export function useDriverComparison(): HookState {
       .then(([driversList, yearsList]) => {
         if (alive) {
           setAllDrivers(driversList);
-          setYears(yearsList.sort((a, b) => b - a));
+          setYears([...yearsList].sort((a, b) => b - a));
         }
       })
       .catch((e) => {

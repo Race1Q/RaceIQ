@@ -1,5 +1,5 @@
 // frontend/src/pages/CompareConstructorsPage/components/ConstructorComparisonTable.tsx
-import { Box, Text, VStack, HStack, Flex, Badge, Image, Grid } from '@chakra-ui/react';
+import { Box, Text, VStack, HStack, Flex, Badge, Image, Grid, useColorModeValue } from '@chakra-ui/react';
 import { Trophy, Star, Flag, Zap, Target, Clock, Award } from 'lucide-react';
 import { getTeamLogo } from '../../../lib/teamAssets';
 import { TEAM_META, type TeamKey } from '../../../theme/teamTokens';
@@ -38,22 +38,32 @@ const StatCard = ({
   teamColor: string;
   isWinner?: boolean;
   metric?: string;
-}) => (
-  <Flex
-    justify="space-between"
-    align="center"
-    p={4}
-    bg="bg-glassmorphism"
-    borderRadius="md"
-    border="2px solid"
-    borderColor={isWinner ? `#${teamColor}` : "border-subtle"}
-    w="100%"
+}) => {
+  // Theme-aware colors
+  const cardBg = useColorModeValue('white', 'rgba(255, 255, 255, 0.05)');
+  const cardBorder = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const cardBorderHover = useColorModeValue('gray.300', 'whiteAlpha.300');
+  const iconColor = useColorModeValue('gray.600', 'white');
+  const textColor = useColorModeValue('gray.600', 'gray.300');
+  const valueColor = useColorModeValue('gray.800', 'white');
+  const shadowColor = useColorModeValue('rgba(0,0,0,0.1)', 'rgba(0,0,0,0.3)');
+
+  return (
+    <Flex
+      justify="space-between"
+      align="center"
+      p={4}
+      bg={cardBg}
+      borderRadius="md"
+      border="2px solid"
+      borderColor={isWinner ? `#${teamColor}` : cardBorder}
+      w="100%"
     transition="all 0.3s ease"
     position="relative"
     _hover={{
       transform: 'translateY(-2px)',
-      boxShadow: isWinner ? `0 8px 25px #${teamColor}30` : '0 8px 25px rgba(0,0,0,0.1)',
-      borderColor: isWinner ? `#${teamColor}` : "border-primary"
+      boxShadow: isWinner ? `0 8px 25px #${teamColor}30` : `0 8px 25px ${shadowColor}`,
+      borderColor: isWinner ? `#${teamColor}` : cardBorderHover
     }}
     _before={isWinner ? {
       content: '""',
@@ -67,14 +77,14 @@ const StatCard = ({
     } : undefined}
   >
     <HStack>
-      <Box as={icon} color={isWinner ? `#${teamColor}` : "white"} w="16px" h="16px" />
-      <Text fontSize="sm" color="text-muted">{label}</Text>
+      <Box as={icon} color={isWinner ? `#${teamColor}` : iconColor} w="16px" h="16px" />
+      <Text fontSize="sm" color={textColor}>{label}</Text>
     </HStack>
     <HStack spacing={2}>
       <Text 
         fontSize="lg" 
         fontFamily="heading" 
-        color={isWinner ? `#${teamColor}` : "white"} 
+        color={isWinner ? `#${teamColor}` : valueColor} 
         fontWeight={isWinner ? "bold" : "normal"}
         textShadow={isWinner ? `0 0 8px #${teamColor}40` : "none"}
         transition="all 0.3s ease"
@@ -86,7 +96,8 @@ const StatCard = ({
       )}
     </HStack>
   </Flex>
-);
+  );
+};
 
 // Helper function to determine winner for each metric
 const determineWinner = (value1: number, value2: number, metric: string): boolean => {
@@ -201,10 +212,10 @@ const ConstructorStatsColumn = ({
           </Badge>
         </Box>
         <VStack spacing="xs" textAlign="center">
-          <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color="text-primary">
+          <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color={useColorModeValue('gray.800', 'white')}>
             {constructor.name}
           </Text>
-          <Text fontSize="sm" color="text-muted">
+          <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.300')}>
             {constructor.nationality}
           </Text>
           <Badge

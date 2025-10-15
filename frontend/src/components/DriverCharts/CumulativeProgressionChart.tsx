@@ -38,13 +38,14 @@ const CumulativeProgressionChart: React.FC<CumulativeProgressionChartProps> = ({
   }));
 
   // Theme-aware colors
-  const backgroundColor = useColorModeValue('bg-surface', 'gray.800');
-  const textColor = useColorModeValue('text-primary', 'white');
-  const gridColor = useColorModeValue('black', 'gray');
-  const axisColor = useColorModeValue('black', 'white');
+  const backgroundColor = useColorModeValue('white', 'gray.800');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const gridColor = useColorModeValue('#E2E8F0', '#4A5568');
+  const axisColor = useColorModeValue('gray.800', 'white');
+  const borderColor = useColorModeValue('#E2E8F0', '#4A5568');
   const tooltipBg = useColorModeValue('white', 'rgba(0, 0, 0, 0.8)');
   const tooltipBorder = useColorModeValue('#E2E8F0', '#333');
-  const tooltipText = useColorModeValue('black', 'white');
+  const tooltipText = useColorModeValue('gray.800', 'white');
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -67,7 +68,7 @@ const CumulativeProgressionChart: React.FC<CumulativeProgressionChartProps> = ({
   };
 
   return (
-    <Box w="100%" h="400px" bg={backgroundColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
+    <Box w="100%" h="400px" bg={backgroundColor} p={4} borderRadius="md" border="1px solid" borderColor={borderColor}>
       <Text fontSize="lg" fontWeight="bold" mb={2} color={textColor}>Cumulative Points Progression ({season})</Text>
       <ResponsiveContainer width="100%" height="90%">
         <LineChart data={chartData}>
@@ -80,8 +81,8 @@ const CumulativeProgressionChart: React.FC<CumulativeProgressionChartProps> = ({
             dataKey="cumulative" 
             stroke={teamColor} 
             strokeWidth={3}
-            dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
-            activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
+            dot={{ fill: teamColor, strokeWidth: 2, r: 4, stroke: teamColor }}
+            activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2, fill: teamColor }}
           />
         </LineChart>
       </ResponsiveContainer>
