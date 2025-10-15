@@ -1,23 +1,16 @@
 // src/App/App.tsx
 
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Flex, HStack, Button, Text, Container, Spinner, IconButton, useDisclosure, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, VStack } from '@chakra-ui/react';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import LoginButton from '../components/LoginButton/LoginButton';
 import LogoutButton from '../components/LogoutButton/LogoutButton';
 import ThemeToggleButton from '../components/ThemeToggleButton/ThemeToggleButton';
-import AboutUs from '../pages/AboutUs/AboutUs';
-import Drivers from '../pages/Drivers/Drivers';
-import DriverDetailPage from '../pages/DriverDetailPage/DriverDetailPage';
-import RacesPage from '../pages/RacesPage/RacesPage';
-import RaceDetailPageLayout from '../pages/RaceDetailPage/RaceDetailPage';
-// import Admin from '../pages/Admin/Admin';
-import ProfilePage from '../pages/ProfilePage/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 import ProtectedDetailRoute from '../components/ProtectedDetailRoute/ProtectedDetailRoute';
 import { useActiveRoute } from '../hooks/useActiveRoute';
-import HomePage from '../pages/HomePage/HomePage';
 import { RoleProvider } from '../context/RoleContext';
 import { ProfileUpdateProvider } from '../context/ProfileUpdateContext';
 import { ThemeColorProvider, useThemeColor } from '../context/ThemeColorContext';
@@ -26,16 +19,25 @@ import { getLogoFilter } from '../lib/colorUtils';
 import useScrollToTop from '../hooks/useScrollToTop';
 import BackToTopButton from '../components/BackToTopButton/BackToTopButton';
 import UserRegistrationHandler from '../components/UserRegistrationHandler/UserRegistrationHandler';
-import Constructors from '../pages/Constructors/Constructors';
-import ConstructorsStandings from '../pages/Standings/ConstructorStandings';
-import ConstructorDetails from '../pages/ConstructorsDetails/ConstructorsDetails';
-import CompareDriversPage from '../pages/CompareDriversPage/CompareDriversPage';
-import CompareConstructorsPage from '../pages/CompareConstructorsPage/CompareConstructorsPage';
-import ComparisonLoginPrompt from '../pages/ComparisonLoginPrompt/ComparisonLoginPrompt';
 import AppLayout from '../components/layout/AppLayout';
-import DashboardPage from '../pages/Dashboard/DashboardPage';
-import DriverStandings from '../pages/Standings/DriverStandings';
-import AnalyticsStandings from '../pages/Standings/AnalyticsStandings';
+
+// Lazy load all pages for route-based code splitting
+const HomePage = lazy(() => import('../pages/HomePage/HomePage'));
+const AboutUs = lazy(() => import('../pages/AboutUs/AboutUs'));
+const Drivers = lazy(() => import('../pages/Drivers/Drivers'));
+const DriverDetailPage = lazy(() => import('../pages/DriverDetailPage/DriverDetailPage'));
+const RacesPage = lazy(() => import('../pages/RacesPage/RacesPage'));
+const RaceDetailPageLayout = lazy(() => import('../pages/RaceDetailPage/RaceDetailPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage/ProfilePage'));
+const Constructors = lazy(() => import('../pages/Constructors/Constructors'));
+const ConstructorsStandings = lazy(() => import('../pages/Standings/ConstructorStandings'));
+const ConstructorDetails = lazy(() => import('../pages/ConstructorsDetails/ConstructorsDetails'));
+const CompareDriversPage = lazy(() => import('../pages/CompareDriversPage/CompareDriversPage'));
+const CompareConstructorsPage = lazy(() => import('../pages/CompareConstructorsPage/CompareConstructorsPage'));
+const ComparisonLoginPrompt = lazy(() => import('../pages/ComparisonLoginPrompt/ComparisonLoginPrompt'));
+const DashboardPage = lazy(() => import('../pages/Dashboard/DashboardPage'));
+const DriverStandings = lazy(() => import('../pages/Standings/DriverStandings'));
+const AnalyticsStandings = lazy(() => import('../pages/Standings/AnalyticsStandings'));
 
 
 
@@ -78,10 +80,13 @@ function Navbar() {
             <img 
               src="/race_IQ_logo.svg" 
               alt="RaceIQ Logo" 
+              width="60"
+              height="60"
               style={{ 
                 height: '60px', 
-                width: 'auto',
+                width: '60px',
                 maxHeight: '100%',
+                objectFit: 'contain',
                 filter: getLogoFilter(accentColorWithHash)
               }}
             />
@@ -236,36 +241,42 @@ function AppContent() {
     return (
       <Box bg="bg-primary" color="text-primary" minH="100vh" display="flex" flexDirection="column">
         <AppLayout>
-          <Routes>
-            {/* Redirect root to dashboard for authenticated users */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* PROTECTED ROUTES */}
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/drivers" element={<Drivers />} />
-            <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
-            <Route path="/constructors" element={<Constructors />} />
-            {/* Standings: default to drivers; constructors available via tab/deep link */}
-            <Route path="/standings" element={<DriverStandings />} />
-            <Route path="/standings/constructors" element={<ConstructorsStandings />} />
-            <Route path="/standings/analytics" element={<AnalyticsStandings />} />
-            <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
-            <Route path="/compare" element={<CompareDriversPage />} />
-            <Route path="/compare/constructors" element={<CompareConstructorsPage />} />
-            <Route path="/races" element={<RacesPage />} />
-            <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* ADMIN route disabled */}
-          </Routes>
+          <Suspense fallback={
+            <Flex align="center" justify="center" minH="50vh">
+              <Spinner thickness="3px" speed="0.65s" emptyColor="whiteAlpha.200" color={accentColorWithHash} size="lg" />
+            </Flex>
+          }>
+            <Routes>
+              {/* Redirect root to dashboard for authenticated users */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              
+              {/* PROTECTED ROUTES */}
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/drivers" element={<Drivers />} />
+              <Route path="/drivers/:driverId" element={<DriverDetailPage />} />
+              <Route path="/constructors" element={<Constructors />} />
+              {/* Standings: default to drivers; constructors available via tab/deep link */}
+              <Route path="/standings" element={<DriverStandings />} />
+              <Route path="/standings/constructors" element={<ConstructorsStandings />} />
+              <Route path="/standings/analytics" element={<AnalyticsStandings />} />
+              <Route path="/constructors/:constructorId" element={<ConstructorDetails />} />
+              <Route path="/compare" element={<CompareDriversPage />} />
+              <Route path="/compare/constructors" element={<CompareConstructorsPage />} />
+              <Route path="/races" element={<RacesPage />} />
+              <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* ADMIN route disabled */}
+            </Routes>
+          </Suspense>
         </AppLayout>
 
         <BackToTopButton />
@@ -294,40 +305,46 @@ function AppContent() {
       {showNavbar && <Navbar />}
       
       {/* Routes */}
-      <Routes>
-        {/* PUBLIC */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/drivers" element={<Drivers />} />
-        <Route 
-          path="/drivers/:driverId" 
-          element={
-            <ProtectedDetailRoute 
-              title="Unlock Driver Insights"
-              message="Get access to comprehensive driver statistics, career analysis, performance trends, and detailed race history."
-            >
-              <DriverDetailPage />
-            </ProtectedDetailRoute>
-          } 
-        />
-        <Route path="/races" element={<RacesPage />} />
-        <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
-        <Route path="/constructors" element={<Constructors />} />
-        <Route 
-          path="/constructors/:constructorId" 
-          element={
-            <ProtectedDetailRoute 
-              title="Unlock Team Analytics"
-              message="Access detailed constructor performance data, team statistics, championship history, and technical insights."
-            >
-              <ConstructorDetails />
-            </ProtectedDetailRoute>
-          } 
-        />
-        <Route path="/compare" element={<CompareDriversPage />} />
-        <Route path="/compare/constructors" element={<CompareConstructorsPage />} />
-        <Route path="/compare-login" element={<ComparisonLoginPrompt />} />
-      </Routes>
+      <Suspense fallback={
+        <Flex align="center" justify="center" minH="50vh">
+          <Spinner thickness="3px" speed="0.65s" emptyColor="whiteAlpha.200" color={accentColorWithHash} size="lg" />
+        </Flex>
+      }>
+        <Routes>
+          {/* PUBLIC */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/drivers" element={<Drivers />} />
+          <Route 
+            path="/drivers/:driverId" 
+            element={
+              <ProtectedDetailRoute 
+                title="Unlock Driver Insights"
+                message="Get access to comprehensive driver statistics, career analysis, performance trends, and detailed race history."
+              >
+                <DriverDetailPage />
+              </ProtectedDetailRoute>
+            } 
+          />
+          <Route path="/races" element={<RacesPage />} />
+          <Route path="/races/:raceId" element={<RaceDetailPageLayout />} />
+          <Route path="/constructors" element={<Constructors />} />
+          <Route 
+            path="/constructors/:constructorId" 
+            element={
+              <ProtectedDetailRoute 
+                title="Unlock Team Analytics"
+                message="Access detailed constructor performance data, team statistics, championship history, and technical insights."
+              >
+                <ConstructorDetails />
+              </ProtectedDetailRoute>
+            } 
+          />
+          <Route path="/compare" element={<CompareDriversPage />} />
+          <Route path="/compare/constructors" element={<CompareConstructorsPage />} />
+          <Route path="/compare-login" element={<ComparisonLoginPrompt />} />
+        </Routes>
+      </Suspense>
 
       <BackToTopButton />
 

@@ -160,9 +160,13 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
               <Image 
                 src="/race_IQ_logo.svg" 
                 alt="RaceIQ Logo" 
+                width="40px"
+                height="40px"
                 h="40px"
                 w="auto"
                 objectFit="contain"
+                loading="eager"
+                decoding="async"
                 filter={getLogoFilter(accentColorWithHash)}
               />
               <DrawerCloseButton />
@@ -225,10 +229,14 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
           <Image 
             src="/race_IQ_logo.svg" 
             alt="RaceIQ Logo" 
+            width="64px"
+            height="64px"
             h="full"
             w="auto"
             maxW={isExpanded ? "70%" : "70%"}
             objectFit="contain"
+            loading="eager"
+            decoding="async"
             filter={getLogoFilter(accentColorWithHash)}
           />
         </Box>

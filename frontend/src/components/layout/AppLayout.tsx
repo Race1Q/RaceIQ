@@ -50,9 +50,13 @@ function AppLayout({ children }: AppLayoutProps) {
                   <Image 
                     src="/race_IQ_logo.svg" 
                     alt="RaceIQ Logo" 
+                    width="40px"
+                    height="40px"
                     h="40px"
                     w="auto"
                     objectFit="contain"
+                    loading="eager"
+                    decoding="async"
                     filter={getLogoFilter(accentColorWithHash)}
                   />
                 </HStack>

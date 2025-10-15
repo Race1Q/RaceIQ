@@ -1,13 +1,12 @@
 import { Heading, Text, VStack, HStack, Box, Image } from '@chakra-ui/react';
-import { useMemo, useEffect, useState, useCallback } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useMemo, useEffect } from 'react';
 import SearchableSelect from '../../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../../components/DropDownSearch/SearchableSelect';
-import { buildApiUrl } from '../../../lib/api';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
 import { driverHeadshots } from '../../../lib/driverHeadshots';
 import { useThemeColor } from '../../../context/ThemeColorContext';
+import { useDashboardSharedData } from '../../../context/DashboardDataContext';
 import WidgetCard from './WidgetCard';
 
 interface HeadToHeadQuickCompareWidgetProps {
@@ -24,69 +23,25 @@ function HeadToHeadQuickCompareWidget({
   onPreferenceChange, 
   allDrivers: _allDrivers 
 }: HeadToHeadQuickCompareWidgetProps) {
-  const { getAccessTokenSilently } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
-  const currentSeason = new Date().getFullYear();
+  const { driverStandings, loadingDriverStandings, errorDriverStandings } = useDashboardSharedData();
 
   const { driver1Id, driver2Id } = preference || {};
 
-  type DriverRow = {
-    id: number;
-    fullName: string;
-    teamName: string;
-    wins: number;
-    podiums: number;
-    points: number;
-    headshotUrl?: string | null;
-  };
-
-  const [driversWithStats, setDriversWithStats] = useState<DriverRow[]>([]);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchDriverStats = useCallback(async () => {
-    try {
-      setLoadingStats(true);
-      setError(null);
-      const token = await getAccessTokenSilently();
-      const res = await fetch(buildApiUrl(`/api/drivers/standings/${currentSeason}`), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error(`Failed to fetch standings: ${res.status}`);
-      const payload = await res.json();
-      const rows: DriverRow[] = (payload as any[]).map((d: any) => ({
-        id: Number(d.id ?? d.driverId),
-        fullName: d.fullname || d.fullName || `${d.firstName ?? ''} ${d.lastName ?? ''}`.trim(),
-        teamName: d.constructor || d.teamName || 'Unknown',
-        wins: Number(d.wins ?? 0),
-        podiums: Number(d.podiums ?? 0),
-        points: Number(d.points ?? 0),
-        headshotUrl: d.profileimageurl || d.profileImageUrl || d.headshotUrl || undefined,
-      })).filter(r => !!r.id && !!r.fullName);
-      setDriversWithStats(rows);
-
-      // Set default selections if none are provided
-      if (!driver1Id && !driver2Id && rows.length >= 2) {
-        onPreferenceChange({ 
-          driver1Id: rows[0].id, 
-          driver2Id: rows[1].id 
-        });
-      }
-    } catch (e: any) {
-      setError(e.message || 'Failed to load driver stats');
-    } finally {
-      setLoadingStats(false);
-    }
-  }, [getAccessTokenSilently, currentSeason, driver1Id, driver2Id, onPreferenceChange]);
-
+  // Set default selections if none are provided
   useEffect(() => {
-    fetchDriverStats();
-  }, [fetchDriverStats]);
+    if (!driver1Id && !driver2Id && driverStandings.length >= 2) {
+      onPreferenceChange({ 
+        driver1Id: driverStandings[0].id, 
+        driver2Id: driverStandings[1].id 
+      });
+    }
+  }, [driver1Id, driver2Id, driverStandings, onPreferenceChange]);
 
-  const options: SelectOption[] = useMemo(() => driversWithStats.map(d => ({ value: d.id, label: d.fullName })), [driversWithStats]);
+  const options: SelectOption[] = useMemo(() => driverStandings.map(d => ({ value: d.id, label: d.fullName })), [driverStandings]);
 
-  const d1 = useMemo(() => driversWithStats.find(d => d.id === driver1Id) || null, [driversWithStats, driver1Id]);
-  const d2 = useMemo(() => driversWithStats.find(d => d.id === driver2Id) || null, [driversWithStats, driver2Id]);
+  const d1 = useMemo(() => driverStandings.find(d => d.id === driver1Id) || null, [driverStandings, driver1Id]);
+  const d2 = useMemo(() => driverStandings.find(d => d.id === driver2Id) || null, [driverStandings, driver2Id]);
 
   const handleDriver1Change = (opt: SelectOption | null) => {
     const newDriver1Id = opt ? Number(opt.value) : undefined;
@@ -104,7 +59,7 @@ function HeadToHeadQuickCompareWidget({
     });
   };
 
-  if (loadingStats) {
+  if (loadingDriverStandings) {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
@@ -115,12 +70,12 @@ function HeadToHeadQuickCompareWidget({
     );
   }
 
-  if (error || !d1 || !d2) {
+  if (errorDriverStandings || !d1 || !d2) {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
           <Heading color={accentColorWithHash} size="md" fontFamily="heading">Head to Head</Heading>
-          <Text color="text-muted">{error || 'Please select two drivers to compare'}</Text>
+          <Text color="text-muted">{errorDriverStandings || 'Please select two drivers to compare'}</Text>
         </VStack>
       </WidgetCard>
     );
@@ -168,6 +123,8 @@ function HeadToHeadQuickCompareWidget({
             <Box
               w="60px"
               h="60px"
+              minW="60px"
+              minH="60px"
               borderRadius="full"
               overflow="hidden"
               border="2px solid"
@@ -176,9 +133,13 @@ function HeadToHeadQuickCompareWidget({
               <Image
                 src={driver1.image}
                 alt={driver1.name}
+                width="60px"
+                height="60px"
                 w="full"
                 h="full"
                 objectFit="cover"
+                loading="eager"
+                decoding="async"
                 fallbackSrc="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
               />
             </Box>
@@ -237,6 +198,8 @@ function HeadToHeadQuickCompareWidget({
             <Box
               w="60px"
               h="60px"
+              minW="60px"
+              minH="60px"
               borderRadius="full"
               overflow="hidden"
               border="2px solid"
@@ -245,9 +208,13 @@ function HeadToHeadQuickCompareWidget({
               <Image
                 src={driver2.image}
                 alt={driver2.name}
+                width="60px"
+                height="60px"
                 w="full"
                 h="full"
                 objectFit="cover"
+                loading="eager"
+                decoding="async"
                 fallbackSrc="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
               />
             </Box>
@@ -301,6 +268,8 @@ function HeadToHeadQuickCompareWidget({
             <Box
               w="50px"
               h="50px"
+              minW="50px"
+              minH="50px"
               borderRadius="full"
               overflow="hidden"
               border="2px solid"
@@ -309,9 +278,13 @@ function HeadToHeadQuickCompareWidget({
               <Image
                 src={driver1.image}
                 alt={driver1.name}
+                width="50px"
+                height="50px"
                 w="full"
                 h="full"
                 objectFit="cover"
+                loading="eager"
+                decoding="async"
                 fallbackSrc="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
               />
             </Box>
@@ -375,6 +348,8 @@ function HeadToHeadQuickCompareWidget({
             <Box
               w="50px"
               h="50px"
+              minW="50px"
+              minH="50px"
               borderRadius="full"
               overflow="hidden"
               border="2px solid"
@@ -383,9 +358,13 @@ function HeadToHeadQuickCompareWidget({
               <Image
                 src={driver2.image}
                 alt={driver2.name}
+                width="50px"
+                height="50px"
                 w="full"
                 h="full"
                 objectFit="cover"
+                loading="eager"
+                decoding="async"
                 fallbackSrc="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
               />
             </Box>

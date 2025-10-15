@@ -34,7 +34,8 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
     return null;
   }
 
-  const imageUrl = driverHeadshots[featuredDriver.fullName] || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png';
+  // Import optimization utility at top of file
+  const imageUrl = driverHeadshots[featuredDriver.fullName] || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col/image.png';
 
   const getTeamColor = (teamName: string): string => {
     const hex = teamColors[teamName] ?? teamColors['Default'];
