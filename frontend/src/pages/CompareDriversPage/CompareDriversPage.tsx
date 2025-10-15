@@ -436,6 +436,36 @@ const CompareDriversPage = () => {
       const teamColor1 = getTeamColor(driver1.teamName || 'Default');
       const teamColor2 = getTeamColor(driver2.teamName || 'Default');
 
+      // Map UI metric keys to internal metric keys expected by the PDF (and hook)
+      const uiToInternal: Record<string, string> = {
+        wins: 'wins',
+        podiums: 'podiums',
+        poles: 'poles',
+        fastest_laps: 'fastestLaps',
+        points: 'points',
+        races: 'races', // not used in PDF driver stats but kept for future
+        dnf: 'dnfs',
+        avg_finish: 'avgFinish', // not used in current PDF driver stats
+      };
+
+      // Build an enabled metrics object from what the user selected (start all false)
+      const enabledFromSelection: any = {
+        wins: false,
+        podiums: false,
+        fastestLaps: false,
+        points: false,
+        sprintWins: false,
+        sprintPodiums: false,
+        dnfs: false,
+        poles: false,
+      };
+      enabledMetricsArray.forEach((uiKey) => {
+        const internal = uiToInternal[uiKey];
+        if (internal && internal in enabledFromSelection) {
+          enabledFromSelection[internal] = true;
+        }
+      });
+
       await DriverPdfComparisonCard({
         driver1: {
           ...driver1,
@@ -447,7 +477,7 @@ const CompareDriversPage = () => {
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
-        enabledMetrics,
+        enabledMetrics: enabledFromSelection,
         score,
       });
     } catch (error) {
