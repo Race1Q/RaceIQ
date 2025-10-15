@@ -22,11 +22,29 @@ export const createTheme = (accentColor: string = 'e10600') => {
       'bg-primary': { default: '#F0F2F5', _dark: '#0a0a0a' },
       'bg-surface': { default: '#FFFFFF', _dark: '#0f0f0f' },
       'bg-surface-raised': { default: '#FDFDFD', _dark: '#1a1a1a' },
+      
+      // Card backgrounds
+      'bg-card': { default: '#FFFFFF', _dark: 'rgba(15, 15, 15, 0.6)' },
+      'bg-card-hover': { default: '#FFFFFF', _dark: 'rgba(26, 26, 26, 0.7)' },
+      
+      // Overlay backgrounds (modals, dropdowns)
+      'bg-overlay': { default: 'rgba(15, 23, 42, 0.75)', _dark: 'rgba(0, 0, 0, 0.6)' },
+      'bg-modal': { default: '#FFFFFF', _dark: 'rgba(15, 15, 15, 0.95)' },
+      
+      // Glassmorphism (sidebar, floating elements)
+      'bg-glassmorphism': { default: 'rgba(255, 255, 255, 0.9)', _dark: 'rgba(15, 15, 15, 0.7)' },
+      
+      // Interactive states
+      'bg-hover': { default: 'rgba(0, 0, 0, 0.04)', _dark: 'rgba(255, 255, 255, 0.05)' },
+      'bg-active': { default: 'rgba(0, 0, 0, 0.08)', _dark: 'rgba(255, 255, 255, 0.1)' },
+      'bg-subtle': { default: 'rgba(0, 0, 0, 0.02)', _dark: 'rgba(255, 255, 255, 0.02)' },
 
       // Text Colors
       'text-primary': { default: '#1A202C', _dark: '#ffffff' },
       'text-secondary': { default: '#718096', _dark: '#cccccc' },
       'text-muted': { default: '#A0AEC0', _dark: '#888888' },
+      'text-on-accent': { default: '#ffffff', _dark: '#ffffff' },
+      'text-inverse': { default: '#ffffff', _dark: '#0F172A' },
 
       // Border Colors
       'border-primary': { default: '#E2E8F0', _dark: '#333333' },
@@ -41,6 +59,11 @@ export const createTheme = (accentColor: string = 'e10600') => {
 
       // Logo Color (swaps based on theme)
       'logo-primary': { default: '#1a202c', _dark: '#FFFFFF' },
+      
+      // Shadow colors (used in boxShadow)
+      'shadow-color': { default: 'rgba(0, 0, 0, 0.1)', _dark: 'rgba(0, 0, 0, 0.5)' },
+      'shadow-color-md': { default: 'rgba(0, 0, 0, 0.08)', _dark: 'rgba(0, 0, 0, 0.4)' },
+      'shadow-color-lg': { default: 'rgba(0, 0, 0, 0.12)', _dark: 'rgba(220, 38, 38, 0.15)' },
     },
   },
 

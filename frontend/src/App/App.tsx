@@ -65,10 +65,10 @@ function Navbar() {
     <>
       <Box 
         as="nav" 
-        bg="blackAlpha.700" 
+        bg="bg-glassmorphism" 
         backdropFilter="blur(10px)" 
         borderBottom="1px solid" 
-        borderColor="whiteAlpha.200"
+        borderColor="border-subtle"
         position="sticky" 
         top="0" 
         zIndex="sticky"
@@ -125,7 +125,7 @@ function Navbar() {
                 variant="outline"
                 borderColor={accentColorWithHash}
                 color={accentColorWithHash}
-                _hover={{ bg: accentColorWithHash, color: 'white' }}
+                _hover={{ bg: accentColorWithHash, color: 'text-on-accent' }}
                 onClick={() => navigate('/profile')}
                 isActive={useActiveRoute('/profile')}
               >
@@ -154,7 +154,7 @@ function Navbar() {
         <DrawerContent bg="bg-glassmorphism" backdropFilter="blur(10px)">
           <DrawerHeader>
             <HStack justify="space-between" align="center">
-              <Text fontFamily="heading" fontSize="lg">Menu</Text>
+              <Text fontFamily="heading" fontSize="lg" color="text-primary">Menu</Text>
               <DrawerCloseButton />
             </HStack>
           </DrawerHeader>
@@ -185,7 +185,7 @@ function Navbar() {
                       variant="outline"
                       borderColor={accentColorWithHash}
                       color={accentColorWithHash}
-                      _hover={{ bg: accentColorWithHash, color: 'white' }}
+                      _hover={{ bg: accentColorWithHash, color: 'text-on-accent' }}
                       onClick={() => {
                         navigate('/profile');
                         onClose();

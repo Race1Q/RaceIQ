@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, HStack, Box } from '@chakra-ui/react';
+import { Badge, HStack, Box, useColorModeValue } from '@chakra-ui/react';
 import { keyframes, css } from '@emotion/react';
 
 // Gemini logo SVG - Single star icon with rainbow shimmer
@@ -59,6 +59,13 @@ const GeminiBadge: React.FC<GeminiBadgeProps> = ({
   size = 'sm', 
   variant = 'subtle' 
 }) => {
+  // Theme-aware colors
+  const borderColor = useColorModeValue('border-subtle', 'whiteAlpha.300');
+  const backgroundColor = useColorModeValue('bg-surface', 'blackAlpha.200');
+  const textColor = useColorModeValue('text-primary', 'white');
+  const hoverShadow = useColorModeValue('0 4px 12px rgba(0,0,0,0.1)', '0 4px 12px rgba(0,0,0,0.15)');
+  const shimmerColor = useColorModeValue('rgba(0,0,0,0.1)', 'rgba(255,255,255,0.4)');
+  
   const baseStyles = {
     fontSize: size === 'sm' ? 'xs' : size === 'md' ? 'sm' : 'md',
     fontWeight: '600',
@@ -66,12 +73,12 @@ const GeminiBadge: React.FC<GeminiBadgeProps> = ({
     px: size === 'sm' ? 2 : 3,
     py: size === 'sm' ? 1 : 1.5,
     border: '1px solid',
-    borderColor: 'whiteAlpha.300',
+    borderColor,
     backdropFilter: 'blur(8px)',
     transition: 'all 0.3s ease',
     _hover: {
       transform: 'translateY(-1px)',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      boxShadow: hoverShadow,
     },
   };
 
@@ -82,7 +89,7 @@ const GeminiBadge: React.FC<GeminiBadgeProps> = ({
         bg="linear-gradient(45deg, #FF0000, #FF8000, #FFFF00, #00FF00, #0080FF, #8000FF, #FF0080, #FF0000)"
         backgroundSize="200% 200%"
         animation={`${shimmer} 3s ease-in-out infinite`}
-        color="white"
+        color="text-on-accent"
         borderColor="whiteAlpha.400"
       >
         <HStack spacing={1}>
@@ -96,8 +103,8 @@ const GeminiBadge: React.FC<GeminiBadgeProps> = ({
   return (
     <Badge
       {...baseStyles}
-      bg="blackAlpha.200"
-      color="white"
+      bg={backgroundColor}
+      color={textColor}
       position="relative"
       overflow="hidden"
       _before={{
@@ -107,7 +114,7 @@ const GeminiBadge: React.FC<GeminiBadgeProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+        background: `linear-gradient(90deg, transparent, ${shimmerColor}, transparent)`,
         backgroundSize: '200% 100%',
         animation: `${shimmer} 3s ease-in-out infinite`,
         borderRadius: 'inherit',

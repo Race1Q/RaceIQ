@@ -36,10 +36,10 @@ function AppLayout({ children }: AppLayoutProps) {
       {!isDesktop && (
         <Box
           as="nav"
-          bg="blackAlpha.700"
+          bg="bg-glassmorphism"
           backdropFilter="blur(10px)"
           borderBottom="1px solid"
-          borderColor="whiteAlpha.200"
+          borderColor="border-subtle"
           position="sticky"
           top="0"
           zIndex="sticky"

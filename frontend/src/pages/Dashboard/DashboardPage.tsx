@@ -29,8 +29,8 @@ const ResponsiveGridLayout = WidthProvider(RGL);
 
 // Fallback banner component
 const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
-  <Alert status="warning" variant="solid" bg={`#${accentColor}`} color="white" borderRadius="md" mb="lg">
-    <AlertIcon as={AlertTriangle} color="white" />
+  <Alert status="warning" variant="solid" bg={`#${accentColor}`} color="text-on-accent" borderRadius="md" mb="lg">
+    <AlertIcon as={AlertTriangle} color="text-on-accent" />
     <AlertTitle fontFamily="heading" fontSize="md">Live Data Unavailable. Showing cached data.</AlertTitle>
   </Alert>
 );
@@ -193,7 +193,7 @@ function DashboardPage() {
   };
 
   return (
-    <Box>
+    <Box bg="bg-primary" minH="100vh">
       <DashboardHeader onCustomizeClick={onOpen} />
       <Box 
         p={{ base: 'md', md: 'lg' }}

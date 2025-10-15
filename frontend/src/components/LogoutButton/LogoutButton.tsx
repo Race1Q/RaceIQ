@@ -22,8 +22,8 @@ const LogoutButton = () => {
       variant="outline"
       borderColor={accentColorWithHash}
       color={accentColorWithHash}
-      _hover={{ bg: accentColorWithHash, color: 'white' }}
-      fontFamily="heading" // Polish: Added for font consistency
+      _hover={{ bg: accentColorWithHash, color: 'text-on-accent' }}
+      fontFamily="heading"
     >
       Log Out
     </Button>
