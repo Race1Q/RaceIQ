@@ -150,13 +150,13 @@ function HeadToHeadQuickCompareWidget({
 
   return (
     <WidgetCard>
-      <VStack align="start" spacing="xs">
+      <VStack align="start" spacing="xs" className="widget-content">
         <Heading color={accentColorWithHash} size="sm" fontFamily="heading" mb="xs">
           Head to Head
         </Heading>
         
         {/* Mobile Layout */}
-        <VStack spacing="xs" align="stretch" w="full" display={{ base: 'flex', md: 'none' }}>
+        <VStack spacing="xs" align="stretch" w="full" display={{ base: 'flex', md: 'none' }} className="scrollable-content">
           <VStack spacing="xs" align="center">
             <SearchableSelect
               label=""
@@ -288,7 +288,7 @@ function HeadToHeadQuickCompareWidget({
         </VStack>
 
         {/* Desktop Layout */}
-        <HStack spacing="sm" align="center" w="full" justify="space-between" display={{ base: 'none', md: 'flex' }}>
+        <HStack spacing="sm" align="center" w="full" justify="space-between" display={{ base: 'none', md: 'flex' }} className="scrollable-content">
           {/* Driver 1 */}
           <VStack spacing="xs" align="center" flex="1">
             <SearchableSelect

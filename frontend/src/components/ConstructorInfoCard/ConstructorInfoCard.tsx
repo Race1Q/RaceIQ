@@ -119,11 +119,11 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
   }
 
   return (
-    <Box bg="bg-elevated" p={6} borderRadius="lg" border="1px solid" borderColor="border-subtle">
-      <VStack align="start" spacing={6}>
+    <Box bg="bg-elevated" p={{ base: 4, md: 6 }} borderRadius="lg" border="1px solid" borderColor="border-subtle">
+      <VStack align="start" spacing={{ base: 4, md: 6 }}>
         {/* Header */}
         <HStack justify="space-between" w="full" flexWrap="wrap" gap={2}>
-          <Heading size="lg" color={accentColorWithHash}>
+          <Heading size={{ base: "md", md: "lg" }} color={accentColorWithHash}>
             Team Analysis
           </Heading>
           {!info.isFallback && <GeminiBadge />}
@@ -132,10 +132,10 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
         {/* Overview */}
         {info.overview && (
           <Box w="full">
-            <Heading size="md" color={accentColorWithHash} mb={3}>
+            <Heading size={{ base: "sm", md: "md" }} color={accentColorWithHash} mb={{ base: 2, md: 3 }}>
               Overview
             </Heading>
-            <Text color="text-primary" fontSize="md" lineHeight="1.7">
+            <Text color="text-primary" fontSize={{ base: "sm", md: "md" }} lineHeight="1.7">
               {info.overview}
             </Text>
           </Box>
@@ -144,10 +144,10 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
         {/* History */}
         {info.history && (
           <Box w="full">
-            <Heading size="md" color={accentColorWithHash} mb={3}>
+            <Heading size={{ base: "sm", md: "md" }} color={accentColorWithHash} mb={{ base: 2, md: 3 }}>
               Team History
             </Heading>
-            <Text color="text-primary" fontSize="md" lineHeight="1.7">
+            <Text color="text-primary" fontSize={{ base: "sm", md: "md" }} lineHeight="1.7">
               {info.history}
             </Text>
           </Box>
@@ -156,51 +156,53 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
         {/* Strengths and Challenges Grid */}
         {(info.strengths || info.challenges) && (
           <Box w="full">
-            <HStack align="start" spacing={6} flexWrap="wrap">
-              {/* Strengths */}
-              {info.strengths && info.strengths.length > 0 && (
-                <Box flex="1" minW="300px">
-                  <Heading size="md" color={accentColorWithHash} mb={3}>
-                    Strengths
-                  </Heading>
-                  <UnorderedList spacing={2}>
-                    {info.strengths.map((strength: string, index: number) => (
-                      <ListItem key={index} color="text-primary" fontSize="sm">
-                        {strength}
-                      </ListItem>
-                    ))}
-                  </UnorderedList>
-                </Box>
-              )}
+            <VStack align="start" spacing={{ base: 4, md: 0 }} w="full">
+              <HStack align="start" spacing={{ base: 0, md: 6 }} flexDirection={{ base: "column", md: "row" }} w="full">
+                {/* Strengths */}
+                {info.strengths && info.strengths.length > 0 && (
+                  <Box flex="1" w={{ base: "full", md: "auto" }} minW={{ md: "300px" }} mb={{ base: 4, md: 0 }}>
+                    <Heading size={{ base: "sm", md: "md" }} color={accentColorWithHash} mb={{ base: 2, md: 3 }}>
+                      Strengths
+                    </Heading>
+                    <UnorderedList spacing={2} pl={{ base: 4, md: 5 }}>
+                      {info.strengths.map((strength: string, index: number) => (
+                        <ListItem key={index} color="text-primary" fontSize={{ base: "xs", md: "sm" }}>
+                          {strength}
+                        </ListItem>
+                      ))}
+                    </UnorderedList>
+                  </Box>
+                )}
 
-              {/* Challenges */}
-              {info.challenges && info.challenges.length > 0 && (
-                <Box flex="1" minW="300px">
-                  <Heading size="md" color={accentColorWithHash} mb={3}>
-                    Challenges
-                  </Heading>
-                  <UnorderedList spacing={2}>
-                    {info.challenges.map((challenge: string, index: number) => (
-                      <ListItem key={index} color="text-primary" fontSize="sm">
-                        {challenge}
-                      </ListItem>
-                    ))}
-                  </UnorderedList>
-                </Box>
-              )}
-            </HStack>
+                {/* Challenges */}
+                {info.challenges && info.challenges.length > 0 && (
+                  <Box flex="1" w={{ base: "full", md: "auto" }} minW={{ md: "300px" }}>
+                    <Heading size={{ base: "sm", md: "md" }} color={accentColorWithHash} mb={{ base: 2, md: 3 }}>
+                      Challenges
+                    </Heading>
+                    <UnorderedList spacing={2} pl={{ base: 4, md: 5 }}>
+                      {info.challenges.map((challenge: string, index: number) => (
+                        <ListItem key={index} color="text-primary" fontSize={{ base: "xs", md: "sm" }}>
+                          {challenge}
+                        </ListItem>
+                      ))}
+                    </UnorderedList>
+                  </Box>
+                )}
+              </HStack>
+            </VStack>
           </Box>
         )}
 
         {/* Notable Achievements */}
         {info.notableAchievements && info.notableAchievements.length > 0 && (
           <Box w="full">
-            <Heading size="md" color={accentColorWithHash} mb={3}>
+            <Heading size={{ base: "sm", md: "md" }} color={accentColorWithHash} mb={{ base: 2, md: 3 }}>
               Notable Achievements
             </Heading>
-            <UnorderedList spacing={2}>
+            <UnorderedList spacing={2} pl={{ base: 4, md: 5 }}>
               {info.notableAchievements.map((achievement: string, index: number) => (
-                <ListItem key={index} color="text-primary" fontSize="sm">
+                <ListItem key={index} color="text-primary" fontSize={{ base: "xs", md: "sm" }}>
                   {achievement}
                 </ListItem>
               ))}
@@ -211,22 +213,22 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
         {/* Current Season */}
         {info.currentSeason && (
           <Box w="full">
-            <Heading size="md" color={accentColorWithHash} mb={3}>
+            <Heading size={{ base: "sm", md: "md" }} color={accentColorWithHash} mb={{ base: 2, md: 3 }}>
               Current Season Analysis
             </Heading>
-            <VStack align="start" spacing={3}>
-              <Text color="text-primary" fontSize="md" lineHeight="1.7">
+            <VStack align="start" spacing={{ base: 2, md: 3 }}>
+              <Text color="text-primary" fontSize={{ base: "sm", md: "md" }} lineHeight="1.7">
                 <strong>Performance:</strong> {info.currentSeason.performance}
               </Text>
               
               {info.currentSeason.highlights && info.currentSeason.highlights.length > 0 && (
                 <Box w="full">
-                  <Text color="text-secondary" fontSize="sm" fontWeight="600" mb={2}>
+                  <Text color="text-secondary" fontSize={{ base: "xs", md: "sm" }} fontWeight="600" mb={2}>
                     Season Highlights:
                   </Text>
-                  <UnorderedList spacing={1}>
+                  <UnorderedList spacing={1} pl={{ base: 4, md: 5 }}>
                     {info.currentSeason.highlights.map((highlight: string, index: number) => (
-                      <ListItem key={index} color="text-primary" fontSize="sm">
+                      <ListItem key={index} color="text-primary" fontSize={{ base: "xs", md: "sm" }}>
                         {highlight}
                       </ListItem>
                     ))}
@@ -234,7 +236,7 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
                 </Box>
               )}
               
-              <Text color="text-primary" fontSize="md" lineHeight="1.7">
+              <Text color="text-primary" fontSize={{ base: "sm", md: "md" }} lineHeight="1.7">
                 <strong>Outlook:</strong> {info.currentSeason.outlook}
               </Text>
             </VStack>

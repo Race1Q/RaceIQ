@@ -90,6 +90,15 @@ describe('SeasonsService', () => {
     } as Race,
   ];
 
+  const mockSession = {
+    id: 1,
+    race_id: 1,
+    type: 'RACE',
+    race: {
+      id: 1,
+    },
+  } as any;
+
   const mockRaceResult: RaceResult = {
     id: 1,
     session_id: 1,
@@ -110,7 +119,7 @@ describe('SeasonsService', () => {
       country_code: 'GBR',
     } as any,
     team: null,
-    session: null,
+    session: mockSession,
   } as any;
 
   const mockRaceResults: RaceResult[] = [
@@ -135,7 +144,7 @@ describe('SeasonsService', () => {
         country_code: 'NED',
       } as any,
       team: null,
-      session: null,
+      session: mockSession,
     } as any,
     {
       id: 3,
@@ -157,7 +166,7 @@ describe('SeasonsService', () => {
         country_code: 'MCO',
       } as any,
       team: null,
-      session: null,
+      session: mockSession,
     } as any,
   ];
 
@@ -501,6 +510,7 @@ describe('SeasonsService', () => {
           last_name: 'Hamilton',
           country_code: null,
         },
+        session: mockSession,
       } as any;
 
       seasonRepository.findOne.mockResolvedValue(mockSeason);

@@ -459,12 +459,17 @@ const ConstructorDetails: React.FC = () => {
 
       {/* 3D Cockpit Viewer - Available for all teams */}
       {["Red Bull", "Mercedes", "Ferrari", "McLaren", "Aston Martin", "Alpine F1 Team", "Williams", "RB F1 Team", "Sauber", "Haas F1 Team"].includes(constructor.name) && (
-        <Box mb={6}>
-          <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
-            <Heading as="h2" size="lg" fontFamily="heading" textTransform="uppercase">
+        <Box mb={{ base: 4, md: 6 }}>
+          <Flex justify="space-between" align="center" mb={{ base: 3, md: 4 }} flexWrap="wrap" gap={2}>
+            <Heading 
+              as="h2" 
+              size={{ base: "md", md: "lg" }} 
+              fontFamily="heading" 
+              textTransform="uppercase"
+            >
               Explore the {constructor.name} Cockpit
             </Heading>
-            <Text fontSize="sm" color="gray.500">
+            <Text fontSize={{ base: "xs", md: "sm" }} color="gray.500">
               Interactive 3D Model
             </Text>
           </Flex>

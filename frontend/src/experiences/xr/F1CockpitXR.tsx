@@ -107,26 +107,31 @@ export default function F1CockpitXR({
     })();
 
     // Create control buttons UI
+    const isMobile = window.innerWidth < 768;
     const controlsUI = document.createElement("div");
     controlsUI.style.position = "absolute";
-    controlsUI.style.bottom = "16px";
-    controlsUI.style.right = "16px";
+    controlsUI.style.bottom = isMobile ? "8px" : "16px";
+    controlsUI.style.right = isMobile ? "8px" : "16px";
     controlsUI.style.display = "flex";
-    controlsUI.style.gap = "8px";
+    controlsUI.style.gap = isMobile ? "6px" : "8px";
     controlsUI.style.zIndex = "10";
+    controlsUI.style.flexWrap = isMobile ? "wrap" : "nowrap";
+    controlsUI.style.justifyContent = "flex-end";
     
     // Reset View button
     const resetBtn = document.createElement("button");
-    resetBtn.textContent = "↺ Reset View";
-    resetBtn.style.padding = "10px 14px";
+    resetBtn.textContent = isMobile ? "↺" : "↺ Reset View";
+    resetBtn.style.padding = isMobile ? "8px 12px" : "10px 14px";
     resetBtn.style.borderRadius = "8px";
     resetBtn.style.border = "1px solid #3a3a3a";
     resetBtn.style.background = "rgba(17, 17, 17, 0.9)";
     resetBtn.style.color = "#fff";
     resetBtn.style.cursor = "pointer";
-    resetBtn.style.fontSize = "14px";
+    resetBtn.style.fontSize = isMobile ? "16px" : "14px";
     resetBtn.style.backdropFilter = "blur(10px)";
     resetBtn.style.transition = "all 0.2s";
+    resetBtn.style.minWidth = isMobile ? "44px" : "auto";
+    resetBtn.style.minHeight = isMobile ? "44px" : "auto";
     resetBtn.onmouseover = () => {
       resetBtn.style.background = "rgba(30, 30, 30, 0.95)";
       resetBtn.style.borderColor = "#555";
@@ -144,16 +149,18 @@ export default function F1CockpitXR({
     
     // Auto-rotate toggle button
     const rotateBtn = document.createElement("button");
-    rotateBtn.textContent = "⟲ Auto";
-    rotateBtn.style.padding = "10px 14px";
+    rotateBtn.textContent = isMobile ? "⟲" : "⟲ Auto";
+    rotateBtn.style.padding = isMobile ? "8px 12px" : "10px 14px";
     rotateBtn.style.borderRadius = "8px";
     rotateBtn.style.border = "1px solid #3a3a3a";
     rotateBtn.style.background = "rgba(17, 17, 17, 0.9)";
     rotateBtn.style.color = "#fff";
     rotateBtn.style.cursor = "pointer";
-    rotateBtn.style.fontSize = "14px";
+    rotateBtn.style.fontSize = isMobile ? "16px" : "14px";
     rotateBtn.style.backdropFilter = "blur(10px)";
     rotateBtn.style.transition = "all 0.2s";
+    rotateBtn.style.minWidth = isMobile ? "44px" : "auto";
+    rotateBtn.style.minHeight = isMobile ? "44px" : "auto";
     rotateBtn.onmouseover = () => {
       rotateBtn.style.background = "rgba(30, 30, 30, 0.95)";
       rotateBtn.style.borderColor = "#555";
@@ -229,7 +236,7 @@ export default function F1CockpitXR({
       ref={containerRef} 
       style={{ 
         width: "100%", 
-        height: "600px", 
+        height: window.innerWidth < 768 ? "400px" : "600px", 
         position: "relative",
         borderRadius: "8px",
         overflow: "hidden"
@@ -280,30 +287,36 @@ export default function F1CockpitXR({
       {showHints && !isLoading && (
         <div style={{
           position: "absolute",
-          top: "16px",
-          left: "16px",
+          top: window.innerWidth < 768 ? "8px" : "16px",
+          left: window.innerWidth < 768 ? "8px" : "16px",
           background: "rgba(17, 17, 17, 0.95)",
           border: "1px solid #3a3a3a",
           borderRadius: "8px",
-          padding: "12px 16px",
+          padding: window.innerWidth < 768 ? "8px 12px" : "12px 16px",
           backdropFilter: "blur(10px)",
           zIndex: 10,
-          maxWidth: "300px",
+          maxWidth: window.innerWidth < 768 ? "calc(100% - 16px)" : "300px",
           animation: "fadeIn 0.5s ease-in"
         }}>
           <div style={{ 
             color: "#fff", 
-            fontSize: "13px", 
+            fontSize: window.innerWidth < 768 ? "11px" : "13px", 
             lineHeight: "1.6",
             fontFamily: "system-ui, -apple-system, sans-serif"
           }}>
-            <div style={{ fontWeight: "600", marginBottom: "8px", color: "#4a9eff" }}>
+            <div style={{ fontWeight: "600", marginBottom: window.innerWidth < 768 ? "4px" : "8px", color: "#4a9eff" }}>
               🏎️ Explore the Cockpit
             </div>
-            <div style={{ marginBottom: "4px" }}>🖱️ <strong>Drag</strong> to rotate</div>
-            <div style={{ marginBottom: "4px" }}>🔍 <strong>Scroll</strong> to zoom</div>
-            <div style={{ marginBottom: "4px" }}>⌨️ <strong>WASD</strong> to move around</div>
-            <div style={{ marginTop: "8px", fontSize: "11px", color: "#888" }}>
+            <div style={{ marginBottom: "4px" }}>
+              {window.innerWidth < 768 ? "👆" : "🖱️"} <strong>{window.innerWidth < 768 ? "Touch" : "Drag"}</strong> to rotate
+            </div>
+            <div style={{ marginBottom: "4px" }}>
+              {window.innerWidth < 768 ? "🤏" : "🔍"} <strong>{window.innerWidth < 768 ? "Pinch" : "Scroll"}</strong> to zoom
+            </div>
+            {window.innerWidth >= 768 && (
+              <div style={{ marginBottom: "4px" }}>⌨️ <strong>WASD</strong> to move around</div>
+            )}
+            <div style={{ marginTop: window.innerWidth < 768 ? "4px" : "8px", fontSize: window.innerWidth < 768 ? "10px" : "11px", color: "#888" }}>
               Tip: Click auto-rotate for a 360° view
             </div>
           </div>
