@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Flex, SimpleGrid, Heading, Icon, Text, VStack, HStack, Badge, Spinner, Divider } from '@chakra-ui/react';
+import { Box, Flex, SimpleGrid, Heading, Icon, Text, VStack, HStack, Badge, Spinner, Divider, useColorModeValue } from '@chakra-ui/react';
 import { Trophy, TrendingUp, Calendar, Medal, Sparkles, AlertCircle, Flag } from 'lucide-react';
 import { useThemeColor } from '../../context/ThemeColorContext';
 import { useAiDriverFunFacts } from '../../hooks/useAiDriverFunFacts';

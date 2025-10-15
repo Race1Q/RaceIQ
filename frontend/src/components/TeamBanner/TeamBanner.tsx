@@ -1,7 +1,7 @@
 // frontend/src/components/TeamBanner/TeamBanner.tsx
 
 import React from 'react';
-import { Flex, Heading, Spacer } from '@chakra-ui/react';
+import { Flex, Heading, Spacer, useColorModeValue } from '@chakra-ui/react';
 import TeamLogo from '../TeamLogo/TeamLogo';
 
 interface TeamBannerProps {
@@ -10,6 +10,10 @@ interface TeamBannerProps {
 }
 
 const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
+  // Theme-aware colors for the banner
+  const textColor = useColorModeValue('gray.900', 'white');
+  const textShadow = useColorModeValue('0 2px 8px rgba(255,255,255,0.3)', '0 2px 8px rgba(0,0,0,0.5)');
+  const gradientEnd = useColorModeValue('bg-surface', 'bg-surface-dark');
 
   return (
     <Flex
@@ -23,7 +27,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
       overflow="hidden"
       border="1px solid"
       borderColor="border-primary"
-      bgGradient={`linear(90deg, ${teamColor} 0%, rgba(0,0,0,0.5) 60%, bg-surface-dark 100%)`}
+      bgGradient={`linear(90deg, ${teamColor} 0%, rgba(0,0,0,0.5) 60%, ${gradientEnd} 100%)`}
       boxShadow="lg"
     >
       {/* Team Name - Left Side */}
@@ -37,10 +41,10 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
           as="h2"
           fontFamily="heading"
           fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }}
-          color="white"
+          color={textColor}
           fontWeight="bold"
           textTransform="uppercase"
-          textShadow="0 2px 8px rgba(0,0,0,0.5)"
+          textShadow={textShadow}
           noOfLines={2}
           lineHeight="shorter"
           zIndex={2}

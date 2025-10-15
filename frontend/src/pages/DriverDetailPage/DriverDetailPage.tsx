@@ -1,6 +1,6 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid, useColorModeValue } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
@@ -89,7 +89,7 @@ const DriverDetailPage: React.FC = () => {
 
             {/* 2) Name + meta pill */}
             <Box justifySelf="center" textAlign={{ base: 'center', md: 'left' }}>
-              <Heading as="h1" lineHeight={1} color="white" alignSelf="start">
+              <Heading as="h1" lineHeight={1} color="text-on-accent" alignSelf="start">
                 <Text
                   fontFamily="signature"
                   fontWeight="normal"
@@ -111,8 +111,9 @@ const DriverDetailPage: React.FC = () => {
                       xl: driverDetails.lastName.length > 12 ? '5xl' : driverDetails.lastName.length > 8 ? '6xl' : '7xl'
                     }}
                     lineHeight={0.95}
-                    wordBreak="break-word"
-                    whiteSpace="normal"
+                    whiteSpace="nowrap"
+                    overflow="hidden"
+                    textOverflow="ellipsis"
                   >
                     {driverDetails.lastName}
                   </Text>
@@ -131,11 +132,11 @@ const DriverDetailPage: React.FC = () => {
               >
                 <HStack spacing="md">
                   <ReactCountryFlag countryCode={twoLetterCountryCode.toLowerCase()} svg style={{ width: '28px', height: '20px' }} title={driverDetails.countryCode} />
-                  <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>{driverDetails.countryCode}</Text>
-                  <Text color="gray.300">•</Text>
-                  <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>{driverDetails.teamName}</Text>
-                  <Text color="gray.300">•</Text>
-                  <Text color="white" fontWeight="bold">#{driverDetails.number}</Text>
+                  <Text color="text-on-accent" fontSize={{ base: 'sm', md: 'md' }}>{driverDetails.countryCode}</Text>
+                  <Text color="text-on-accent" opacity={0.7}>•</Text>
+                  <Text color="text-on-accent" fontSize={{ base: 'sm', md: 'md' }}>{driverDetails.teamName}</Text>
+                  <Text color="text-on-accent" opacity={0.7}>•</Text>
+                  <Text color="text-on-accent" fontWeight="bold">#{driverDetails.number}</Text>
                 </HStack>
               </Box>
             </Box>
@@ -190,7 +191,7 @@ const DriverDetailPage: React.FC = () => {
 
         {/* --- PERFORMANCE TREND CHARTS (2x2 Grid) --- */}
         <Box mt="xl">
-          <Heading size="md" fontFamily="heading" mb="md" color="white">Performance Trends</Heading>
+          <Heading size="md" fontFamily="heading" mb="md" color="text-primary">Performance Trends</Heading>
           <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} mb={6}>
             {seasonStatsLoading ? (
               <>
@@ -228,7 +229,7 @@ const DriverDetailPage: React.FC = () => {
 
         {/* --- AI-GENERATED BIO SECTION --- */}
         <Box mt="xl">
-          <Heading size="md" fontFamily="heading" mb="md">Driver Biography</Heading>
+          <Heading size="md" fontFamily="heading" mb="md" color="text-primary">Driver Biography</Heading>
           <DriverBioCard driverId={Number(driverId)} season={2025} />
         </Box>
       </Container>

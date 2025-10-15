@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text } from '@chakra-ui/react';
+import { Box, Text, useColorModeValue } from '@chakra-ui/react';
 import {
   LineChart,
   Line,
@@ -29,15 +29,28 @@ const PointsBySeasonChart: React.FC<PointsBySeasonChartProps> = ({ data, teamCol
     points: item.total_points,
   }));
 
+  // Theme-aware colors
+  const backgroundColor = useColorModeValue('bg-surface', 'gray.800');
+  const textColor = useColorModeValue('text-primary', 'white');
+  const gridColor = useColorModeValue('black', 'gray');
+  const axisColor = useColorModeValue('black', 'white');
+
   return (
-    <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
-      <Text fontSize="lg" fontWeight="bold" mb={2}>Points by Season</Text>
+    <Box w="100%" h="300px" bg={backgroundColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
+      <Text fontSize="lg" fontWeight="bold" mb={2} color={textColor}>Points by Season</Text>
       <ResponsiveContainer width="100%" height="90%">
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
-          <XAxis dataKey="year" stroke="white"/>
-          <YAxis stroke="white"/>
-          <Tooltip/>
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+          <XAxis dataKey="year" stroke={axisColor}/>
+          <YAxis stroke={axisColor}/>
+          <Tooltip 
+            contentStyle={{
+              backgroundColor: useColorModeValue('white', 'gray.800'),
+              border: `1px solid ${useColorModeValue('#E2E8F0', '#4A5568')}`,
+              borderRadius: '8px',
+              color: useColorModeValue('black', 'white')
+            }}
+          />
           <Line 
             type="monotone" 
             dataKey="points" 

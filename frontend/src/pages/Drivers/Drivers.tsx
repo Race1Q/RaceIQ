@@ -19,11 +19,11 @@ const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
     status="warning"
     variant="solid"
     bg={`#${accentColor}`}
-    color="white"
+    color="text-on-accent"
     borderRadius="md"
     mb="lg"
   >
-    <AlertIcon as={AlertTriangle} color="white" />
+    <AlertIcon as={AlertTriangle} color="text-on-accent" />
     <AlertTitle fontFamily="heading" fontSize="md">Live Data Unavailable. Showing cached standings.</AlertTitle>
   </Alert>
 );
