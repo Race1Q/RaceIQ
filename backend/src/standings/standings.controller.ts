@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Header } from '@nestjs/common';
 import { StandingsService } from './standings.service';
 import { StandingsResponseDto } from './dto/standings-response.dto';
 import { FeaturedDriverDto } from './dto/featured-driver.dto';
@@ -8,6 +8,7 @@ export class StandingsController {
   constructor(private readonly standingsService: StandingsService) {}
 
   @Get('featured-driver')
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
   async getFeaturedDriver(): Promise<FeaturedDriverDto> {
     return this.standingsService.getFeaturedDriver();
   }

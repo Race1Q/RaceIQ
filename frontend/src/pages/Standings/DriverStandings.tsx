@@ -70,23 +70,39 @@ const DriverStandingsPage: React.FC = () => {
   {loading && <StandingsSkeleton type="drivers" text="Loading Driver Standings..." />}
 
       {!loading && standings.length > 0 && (
-        <Flex flexDirection="column" gap={3}>
-          {standings
-            .sort((a, b) => a.position - b.position)
-            .map(driver => (
-              <DriverStandingCard
-                key={driver.id}
-                id={driver.id}
-                position={driver.position}
-                fullName={driver.fullName}
-                constructor={driver.constructor}
-                points={driver.points}
-                wins={driver.wins}
-                podiums={driver.podiums}
-                profileImageUrl={driver.profileImageUrl}
-              />
-            ))}
-        </Flex>
+        <Box>
+          {/* Mobile scroll indicator */}
+          <Box 
+            display={{ base: "block", md: "none" }}
+            textAlign="center" 
+            mb={2}
+            color="text-muted"
+            fontSize="xs"
+          >
+            👆 Scroll to see more drivers
+          </Box>
+          <Flex 
+            flexDirection="column" 
+            gap={{ base: 2, md: 3 }}
+            pb={{ base: 4, md: 0 }} // Extra padding on mobile for better scroll
+          >
+            {[...standings]
+              .sort((a, b) => a.position - b.position)
+              .map(driver => (
+                <DriverStandingCard
+                  key={driver.id}
+                  id={driver.id}
+                  position={driver.position}
+                  fullName={driver.fullName}
+                  constructor={driver.constructor}
+                  points={driver.points}
+                  wins={driver.wins}
+                  podiums={driver.podiums}
+                  profileImageUrl={driver.profileImageUrl}
+                />
+              ))}
+          </Flex>
+        </Box>
       )}
 
 

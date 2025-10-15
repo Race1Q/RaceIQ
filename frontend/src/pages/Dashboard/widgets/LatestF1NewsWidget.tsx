@@ -24,7 +24,7 @@ function LatestF1NewsWidget() {
 
   return (
     <WidgetCard>
-      <VStack align="start" spacing="md">
+      <VStack align="start" spacing="md" className="widget-content">
             <HStack justify="space-between" w="full">
               <Heading color={accentColorWithHash} size="md" fontFamily="heading">
                 Latest F1 News
@@ -55,7 +55,7 @@ function LatestF1NewsWidget() {
               </Text>
             )}
 
-            <VStack align="stretch" spacing="sm" w="full">
+            <VStack align="stretch" spacing="sm" w="full" className="scrollable-content">
               {data.bullets.map((bullet, index) => (
                 <HStack
                   key={index}

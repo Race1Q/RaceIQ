@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../auth/public.decorator';
@@ -8,11 +8,13 @@ import { PreviewService } from './services/preview.service';
 import { QuotaService } from './services/quota.service';
 import { ConstructorInfoService } from './services/constructor-info.service';
 import { StandingsAnalysisService } from './services/standings-analysis.service';
+import { FunFactsService } from './services/fun-facts.service';
 import { AiNewsDto } from './dto/ai-news.dto';
 import { AiDriverBioDto } from './dto/ai-bio.dto';
 import { AiTrackPreviewDto } from './dto/ai-preview.dto';
 import { AiConstructorInfoDto } from './dto/ai-constructor-info.dto';
 import { AiStandingsAnalysisDto } from './dto/ai-standings-analysis.dto';
+import { AiDriverFunFactsDto } from './dto/ai-fun-facts.dto';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -25,6 +27,7 @@ export class AiController {
     private readonly quotaService: QuotaService,
     private readonly constructorInfoService: ConstructorInfoService,
     private readonly standingsAnalysisService: StandingsAnalysisService,
+    private readonly funFactsService: FunFactsService,
   ) {}
 
   @Get('news')
@@ -88,6 +91,31 @@ export class AiController {
   ): Promise<AiStandingsAnalysisDto> {
     const seasonNumber = season ? parseInt(season, 10) : undefined;
     return this.standingsAnalysisService.getStandingsAnalysis(seasonNumber);
+  }
+
+  @Get('driver/:driverId/fun-facts')
+  @Public()
+  @ApiOperation({ summary: 'Get AI-generated fun facts about a driver' })
+  @ApiParam({ name: 'driverId', type: Number, description: 'Driver ID' })
+  @ApiQuery({ name: 'season', required: false, type: Number, description: 'Optional season year for season-specific facts' })
+  @ApiOkResponse({ type: AiDriverFunFactsDto })
+  async getDriverFunFacts(
+    @Param('driverId', ParseIntPipe) driverId: number,
+    @Query('season') season?: string,
+  ): Promise<AiDriverFunFactsDto> {
+    const seasonNumber = season ? parseInt(season, 10) : undefined;
+    
+    // Add validation for season parameter
+    if (season && (isNaN(seasonNumber!) || seasonNumber === undefined)) {
+      throw new BadRequestException('Invalid season parameter. Must be a number.');
+    }
+    
+    // Validate season range
+    if (seasonNumber && (seasonNumber < 1950 || seasonNumber > new Date().getFullYear() + 1)) {
+      throw new BadRequestException('Season must be between 1950 and next year');
+    }
+    
+    return this.funFactsService.getDriverFunFacts(driverId, seasonNumber);
   }
 
   @Get('quota')

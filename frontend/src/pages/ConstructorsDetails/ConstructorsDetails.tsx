@@ -3,15 +3,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue } from '@chakra-ui/react';
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
+import { getTeamCarModel } from '../../lib/teamCarModels';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
 import type { Stat } from '../../types';
 import ConstructorInfoCard from '../../components/ConstructorInfoCard/ConstructorInfoCard';
+import F1CockpitXR from '../../experiences/xr/F1CockpitXR';
 import {
   LineChart,
   Line,
@@ -248,21 +250,37 @@ const ConstructorDetails: React.FC = () => {
     ];
   }, [latestSeason, latestSeasonYear, latestSeasonPoles]);
 
+  // Theme-aware colors for charts and page elements
+  const chartBgColor = useColorModeValue('white', 'gray.800');
+  const chartTextColor = useColorModeValue('gray.800', 'white');
+  const gridColor = useColorModeValue('#E2E8F0', '#4A5568');
+  const axisColor = useColorModeValue('gray.800', 'white');
+  const tooltipBg = useColorModeValue('white', 'gray.800');
+  const tooltipBorder = useColorModeValue('#E2E8F0', '#4A5568');
+  const tooltipTextColor = useColorModeValue('gray.800', 'white');
+  const bestRaceBg = useColorModeValue('gray.50', 'gray.700');
+  
+  // Page-level theme colors
+  const pageBgColor = useColorModeValue('#F0F2F5', '#0a0a0a');
+  const pageTextColor = useColorModeValue('#1A202C', '#ffffff');
+  const surfaceBgColor = useColorModeValue('#FFFFFF', '#0f0f0f');
+  const borderColor = useColorModeValue('#E2E8F0', '#333333');
+
   if (loading) return <ConstructorsDetailsSkeleton />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
 
   return (
-    <Box bg="bg-primary" color="text-primary" minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+    <Box bg={pageBgColor} color={pageTextColor} minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
       {/* Top Utility Bar */}
-      <Box bg="bg-surface" borderBottom="1px solid" borderColor="border-primary">
+      <Box bg={surfaceBgColor} borderBottom="1px solid" borderColor={borderColor}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
           <Button
             onClick={() => window.history.back()}
             size={{ base: 'sm', md: 'md' }}
             variant="outline"
-            borderColor="border-primary"
+            borderColor={borderColor}
           >
             Back to Constructors
           </Button>
@@ -270,7 +288,7 @@ const ConstructorDetails: React.FC = () => {
       </Box>
 
       {/* Header Bar */}
-      <Box bg="bg-primary" color="text-primary" py={{ base: 6, md: 8 }}>
+      <Box bg={pageBgColor} color={pageTextColor} py={{ base: 6, md: 8 }}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
           <Flex
         justify="space-between"
@@ -365,57 +383,106 @@ const ConstructorDetails: React.FC = () => {
       {/* Graphs Grid - 2 per row on desktop, 1 per row on mobile */}
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} mb={6}>
         {/* Points by Season */}
-        <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold" mb={2}>Points by Season</Text>
+        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
+          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Points by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
-              <XAxis dataKey="seasonLabel" stroke="white"/>
-              <YAxis stroke="white"/>
-              <Tooltip/>
-              <Line type="monotone" dataKey="points" stroke={teamColor} strokeWidth={3}/>
+            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
+              <YAxis stroke={axisColor}/>
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
+                  borderRadius: '8px',
+                  color: tooltipTextColor
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="points" 
+                stroke={teamColor} 
+                strokeWidth={3}
+                dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </Box>
 
         {/* Wins by Season */}
-        <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold" mb={2}>Wins by Season</Text>
+        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
+          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Wins by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
-              <XAxis dataKey="seasonLabel" stroke="white"/>
-              <YAxis stroke="white"/>
-              <Tooltip/>
-              <Line type="monotone" dataKey="wins" stroke="#F56565" strokeWidth={3}/>
+            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
+              <YAxis stroke={axisColor}/>
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
+                  borderRadius: '8px',
+                  color: tooltipTextColor
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="wins" 
+                stroke="#F56565" 
+                strokeWidth={3}
+                dot={{ fill: '#F56565', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: '#F56565', strokeWidth: 2 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </Box>
 
         {/* Podiums by Season */}
-        <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold" mb={2}>Podiums by Season</Text>
+        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
+          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Podiums by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={mappedPointsPerSeason.sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
-              <XAxis dataKey="seasonLabel" stroke="white"/>
-              <YAxis stroke="white"/>
-              <Tooltip/>
-              <Line type="monotone" dataKey="podiums" stroke="#ECC94B" strokeWidth={3}/>
+            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
+              <YAxis stroke={axisColor}/>
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
+                  borderRadius: '8px',
+                  color: tooltipTextColor
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="podiums" 
+                stroke="#ECC94B" 
+                strokeWidth={3}
+                dot={{ fill: '#ECC94B', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: '#ECC94B', strokeWidth: 2 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </Box>
 
         {/* Poles by Season */}
-        <Box w="100%" h="300px" bg="gray.800" p={4} borderRadius="md">
-          <Text fontSize="lg" fontWeight="bold" mb={2}>Poles by Season</Text>
+        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
+          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Poles by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
             <BarChart data={mappedPolesPerSeason}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray"/>
-              <XAxis dataKey="seasonYear" stroke="white"/>
-              <YAxis stroke="white"/>
-              <Tooltip/>
-              <Bar dataKey="poleCount" fill={teamColor} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+              <XAxis dataKey="seasonYear" stroke={axisColor}/>
+              <YAxis stroke={axisColor}/>
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
+                  borderRadius: '8px',
+                  color: tooltipTextColor
+                }}
+              />
+              <Bar dataKey="poleCount" fill={teamColor} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Box>
@@ -423,15 +490,29 @@ const ConstructorDetails: React.FC = () => {
 
       {/* Cumulative Progression - Full Width */}
       {cumulativeProgression.length > 0 && (
-        <Box w="100%" h="400px" bg="gray.800" p={4} borderRadius="md" mb={6}>
-          <Text fontSize="lg" fontWeight="bold" mb={2}>Cumulative Points Progression ({seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'})</Text>
+        <Box w="100%" h="400px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary" mb={6}>
+          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Cumulative Points Progression ({seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'})</Text>
           <ResponsiveContainer width="100%" height="90%">
             <LineChart data={cumulativeProgression}>
-              <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-              <XAxis dataKey="round" stroke="white" />
-              <YAxis stroke="white" />
-              <Tooltip />
-              <Line type="monotone" dataKey="cumulativePoints" stroke={teamColor} strokeWidth={3} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="round" stroke={axisColor} />
+              <YAxis stroke={axisColor} />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
+                  borderRadius: '8px',
+                  color: tooltipTextColor
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="cumulativePoints" 
+                stroke={teamColor} 
+                strokeWidth={3}
+                dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </Box>
@@ -439,14 +520,14 @@ const ConstructorDetails: React.FC = () => {
 
       {/* Best Race */}
       {topRace && (
-        <Box p={4} bg="gray.700" borderRadius="md" minW="200px">
-          <Text fontSize="lg" fontWeight="bold" textAlign="left">
+        <Box p={4} bg={bestRaceBg} borderRadius="md" minW="200px" border="1px solid" borderColor="border-primary">
+          <Text fontSize="lg" fontWeight="bold" textAlign="left" color={chartTextColor}>
             {constructor.name} {seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'} BEST RACE:
           </Text>
-          <Text fontSize="lg" fontWeight="bold" textAlign="left">
+          <Text fontSize="lg" fontWeight="bold" textAlign="left" color={chartTextColor}>
             Round {topRace.round}: {topRace.raceName}
           </Text>
-          <Text fontSize="xl" mt={2} textAlign="left">Points: {topRace.points}</Text>
+          <Text fontSize="xl" mt={2} textAlign="left" color={chartTextColor}>Points: {topRace.points}</Text>
         </Box>
       )}
 
@@ -454,6 +535,35 @@ const ConstructorDetails: React.FC = () => {
       <Box mb={6}>
         <ConstructorInfoCard constructorId={constructor.id} season={latestSeasonYear} />
       </Box>
+
+      {/* 3D Cockpit Viewer - Available for all teams */}
+      {["Red Bull", "Mercedes", "Ferrari", "McLaren", "Aston Martin", "Alpine F1 Team", "Williams", "RB F1 Team", "Sauber", "Haas F1 Team"].includes(constructor.name) && (
+        <Box mb={{ base: 4, md: 6 }}>
+          <Flex justify="space-between" align="center" mb={{ base: 3, md: 4 }} flexWrap="wrap" gap={2}>
+            <Heading 
+              as="h2" 
+              size={{ base: "md", md: "lg" }} 
+              fontFamily="heading" 
+              textTransform="uppercase"
+            >
+              Explore the {constructor.name} Cockpit
+            </Heading>
+            <Text fontSize={{ base: "xs", md: "sm" }} color="gray.500">
+              Interactive 3D Model
+            </Text>
+          </Flex>
+          <Box 
+            bg={useColorModeValue('gray.100', 'gray.900')} 
+            borderRadius="md" 
+            overflow="hidden"
+            border="1px solid"
+            borderColor={borderColor}
+            boxShadow={useColorModeValue('0 4px 20px rgba(0,0,0,0.1)', '0 4px 20px rgba(0,0,0,0.5)')}
+          >
+            <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} teamName={constructor.name} />
+          </Box>
+        </Box>
+      )}
       </Container>
     </Box>
   );

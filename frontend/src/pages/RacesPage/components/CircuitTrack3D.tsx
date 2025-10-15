@@ -8,7 +8,7 @@ import {
   Float32BufferAttribute,
 } from 'three';
 import { Line, Html } from '@react-three/drei';
-import { Spinner, Text } from '@chakra-ui/react';
+import { Spinner, Text, useColorModeValue } from '@chakra-ui/react';
 import { circuitFileMap } from './circuitFileMap';
 
 type GeoJSONGeometry =
@@ -180,6 +180,13 @@ export const CircuitTrack3D: React.FC<Props> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingFailed, setLoadingFailed] = useState<boolean>(false);
 
+  // Theme-aware colors
+  const trackColor = useColorModeValue('#dc2626', '#d22'); // Red for light mode, slightly different red for dark
+  const loadingTextColor = useColorModeValue('gray.800', 'white');
+  const errorBgColor = useColorModeValue('rgba(255,255,255,0.9)', 'rgba(0,0,0,0.7)');
+  const errorTextColor = useColorModeValue('gray.800', 'white');
+  const errorSecondaryTextColor = useColorModeValue('gray.600', 'gray.500');
+
   useEffect(() => {
     let cancelled = false;
 
@@ -298,7 +305,7 @@ export const CircuitTrack3D: React.FC<Props> = ({
       <Html center style={{ pointerEvents: 'none' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <Spinner size="lg" color="brand.red" thickness="4px" />
-          <Text color="white" fontSize="sm" fontWeight="medium">
+          <Text color={loadingTextColor} fontSize="sm" fontWeight="medium">
             Loading track layout...
           </Text>
         </div>
@@ -321,14 +328,14 @@ export const CircuitTrack3D: React.FC<Props> = ({
       <>
         <line>
           <primitive object={geometry} attach="geometry" />
-          <lineBasicMaterial color="#666" linewidth={1} />
+          <lineBasicMaterial color={useColorModeValue('#666', '#888')} linewidth={1} />
         </line>
         {loadingFailed && (
           <Html center style={{ pointerEvents: 'none' }}>
             <div
               style={{
-                background: 'rgba(0,0,0,0.7)',
-                color: 'white',
+                background: errorBgColor,
+                color: errorTextColor,
                 padding: '12px 16px',
                 borderRadius: 8,
                 fontSize: 14,
@@ -336,10 +343,10 @@ export const CircuitTrack3D: React.FC<Props> = ({
                 maxWidth: 300,
               }}
             >
-              <Text fontSize="sm" mb={2} color="gray.300">
+              <Text fontSize="sm" mb={2} color={errorTextColor}>
                 Track layout not available
               </Text>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color={errorSecondaryTextColor}>
                 {circuitName || `Circuit #${circuitId}`}
               </Text>
             </div>
@@ -349,7 +356,7 @@ export const CircuitTrack3D: React.FC<Props> = ({
     );
   }
 
-  return <Line points={linePoints} color="#d22" lineWidth={2} />;
+  return <Line points={linePoints} color={trackColor} lineWidth={2} />;
 };
 
 export default CircuitTrack3D;

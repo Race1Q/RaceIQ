@@ -29,4 +29,7 @@ export class DriverCareerStatsMaterialized {
 
   @Column({ type: 'int', name: 'highestRaceFinish' })
   highestRaceFinish: number;
+
+  @Column({ type: 'int', name: 'championships' })
+  championships: number;
 }

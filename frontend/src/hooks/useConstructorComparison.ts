@@ -297,7 +297,7 @@ export function useConstructorComparison(): HookState {
       .then(([constructorsList, yearsList]) => {
         if (alive) {
           setAllConstructors(constructorsList);
-          setYears(yearsList.sort((a, b) => b - a));
+          setYears([...yearsList].sort((a, b) => b - a));
         }
       })
       .catch((e) => {

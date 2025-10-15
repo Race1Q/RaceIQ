@@ -99,11 +99,9 @@ const HeaderSkeleton = () => {
   );
 };
 
-// Key info bar skeleton - matches the actual KeyInfoBar structure
+// Key info bar skeleton - matches the new unified KeyInfoBar structure
 const KeyInfoBarSkeleton = () => (
-  <Flex
-    direction={{ base: 'column', lg: 'row' }}
-    align="stretch"
+  <Box
     bg="bg-surface"
     border="1px solid"
     borderColor="border-primary"
@@ -117,38 +115,68 @@ const KeyInfoBarSkeleton = () => (
     boxShadow="xl"
     overflow="hidden"
   >
-    {/* Team logo section */}
     <Flex
-      align="center"
-      justify="center"
-      p="lg"
-      borderRight={{ base: 'none', lg: '1px solid' }}
-      borderBottom={{ base: '1px solid', lg: 'none' }}
-      borderColor="border-primary"
-      minW={{ lg: '220px' }}
+      direction={{ base: 'column', lg: 'row' }}
+      align="stretch"
+      minH="200px"
     >
-      <SkeletonCircle size="60px" />
-    </Flex>
-
-    {/* Career stats section */}
-    <Box p={{ base: 'md', md: 'lg' }} flexGrow={1}>
-      <SkeletonLine w="100px" h="12px" mb="sm" />
-      <Grid
-        templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }}
-        gap={{ base: 2, md: 4 }}
+      {/* Career stats section - 65% width */}
+      <Box 
+        flex={{ base: 1, lg: '0 0 65%' }}
+        p={{ base: 'md', md: 'lg' }}
       >
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Flex key={i} align="center" gap={4} p={{ base: 2, md: 4 }}>
-            <SkeletonCircle size="32px" />
-            <Box>
-              <SkeletonLine w="60px" h="10px" mb={1} />
-              <SkeletonLine w="40px" h="16px" />
+        <SkeletonLine w="100px" h="12px" mb="md" />
+        <Grid
+          templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(3, 1fr)' }}
+          templateRows={{ base: 'repeat(3, 1fr)', md: 'repeat(2, 1fr)', lg: 'repeat(2, 1fr)' }}
+          gap={4}
+        >
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Box key={i} p={4} bg="bg-surface" borderRadius="md" border="1px solid" borderColor="border-primary">
+              <Flex align="center" gap={4}>
+                <SkeletonCircle size="48px" />
+                <Box flex="1">
+                  <SkeletonLine w="60px" h="10px" mb={2} />
+                  <SkeletonLine w="40px" h="24px" />
+                </Box>
+              </Flex>
             </Box>
-          </Flex>
-        ))}
-      </Grid>
-    </Box>
-  </Flex>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* Divider skeleton */}
+      <Box 
+        w="1px" 
+        bg="border-primary" 
+        display={{ base: 'none', lg: 'block' }}
+      />
+
+      {/* Fun facts section skeleton - 35% width */}
+      <Box 
+        flex={{ base: 1, lg: '0 0 35%' }}
+        p={{ base: 'md', md: 'lg' }}
+        minW={{ lg: '300px' }}
+      >
+        <HStack mb="md">
+          <SkeletonCircle size="16px" />
+          <SkeletonLine w="80px" h="12px" />
+        </HStack>
+        <VStack spacing={3} align="stretch">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <HStack key={i} align="flex-start" spacing={3}>
+              <SkeletonCircle size="16px" mt={0.5} />
+              <Box flex="1">
+                <SkeletonLine w="100%" h="14px" mb={1} />
+                <SkeletonLine w="80%" h="14px" />
+              </Box>
+            </HStack>
+          ))}
+          <SkeletonLine w="120px" h="10px" alignSelf="flex-end" mt={2} />
+        </VStack>
+      </Box>
+    </Flex>
+  </Box>
 );
 
 // Stats section skeleton - matches StatSection structure

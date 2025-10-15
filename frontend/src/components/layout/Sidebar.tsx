@@ -3,10 +3,10 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut, X
+  LayoutDashboard, Users, Wrench, GitCompareArrows, Flag, Info, Pin, PinOff, UserCircle, LogOut
 } from 'lucide-react';
 import {
-  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, useDisclosure
+  Box, VStack, Button, Text, HStack, Icon, Flex, useToast, Spacer, Image, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useActiveRoute } from '../../hooks/useActiveRoute';
@@ -16,7 +16,6 @@ import ThemeToggleButton from '../ThemeToggleButton/ThemeToggleButton';
 
 // --- Sub-component for Navigation Links ---
 const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: () => void }) => {
-  const { isAuthenticated } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
   
   const navLinks = [
@@ -133,7 +132,7 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
               <Text fontWeight="bold" fontSize="md" color={accentColorWithHash}>Sign Out</Text>
               <Text fontSize="sm" color="text-secondary">Are you sure you want to sign out?</Text>
               <HStack spacing="2" mt="2">
-                <Button size="sm" bg={accentColorWithHash} color="white" _hover={{ opacity: 0.9 }}
+                <Button size="sm" bg={accentColorWithHash} color="text-on-accent" _hover={{ opacity: 0.9 }}
                   onClick={() => {
                     logout({ logoutParams: { returnTo: window.location.origin } });
                     onClose();
@@ -153,7 +152,7 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
   // Mobile Drawer
   if (isMobile) {
     return (
-      <Drawer isOpen={isOpen} onClose={onClose} placement="left" size="xs">
+      <Drawer isOpen={isOpen} onClose={onClose || (() => {})} placement="left" size="xs">
         <DrawerOverlay />
         <DrawerContent bg="bg-glassmorphism" backdropFilter="blur(10px)">
           <DrawerHeader>

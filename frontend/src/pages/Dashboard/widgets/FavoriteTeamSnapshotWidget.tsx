@@ -6,13 +6,91 @@ import { useUserProfile } from '../../../hooks/useUserProfile';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
 import { useThemeColor } from '../../../context/ThemeColorContext';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useEffect, useState } from 'react';
+import { buildApiUrl } from '../../../lib/api';
 
 function FavoriteTeamSnapshotWidget() {
   const { favoriteConstructor, loading, error } = useUserProfile();
+  const { getAccessTokenSilently } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
+  const [points, setPoints] = useState<number | null>(null);
+  const [position, setPosition] = useState<number | null>(null);
   
   // Debug logging
   console.log('🏎️ [FavoriteTeamWidget] State:', { favoriteConstructor, loading, error });
+
+  // Fetch current season points for the favorite constructor using the same method as useConstructorStandings
+  useEffect(() => {
+    const fetchPoints = async () => {
+      try {
+        if (!favoriteConstructor) return;
+        const season = new Date().getFullYear();
+        const token = await getAccessTokenSilently();
+        const teamName = favoriteConstructor.name;
+        const constructorId = (favoriteConstructor as any).id;
+        
+        console.log('🏎️ [FavoriteTeamWidget] Fetching for:', { teamName, constructorId, season });
+        
+        // Get season data to find season ID
+        const seasonsResponse = await fetch(buildApiUrl('/api/seasons'), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (!seasonsResponse.ok) {
+          console.log('🏎️ [FavoriteTeamWidget] Failed to fetch seasons:', seasonsResponse.status);
+          return;
+        }
+        
+        const seasons = await seasonsResponse.json();
+        const targetSeason = seasons.find((s: any) => s.year === season);
+        
+        if (!targetSeason) {
+          console.log('🏎️ [FavoriteTeamWidget] Season not found:', season);
+          return;
+        }
+        
+        console.log('🏎️ [FavoriteTeamWidget] Found season:', targetSeason);
+        
+        // Fetch season points for this specific constructor
+        const response = await fetch(
+          buildApiUrl(`/api/race-results/constructor/${constructorId}/season-points`),
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        
+        if (!response.ok) {
+          console.log('🏎️ [FavoriteTeamWidget] Failed to fetch constructor points:', response.status);
+          return;
+        }
+        
+        const seasonPoints = await response.json();
+        console.log('🏎️ [FavoriteTeamWidget] Season points data:', seasonPoints);
+        
+        const currentSeasonData = seasonPoints.find((sp: any) => sp.season === targetSeason.id);
+        
+        if (currentSeasonData) {
+          const points = Number(currentSeasonData.points || 0);
+          const wins = Number(currentSeasonData.wins || 0);
+          const podiums = Number(currentSeasonData.podiums || 0);
+          
+          console.log('🏎️ [FavoriteTeamWidget] Found season data:', { points, wins, podiums });
+          
+          // For position, we need to get all constructors and sort them
+          // For now, let's just set the points and leave position as null
+          setPoints(points);
+          setPosition(null); // We'll calculate this later if needed
+        } else {
+          console.log('🏎️ [FavoriteTeamWidget] No data found for current season');
+        }
+      } catch (error) {
+        console.log('🏎️ [FavoriteTeamWidget] Fetch error:', error);
+      }
+    };
+
+    fetchPoints();
+  }, [favoriteConstructor, getAccessTokenSilently]);
 
   if (loading) {
     return (
@@ -43,7 +121,7 @@ function FavoriteTeamSnapshotWidget() {
               w="50px"
               h="50px"
               borderRadius="md"
-              bg="whiteAlpha.100"
+              bg="bg-subtle"
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -55,7 +133,7 @@ function FavoriteTeamSnapshotWidget() {
               <Text color="text-muted" fontSize="sm" textAlign="center">
                 No favorite team set
               </Text>
-              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
+              <Button as={Link} to="/profile" size="sm" variant="outline" borderColor={accentColorWithHash} color={accentColorWithHash} _hover={{ bg: accentColorWithHash, color: 'text-on-accent' }}>
                 Select Constructor
               </Button>
             </VStack>
@@ -86,7 +164,7 @@ function FavoriteTeamSnapshotWidget() {
               border="2px solid"
               borderColor={`#${teamColor}`}
               flexShrink={0}
-              bg="whiteAlpha.100"
+              bg="bg-subtle"
             >
               <Image
                 src={teamLogo}
@@ -106,8 +184,8 @@ function FavoriteTeamSnapshotWidget() {
               <Text color="text-secondary" fontSize="sm">
                 Constructor's Championship
               </Text>
-            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor="{accentColorWithHash}" color={accentColorWithHash} _hover={{ bg: '{accentColorWithHash}', color: 'white' }}>
-              Select Constructor
+            <Button as={Link} to="/profile" size="xs" mt="sm" variant="outline" borderColor={accentColorWithHash} color={accentColorWithHash} _hover={{ bg: accentColorWithHash, color: 'text-on-accent' }}>
+              Change Team
             </Button>
             </VStack>
           </HStack>
@@ -115,22 +193,22 @@ function FavoriteTeamSnapshotWidget() {
           <VStack align="start" spacing="xs" w="full">
             <HStack spacing="md" justify="space-between" w="full">
               <Text color={accentColorWithHash} fontSize="lg" fontWeight="bold" fontFamily="mono">
-                600 pts
+                {points !== null ? `${points} pts` : '—'}
               </Text>
               <Text color="text-muted" fontSize="sm">
-                P2
+                {position ? `P${position}` : ''}
               </Text>
             </HStack>
             
             <Box
               w="full"
               h="4px"
-              bg="whiteAlpha.200"
+              bg="bg-subtle"
               borderRadius="full"
               overflow="hidden"
             >
               <Box
-                w="75%"
+                w={position ? `${Math.max(10, 100 - (position - 1) * 10)}%` : '0%'}
                 h="full"
                 bg={`#${teamColor}`}
                 borderRadius="full"

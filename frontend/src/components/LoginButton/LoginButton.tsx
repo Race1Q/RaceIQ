@@ -12,11 +12,11 @@ const LoginButton = () => {
     <Button
       onClick={() => loginWithRedirect()}
       bg={accentColorWithHash}
-      color="white" // 'white' is fine, 'staticWhite' from your theme is also an option
+      color="text-on-accent"
       _hover={{ bg: accentColorDark, transform: 'translateY(-2px)', boxShadow: 'lg' }}
       size="lg"
       fontWeight="bold"
-      fontFamily="heading" // Polish: Added for font consistency
+      fontFamily="heading"
       transition="all 0.3s ease"
     >
       Login or Sign Up

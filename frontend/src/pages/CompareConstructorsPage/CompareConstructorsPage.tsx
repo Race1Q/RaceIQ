@@ -1,6 +1,6 @@
 // frontend/src/pages/CompareConstructorsPage/CompareConstructorsPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Skeleton, SkeletonText, ScaleFade } from '@chakra-ui/react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Skeleton, SkeletonText, ScaleFade, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Download } from 'lucide-react';
@@ -20,6 +20,13 @@ type ParameterPhase = 'constructors' | 'time' | 'stats';
 
 const CompareConstructorsPage = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
+  
+  // Theme-aware colors
+  const surfaceBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const primaryTextColor = useColorModeValue('gray.800', 'white');
+  const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
+  const glassmorphismBg = useColorModeValue('gray.50', 'rgba(255, 255, 255, 0.05)');
   
   // Progressive disclosure state
   const [currentStep, setCurrentStep] = useState<ComparisonStep>('parameters');
@@ -223,11 +230,11 @@ const CompareConstructorsPage = () => {
     return (
       <Flex direction="column" align="center" justify="center" minH="60vh" gap={4} p="xl">
         <Heading size="md" fontFamily="heading">Login to Compare Constructors</Heading>
-        <Text color="text-secondary">Please sign in to access the comparison tool.</Text>
+        <Text color={mutedTextColor}>Please sign in to access the comparison tool.</Text>
         <Button
           bg="border-accent"
           _hover={{ bg: 'border-accentDark' }}
-          color="white"
+          color={useColorModeValue('gray.800', 'white')}
           onClick={() => loginWithRedirect()}
         >
           Login
@@ -241,7 +248,7 @@ const CompareConstructorsPage = () => {
     <VStack spacing="xl" align="stretch">
       <VStack spacing="md" textAlign="center">
         <Heading size="lg" fontFamily="heading">Choose Your Constructors</Heading>
-        <Text color="text-muted" fontSize="lg">
+        <Text color={mutedTextColor} fontSize="lg">
           {constructor1?.id && constructor2?.id 
             ? "Both constructors selected - ready to proceed" 
             : constructor1?.id 
@@ -311,21 +318,21 @@ const CompareConstructorsPage = () => {
       <VStack spacing="xl" align="stretch">
         <VStack spacing="md" textAlign="center">
           <Heading size="lg" fontFamily="heading">Select Time Period</Heading>
-          <Text color="text-muted" fontSize="lg">
+          <Text color={mutedTextColor} fontSize="lg">
             Choose the years for each constructor's comparison data
           </Text>
         </VStack>
         
         {/* Selected Constructors Preview */}
-        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
           <VStack spacing="md">
-            <Heading size="md" fontFamily="heading" color="text-primary">Selected Constructors</Heading>
+            <Heading size="md" fontFamily="heading" color={primaryTextColor}>Selected Constructors</Heading>
             <Grid templateColumns={{ base: '1fr', md: '1fr auto 1fr' }} gap="md" w="full" maxW="600px" mx="auto">
-              <Box textAlign="center" p="md" bg="bg-glassmorphism" borderRadius="md">
-                <Text fontSize="sm" color="text-muted" mb="xs">Constructor 1</Text>
+              <Box textAlign="center" p="md" bg={glassmorphismBg} borderRadius="md">
+                <Text fontSize="sm" color={mutedTextColor} mb="xs">Constructor 1</Text>
                 <Text fontFamily="heading" fontWeight="bold">{constructor1?.name || 'Not Selected'}</Text>
                 {constructor1?.nationality && (
-                  <Text fontSize="xs" color="text-muted">{constructor1.nationality}</Text>
+                  <Text fontSize="xs" color={mutedTextColor}>{constructor1.nationality}</Text>
                 )}
               </Box>
               
@@ -333,11 +340,11 @@ const CompareConstructorsPage = () => {
                 <Text fontSize="lg" color="border-accent" fontFamily="heading">VS</Text>
               </Flex>
               
-              <Box textAlign="center" p="md" bg="bg-glassmorphism" borderRadius="md">
-                <Text fontSize="sm" color="text-muted" mb="xs">Constructor 2</Text>
+              <Box textAlign="center" p="md" bg={glassmorphismBg} borderRadius="md">
+                <Text fontSize="sm" color={mutedTextColor} mb="xs">Constructor 2</Text>
                 <Text fontFamily="heading" fontWeight="bold">{constructor2?.name || 'Not Selected'}</Text>
                 {constructor2?.nationality && (
-                  <Text fontSize="xs" color="text-muted">{constructor2.nationality}</Text>
+                  <Text fontSize="xs" color={mutedTextColor}>{constructor2.nationality}</Text>
                 )}
               </Box>
             </Grid>
@@ -345,16 +352,16 @@ const CompareConstructorsPage = () => {
         </Box>
 
         {/* Year Selection */}
-        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
           <VStack spacing="md" align="stretch">
-            <Heading size="md" fontFamily="heading" color="text-primary">Time Period Selection</Heading>
-            <Text fontSize="sm" color="text-muted">Select one or more years for each constructor's comparison data</Text>
+            <Heading size="md" fontFamily="heading" color={primaryTextColor}>Time Period Selection</Heading>
+            <Text fontSize="sm" color={mutedTextColor}>Select one or more years for each constructor's comparison data</Text>
             
             <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap="lg" w="full">
               {/* Constructor 1 Year Selection */}
               <VStack spacing="sm" align="stretch">
                 <HStack justify="space-between" align="center">
-                  <Text fontSize="sm" fontFamily="heading" color="text-primary">
+                  <Text fontSize="sm" fontFamily="heading" color={primaryTextColor}>
                     {constructor1?.name || 'Constructor 1'} - Years
                   </Text>
                   <Button
@@ -405,11 +412,6 @@ const CompareConstructorsPage = () => {
                             } else {
                               // Add year
                               setSelectedYears1(prev => [...prev, yearStr]);
-                              // Note: We'll aggregate multiple years in the results display
-                              // For now, just fetch the most recent year for immediate display
-                              if (constructor1) {
-                                selectConstructor(1, constructor1.id.toString(), year);
-                              }
                             }
                           }}
                           fontFamily="heading"
@@ -420,7 +422,7 @@ const CompareConstructorsPage = () => {
                       );
                     })
                   ) : (
-                    <Text fontSize="sm" color="text-muted">No years available</Text>
+                    <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
               </VStack>
@@ -428,7 +430,7 @@ const CompareConstructorsPage = () => {
               {/* Constructor 2 Year Selection */}
               <VStack spacing="sm" align="stretch">
                 <HStack justify="space-between" align="center">
-                  <Text fontSize="sm" fontFamily="heading" color="text-primary">
+                  <Text fontSize="sm" fontFamily="heading" color={primaryTextColor}>
                     {constructor2?.name || 'Constructor 2'} - Years
                   </Text>
                   <Button
@@ -479,11 +481,6 @@ const CompareConstructorsPage = () => {
                             } else {
                               // Add year
                               setSelectedYears2(prev => [...prev, yearStr]);
-                              // Note: We'll aggregate multiple years in the results display
-                              // For now, just fetch the most recent year for immediate display
-                              if (constructor2) {
-                                selectConstructor(2, constructor2.id.toString(), year);
-                              }
                             }
                           }}
                           fontFamily="heading"
@@ -494,7 +491,7 @@ const CompareConstructorsPage = () => {
                       );
                     })
                   ) : (
-                    <Text fontSize="sm" color="text-muted">No years available</Text>
+                    <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
               </VStack>
@@ -502,8 +499,8 @@ const CompareConstructorsPage = () => {
 
             {/* Year Selection Status */}
             {(selectedYears1.length > 0 || selectedYears2.length > 0) && (
-              <Box p="sm" bg="bg-glassmorphism" borderRadius="md" textAlign="center">
-                <Text fontSize="xs" color="text-muted">
+              <Box p="sm" bg={glassmorphismBg} borderRadius="md" textAlign="center">
+                <Text fontSize="xs" color={mutedTextColor}>
                   {selectedYears1.length > 0 && selectedYears2.length > 0 ? (
                     `Comparing ${constructor1?.name} (${selectedYears1.join(', ')}) vs ${constructor2?.name} (${selectedYears2.join(', ')})`
                   ) : selectedYears1.length > 0 ? (
@@ -546,16 +543,16 @@ const CompareConstructorsPage = () => {
       <VStack spacing="xl" align="stretch">
         <VStack spacing="md" textAlign="center">
           <Heading size="lg" fontFamily="heading">Select Statistics</Heading>
-          <Text color="text-muted" fontSize="lg">
+          <Text color={mutedTextColor} fontSize="lg">
             Choose the metrics you want to compare
           </Text>
         </VStack>
         
         {/* Statistics Selection */}
-        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
           <VStack spacing="md" align="stretch">
             <HStack justify="space-between" align="center">
-              <Heading size="md" fontFamily="heading" color="text-primary">Statistics to Compare</Heading>
+              <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics to Compare</Heading>
               <Button
                 size="sm"
                 variant="ghost"
@@ -584,7 +581,7 @@ const CompareConstructorsPage = () => {
                 {Object.keys(availableMetrics).every(key => enabledMetricsArray.includes(key)) ? 'Deselect All' : 'Select All'}
               </Button>
             </HStack>
-            <Text fontSize="sm" color="text-muted">
+            <Text fontSize="sm" color={mutedTextColor}>
               Select the metrics you want to compare. Choose at least one statistic.
             </Text>
             
@@ -628,7 +625,7 @@ const CompareConstructorsPage = () => {
                       alignItems="center"
                       justifyContent="center"
                       fontSize="10px"
-                      color="white"
+                      color={useColorModeValue('gray.800', 'white')}
                       fontWeight="bold"
                     >
                       ✓
@@ -663,7 +660,7 @@ const CompareConstructorsPage = () => {
                   transform: 'translateY(0px)',
                   boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                 }}
-                color="white"
+                color={useColorModeValue('gray.800', 'white')}
                 fontFamily="heading"
                 transition="all 0.2s ease"
                 boxShadow="0 4px 15px rgba(0,0,0,0.1)"
@@ -685,16 +682,12 @@ const CompareConstructorsPage = () => {
       
       {/* Phase 2: Time Period Selection - Appears after constructors selected */}
       {(currentPhase === 'time' || currentPhase === 'stats') && (
-        <SlideFade in={currentPhase === 'time' || currentPhase === 'stats'} offsetY="20px">
-          <Phase2TimeSelection />
-        </SlideFade>
+        <Phase2TimeSelection />
       )}
       
       {/* Phase 3: Statistics Selection - Appears after time period selected */}
       {currentPhase === 'stats' && (
-        <SlideFade in={currentPhase === 'stats'} offsetY="20px">
-          <Phase3StatsSelection />
-        </SlideFade>
+        <Phase3StatsSelection />
       )}
     </VStack>
   );
@@ -720,7 +713,7 @@ const CompareConstructorsPage = () => {
       <VStack spacing="xl" align="stretch">
         <VStack spacing="md" textAlign="center">
           <Heading size="lg" fontFamily="heading">Head-to-Head Comparison</Heading>
-          <Text color="text-muted" fontSize="lg">
+          <Text color={mutedTextColor} fontSize="lg">
             See how your selected constructors stack up against each other
           </Text>
           {selectedYears1.length > 0 && selectedYears2.length > 0 && (
@@ -731,9 +724,9 @@ const CompareConstructorsPage = () => {
         </VStack>
 
         {/* Central-Axis Results Display */}
-        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
           <VStack spacing="lg">
-            <Heading size="md" fontFamily="heading" color="text-primary">Statistics Comparison</Heading>
+            <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics Comparison</Heading>
             
             {/* Loading State */}
             {loading && (
@@ -863,7 +856,7 @@ const CompareConstructorsPage = () => {
               transform: 'translateY(0px)',
               boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
             }}
-            color="white"
+            color={useColorModeValue('gray.800', 'white')}
             fontFamily="heading"
             transition="all 0.2s ease"
             boxShadow="0 4px 15px rgba(0,0,0,0.1)"
@@ -895,21 +888,21 @@ const CompareConstructorsPage = () => {
                     w="8px"
                     h="8px"
                     borderRadius="full"
-                    bg={currentStep === step ? 'border-accent' : 'border-subtle'}
+                    bg={currentStep === step ? 'border-accent' : useColorModeValue('gray.100', 'whiteAlpha.100')}
                     transition="all 0.3s ease"
                   />
                   {index < 1 && (
                     <Box
                       w="20px"
                       h="2px"
-                      bg={currentStep === 'results' ? 'border-accent' : 'border-subtle'}
+                      bg={currentStep === 'results' ? 'border-accent' : useColorModeValue('gray.100', 'whiteAlpha.100')}
                       transition="all 0.3s ease"
                     />
                   )}
                 </HStack>
               ))}
             </HStack>
-            <Text fontSize="xs" color="text-muted" textAlign="center" mt="sm">
+            <Text fontSize="xs" color={mutedTextColor} textAlign="center" mt="sm">
               {currentStep === 'parameters' ? (
                 currentPhase === 'constructors' ? 'Step 1 of 2 - Select Constructors' :
                 currentPhase === 'time' ? 'Step 1 of 2 - Select Time Period' :
@@ -918,14 +911,9 @@ const CompareConstructorsPage = () => {
             </Text>
           </Box>
 
-          {/* Progressive Disclosure: Render current step with animations */}
-          <Fade in={currentStep === 'parameters'} unmountOnExit>
-            {currentStep === 'parameters' && <Step1Parameters />}
-          </Fade>
-          
-          <SlideFade in={currentStep === 'results'} offsetY="20px" unmountOnExit>
-            {currentStep === 'results' && <Step3Results />}
-          </SlideFade>
+          {/* Progressive Disclosure: Render current step */}
+          {currentStep === 'parameters' && <Step1Parameters />}
+          {currentStep === 'results' && <Step3Results />}
         </Box>
       </LayoutContainer>
     </Box>

@@ -117,25 +117,41 @@ const ConstructorStandings: React.FC = () => {
   {loading && <StandingsSkeleton type="constructors" text="Loading Constructor Standings..." />}
 
       {!loading && (
-        <Flex flexDirection="column" gap={{ base: 2, md: 3 }}>
-          {teamsToRender.flatMap(teamName => {
-            const constructors = groupedConstructors[teamName];
-            if (!constructors) return [];
-            return constructors
-              .sort((a, b) => a.position - b.position)
-              .map(standing => (
-                  <ConstructorStandingCard
-                    key={standing.constructorId}
-                    constructorId={standing.constructorId}
-                    position={standing.position}
-                    constructorName={standing.constructorName}
-                    points={standing.points}
-                    wins={standing.wins}
-                    podiums={standing.podiums}
-                  />
-              ));
-          })}
-        </Flex>
+        <Box>
+          {/* Mobile scroll indicator */}
+          <Box 
+            display={{ base: "block", md: "none" }}
+            textAlign="center" 
+            mb={2}
+            color="text-muted"
+            fontSize="xs"
+          >
+            👆 Scroll to see more teams
+          </Box>
+          <Flex 
+            flexDirection="column" 
+            gap={{ base: 2, md: 3 }}
+            pb={{ base: 4, md: 0 }} // Extra padding on mobile for better scroll
+          >
+            {teamsToRender.flatMap(teamName => {
+              const constructors = groupedConstructors[teamName];
+              if (!constructors) return [];
+              return [...constructors]
+                .sort((a, b) => a.position - b.position)
+                .map(standing => (
+                    <ConstructorStandingCard
+                      key={standing.constructorId}
+                      constructorId={standing.constructorId}
+                      position={standing.position}
+                      constructorName={standing.constructorName}
+                      points={standing.points}
+                      wins={standing.wins}
+                      podiums={standing.podiums}
+                    />
+                ));
+            })}
+          </Flex>
+        </Box>
       )}
 
 

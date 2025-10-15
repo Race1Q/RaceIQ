@@ -1,50 +1,40 @@
 import React from 'react';
-import { Box, Flex, Grid, Heading, Icon, Text } from '@chakra-ui/react';
-import { Trophy, TrendingUp, Calendar, Medal } from 'lucide-react';
-import TeamLogo from '../TeamLogo/TeamLogo';
+import { Box, Flex, SimpleGrid, Heading, Icon, Text, VStack, HStack, Badge, Spinner, Divider, useColorModeValue } from '@chakra-ui/react';
+import { Trophy, TrendingUp, Calendar, Medal, Sparkles, AlertCircle, Flag } from 'lucide-react';
 import { useThemeColor } from '../../context/ThemeColorContext';
+import { useAiDriverFunFacts } from '../../hooks/useAiDriverFunFacts';
+import StatCard from '../StatCard/StatCard';
 
-interface InfoBlockProps {
-  label: string;
-  value: string | number;
-  subValue?: string;
-  icon: React.ElementType;
-}
-
-const InfoBlock: React.FC<InfoBlockProps> = ({ label, value, subValue, icon }) => {
-  const { accentColorWithHash } = useThemeColor();
-  
-  return (
-    <Flex align="center" gap={4} p={{ base: 2, md: 4 }}>
-      <Icon as={icon} boxSize={8} color={accentColorWithHash} />
-    <Box>
-      <Text fontSize="xs" color="text-muted" textTransform="uppercase">{label}</Text>
-      <Heading size="md" fontWeight="bold">{value}</Heading>
-      {subValue && <Text fontSize="sm" color="text-muted">{subValue}</Text>}
-    </Box>
-  </Flex>
-  );
-};
+// Removed InfoBlock - now using StatCard component for consistency
 
 interface KeyInfoBarProps {
   driver: {
+    id: number;
     teamName: string;
     championshipStanding: string;
     points: number;
     wins: number;
     podiums: number;
     firstRace: { year: string; event: string };
+    worldChampionships?: number;
+    grandsPrixEntered?: number;
   };
+  teamColor?: string;
 }
 
-const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver }) => {
+const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver, teamColor }) => {
   // --- DEBUG STEP 4: Log the data as it's received by a child component ---
   console.log("%c4. Data Received by KeyInfoBar:", "color: violet; font-weight: bold;", driver);
 
+  // Fetch AI-generated fun facts
+  const { data: funFactsData, loading: funFactsLoading, error: funFactsError } = useAiDriverFunFacts(driver.id);
+  const { accentColorWithHash } = useThemeColor();
+  
+  // Use team color for icons, fallback to accent color
+  const iconColor = teamColor || accentColorWithHash;
+
   return (
-    <Flex
-      direction={{ base: 'column', lg: 'row' }}
-      align="stretch"
+    <Box
       bg="bg-surface"
       border="1px solid"
       borderColor="border-primary"
@@ -59,33 +49,146 @@ const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver }) => {
       overflow="hidden"
     >
       <Flex
-        align="center"
-        justify="center"
-        p="lg"
-        borderRight={{ base: 'none', lg: '1px solid' }}
-        borderBottom={{ base: '1px solid', lg: 'none' }}
-        borderColor="border-primary"
-        minW={{ lg: '220px' }}
+        direction={{ base: 'column', lg: 'row' }}
+        align="stretch"
+        minH="200px"
       >
-        <TeamLogo teamName={driver.teamName} />
-      </Flex>
-
-      <Box p={{ base: 'md', md: 'lg' }} flexGrow={1}>
-        <Text fontSize="xs" textTransform="uppercase" color="text-muted" mb="sm">
-          Career Stats
-        </Text>
-        <Grid
-          templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }}
-          gap={{ base: 2, md: 4 }}
+        {/* Career Stats Section - 65% width */}
+        <Box 
+          flex={{ base: 1, lg: '0 0 65%' }}
+          p={{ base: 'md', md: 'lg' }}
         >
-          <InfoBlock label="First Race" value={driver.firstRace.year} subValue={driver.firstRace.event} icon={Calendar} />
-          <InfoBlock label="Wins" value={driver.wins} icon={Trophy} />
-          <InfoBlock label="Podiums" value={driver.podiums} icon={Medal} />
-          <InfoBlock label="Points" value={driver.points} icon={TrendingUp} />
-          <InfoBlock label="Standing" value={driver.championshipStanding} icon={Trophy} />
-        </Grid>
-      </Box>
-    </Flex>
+          <Heading 
+            size="sm" 
+            fontFamily="heading" 
+            textTransform="uppercase" 
+            color="text-muted" 
+            mb="md"
+            letterSpacing="0.05em"
+          >
+            Key Stats
+          </Heading>
+          <SimpleGrid 
+            columns={{ base: 2, md: 3, lg: 3 }} 
+            spacing={4}
+            templateRows={{ base: 'repeat(3, 1fr)', md: 'repeat(2, 1fr)', lg: 'repeat(2, 1fr)' }}
+          >
+            {/* World Championships - Most important stat */}
+            <StatCard
+              icon={Trophy}
+              value={driver.worldChampionships || 0}
+              label="World Championships"
+              color={iconColor}
+            />
+            
+            {/* Wins - Core performance metric */}
+            <StatCard
+              icon={Trophy}
+              value={driver.wins}
+              label="Wins"
+              color={iconColor}
+            />
+            
+            {/* Podiums - Sustained excellence */}
+            <StatCard
+              icon={Medal}
+              value={driver.podiums}
+              label="Podiums"
+              color={iconColor}
+            />
+            
+            {/* Grands Prix Entered - Experience & longevity */}
+            <StatCard
+              icon={Calendar}
+              value={driver.grandsPrixEntered || 0}
+              label="Grands Prix Entered"
+              color={iconColor}
+            />
+            
+            {/* Career Points - Overall contribution */}
+            <StatCard
+              icon={TrendingUp}
+              value={driver.points}
+              label="Career Points"
+              color={iconColor}
+            />
+            
+            {/* First Race - Career start */}
+            <StatCard
+              icon={Flag}
+              value={driver.firstRace.year}
+              label="First Race"
+              color={iconColor}
+            />
+          </SimpleGrid>
+        </Box>
+
+        {/* Divider */}
+        <Divider 
+          orientation="vertical" 
+          display={{ base: 'none', lg: 'block' }}
+          borderColor="border-primary"
+        />
+
+        {/* Fun Facts Section - 35% width */}
+        <Box 
+          flex={{ base: 1, lg: '0 0 35%' }}
+          p={{ base: 'md', md: 'lg' }}
+          minW={{ lg: '300px' }}
+        >
+          <HStack mb="md" align="center">
+            <Heading 
+              size="sm" 
+              fontFamily="heading" 
+              textTransform="uppercase" 
+              color="text-muted"
+              letterSpacing="0.05em"
+            >
+              Fun Facts
+            </Heading>
+            {funFactsData?.isFallback && (
+              <Badge size="sm" colorScheme="orange" variant="subtle">
+                Cached
+              </Badge>
+            )}
+          </HStack>
+          
+          {funFactsLoading ? (
+            <VStack spacing={3} align="stretch">
+              <HStack>
+                <Spinner size="sm" color={accentColorWithHash} />
+                <Text fontSize="sm" color="text-muted">Generating fun facts...</Text>
+              </HStack>
+            </VStack>
+          ) : funFactsError ? (
+            <VStack spacing={3} align="stretch">
+              <HStack>
+                <Icon as={AlertCircle} boxSize={4} color="red.400" />
+                <Text fontSize="sm" color="red.400">Unable to load fun facts</Text>
+              </HStack>
+            </VStack>
+          ) : funFactsData ? (
+            <VStack spacing={3} align="stretch">
+              {funFactsData.facts.slice(0, 3).map((fact, index) => (
+                <HStack key={index} align="flex-start" spacing={3}>
+                  <Icon as={Sparkles} boxSize={4} color={accentColorWithHash} mt={0.5} flexShrink={0} />
+                  <Text fontSize="sm" color="text-primary" lineHeight="1.5">
+                    {fact}
+                  </Text>
+                </HStack>
+              ))}
+              {funFactsData.aiAttribution && (
+                <Text fontSize="xs" color="text-muted" textAlign="right" mt={2}>
+                  {funFactsData.aiAttribution}
+                </Text>
+              )}
+            </VStack>
+          ) : (
+            <Text fontSize="sm" color="text-muted">No fun facts available</Text>
+          )}
+        </Box>
+      </Flex>
+    </Box>
   );
 };
 

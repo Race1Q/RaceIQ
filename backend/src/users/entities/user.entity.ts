@@ -39,6 +39,15 @@ export class User {
   @Column({ type: 'boolean', default: true })
   use_custom_team_color: boolean;
 
+  @Column({ type: 'jsonb', nullable: true })
+  dashboard_visibility: object;
+
+  @Column({ type: 'jsonb', nullable: true })
+  dashboard_layouts: object;
+
+  @Column({ type: 'jsonb', nullable: true, default: {} })
+  widget_settings: Record<string, any>;
+
   @Column({ type: 'timestamp with time zone', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 

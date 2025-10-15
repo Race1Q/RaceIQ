@@ -15,6 +15,8 @@ export type DriverDetailsModel = {
   countryCode: string;
   imageUrl: string;
   teamName: string;
+  worldChampionships: number;
+  grandsPrixEntered: number;
   currentSeasonStats?: { wins: number; podiums: number; fastestLaps: number; standing: string };
   careerStats?: { wins: number; podiums: number; fastestLaps: number; points: number; grandsPrixEntered: number; dnfs: number; highestRaceFinish: number };
   winsPerSeason?: Array<{ season: number; wins: number }>;
@@ -126,6 +128,8 @@ export const useDriverDetails = (driverId?: string) => {
           podiums: hasStats ? (apiData.careerStats?.podiums || 0) : 0,
           points: hasStats ? (apiData.careerStats?.points || 0) : 0,
           championshipStanding: hasStats ? (apiData.currentSeasonStats?.standing || 'N/A') : 'N/A',
+          worldChampionships: hasStats ? (apiData.careerStats?.worldChampionships || 0) : 0,
+          grandsPrixEntered: hasStats ? (apiData.careerStats?.grandsPrixEntered || 0) : 0,
           
           firstRace: hasStats ? {
             year: String(apiData.careerStats?.firstRace?.year || ''),

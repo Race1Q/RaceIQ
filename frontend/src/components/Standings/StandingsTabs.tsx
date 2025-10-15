@@ -26,10 +26,12 @@ const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
       borderColor="border-primary"
       borderRadius="full"
       p="6px"
-      w="fit-content"
+      w={{ base: 'full', md: 'fit-content' }}
       boxShadow="shadow-md"
       position="relative"
       gap={2}
+      justifyContent={{ base: 'space-between', md: 'flex-start' }}
+      overflow="hidden"
     >
       {tabs.map((t) => {
         const isActive = active === t.key;
@@ -40,7 +42,7 @@ const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
             aria-selected={isActive}
             variant="ghost"
             onClick={() => !isActive && navigate(t.path)}
-            px={6}
+            px={{ base: 3, md: 6 }}
             h="44px"
             fontWeight={600}
             fontFamily="heading"
@@ -52,6 +54,9 @@ const StandingsTabs: React.FC<StandingsTabsProps> = ({ active }) => {
             bg={isActive ? accentColorWithHash : 'transparent'}
             borderRadius="full"
             boxShadow={isActive ? `0 6px 24px ${accentColorRgba(0.35)}, 0 0 0 1px ${accentColorRgba(0.35)} inset` : 'none'}
+            flex={{ base: 1, md: 'none' }}
+            fontSize={{ base: 'sm', md: 'md' }}
+            minW={0}
           >
             <Text>{t.label}</Text>
           </Button>

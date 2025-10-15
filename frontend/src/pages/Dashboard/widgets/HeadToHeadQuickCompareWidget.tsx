@@ -1,10 +1,9 @@
 import { Heading, Text, VStack, HStack, Box, Image } from '@chakra-ui/react';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import SearchableSelect from '../../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../../components/DropDownSearch/SearchableSelect';
 import { buildApiUrl } from '../../../lib/api';
-import type { HeadToHead } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
 import { driverHeadshots } from '../../../lib/driverHeadshots';
@@ -12,13 +11,24 @@ import { useThemeColor } from '../../../context/ThemeColorContext';
 import WidgetCard from './WidgetCard';
 
 interface HeadToHeadQuickCompareWidgetProps {
-  data?: HeadToHead;
+  preference?: {
+    driver1Id?: number;
+    driver2Id?: number;
+  };
+  onPreferenceChange: (preference: { driver1Id?: number; driver2Id?: number }) => void;
+  allDrivers: Array<{ id: number; name: string; teamName: string; headshotUrl?: string | null }>;
 }
 
-function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProps) {
+function HeadToHeadQuickCompareWidget({ 
+  preference, 
+  onPreferenceChange, 
+  allDrivers: _allDrivers 
+}: HeadToHeadQuickCompareWidgetProps) {
   const { getAccessTokenSilently } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
   const currentSeason = new Date().getFullYear();
+
+  const { driver1Id, driver2Id } = preference || {};
 
   type DriverRow = {
     id: number;
@@ -30,15 +40,13 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
     headshotUrl?: string | null;
   };
 
-  const [drivers, setDrivers] = useState<DriverRow[]>([]);
-  const [loadingList, setLoadingList] = useState(true);
-  const [selected1, setSelected1] = useState<number | null>(null);
-  const [selected2, setSelected2] = useState<number | null>(null);
+  const [driversWithStats, setDriversWithStats] = useState<DriverRow[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStandings = useCallback(async () => {
+  const fetchDriverStats = useCallback(async () => {
     try {
-      setLoadingList(true);
+      setLoadingStats(true);
       setError(null);
       const token = await getAccessTokenSilently();
       const res = await fetch(buildApiUrl(`/api/drivers/standings/${currentSeason}`), {
@@ -55,35 +63,48 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
         points: Number(d.points ?? 0),
         headshotUrl: d.profileimageurl || d.profileImageUrl || d.headshotUrl || undefined,
       })).filter(r => !!r.id && !!r.fullName);
-      setDrivers(rows);
+      setDriversWithStats(rows);
 
-      // Preselect initial values: from dashboard data if provided, else top two
-      if (data) {
-        const id1 = Number((data as any).driver1?.id ?? 0) || rows[0]?.id || null;
-        const id2 = Number((data as any).driver2?.id ?? 0) || rows[1]?.id || null;
-        setSelected1(id1);
-        setSelected2(id2);
-      } else {
-        setSelected1(rows[0]?.id ?? null);
-        setSelected2(rows[1]?.id ?? null);
+      // Set default selections if none are provided
+      if (!driver1Id && !driver2Id && rows.length >= 2) {
+        onPreferenceChange({ 
+          driver1Id: rows[0].id, 
+          driver2Id: rows[1].id 
+        });
       }
     } catch (e: any) {
-      setError(e.message || 'Failed to load drivers');
+      setError(e.message || 'Failed to load driver stats');
     } finally {
-      setLoadingList(false);
+      setLoadingStats(false);
     }
-  }, [getAccessTokenSilently, currentSeason, data]);
+  }, [getAccessTokenSilently, currentSeason, driver1Id, driver2Id, onPreferenceChange]);
 
   useEffect(() => {
-    fetchStandings();
-  }, [fetchStandings]);
+    fetchDriverStats();
+  }, [fetchDriverStats]);
 
-  const options: SelectOption[] = useMemo(() => drivers.map(d => ({ value: d.id, label: d.fullName })), [drivers]);
+  const options: SelectOption[] = useMemo(() => driversWithStats.map(d => ({ value: d.id, label: d.fullName })), [driversWithStats]);
 
-  const d1 = useMemo(() => drivers.find(d => d.id === selected1) || null, [drivers, selected1]);
-  const d2 = useMemo(() => drivers.find(d => d.id === selected2) || null, [drivers, selected2]);
+  const d1 = useMemo(() => driversWithStats.find(d => d.id === driver1Id) || null, [driversWithStats, driver1Id]);
+  const d2 = useMemo(() => driversWithStats.find(d => d.id === driver2Id) || null, [driversWithStats, driver2Id]);
 
-  if (loadingList) {
+  const handleDriver1Change = (opt: SelectOption | null) => {
+    const newDriver1Id = opt ? Number(opt.value) : undefined;
+    onPreferenceChange({ 
+      driver1Id: newDriver1Id, 
+      driver2Id 
+    });
+  };
+
+  const handleDriver2Change = (opt: SelectOption | null) => {
+    const newDriver2Id = opt ? Number(opt.value) : undefined;
+    onPreferenceChange({ 
+      driver1Id, 
+      driver2Id: newDriver2Id 
+    });
+  };
+
+  if (loadingStats) {
     return (
       <WidgetCard>
         <VStack align="start" spacing="md">
@@ -99,7 +120,7 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
       <WidgetCard>
         <VStack align="start" spacing="md">
           <Heading color={accentColorWithHash} size="md" fontFamily="heading">Head to Head</Heading>
-          <Text color="text-muted">{error || 'Unable to load drivers'}</Text>
+          <Text color="text-muted">{error || 'Please select two drivers to compare'}</Text>
         </VStack>
       </WidgetCard>
     );
@@ -129,19 +150,19 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
 
   return (
     <WidgetCard>
-      <VStack align="start" spacing="xs">
+      <VStack align="start" spacing="xs" className="widget-content">
         <Heading color={accentColorWithHash} size="sm" fontFamily="heading" mb="xs">
           Head to Head
         </Heading>
         
         {/* Mobile Layout */}
-        <VStack spacing="xs" align="stretch" w="full" display={{ base: 'flex', md: 'none' }}>
+        <VStack spacing="xs" align="stretch" w="full" display={{ base: 'flex', md: 'none' }} className="scrollable-content">
           <VStack spacing="xs" align="center">
             <SearchableSelect
               label=""
               options={options}
-              value={selected1 ? { value: selected1, label: driver1.name } : null}
-              onChange={(opt) => setSelected1(opt ? Number((opt as SelectOption).value) : null)}
+              value={driver1Id ? { value: driver1Id, label: driver1.name } : null}
+              onChange={handleDriver1Change}
               placeholder="Select driver"
             />
             <Box
@@ -209,8 +230,8 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
             <SearchableSelect
               label=""
               options={options}
-              value={selected2 ? { value: selected2, label: driver2.name } : null}
-              onChange={(opt) => setSelected2(opt ? Number((opt as SelectOption).value) : null)}
+              value={driver2Id ? { value: driver2Id, label: driver2.name } : null}
+              onChange={handleDriver2Change}
               placeholder="Select driver"
             />
             <Box
@@ -267,14 +288,14 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
         </VStack>
 
         {/* Desktop Layout */}
-        <HStack spacing="sm" align="center" w="full" justify="space-between" display={{ base: 'none', md: 'flex' }}>
+        <HStack spacing="sm" align="center" w="full" justify="space-between" display={{ base: 'none', md: 'flex' }} className="scrollable-content">
           {/* Driver 1 */}
           <VStack spacing="xs" align="center" flex="1">
             <SearchableSelect
               label=""
               options={options}
-              value={selected1 ? { value: selected1, label: driver1.name } : null}
-              onChange={(opt) => setSelected1(opt ? Number((opt as SelectOption).value) : null)}
+              value={driver1Id ? { value: driver1Id, label: driver1.name } : null}
+              onChange={handleDriver1Change}
               placeholder="Select driver"
             />
             <Box
@@ -347,8 +368,8 @@ function HeadToHeadQuickCompareWidget({ data }: HeadToHeadQuickCompareWidgetProp
             <SearchableSelect
               label=""
               options={options}
-              value={selected2 ? { value: selected2, label: driver2.name } : null}
-              onChange={(opt) => setSelected2(opt ? Number((opt as SelectOption).value) : null)}
+              value={driver2Id ? { value: driver2Id, label: driver2.name } : null}
+              onChange={handleDriver2Change}
               placeholder="Select driver"
             />
             <Box

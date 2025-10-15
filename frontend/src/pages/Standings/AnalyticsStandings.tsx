@@ -1,6 +1,6 @@
 // src/pages/Standings/AnalyticsStandings.tsx
 import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Flex, Text } from '@chakra-ui/react';
+import { Box, Flex, Text, useColorModeValue } from '@chakra-ui/react';
 import {
   LineChart,
   Line,
@@ -65,7 +65,15 @@ const AnalyticsStandings: React.FC = () => {
     setSelectedSeasonId(26); // 2025 season ID
   }, []);
 
-  // Fetch progression data for selected season
+  // Theme-aware colors
+  const chartBgColor = useColorModeValue('white', 'gray.900');
+  const chartTextColor = useColorModeValue('gray.800', 'white');
+  const gridColor = useColorModeValue('#E2E8F0', '#4A5568');
+  const axisColor = useColorModeValue('gray.800', 'white');
+  const tooltipBg = useColorModeValue('white', 'gray.800');
+  const tooltipBorder = useColorModeValue('#E2E8F0', '#4A5568');
+  const tooltipTextColor = useColorModeValue('gray.800', 'white');
+
   useEffect(() => {
     const fetchProgressions = async () => {
       try {
@@ -245,7 +253,7 @@ const AnalyticsStandings: React.FC = () => {
       const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
 
       return (
-        <Box bg="gray.800" p={2} borderRadius="md" color="white">
+        <Box bg={tooltipBg} p={2} borderRadius="md" border={`1px solid ${tooltipBorder}`} color={tooltipTextColor}>
           <Text fontWeight="bold">Round {label}: {raceName}</Text>
           {sortedPayload.map((entry, index) => (
             <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
@@ -255,7 +263,7 @@ const AnalyticsStandings: React.FC = () => {
           ))}
         </Box>
       );
-    }, [driversChartData]
+    }, [driversChartData, tooltipBg, tooltipBorder, tooltipTextColor]
   );
 
   const constructorsTooltipContent = useMemo(() => 
@@ -268,7 +276,7 @@ const AnalyticsStandings: React.FC = () => {
       const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
 
       return (
-        <Box bg="gray.800" p={2} borderRadius="md" color="white">
+        <Box bg={tooltipBg} p={2} borderRadius="md" border={`1px solid ${tooltipBorder}`} color={tooltipTextColor}>
           <Text fontWeight="bold">Round {label}: {raceName}</Text>
           {sortedPayload.map((entry, index) => (
             <Flex key={index} justify="space-between" fontSize="sm" color={entry.color}>
@@ -278,7 +286,7 @@ const AnalyticsStandings: React.FC = () => {
           ))}
         </Box>
       );
-    }, [constructorsChartData]
+    }, [constructorsChartData, tooltipBg, tooltipBorder, tooltipTextColor]
   );
 
   return (
@@ -314,15 +322,15 @@ const AnalyticsStandings: React.FC = () => {
           <Flex gap={6} flexDirection="column" mt={8}>
             {/* Drivers Chart */}
             {driversProgression.length > 0 && (
-              <Box h="400px" bg="gray.900" p={4} borderRadius="md">
-                <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                  {selectedSeason} Drivers Points Progression
+              <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
+                  2025 Drivers Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={driversChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-                    <XAxis dataKey="round" stroke="white" />
-                    <YAxis stroke="white" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                    <XAxis dataKey="round" stroke={axisColor} />
+                    <YAxis stroke={axisColor} />
                     <Tooltip content={driversTooltipContent} />
                     {uniqueDriverNames.map((name) => {
                       const isLeading = name === leadingDriver;
@@ -354,15 +362,15 @@ const AnalyticsStandings: React.FC = () => {
 
             {/* Constructors Chart */}
             {constructorsProgression.length > 0 && (
-              <Box h="400px" bg="gray.900" p={4} borderRadius="md">
-                <Text fontSize="lg" fontWeight="bold" mb={4} color="white">
-                  {selectedSeason} Constructors Points Progression
+              <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
+                <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
+                  2025 Constructors Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={constructorsChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="gray" />
-                    <XAxis dataKey="round" stroke="white" />
-                    <YAxis stroke="white" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                    <XAxis dataKey="round" stroke={axisColor} />
+                    <YAxis stroke={axisColor} />
                     <Tooltip content={constructorsTooltipContent} />
                     {uniqueConstructorNames.map((name) => {
                       const isLeading = name === leadingConstructor;

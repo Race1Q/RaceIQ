@@ -15,6 +15,8 @@ export const fallbackDriverDetails: DriverDetailsData = {
   podiums: 24,
   points: 550,
   championshipStanding: "P1",
+  worldChampionships: 0, // Placeholder - would be populated from real data (Max Verstappen has 3, Lewis Hamilton has 7, etc.)
+  grandsPrixEntered: 58,
   firstRace: { year: "2023", event: "Bahrain GP" },
   winsPerSeason: [
     { season: "2021", wins: 6 },

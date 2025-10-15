@@ -2,7 +2,7 @@
 
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Repository, DataSource } from 'typeorm';
 import { Driver } from './drivers.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
@@ -11,6 +11,8 @@ import { DriverCareerStatsMaterialized } from './driver-career-stats-materialize
 import { WinsPerSeasonMaterialized } from './wins-per-season-materialized.entity';
 import { RaceFastestLapMaterialized } from '../dashboard/race-fastest-laps-materialized.entity';
 import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
+import { DriverSeasonStatsDto } from './dto/driver-season-stats.dto';
+import { DriverSeasonProgressionDto } from './dto/driver-season-progression.dto';
 
 // Define the shape of the data we will return
 interface RecentFormResult {
@@ -36,6 +38,7 @@ export class DriversService {
     private readonly winsPerSeasonViewRepo: Repository<WinsPerSeasonMaterialized>,
     @InjectRepository(RaceFastestLapMaterialized)
     private readonly fastestLapViewRepo: Repository<RaceFastestLapMaterialized>,
+    private readonly dataSource: DataSource,
   ) {}
   private readonly logger = new Logger(DriversService.name);
 
@@ -136,7 +139,7 @@ export class DriversService {
     const currentYear = new Date().getFullYear();
 
     // Add a query for this season's fastest laps to the parallel execution
-    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings] = await Promise.all([
+    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings, worldChampionships] = await Promise.all([
       this.findOne(driverId),
       this.careerStatsViewRepo.findOne({ where: { driverId } }),
       this.standingsViewRepo.findOne({ where: { driverId, seasonYear: currentYear } }),
@@ -157,6 +160,8 @@ export class DriversService {
         where: { seasonYear: currentYear }, 
         order: { seasonPoints: 'DESC' } 
       }),
+      // NEW QUERY: Get world championships from materialized view (fallback to calculation if not available)
+      this.getWorldChampionships(driverId),
     ]);
 
     if (!driver || !careerStats) {
@@ -211,6 +216,7 @@ export class DriversService {
         grandsPrixEntered: careerStats.grandsPrixEntered,
         dnfs: careerStats.dnfs,
         highestRaceFinish: careerStats.highestRaceFinish,
+        worldChampionships: worldChampionships,
         firstRace: {
           year: firstRace ? new Date(firstRace.session.race.date).getFullYear() : 0,
           event: firstRace ? firstRace.session.race.name : 'N/A',
@@ -228,6 +234,69 @@ export class DriversService {
         standing: driverPosition > 0 ? `P${driverPosition}` : 'N/A', 
       },
     };
+  }
+
+  /**
+   * Get the number of world championships won by a driver
+   * First tries to get from materialized view, falls back to calculation if not available
+   */
+  private async getWorldChampionships(driverId: number): Promise<number> {
+    try {
+      // First try to get from materialized view
+      const careerStats = await this.careerStatsViewRepo.findOne({ where: { driverId } });
+      if (careerStats && careerStats.championships !== undefined) {
+        return careerStats.championships;
+      }
+
+      // Fallback to calculation if not in materialized view
+      return await this.calculateWorldChampionships(driverId);
+    } catch (error) {
+      console.error(`Error getting world championships for driver ${driverId}:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Calculate the number of world championships won by a driver
+   * by counting seasons where they finished 1st in the final standings
+   */
+  private async calculateWorldChampionships(driverId: number): Promise<number> {
+    try {
+      // Get all seasons where this driver participated
+      const driverSeasons = await this.standingsViewRepo
+        .createQueryBuilder('ds')
+        .select('ds.seasonYear')
+        .where('ds.driverId = :driverId', { driverId })
+        .getMany();
+
+      if (driverSeasons.length === 0) {
+        return 0;
+      }
+
+      const seasons = driverSeasons.map(ds => ds.seasonYear);
+      let championships = 0;
+
+      // For each season, check if the driver finished 1st
+      for (const season of seasons) {
+        const seasonStandings = await this.standingsViewRepo
+          .createQueryBuilder('ds')
+          .select(['ds.driverId', 'ds.seasonPoints'])
+          .where('ds.seasonYear = :season', { season })
+          .orderBy('ds.seasonPoints', 'DESC')
+          .limit(1)
+          .getOne();
+
+        // If this driver has the highest points in this season, they won the championship
+        if (seasonStandings && seasonStandings.driverId === driverId) {
+          championships++;
+        }
+      }
+
+      return championships;
+    } catch (error) {
+      console.error(`Error calculating world championships for driver ${driverId}:`, error);
+      return 0;
+    }
   }
 
   async getDriverStandings(season: number): Promise<any[]> {
@@ -418,5 +487,65 @@ export class DriversService {
     };
 
     return response;
+  }
+
+  /**
+   * Get driver season statistics from materialized view
+   * Used for 2x2 grid of career trend graphs
+   */
+  async findDriverSeasonStats(driverId: number): Promise<DriverSeasonStatsDto[]> {
+    try {
+      const query = `
+        SELECT * FROM public.driver_season_stats_materialized 
+        WHERE driver_id = $1 
+        ORDER BY year ASC
+      `;
+      
+      const results = await this.dataSource.query(query, [driverId]);
+      
+      this.logger.log(`Retrieved ${results.length} season stats records for driver ${driverId}`);
+      
+      return results.map((row: any) => ({
+        year: row.year,
+        driver_id: row.driver_id,
+        total_points: parseFloat(row.total_points || '0'),
+        wins: parseInt(row.wins || '0', 10),
+        podiums: parseInt(row.podiums || '0', 10),
+        poles: parseInt(row.poles || '0', 10),
+      }));
+    } catch (error) {
+      this.logger.error(`Error fetching driver season stats for driver ${driverId}:`, error);
+      throw new NotFoundException(`Season stats not found for driver ID ${driverId}`);
+    }
+  }
+
+  /**
+   * Get driver current season progression from materialized view
+   * Used for full-width cumulative points progression chart
+   */
+  async findCurrentSeasonProgression(driverId: number): Promise<DriverSeasonProgressionDto[]> {
+    try {
+      const query = `
+        SELECT * FROM public.driver_current_season_progression_materialized 
+        WHERE driver_id = $1 
+        ORDER BY round ASC
+      `;
+      
+      const results = await this.dataSource.query(query, [driverId]);
+      
+      this.logger.log(`Retrieved ${results.length} progression records for driver ${driverId}`);
+      
+      return results.map((row: any) => ({
+        year: row.year,
+        round: parseInt(row.round || '0', 10),
+        race_name: row.race_name,
+        driver_id: row.driver_id,
+        points: parseFloat(row.points || '0'),
+        cumulative_points: parseFloat(row.cumulative_points || '0'),
+      }));
+    } catch (error) {
+      this.logger.error(`Error fetching driver season progression for driver ${driverId}:`, error);
+      throw new NotFoundException(`Season progression not found for driver ID ${driverId}`);
+    }
   }
 }
