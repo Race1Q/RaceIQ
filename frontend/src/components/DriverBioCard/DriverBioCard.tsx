@@ -29,7 +29,8 @@ export const DriverBioCard: React.FC<DriverBioCardProps> = ({ driverId, season }
   if (loading) {
     return (
       <Box
-        bg="bg-elevated"
+        bg="transparent"
+        backdropFilter="blur(8px)"
         borderRadius="lg"
         border="1px solid"
         borderColor="border-subtle"
@@ -48,7 +49,8 @@ export const DriverBioCard: React.FC<DriverBioCardProps> = ({ driverId, season }
   if (error) {
     return (
       <Box
-        bg="bg-elevated"
+        bg="transparent"
+        backdropFilter="blur(8px)"
         borderRadius="lg"
         border="1px solid"
         borderColor="border-subtle"

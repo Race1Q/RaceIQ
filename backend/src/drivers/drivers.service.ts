@@ -137,9 +137,10 @@ export class DriversService {
 
   async getDriverCareerStats(driverId: number): Promise<DriverStatsResponseDto> {
     const currentYear = new Date().getFullYear();
+    console.log(`[getDriverCareerStats] Fetching career stats for driver ${driverId}`);
 
-    // Add a query for this season's fastest laps to the parallel execution
-    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings, worldChampionships] = await Promise.all([
+    // Add queries for poles data (career and current season)
+    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings, worldChampionships, careerPolesResult, seasonPolesResult] = await Promise.all([
       this.findOne(driverId),
       this.careerStatsViewRepo.findOne({ where: { driverId } }),
       this.standingsViewRepo.findOne({ where: { driverId, seasonYear: currentYear } }),
@@ -162,6 +163,27 @@ export class DriversService {
       }),
       // NEW QUERY: Get world championships from materialized view (fallback to calculation if not available)
       this.getWorldChampionships(driverId),
+      // NEW QUERY: Career poles from qualifying results
+      this.qualifyingResultRepository
+        .createQueryBuilder('qr')
+        .select('COUNT(CASE WHEN qr.position = 1 THEN 1 END) AS poles')
+        .innerJoin('qr.session', 's')
+        .innerJoin('s.race', 'r')
+        .innerJoin('r.season', 'season')
+        .where('qr.driver_id = :driverId', { driverId })
+        .andWhere("s.type = 'QUALIFYING'")
+        .getRawOne<{ poles: string }>(),
+      // NEW QUERY: Current season poles from qualifying results
+      this.qualifyingResultRepository
+        .createQueryBuilder('qr')
+        .select('COUNT(CASE WHEN qr.position = 1 THEN 1 END) AS poles')
+        .innerJoin('qr.session', 's')
+        .innerJoin('s.race', 'r')
+        .innerJoin('r.season', 'season')
+        .where('qr.driver_id = :driverId', { driverId })
+        .andWhere("s.type = 'QUALIFYING'")
+        .andWhere('season.year = :year', { year: currentYear })
+        .getRawOne<{ poles: string }>(),
     ]);
 
     if (!driver || !careerStats) {
@@ -212,6 +234,7 @@ export class DriversService {
         wins: careerStats.totalWins,
         podiums: careerStats.totalPodiums,
         fastestLaps: careerStats.totalFastestLaps,
+        poles: parseInt(careerPolesResult?.poles || '0', 10) || 0,
         points: Number(careerStats.totalPoints),
         grandsPrixEntered: careerStats.grandsPrixEntered,
         dnfs: careerStats.dnfs,
@@ -230,6 +253,7 @@ export class DriversService {
         wins: currentSeason?.seasonWins || 0,
         podiums: currentSeason?.seasonPodiums || 0,
         fastestLaps: seasonFastestLaps, // USE THE LIVE DATA
+        poles: parseInt(seasonPolesResult?.poles || '0', 10) || 0,
         // BUG FIX: Use the calculated position from standings
         standing: driverPosition > 0 ? `P${driverPosition}` : 'N/A', 
       },
@@ -312,16 +336,14 @@ export class DriversService {
         'ds.seasonPoints AS points',
         'ds.seasonWins AS wins',
         'ds.seasonPodiums AS podiums',
-        'ds.position AS position',
         'ds.seasonYear AS seasonYear'
       ])
       .where('ds.seasonYear = :season', { season })
-      .orderBy('ds.position', 'ASC')
+      .orderBy('ds.seasonPoints', 'DESC')
       .getRawMany();
 
-      console.log(rawResults[0]);
-  
-    return rawResults.map(r => ({
+    // Calculate position based on points ranking
+    const resultsWithPosition = rawResults.map((r, index) => ({
       id: parseInt(r.id, 10),
       fullName: r.fullname || r.fullName || r.driverFullName || r.driverfullname || 'Unknown',
       number: r.number ? parseInt(r.number, 10) : null,
@@ -331,9 +353,11 @@ export class DriversService {
       points: parseFloat(r.points) || 0,
       wins: parseInt(r.wins, 10) || 0,
       podiums: parseInt(r.podiums, 10) || 0,
-      position: parseInt(r.position, 10) || 0,
+      position: index + 1, // Position based on ranking
       seasonYear: r.seasonYear
     }));
+  
+    return resultsWithPosition;
   }
   
   

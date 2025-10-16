@@ -30,15 +30,12 @@ const ConstructorInfoCard: React.FC<ConstructorInfoCardProps> = ({ constructorId
     return rawInfo;
   }, [rawInfo]);
 
-  // Debug logging
+  // Debug logging (disabled in production)
   React.useEffect(() => {
-    if (!loading) {
-      console.log('[ConstructorInfoCard] Constructor ID:', constructorId);
-      console.log('[ConstructorInfoCard] Raw info data:', rawInfo);
-      console.log('[ConstructorInfoCard] Processed info:', info);
-      console.log('[ConstructorInfoCard] Error:', error);
+    if (!loading && process.env.NODE_ENV === 'development' && error) {
+      console.warn('[ConstructorInfoCard] Error loading constructor info:', error);
     }
-  }, [loading, rawInfo, info, error, constructorId]);
+  }, [loading, error, constructorId]);
 
   const formatGeneratedAt = (isoString: string) => {
     const date = new Date(isoString);

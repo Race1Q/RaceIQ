@@ -10,7 +10,7 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ stat }) => {
   return (
     <VStack
-      bg="bg-surface"
+      bg="transparent"
       p="md"
       borderRadius="lg"
       border="1px solid"
@@ -18,6 +18,7 @@ const StatCard: React.FC<StatCardProps> = ({ stat }) => {
       align="flex-start"
       spacing={0}
       h="100%"
+      backdropFilter="blur(8px)"
     >
       <Text fontSize="sm" color="text-muted" textTransform="uppercase">
         {stat.label}
