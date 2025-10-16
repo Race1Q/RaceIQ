@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { driverHeadshots } from '../lib/driverHeadshots';
 import { fallbackDriverDetails } from '../lib/fallbackData/driverDetails';
 import { apiFetch } from '../lib/api';
 
@@ -133,6 +132,20 @@ export const useDriverDetails = (driverId?: string) => {
         const lastName = safeGet(driverEntity, 'family_name', 'last_name', 'lastName') || '';
         const fullName = driverEntity.full_name || `${firstName} ${lastName}`.trim() || `Driver ${driverId}`;
         
+        // DEBUG: Track image URL resolution
+        const imageUrlFromApi = safeGet(driverEntity, 'image_url', 'profile_image_url', 'imageUrl') || '';
+        console.log(`🔍 Driver Image Debug for ${fullName}:`, {
+          driverId,
+          fullName,
+          driverEntity: {
+            image_url: driverEntity.image_url,
+            profile_image_url: driverEntity.profile_image_url,
+            imageUrl: driverEntity.imageUrl
+          },
+          resolvedImageUrl: imageUrlFromApi,
+          hasImageUrl: !!imageUrlFromApi
+        });
+        
         const mappedData = {
           id: driverEntity.id || parseInt(driverId, 10),
           fullName: fullName,
@@ -141,8 +154,7 @@ export const useDriverDetails = (driverId?: string) => {
           countryCode: safeGet(driverEntity, 'country_code', 'countryCode') || '',
           dateOfBirth: safeGet(driverEntity, 'date_of_birth', 'dateOfBirth') || '',
           teamName: safeGet(driverEntity, 'teamName', 'current_team_name') || 'N/A',
-          imageUrl: driverHeadshots[fullName] || 
-                   safeGet(driverEntity, 'image_url', 'profile_image_url', 'imageUrl') || '',
+          imageUrl: imageUrlFromApi,
           number: safeGetNumber(driverEntity, 'driver_number', 'number') || null,
           
           // Stats data (use from stats API if available, otherwise defaults)

@@ -18,6 +18,13 @@ const DriverDetailProfile: React.FC<DriverDetailProfileProps> = ({ name, team, i
   const [firstName, ...lastNameParts] = nameToSplit.split(' ');
   const lastName = lastNameParts.join(' ');
 
+  // DEBUG: Track image URL in component
+  console.log(`🖼️ DriverDetailProfile image debug for ${nameToSplit}:`, {
+    imageUrl,
+    hasImageUrl: !!imageUrl,
+    fallbackIcon: userIcon
+  });
+
   return (
     <div className={styles.profileCard}>
       <div className={styles.imageContainer}>
@@ -25,7 +32,11 @@ const DriverDetailProfile: React.FC<DriverDetailProfileProps> = ({ name, team, i
           src={imageUrl || userIcon} 
           alt={nameToSplit} 
           className={styles.driverImage}
-          onError={(e) => { e.currentTarget.src = userIcon; }}
+          onLoad={() => console.log(`✅ DriverDetailProfile image loaded: ${imageUrl || userIcon}`)}
+          onError={(e) => { 
+            console.log(`❌ DriverDetailProfile image failed, using fallback: ${imageUrl}`, e);
+            e.currentTarget.src = userIcon; 
+          }}
         />
       </div>
       <div className={styles.infoContainer}>

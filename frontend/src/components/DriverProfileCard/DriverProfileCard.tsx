@@ -3,7 +3,6 @@ import { Box, VStack, Heading, Text, Image, Flex, useColorModeValue } from '@cha
 import ReactCountryFlag from 'react-country-flag';
 import userIcon from '../../assets/UserIcon.png';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 // Import our new color helpers
 import { lightenColor, darkenColor } from '../../lib/colorUtils';
 import { optimizeF1ImageUrl, createF1ImageSrcSet, getImageSizes } from '../../lib/imageOptimizer';
@@ -27,6 +26,13 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
 
   const [firstName, ...lastNameParts] = driver.name.split(' ');
   const lastName = lastNameParts.join(' ');
+
+  // DEBUG: Track image URL in driver card component
+  console.log(`🖼️ DriverProfileCard image debug for ${driver.name}:`, {
+    imageUrl: driver.image,
+    hasImageUrl: !!driver.image,
+    fallbackIcon: userIcon
+  });
 
   const countryCode = countryCodeMap[driver.nationality] || driver.nationality;
   const isNumberAvailable = driver.number && driver.number !== 'N/A';
@@ -202,8 +208,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
 
           {/* Driver Image - Fitting within card */}
           <Image
-            src={optimizeF1ImageUrl(driverHeadshots[driver.name] || driver.image, 'medium') || userIcon}
-            srcSet={createF1ImageSrcSet(driverHeadshots[driver.name] || driver.image)}
+            src={optimizeF1ImageUrl(driver.image, 'medium') || userIcon}
+            srcSet={createF1ImageSrcSet(driver.image)}
             sizes={getImageSizes('card')}
             alt={driver.name}
             position="absolute"
@@ -219,7 +225,11 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             _groupHover={{ transform: 'scale(1.05)' }}
             loading="lazy"
             decoding="async"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
+            onLoad={() => console.log(`✅ DriverProfileCard image loaded: ${driver.image}`)}
+            onError={(e) => { 
+              console.log(`❌ DriverProfileCard image failed, using fallback: ${driver.image}`, e);
+              (e.currentTarget as HTMLImageElement).src = userIcon; 
+            }}
           />
         </Box>
 

@@ -190,6 +190,8 @@ const DriverDetailPage: React.FC = () => {
                   h={{ base: '190px', md: '300px' }}
                   zIndex={3}
                   objectFit="contain"
+                  onLoad={() => console.log(`✅ Driver image loaded successfully: ${driverDetails.imageUrl}`)}
+                  onError={(e) => console.log(`❌ Driver image failed to load: ${driverDetails.imageUrl}`, e)}
                 />
               )}
             </Box>

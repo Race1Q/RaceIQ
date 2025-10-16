@@ -5,7 +5,6 @@ import { useToast } from '@chakra-ui/react';
 import { buildApiUrl } from '../lib/api';
 import { teamColors } from '../lib/teamColors';
 import { fallbackDriverStandings } from '../lib/fallbackData/driverStandings';
-import { driverHeadshots } from '../lib/driverHeadshots';
 import type { Driver } from '../types';
 
 type GroupedDrivers = { [teamName: string]: Driver[] };
@@ -43,13 +42,26 @@ export const useDriversData = (year: number) => {
             if (!standing || !standing.driverId) return null;
             const teamName = standing.constructorName || 'Unknown Team';
             const fullName = standing.driverFullName || `${standing.driverFirstName || ''} ${standing.driverLastName || ''}`.trim();
+            const headshotUrl = standing.driverProfileImageUrl || '';
+            
+            // DEBUG: Track image URL resolution for drivers page
+            console.log(`🔍 Drivers Page Image Debug for ${fullName}:`, {
+              driverId: standing.driverId,
+              fullName,
+              standing: {
+                driverProfileImageUrl: standing.driverProfileImageUrl
+              },
+              resolvedHeadshotUrl: headshotUrl,
+              hasHeadshotUrl: !!headshotUrl
+            });
+            
             return {
               id: standing.driverId as number,
               fullName,
               driverNumber: standing.driverNumber ?? null,
               countryCode: standing.driverCountryCode ?? null,
               teamName,
-              headshotUrl: driverHeadshots[fullName] || standing.driverProfileImageUrl || driverHeadshots.default || '',
+              headshotUrl,
               teamColor: teamColors[teamName] ? `#${teamColors[teamName]}` : `#${teamColors['Default']}`,
             } as Driver;
           })
