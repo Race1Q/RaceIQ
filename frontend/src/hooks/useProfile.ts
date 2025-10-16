@@ -22,7 +22,11 @@ export const useProfile = () => {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        },
+      });
       const response = await fetch(buildApiUrl('/api/profile'), {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -35,7 +39,11 @@ export const useProfile = () => {
   }, [getAccessTokenSilently]);
 
   const updateProfile = useCallback(async (payload: Partial<ProfileResponse>) => {
-    const token = await getAccessTokenSilently();
+    const token = await getAccessTokenSilently({
+      authorizationParams: {
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+      },
+    });
     const res = await fetch(buildApiUrl('/api/profile'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

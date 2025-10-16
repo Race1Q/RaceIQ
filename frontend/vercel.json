@@ -1,0 +1,20 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)\\.js",
+      "headers": [{ "key": "Content-Type", "value": "text/javascript" }]
+    },
+    {
+      "source": "/(.*)\\.wasm",
+      "headers": [{ "key": "Content-Type", "value": "application/wasm" }]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
+
