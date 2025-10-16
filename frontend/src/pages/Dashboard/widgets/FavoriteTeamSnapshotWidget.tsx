@@ -25,7 +25,11 @@ function FavoriteTeamSnapshotWidget() {
       try {
         if (!favoriteConstructor || seasons.length === 0) return;
         const season = new Date().getFullYear();
-        const token = await getAccessTokenSilently();
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          },
+        });
         const constructorId = (favoriteConstructor as any).id;
         
         // Use shared seasons data to find season ID

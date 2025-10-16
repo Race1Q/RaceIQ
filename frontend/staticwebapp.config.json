@@ -6,6 +6,7 @@
   "mimeTypes": {
     ".js": "application/javascript",
     ".mjs": "application/javascript",
+    ".wasm": "application/wasm",
     ".css": "text/css",
     ".html": "text/html"
   },

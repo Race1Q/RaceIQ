@@ -31,7 +31,11 @@ export const useDriverSeasonStats = (driverId?: string) => {
         setLoading(true);
         setError(null);
         
-        const token = await getAccessTokenSilently();
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          },
+        });
         const data = await apiFetch<SeasonStatsData[]>(`/api/drivers/${driverId}/season-stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });

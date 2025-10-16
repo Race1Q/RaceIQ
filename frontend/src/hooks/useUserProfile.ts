@@ -44,7 +44,11 @@ export function useUserProfile() {
     let token: string | undefined;
     try {
       // Use provider defaults (audience/scope) to avoid scope mismatch
-      token = await getAccessTokenSilently();
+      token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        },
+      });
     } catch (err: any) {
       const message = String(err?.message || err);
       console.error('❌ [useUserProfile] getAccessTokenSilently error:', message);

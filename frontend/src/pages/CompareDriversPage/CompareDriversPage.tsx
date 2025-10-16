@@ -325,7 +325,11 @@ const CompareDriversPage = () => {
   // Function to fetch driver career info
   const fetchDriverCareerInfo = async (driverId: string) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        },
+      });
       const response = await fetch(buildApiUrl(`/api/drivers/${driverId}/career-stats`), {
         headers: { 
           'Authorization': `Bearer ${token}`,
