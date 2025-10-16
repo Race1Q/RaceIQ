@@ -21,7 +21,7 @@ async function bootstrap() {
     .setVersion(version)
     .addBearerAuth()
     // Explicit servers for prod + local (paths already include /api from global prefix)
-    .addServer('https://raceiq-api.azurewebsites.net')
+    .addServer('https://raceiq-api.onrender.com')
     .addServer('http://localhost:3000')
     .build();
 
@@ -38,7 +38,11 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
  // Robust CORS configuration
- const allowedOriginsFromEnv = (configService.get<string>('FRONTEND_URL') ?? '')
+ const allowedOriginsFromEnv = (
+   configService.get<string>('ALLOWED_ORIGINS') ||
+   configService.get<string>('FRONTEND_URL') ||
+   ''
+ )
    .split(',')
    .map((s) => s.trim())
    .filter(Boolean);
@@ -53,14 +57,14 @@ async function bootstrap() {
        return callback(new Error('Invalid Origin'), false);
      }
      const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(origin);
-     const isAzureStaticApps = /\.azurestaticapps\.net$/.test(hostname);
+     const isVercel = /(^|\.)race-iq\.vercel\.app$/i.test(hostname);
 
      // You can add your custom domain here in the future
      // const isRaceIQDomain = /(^|\.)raceiq\.app$/i.test(hostname);
 
      const isListed = allowedOriginsFromEnv.includes(origin);
 
-     const allowed = isListed || isLocalhost || isAzureStaticApps;
+     const allowed = isListed || isLocalhost || isVercel;
      return callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
    },
    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],

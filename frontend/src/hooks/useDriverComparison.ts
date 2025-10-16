@@ -1,6 +1,6 @@
 // frontend/src/hooks/useDriverComparison.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, buildApiUrl } from '../lib/api';
 
 // NEW: Types for the comparison feature
 export type DriverSelection = {
@@ -96,7 +96,7 @@ const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? 
 // Fetch functions
 async function fetchDriversList(): Promise<DriverListItem[]> {
   // Use the same endpoint as the drivers page to get team information
-  const response = await fetch(`/api/standings/2025/99`);
+  const response = await fetch(buildApiUrl(`/api/standings/2025/99`));
   if (!response.ok) {
     throw new Error(`Failed to fetch driver standings: ${response.status}`);
   }
