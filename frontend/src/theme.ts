@@ -17,7 +17,7 @@ const theme = extendTheme({
     colors: {
       // ===== BACKGROUNDS =====
       // Page backgrounds
-      'bg-primary': { default: '#F5F7FA', _dark: '#0a0a0a' },
+      'bg-primary': { default: 'transparent', _dark: 'transparent' },
       'bg-surface': { default: '#FFFFFF', _dark: '#0f0f0f' },
       'bg-surface-raised': { default: '#FFFFFF', _dark: '#1a1a1a' },
       

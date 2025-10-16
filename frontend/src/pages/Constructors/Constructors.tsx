@@ -319,7 +319,28 @@ const Constructors = () => {
         </LayoutContainer>
       )}
 
-      <Box bg="bg-primary" color="text-primary" py={{ base: 'md', md: 'lg' }}>
+      <Box 
+        color="text-primary" 
+        py={{ base: 'md', md: 'lg' }}
+        sx={{
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+            linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+            linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#0a0a0a',
+          _light: {
+            background: `
+              radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+              linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+              linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+            `,
+            backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+            backgroundColor: '#f8f9fa',
+          }
+        }}
+      >
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
           {loading || (standingsLoading && isAuthenticated) ? (
             <ConstructorsSkeleton />

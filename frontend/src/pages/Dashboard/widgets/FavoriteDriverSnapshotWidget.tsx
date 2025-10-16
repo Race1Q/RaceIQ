@@ -4,57 +4,33 @@ import { Link } from 'react-router-dom';
 import WidgetCard from './WidgetCard';
 import { useUserProfile } from '../../../hooks/useUserProfile';
 import { driverHeadshots } from '../../../lib/driverHeadshots';
- import { getTeamColor } from '../../../lib/teamColors';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect, useState } from 'react';
-import { buildApiUrl } from '../../../lib/api';
+import { getTeamColor } from '../../../lib/teamColors';
+import { useMemo } from 'react';
 import { useThemeColor } from '../../../context/ThemeColorContext';
+import { useDashboardSharedData } from '../../../context/DashboardDataContext';
 
 function FavoriteDriverSnapshotWidget() {
   const { favoriteDriver, loading, error } = useUserProfile();
-  const { getAccessTokenSilently } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
-  const [points, setPoints] = useState<number | null>(null);
-  const [position, setPosition] = useState<number | null>(null);
-  
-  // Debug logging
-  console.log('🚗 [FavoriteDriverWidget] State:', { favoriteDriver, loading, error });
+  const { driverStandings } = useDashboardSharedData();
 
-  // Fetch current season points for the favorite driver (hook must be unconditional)
-  useEffect(() => {
-    const fetchPoints = async () => {
-      try {
-        if (!favoriteDriver) return;
-        const season = new Date().getFullYear();
-        const token = await getAccessTokenSilently();
-        const res = await fetch(buildApiUrl(`/api/drivers/standings/${season}`), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const favId = Number((favoriteDriver as any).id);
-        const fullName =
-          (favoriteDriver as any).full_name ||
-          (favoriteDriver as any).fullName ||
-          [
-            (favoriteDriver as any).first_name,
-            (favoriteDriver as any).last_name
-          ].filter(Boolean).join(' ');
-        const row = (data as any[]).find((d: any) =>
-          Number(d.id ?? d.driverId) === favId ||
-          (d.fullname || d.fullName) === fullName
-        );
-        if (row) {
-          setPoints(Number(row.points ?? 0));
-          setPosition(Number(row.position ?? 0));
-        }
-      } catch {
-        // non-critical
-      }
-    };
-
-    fetchPoints();
-  }, [favoriteDriver, getAccessTokenSilently]);
+  // Find the favorite driver's current season stats from shared data
+  const driverStats = useMemo(() => {
+    if (!favoriteDriver) return null;
+    
+    const favId = Number((favoriteDriver as any).id);
+    const fullName =
+      (favoriteDriver as any).full_name ||
+      (favoriteDriver as any).fullName ||
+      [
+        (favoriteDriver as any).first_name,
+        (favoriteDriver as any).last_name
+      ].filter(Boolean).join(' ');
+    
+    return driverStandings.find((d) =>
+      d.id === favId || d.fullName === fullName
+    ) || null;
+  }, [favoriteDriver, driverStandings]);
 
   if (loading) {
     return (
@@ -136,6 +112,8 @@ function FavoriteDriverSnapshotWidget() {
           <Box
             w="60px"
             h="60px"
+            minW="60px"
+            minH="60px"
             borderRadius="full"
             overflow="hidden"
             border="2px solid"
@@ -145,9 +123,13 @@ function FavoriteDriverSnapshotWidget() {
             <Image
               src={driverImage}
               alt={driverFullName}
+              width="60px"
+              height="60px"
               w="full"
               h="full"
               objectFit="cover"
+              loading="eager"
+              decoding="async"
               fallbackSrc="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
             />
           </Box>
@@ -184,10 +166,10 @@ function FavoriteDriverSnapshotWidget() {
         <VStack align="start" spacing="xs" mt="sm" w="full">
           <HStack spacing="md" justify="space-between" w="full">
             <Text color={accentColorWithHash} fontSize="lg" fontWeight="bold" fontFamily="mono">
-              {points !== null ? `${points} pts` : '—'}
+              {driverStats?.points !== undefined ? `${driverStats.points} pts` : '—'}
             </Text>
             <Text color="text-muted" fontSize="sm">
-              {position ? `P${position}` : ''}
+              {driverStats?.position ? `P${driverStats.position}` : ''}
             </Text>
           </HStack>
           <Box
@@ -198,7 +180,7 @@ function FavoriteDriverSnapshotWidget() {
             overflow="hidden"
           >
             <Box
-              w={position ? `${Math.max(10, 100 - (position - 1) * 4)}%` : '0%'}
+              w={driverStats?.position ? `${Math.max(10, 100 - (driverStats.position - 1) * 4)}%` : '0%'}
               h="full"
               bg={teamColorHex}
               borderRadius="full"

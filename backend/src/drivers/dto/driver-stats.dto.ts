@@ -14,6 +14,7 @@ class CurrentSeasonStatsDto {
   wins: number;
   podiums: number;
   fastestLaps: number;
+  poles: number;
   standing: string;
 }
 
@@ -21,6 +22,7 @@ class CareerStatsDto {
   wins: number;
   podiums: number;
   fastestLaps: number;
+  poles: number;
   points: number;
   grandsPrixEntered: number;
   dnfs: number;

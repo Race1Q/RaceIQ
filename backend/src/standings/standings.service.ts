@@ -5,6 +5,7 @@ import { Season } from '../seasons/seasons.entity';
 import { Race } from '../races/races.entity';
 import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
+import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
 import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
 import { DriverStandingDto, ConstructorStanding, StandingsResponseDto } from './dto/standings-response.dto';
@@ -26,6 +27,8 @@ export class StandingsService {
     private readonly sessionRepository: Repository<Session>,
     @InjectRepository(RaceResult)
     private readonly raceResultRepository: Repository<RaceResult>,
+    @InjectRepository(QualifyingResult)
+    private readonly qualifyingResultRepository: Repository<QualifyingResult>,
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(ConstructorEntity)
@@ -106,6 +109,54 @@ export class StandingsService {
 
     const careerStats = await this.careerStatsViewRepo.findOne({ where: { driverId: best.driverId } });
 
+    // Find the latest year with qualifying data for this driver
+    const latestQualifyingYearResult = await this.qualifyingResultRepository
+      .createQueryBuilder('qr')
+      .select('MAX(season.year)', 'latestYear')
+      .innerJoin('qr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('r.season', 'season')
+      .where('qr.driver_id = :driverId', { driverId: best.driverId })
+      .andWhere("s.type = 'QUALIFYING'")
+      .getRawOne<{ latestYear: number }>();
+
+    const latestQualifyingYear = latestQualifyingYearResult?.latestYear || null;
+
+    console.log(`[FeaturedDriver] Driver: ${best.driverFullName}, Current Season: ${currentYear}, Latest Qualifying Data Year: ${latestQualifyingYear}`);
+
+    // Fetch career poles from qualifying results table (all years)
+    const careerPolesResult = await this.qualifyingResultRepository
+      .createQueryBuilder('qr')
+      .select('COUNT(CASE WHEN qr.position = 1 THEN 1 END) AS poles')
+      .innerJoin('qr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('r.season', 'season')
+      .where('qr.driver_id = :driverId', { driverId: best.driverId })
+      .andWhere("s.type = 'QUALIFYING'")
+      .getRawOne<{ poles: string }>();
+
+    const totalPoles = parseInt(careerPolesResult?.poles || '0', 10);
+
+    // Fetch season poles from the latest year with qualifying data (not necessarily current season)
+    let seasonPoles = 0;
+    if (latestQualifyingYear) {
+      const seasonPolesResult = await this.qualifyingResultRepository
+        .createQueryBuilder('qr')
+        .select('COUNT(CASE WHEN qr.position = 1 THEN 1 END) AS poles')
+        .innerJoin('qr.session', 's')
+        .innerJoin('s.race', 'r')
+        .innerJoin('r.season', 'season')
+        .where('qr.driver_id = :driverId', { driverId: best.driverId })
+        .andWhere("s.type = 'QUALIFYING'")
+        .andWhere('season.year = :year', { year: latestQualifyingYear })
+        .getRawOne<{ poles: string }>();
+
+      seasonPoles = parseInt(seasonPolesResult?.poles || '0', 10);
+      console.log(`[FeaturedDriver] Career Poles: ${totalPoles}, Season Poles (${latestQualifyingYear}): ${seasonPoles}`);
+    } else {
+      console.log(`[FeaturedDriver] No qualifying data found for driver ${best.driverId}`);
+    }
+
     const recentFormArray = Array.isArray(best.last5_positions)
       ? (best.last5_positions as number[]).map((p: number) => ({ position: p, raceName: 'Recent', countryCode: best.countryCode ?? null }))
       : [];
@@ -118,11 +169,12 @@ export class StandingsService {
       teamName: best.constructorName,
       seasonPoints: Number(best.seasonPoints) || 0,
       seasonWins: best.seasonWins || 0,
+      seasonPoles: seasonPoles,
       position: Number(best.position) || 0,
       careerStats: {
         wins: (careerStats as any)?.totalWins ?? 0,
         podiums: ((careerStats as any)?.totalPodiums ?? Number(best.seasonPodiums)) || 0,
-        poles: 0,
+        poles: totalPoles,
       },
       recentForm: recentFormArray,
     };
@@ -250,5 +302,7 @@ export class StandingsService {
     }));
   }
 }
+
+
 
 

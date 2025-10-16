@@ -31,7 +31,11 @@ export const useDriverStandings = (season: number) => {
         setLoading(true);
         setError(null);
 
-        const token = await getAccessTokenSilently();
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          },
+        });
         const response = await fetch(buildApiUrl(`/api/drivers/standings/${season}`), {
           headers: { Authorization: `Bearer ${token}` },
         });

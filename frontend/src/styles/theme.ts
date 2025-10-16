@@ -4,7 +4,7 @@ import { extendTheme, type ThemeConfig } from '@chakra-ui/react';
 
 // 1. Color mode configuration - This remains the same.
 const config: ThemeConfig = {
-  initialColorMode: 'light',
+  initialColorMode: 'dark',
   useSystemColorMode: false, // Disabled to prevent conflicts
 };
 
@@ -19,7 +19,7 @@ export const createTheme = (accentColor: string = 'e10600') => {
   semanticTokens: {
     colors: {
       // UI Backgrounds
-      'bg-primary': { default: '#F0F2F5', _dark: '#0a0a0a' },
+      'bg-primary': { default: 'transparent', _dark: 'transparent' },
       'bg-surface': { default: '#FFFFFF', _dark: '#0f0f0f' },
       'bg-surface-raised': { default: '#FDFDFD', _dark: '#1a1a1a' },
       

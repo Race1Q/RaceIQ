@@ -1,6 +1,6 @@
 # 🏁 RaceIQ
 
-**RaceIQ** is a simple and intuitive tool for tracking Formula 1 race stats and performance.  
+**RaceIQ** is a simple and intuitive tool for tracking Formula 1 race stats and performance (post-race).  
 It gathers race data and shows key info like lap times, driver positions, pit stops, and sector performance — with a few surprises. 😉
 
 ## [![codecov](https://codecov.io/gh/Race1Q/RaceIQ/graph/badge.svg?token=0B9G4DM0W3)](https://codecov.io/gh/Race1Q/RaceIQ)
@@ -52,6 +52,7 @@ npm run test:cov
 ```
 
 ## 📘 API Documentation
+
 Interactive Swagger UI:
 Local: `http://localhost:3000/docs`
 Deployed: `https://raceiq-api.azurewebsites.net/docs`
@@ -59,7 +60,6 @@ Deployed: `https://raceiq-api.azurewebsites.net/docs`
 Raw OpenAPI JSON: `http://localhost:3000/docs-json`
 
 ### Public Endpoints (no auth required)
-
 
 These GET endpoints are publicly accessible:
 
@@ -75,12 +75,10 @@ All errors are normalized to a consistent shape:
 
 ```json
 {
-	"statusCode": 400,
-	"error": "Bad Request",
-	"message": "Validation failed",
-	"details": [
-		{ "message": "season must be a 4-digit year" }
-	]
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "details": [{ "message": "season must be a 4-digit year" }]
 }
 ```
 
@@ -91,4 +89,3 @@ Fields:
 - `message` – human readable summary
 - `code` (optional) – app/database specific code
 - `details` (optional) – validation or contextual info
-

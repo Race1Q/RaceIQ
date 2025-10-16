@@ -2,6 +2,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Image, Badge, Skeleton, SkeletonText, ScaleFade, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
+import { buildApiUrl } from '../../lib/api';
 import { ChevronRight, ChevronLeft, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { useDriverComparison } from '../../hooks/useDriverComparison';
@@ -324,8 +325,12 @@ const CompareDriversPage = () => {
   // Function to fetch driver career info
   const fetchDriverCareerInfo = async (driverId: string) => {
     try {
-      const token = await getAccessTokenSilently();
-      const response = await fetch(`/api/drivers/${driverId}/career-stats`, {
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        },
+      });
+      const response = await fetch(buildApiUrl(`/api/drivers/${driverId}/career-stats`), {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -1268,7 +1273,26 @@ const CompareDriversPage = () => {
   };
 
   return (
-    <Box>
+    <Box
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <PageHeader 
         title="Driver Comparison" 
         subtitle="Compare F1 drivers head-to-head"

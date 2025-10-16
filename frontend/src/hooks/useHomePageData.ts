@@ -24,6 +24,7 @@ const fallbackFeaturedDriver: FeaturedDriver = {
     teamName: 'Red Bull Racing',
     seasonPoints: 400,
     seasonWins: 15,
+    seasonPoles: 8,
     position: 1,
     careerStats: { wins: 60, podiums: 105, poles: 35 },
     recentForm: [{ position: 1, raceName: 'Previous GP', countryCode: 'USA' }],

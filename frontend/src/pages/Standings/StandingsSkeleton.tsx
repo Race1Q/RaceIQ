@@ -19,18 +19,21 @@ const SkeletonLine = ({ w = '60%', h = '12px', br = 'md' }: { w?: any; h?: any; 
 );
 
 // Skeleton circle component
-const SkeletonCircle = ({ size = '40px' }: { size?: string }) => (
-  <Box w={size} h={size} borderRadius="full" bg="bg-surface" position="relative" overflow="hidden">
-    <Box
-      position="absolute"
-      inset={0}
-      transform="translateX(-100%)"
-      bgGradient="linear(to-r, transparent, whiteAlpha.200, transparent)"
-      animation="shimmer 1.4s infinite"
-      sx={{ '@keyframes shimmer': { '100%': { transform: 'translateX(100%)' } } }}
-    />
-  </Box>
-);
+const SkeletonCircle = ({ size = '40px' }: { size?: string | { base?: string; md?: string } }) => {
+  const sizeValue = typeof size === 'object' ? size : { base: size, md: size };
+  return (
+    <Box w={sizeValue} h={sizeValue} borderRadius="full" bg="bg-surface" position="relative" overflow="hidden">
+      <Box
+        position="absolute"
+        inset={0}
+        transform="translateX(-100%)"
+        bgGradient="linear(to-r, transparent, whiteAlpha.200, transparent)"
+        animation="shimmer 1.4s infinite"
+        sx={{ '@keyframes shimmer': { '100%': { transform: 'translateX(100%)' } } }}
+      />
+    </Box>
+  );
+};
 
 // Driver Standing Card Skeleton
 const DriverStandingCardSkeleton = () => (
@@ -57,8 +60,16 @@ const DriverStandingCardSkeleton = () => (
       <SkeletonLine w="20px" h="24px" />
     </Box>
 
-    {/* Driver avatar */}
-    <SkeletonCircle size="48px" />
+    {/* Driver avatar - Match actual card dimensions */}
+    <Box
+      w={{ base: "48px", md: "64px" }}
+      h={{ base: "48px", md: "64px" }}
+      minW={{ base: "48px", md: "64px" }}
+      minH={{ base: "48px", md: "64px" }}
+      flexShrink={0}
+    >
+      <SkeletonCircle size={{ base: "48px", md: "64px" }} />
+    </Box>
 
     {/* Driver info */}
     <Flex direction="column" flex={1} minW={0}>
