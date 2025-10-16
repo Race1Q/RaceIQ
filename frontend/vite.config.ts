@@ -88,8 +88,13 @@ export default defineConfig({
       '@emotion/react',
       '@emotion/styled',
       'framer-motion',
+      'react-reconciler',
+      'react-reconciler/constants',
+      'scheduler',
+      'suspend-react',
+      '@react-three/drei', // Include drei to handle stats.js properly
     ],
-    exclude: ['three', '@react-three/fiber', '@react-three/drei'], // Don't pre-bundle heavy 3D libs
+    exclude: ['three', '@react-three/fiber'], // Only exclude three and fiber
   },
 
   server: {

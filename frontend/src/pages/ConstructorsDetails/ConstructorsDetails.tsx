@@ -272,7 +272,30 @@ const ConstructorDetails: React.FC = () => {
   const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
 
   return (
-    <Box bg={pageBgColor} color={pageTextColor} minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+    <Box 
+      color={pageTextColor} 
+      minH="100vh" 
+      pb={{ base: 4, md: 6, lg: 8 }} 
+      fontFamily="var(--font-display)"
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       {/* Top Utility Bar */}
       <Box bg={surfaceBgColor} borderBottom="1px solid" borderColor={borderColor}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
@@ -290,80 +313,118 @@ const ConstructorDetails: React.FC = () => {
       {/* Header Bar */}
       <Box bg={pageBgColor} color={pageTextColor} py={{ base: 6, md: 8 }}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
-          <Flex
-        justify="space-between"
-        align="center"
-        mb={4}
-        p={{ base: 6, md: 8 }}
-        minH={{ base: '180px', md: '240px' }}
-        borderRadius="md"
-        position="relative"
-        bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
-        direction={{ base: 'column', md: 'row' }}
-        gap={{ base: 4, md: 0 }}
-        _before={{
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          background:
-            'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
-          zIndex: 0,
-        }}
-      >
-        {/* Left: Team Logo + Info */}
-        <Flex direction={{ base: 'column', sm: 'row' }} align="center" gap={4} zIndex={1}>
-          <Box boxSize={{ base: '80px', md: '100px' }} display="flex" alignItems="center" justifyContent="center">
-            <TeamLogo teamName={constructor.name} />
-          </Box>
-          <Flex direction="column" justify="center" align={{ base: 'center', sm: 'flex-start' }}>
-            <Heading as="h1" lineHeight={1} color="white" textAlign={{ base: 'center', sm: 'left' }}>
-              <Text
-                fontFamily="heading"
-                textTransform="uppercase"
-                fontWeight="900"
-                letterSpacing={{ base: '0.01em', md: '0.02em' }}
-                fontSize={{ base: '4xl', md: '7xl', xl: '8xl' }}
-                lineHeight={0.95}
-              >
-                {constructor.name}
-              </Text>
-            </Heading>
+          <Box
+            mb={4}
+            p={{ base: 6, md: 8 }}
+            minH={{ base: '180px', md: '240px' }}
+            borderRadius="md"
+            position="relative"
+            bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
+            overflow="hidden"
+            _before={{
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              background:
+                'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
+              zIndex: 0,
+            }}
+          >
+            {/* Responsive Grid Layout */}
             <Box
-              mt={{ base: 2, md: 3 }}
-              display="inline-block"
-              bg="blackAlpha.300"
-              border="1px solid"
-              borderColor="whiteAlpha.300"
-              borderRadius="md"
-              px={3}
-              py={2}
-              backdropFilter="blur(6px)"
+              display="grid"
+              gridTemplateColumns={{ 
+                base: "1fr", 
+                lg: "auto 1fr auto", 
+                xl: "auto 1fr auto auto" 
+              }}
+              gridTemplateRows={{ base: "auto auto auto", lg: "1fr" }}
+              gap={{ base: 4, lg: 6 }}
+              alignItems="center"
+              minH="full"
+              position="relative"
+              zIndex={1}
             >
-              <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>
-                Nationality: {constructor.nationality}
-              </Text>
+              {/* Left: Team Logo + Info */}
+              <Flex 
+                direction={{ base: 'column', md: 'row' }} 
+                align="center" 
+                gap={4}
+                gridColumn={{ base: "1", lg: "1" }}
+                gridRow={{ base: "1", lg: "1" }}
+                justifySelf={{ base: "center", lg: "start" }}
+              >
+                <Box boxSize={{ base: '70px', md: '90px' }} display="flex" alignItems="center" justifyContent="center">
+                  <TeamLogo teamName={constructor.name} />
+                </Box>
+                <Flex direction="column" justify="center" align={{ base: 'center', md: 'flex-start' }}>
+                  <Heading as="h1" lineHeight={1} color="white" textAlign={{ base: 'center', md: 'left' }}>
+                    <Text
+                      fontFamily="heading"
+                      textTransform="uppercase"
+                      fontWeight="900"
+                      letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                      fontSize={{ base: '3xl', md: '5xl', xl: '6xl' }}
+                      lineHeight={0.95}
+                    >
+                      {constructor.name}
+                    </Text>
+                  </Heading>
+                  <Box
+                    mt={{ base: 2, md: 3 }}
+                    display="inline-block"
+                    bg="blackAlpha.300"
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    borderRadius="md"
+                    px={3}
+                    py={2}
+                    backdropFilter="blur(6px)"
+                  >
+                    <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>
+                      Nationality: {constructor.nationality}
+                    </Text>
+                  </Box>
+                </Flex>
+              </Flex>
+
+              {/* Car Image Container - Properly constrained */}
+              {teamCarImages[constructor.name] && (
+                <Box
+                  gridColumn={{ base: "1", lg: "2", xl: "3" }}
+                  gridRow={{ base: "2", lg: "1" }}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent={{ base: "center", lg: "center", xl: "flex-end" }}
+                  maxW={{ base: "100%", lg: "400px", xl: "550px" }}
+                  overflow="hidden"
+                  position="relative"
+                >
+                  <Image
+                    src={teamCarImages[constructor.name]}
+                    alt={`${constructor.name} car`}
+                    maxH={{ base: '140px', md: '200px', lg: '240px', xl: '280px' }}
+                    maxW="100%"
+                    w="auto"
+                    h="auto"
+                    objectFit="contain"
+                    flexShrink={0}
+                    transform={{ base: "none", lg: "translateX(10px)", xl: "translateX(20px)" }}
+                    filter="drop-shadow(0 4px 8px rgba(0,0,0,0.3))"
+                  />
+                </Box>
+              )}
+
+              {/* Right Spacer - Only on extra large screens */}
+              <Box 
+                display={{ base: "none", xl: "block" }}
+                gridColumn="4"
+                gridRow="1"
+                w="60px"
+              />
             </Box>
-          </Flex>
-        </Flex>
-
-        {/* Middle: Team Car Image */}
-        {teamCarImages[constructor.name] && (
-          <Image
-            src={teamCarImages[constructor.name]}
-            alt={`${constructor.name} car`}
-            maxH={{ base: '140px', md: '220px' }}
-            maxW={{ base: '280px', md: '440px' }}
-            w="auto"
-            h="auto"
-            objectFit="contain"
-            flexShrink={0}
-          />
-        )}
-
-        {/* Right: Placeholder to maintain spacing */}
-        <Box display={{ base: 'none', md: 'block' }} />
-      </Flex>
+          </Box>
         </Container>
       </Box>
 

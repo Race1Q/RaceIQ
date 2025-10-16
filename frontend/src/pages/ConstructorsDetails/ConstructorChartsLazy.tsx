@@ -78,6 +78,16 @@ const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
   topRace,
   bestRaceBg,
 }) => {
+  // Memoize sorted data to prevent unnecessary re-sorting on every render
+  const sortedPointsData = React.useMemo(() => 
+    [...mappedPointsPerSeason].sort((a, b) => Number(a.seasonLabel) - Number(b.seasonLabel)),
+    [mappedPointsPerSeason]
+  );
+
+  const sortedPolesData = React.useMemo(() => 
+    [...mappedPolesPerSeason].sort((a, b) => a.seasonYear - b.seasonYear),
+    [mappedPolesPerSeason]
+  );
   return (
     <>
       {/* Graphs Grid - 2 per row on desktop, 1 per row on mobile */}
@@ -86,7 +96,7 @@ const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Points by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+            <LineChart data={sortedPointsData}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
               <XAxis dataKey="seasonLabel" stroke={axisColor}/>
               <YAxis stroke={axisColor}/>
@@ -114,7 +124,7 @@ const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Wins by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+            <LineChart data={sortedPointsData}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
               <XAxis dataKey="seasonLabel" stroke={axisColor}/>
               <YAxis stroke={axisColor}/>
@@ -142,7 +152,7 @@ const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Podiums by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
+            <LineChart data={sortedPointsData}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
               <XAxis dataKey="seasonLabel" stroke={axisColor}/>
               <YAxis stroke={axisColor}/>
@@ -170,7 +180,7 @@ const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Poles by Season</Text>
           <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={mappedPolesPerSeason}>
+            <BarChart data={sortedPolesData}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
               <XAxis dataKey="seasonYear" stroke={axisColor}/>
               <YAxis stroke={axisColor}/>

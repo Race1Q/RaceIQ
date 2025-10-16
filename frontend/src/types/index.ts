@@ -171,6 +171,7 @@ export interface FeaturedDriver {
   teamName: string;
   seasonPoints: number;
   seasonWins: number;
+  seasonPoles: number;
   position: number;
   careerStats: {
     wins: number;

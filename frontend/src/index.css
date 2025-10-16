@@ -16,3 +16,34 @@
   width: 100%;
   min-height: 100vh;
 }
+
+/* F1-themed carbon fiber background patterns */
+[data-theme='dark'] body,
+[data-theme='dark'] #root,
+[data-theme='dark'] [data-bg-primary],
+[data-chakra-theme='dark'] body,
+[data-chakra-theme='dark'] #root,
+[data-chakra-theme='dark'] [data-bg-primary],
+[data-chakra-theme='dark'] [data-bg="bg-primary"] {
+  background: 
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+    linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+    linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%);
+  background-size: 20px 20px, 20px 20px, 20px 20px;
+  background-color: #0a0a0a;
+}
+
+[data-theme='light'] body,
+[data-theme='light'] #root,
+[data-theme='light'] [data-bg-primary],
+[data-chakra-theme='light'] body,
+[data-chakra-theme='light'] #root,
+[data-chakra-theme='light'] [data-bg-primary],
+[data-chakra-theme='light'] [data-bg="bg-primary"] {
+  background: 
+    radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+    linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+    linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%);
+  background-size: 20px 20px, 20px 20px, 20px 20px;
+  background-color: #f8f9fa;
+}
