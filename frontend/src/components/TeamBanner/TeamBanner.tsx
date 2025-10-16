@@ -1,7 +1,7 @@
 // frontend/src/components/TeamBanner/TeamBanner.tsx
 
 import React from 'react';
-import { Flex, Heading, Spacer, useColorModeValue } from '@chakra-ui/react';
+import { Flex, Heading, useColorModeValue, Box } from '@chakra-ui/react';
 import TeamLogo from '../TeamLogo/TeamLogo';
 
 interface TeamBannerProps {
@@ -11,31 +11,47 @@ interface TeamBannerProps {
 
 const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
   // Theme-aware colors for the banner
-  const textColor = useColorModeValue('gray.900', 'white');
+  const textColor = useColorModeValue('black', 'white');
   const textShadow = useColorModeValue('0 2px 8px rgba(255,255,255,0.3)', '0 2px 8px rgba(0,0,0,0.5)');
-  const gradientEnd = useColorModeValue('rgba(248, 250, 252, 0.9)', 'rgba(23, 25, 35, 0.9)');
-
+  
+  // Base background colors
+  const baseBg = useColorModeValue('white', 'black');
+  
   return (
-    <Flex
-      align="center"
-      justify="space-between"
-      p={{ base: 4, md: 6 }}
-      borderRadius="lg"
-      mb="md"
-      minH={{ base: '100px', md: '120px' }}
-      position="relative"
-      overflow="hidden"
-      border="1px solid"
-      borderColor="border-primary"
-      bgGradient={`linear(90deg, ${teamColor} 0%, rgba(0,0,0,0.5) 60%, ${gradientEnd} 100%)`}
-      boxShadow="lg"
-    >
+    <Box position="relative" mb="md">
+      <Flex
+        align="center"
+        justify="space-between"
+        p={{ base: 4, md: 6 }}
+        borderRadius="lg"
+        minH={{ base: '100px', md: '120px' }}
+        position="relative"
+        overflow="hidden"
+        border="1px solid"
+        borderColor="border-primary"
+        bg={baseBg}
+        boxShadow="lg"
+        _before={{
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `linear-gradient(135deg, rgba(${parseInt(teamColor.slice(0, 2), 16)}, ${parseInt(teamColor.slice(2, 4), 16)}, ${parseInt(teamColor.slice(4, 6), 16)}, 0.15), transparent)`,
+          borderRadius: 'inherit',
+          zIndex: 1,
+        }}
+      >
+      
       {/* Team Name - Left Side */}
       <Flex
         flex="1"
         minW={0}
         align="center"
         mr={{ base: 3, md: 4 }}
+        zIndex={2}
+        position="relative"
       >
         <Heading
           as="h2"
@@ -47,7 +63,6 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
           textShadow={textShadow}
           noOfLines={2}
           lineHeight="shorter"
-          zIndex={2}
         >
           {teamName}
         </Heading>
@@ -61,10 +76,13 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
         w={{ base: '80px', sm: '100px', md: '120px' }}
         h={{ base: '60px', sm: '70px', md: '80px' }}
         maxW="100%"
+        zIndex={2}
+        position="relative"
       >
         <TeamLogo teamName={teamName} />
       </Flex>
-    </Flex>
+      </Flex>
+    </Box>
   );
 };
 
