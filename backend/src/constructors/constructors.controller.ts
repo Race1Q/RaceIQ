@@ -14,7 +14,7 @@ export class ConstructorsController {
 
   @Get('all')
   async getAllConstructors(): Promise<ConstructorEntity[]> {
-    return this.constructorsService.findAll();
+    return this.constructorsService.findAllConstructors();
   }
 
   @Get()

@@ -42,9 +42,8 @@ type FilterOption = 'active' | 'historical' | 'all';
 
 // Map constructor names to team keys
 const getTeamKey = (constructorName: string): keyof typeof TEAM_META => {
-  console.log(`🔍 Mapping constructor: "${constructorName}"`);
-  
   const nameMap: Record<string, keyof typeof TEAM_META> = {
+    // Current Teams (2024+)
     'Red Bull Racing': 'red_bull',
     'Red Bull': 'red_bull',
     'Ferrari': 'ferrari',
@@ -60,10 +59,17 @@ const getTeamKey = (constructorName: string): keyof typeof TEAM_META => {
     'Williams': 'williams',
     'Haas F1 Team': 'haas',
     'Haas': 'haas',
+    // Recent Historical Teams
+    'AlphaTauri': 'historical',
+    'Alfa Romeo': 'historical',
+    'Racing Point': 'aston_martin',
+    'Force India': 'aston_martin',
+    'Renault': 'alpine',
+    'Lotus F1': 'alpine',
+    'Toro Rosso': 'rb',
   };
   
-  const teamKey = nameMap[constructorName] || 'haas'; // fallback
-  console.log(`✅ Mapped to team key: ${teamKey}`);
+  const teamKey = nameMap[constructorName] || 'historical'; // fallback to historical theme
   return teamKey;
 };
 
@@ -145,7 +151,7 @@ const Constructors = () => {
         setLoading(true);
         setError(null);
         const apiConstructors: ApiConstructor[] = await publicFetch(
-          buildApiUrl('/api/constructors')
+          buildApiUrl('/api/constructors/all')
         );
         setConstructors(apiConstructors);
       } catch (err: unknown) {
@@ -285,7 +291,10 @@ const Constructors = () => {
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
               {sortedConstructors.map((constructor) => {
                 const teamKey = getTeamKey(constructor.name);
-                const carImage = teamCarImages[constructor.name];
+                const isHistorical = teamKey === 'historical';
+                const carImage = isHistorical 
+                  ? '/assets/F1Car.png' 
+                  : (teamCarImages[constructor.name] || '/assets/default-car.png');
                 const standing = standingsMap.get(constructor.name);
                 const flagEmoji = getFlagEmoji(constructor.nationality);
 
@@ -293,13 +302,14 @@ const Constructors = () => {
                   <TeamCard
                     key={constructor.id}
                     teamKey={teamKey}
+                    teamName={constructor.name}
                     countryName={constructor.nationality}
                     countryFlagEmoji={flagEmoji}
                     points={standing?.seasonPoints ?? 0}
                     maxPoints={500} // Max points for progress bar
                     wins={standing?.seasonWins ?? 0}
                     podiums={standing?.seasonPodiums ?? 0}
-                    carImage={carImage || '/assets/default-car.png'}
+                    carImage={carImage}
                     onClick={() => navigate(`/constructors/${constructor.id}`)}
                   />
                 );
