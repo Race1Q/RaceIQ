@@ -38,7 +38,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
  // Robust CORS configuration
- const allowedOriginsFromEnv = (configService.get<string>('ALLOWED_ORIGINS') ?? '')
+ const allowedOriginsFromEnv = (configService.get<string>('FRONTEND_URL') ?? '')
    .split(',')
    .map((s) => s.trim())
    .filter(Boolean);
