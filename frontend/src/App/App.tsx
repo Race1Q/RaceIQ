@@ -286,7 +286,7 @@ function AppContent() {
           <Container maxW="1200px">
             <Flex justify="space-between" align="center" wrap="wrap" gap="md">
               <HStack spacing="lg">
-                <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>API Docs</Text></Link>
+                <Link to="https://raceiq-api.onrender.com/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>API Docs</Text></Link>
                 <Link to="/privacy"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Privacy Policy</Text></Link>
                 <Link to="/contact"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Contact</Text></Link>
               </HStack>
@@ -353,7 +353,7 @@ function AppContent() {
         <Container maxW="1200px">
           <Flex justify="space-between" align="center" wrap="wrap" gap="md">
             <HStack spacing="lg">
-              <Link to="https://raceiq-api.azurewebsites.net/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>API Docs</Text></Link>
+              <Link to="https://raceiq-api.onrender.com/docs" target="_blank" rel="noopener noreferrer"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>API Docs</Text></Link>
               <Link to="/privacy"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Privacy Policy</Text></Link>
               <Link to="/contact"><Text color="text-secondary" _hover={{ color: accentColorWithHash }}>Contact</Text></Link>
             </HStack>
