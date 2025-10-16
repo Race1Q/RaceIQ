@@ -111,6 +111,13 @@ export class ConstructorsService {
     return constructors;
   }
 
+  async findAllConstructors(): Promise<ConstructorEntity[]> {
+    // Return ALL constructors from the database without any filtering
+    return this.constructorRepository.find({ 
+      order: { name: 'ASC' } 
+    });
+  }
+
   async getConstructorStats(constructorId: number, year?: number): Promise<ConstructorComparisonStatsResponseDto> {
     // Check if constructor exists
     const constructor = await this.constructorRepository.findOne({

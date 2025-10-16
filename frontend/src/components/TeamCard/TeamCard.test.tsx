@@ -18,7 +18,26 @@ describe('TeamCard', () => {
         onClick={mockOnClick}
       />
     );
-    expect(screen.getByText('Red Bull')).toBeInTheDocument();
+    expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
+  });
+
+  it('renders with custom team name override', () => {
+    const mockOnClick = jest.fn();
+    render(
+      <TeamCard
+        teamKey="historical"
+        teamName="Lotus"
+        countryName="British"
+        countryFlagEmoji="🇬🇧"
+        points={50}
+        maxPoints={200}
+        wins={2}
+        podiums={5}
+        carImage="/test-car.png"
+        onClick={mockOnClick}
+      />
+    );
+    expect(screen.getByText('Lotus')).toBeInTheDocument();
   });
 });
 

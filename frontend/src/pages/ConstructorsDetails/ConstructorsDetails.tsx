@@ -3,12 +3,14 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, Button, useToast, Image, Container, Heading, useColorModeValue, Spinner } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue, VStack } from '@chakra-ui/react';
+import { WarningTwoIcon } from '@chakra-ui/icons';
 import { useInView } from 'react-intersection-observer';
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import { getTeamCarModel } from '../../lib/teamCarModels';
+import { COUNTRY_COLORS } from '../../theme/teamTokens';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
@@ -207,6 +209,48 @@ const ConstructorDetails: React.FC = () => {
     return entry ? entry.poleCount : 0;
   }, [latestSeason, mappedPolesPerSeason, seasons]);
 
+  // Normalize numeric fields and sort by season label for charting consistency
+  const sortedPoints = useMemo(() => {
+    const normalized = mappedPointsPerSeason.map(p => ({
+      ...p,
+      points: Number((p as any).points ?? 0),
+      wins: Number((p as any).wins ?? 0),
+      podiums: Number((p as any).podiums ?? 0),
+    }));
+    
+    // Sort by season year (not label) to ensure proper chronological order
+    const sorted = normalized.sort((a, b) => {
+      const seasonA = seasons.find(s => s.id === a.season)?.year || 0;
+      const seasonB = seasons.find(s => s.id === b.season)?.year || 0;
+      return seasonA - seasonB;
+    });
+    
+    // Debug log to help diagnose chart issues
+    console.log('Chart data for Points by Season:', sorted.map(s => ({
+      seasonLabel: s.seasonLabel,
+      points: s.points,
+      season: s.season
+    })));
+    
+    return sorted;
+  }, [mappedPointsPerSeason, seasons]);
+
+  // Dataset availability flags
+  const hasPoints = sortedPoints.length > 0 && sortedPoints.some(p => Number(p.points) >= 0);
+  const hasWins = sortedPoints.some(p => Number(p.wins || 0) > 0);
+  const hasPodiumsData = sortedPoints.some(p => Number(p.podiums || 0) > 0);
+  const hasPoles = mappedPolesPerSeason.length > 0 && mappedPolesPerSeason.some(p => Number(p.poleCount || 0) > 0);
+
+  // Reusable fallback for charts with no data
+  const NoData = ({ message = 'No data available' }: { message?: string }) => (
+    <Flex w="100%" h="90%" align="center" justify="center">
+      <VStack spacing={2} opacity={0.7}>
+        <WarningTwoIcon boxSize={6} />
+        <Text fontSize="sm">{message}</Text>
+      </VStack>
+    </Flex>
+  );
+
   const totalPoints = useMemo(
     () => pointsPerSeason.reduce((acc, s) => acc + (s.points || 0), 0),
     [pointsPerSeason]
@@ -269,7 +313,19 @@ const ConstructorDetails: React.FC = () => {
   if (loading) return <ConstructorsDetailsSkeleton />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
-  const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
+  // Check if this is a historical team
+  const isHistorical = !teamCarImages[constructor.name];
+  
+  // Use country colors for historical teams, team colors for active teams
+  // Normalize team line color to always include leading '#'
+  const lineColor = isHistorical
+    ? `#${COUNTRY_COLORS[constructor.nationality]?.hex || COUNTRY_COLORS['default'].hex}`
+    : `#${teamColors[constructor.name] || teamColors.Default}`;
+
+  // Use country gradient for historical teams, team color for active teams
+  const headerGradient = isHistorical 
+    ? COUNTRY_COLORS[constructor.nationality]?.gradient || COUNTRY_COLORS['default'].gradient
+    : `linear-gradient(135deg, ${lineColor} 0%, rgba(0,0,0,0.6) 100%)`;
 
   return (
     <Box 
