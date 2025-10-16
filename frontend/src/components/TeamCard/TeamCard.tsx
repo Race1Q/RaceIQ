@@ -2,7 +2,7 @@
 import {
   Box, Flex, Heading, Text, Image, HStack, Badge, Progress, usePrefersReducedMotion
 } from "@chakra-ui/react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { TEAM_META, COUNTRY_COLORS } from "../../theme/teamTokens";
 import React, { useRef, useState } from "react";
 
@@ -17,16 +17,17 @@ type Props = {
   podiums?: number;
   carImage: string; // transparent webp/png
   onClick?: () => void;
+  isHistorical?: boolean; // Flag to indicate if showing career stats
 };
 
 export function TeamCard({
-  teamKey, teamName, countryName, countryFlagEmoji, points = 0, maxPoints = 100, wins = 0, podiums = 0, carImage, onClick
+  teamKey, teamName, countryName, countryFlagEmoji, points = 0, maxPoints = 100, wins = 0, podiums = 0, carImage, onClick, isHistorical: isHistoricalProp
 }: Props) {
   const meta = TEAM_META[teamKey];
   const displayName = teamName || meta.name; // Use override name if provided
   
   // Use country colors for historical teams
-  const isHistorical = teamKey === 'historical';
+  const isHistorical = isHistoricalProp ?? teamKey === 'historical';
   const countryTheme = isHistorical ? (COUNTRY_COLORS[countryName] || COUNTRY_COLORS['default']) : null;
   const colors = countryTheme || meta;
   
@@ -178,9 +179,9 @@ export function TeamCard({
             fontSize="sm" 
             mt={2}
           >
-            <Text>Wins: <b style={{ color: colors.hex }}>{wins}</b></Text>
-            <Text>Podiums: <b style={{ color: colors.hex }}>{podiums}</b></Text>
-            <Text>Pts: <b style={{ color: colors.hex }}>{points}</b></Text>
+            <Text>{isHistorical ? 'Career Wins' : 'Wins'}: <b style={{ color: colors.hex }}>{wins}</b></Text>
+            <Text>{isHistorical ? 'Career Podiums' : 'Podiums'}: <b style={{ color: colors.hex }}>{podiums}</b></Text>
+            <Text>{isHistorical ? 'Career Pts' : 'Pts'}: <b style={{ color: colors.hex }}>{points}</b></Text>
           </HStack>
 
           {/* mini leaderboard strip */}

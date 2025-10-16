@@ -127,6 +127,7 @@ const Constructors = () => {
   const [statusFilter, setStatusFilter] = useState<FilterOption>('active');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeason] = useState<number>(new Date().getFullYear());
+  const [careerStatsMap, setCareerStatsMap] = useState<Map<number, { points: number; wins: number; podiums: number }>>(new Map());
 
   const {
     standings: constructorStandings,
@@ -171,6 +172,50 @@ const Constructors = () => {
     };
     fetchConstructors();
   }, [publicFetch, toast]);
+
+  // Fetch career stats for historical constructors
+  useEffect(() => {
+    const fetchCareerStats = async () => {
+      if (!constructors.length) return;
+      
+      const historicalConstructors = constructors.filter(c => !c.is_active);
+      if (historicalConstructors.length === 0) return;
+
+      try {
+        const statsPromises = historicalConstructors.map(async (constructor) => {
+          try {
+            const statsData = await publicFetch(
+              buildApiUrl(`/api/constructors/${constructor.id}/stats`)
+            );
+            return {
+              id: constructor.id,
+              stats: {
+                points: statsData.career.points || 0,
+                wins: statsData.career.wins || 0,
+                podiums: statsData.career.podiums || 0,
+              },
+            };
+          } catch (error) {
+            console.error(`Error fetching career stats for constructor ${constructor.id}:`, error);
+            return null;
+          }
+        });
+
+        const results = await Promise.all(statsPromises);
+        const newStatsMap = new Map();
+        results.forEach(result => {
+          if (result) {
+            newStatsMap.set(result.id, result.stats);
+          }
+        });
+        setCareerStatsMap(newStatsMap);
+      } catch (error) {
+        console.error('Error fetching career stats:', error);
+      }
+    };
+
+    fetchCareerStats();
+  }, [constructors, publicFetch]);
 
   const filteredConstructors = useMemo(() => {
     if (!isAuthenticated) {
@@ -291,12 +336,18 @@ const Constructors = () => {
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
               {sortedConstructors.map((constructor) => {
                 const teamKey = getTeamKey(constructor.name);
-                const isHistorical = teamKey === 'historical';
+                const isHistorical = !constructor.is_active;
                 const carImage = isHistorical 
                   ? '/assets/F1Car.png' 
                   : (teamCarImages[constructor.name] || '/assets/default-car.png');
                 const standing = standingsMap.get(constructor.name);
                 const flagEmoji = getFlagEmoji(constructor.nationality);
+
+                // Use career stats for historical teams, season stats for active teams
+                const careerStats = careerStatsMap.get(constructor.id);
+                const displayPoints = isHistorical && careerStats ? careerStats.points : (standing?.seasonPoints ?? 0);
+                const displayWins = isHistorical && careerStats ? careerStats.wins : (standing?.seasonWins ?? 0);
+                const displayPodiums = isHistorical && careerStats ? careerStats.podiums : (standing?.seasonPodiums ?? 0);
 
                 return (
                   <TeamCard
@@ -305,11 +356,12 @@ const Constructors = () => {
                     teamName={constructor.name}
                     countryName={constructor.nationality}
                     countryFlagEmoji={flagEmoji}
-                    points={standing?.seasonPoints ?? 0}
-                    maxPoints={500} // Max points for progress bar
-                    wins={standing?.seasonWins ?? 0}
-                    podiums={standing?.seasonPodiums ?? 0}
+                    points={displayPoints}
+                    maxPoints={isHistorical ? Math.max(1000, displayPoints) : 500} // Higher max for career stats
+                    wins={displayWins}
+                    podiums={displayPodiums}
                     carImage={carImage}
+                    isHistorical={isHistorical}
                     onClick={() => navigate(`/constructors/${constructor.id}`)}
                   />
                 );

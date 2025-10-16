@@ -20,7 +20,7 @@ export const TEAM_META: Record<TeamKey, {
   sauber:       { name:"Kick Sauber",  hex:"#52C41A", gradient:"linear-gradient(135deg,#0f2014 0%,#1d5a2c 60%,#0b160f 100%)", textOn:"#ECFFF1", logo:"/assets/logos/Kick_Sauber.svg" },
   williams:     { name:"Williams",     hex:"#37A9FF", gradient:"linear-gradient(135deg,#0b1420 0%,#244e7b 60%,#0a121c 100%)", textOn:"#E9F3FF", logo:"/assets/logos/Williams_Racing.svg" },
   haas:         { name:"Haas F1 Team", hex:"#B0B0B0", gradient:"linear-gradient(135deg,#1a1a1a 0%,#3d3d3d 60%,#0f0f0f 100%)", textOn:"#F2F2F2", logo:"/assets/logos/Haas_F1_Team.svg" },
-  historical:   { name:"Historical Team", hex:"#8B7355", gradient:"linear-gradient(135deg,#1a1612 0%,#3d2f24 60%,#0f0d0a 100%)", textOn:"#E8DCC8", logo:"/assets/logos/f1Logo.webp" },
+  historical:   { name:"Historical Team", hex:"#8B7355", gradient:"linear-gradient(135deg,#1a1612 0%,#3d2f24 60%,#0f0d0a 100%)", textOn:"#E8DCC8", logo:"/assets/logos/F1LOGO.png" },
 };
 
 // Country color schemes for historical teams

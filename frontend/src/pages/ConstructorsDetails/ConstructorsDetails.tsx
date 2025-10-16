@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue, VStack } from '@chakra-ui/react';
+import { WarningTwoIcon } from '@chakra-ui/icons';
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import { getTeamCarModel } from '../../lib/teamCarModels';
+import { COUNTRY_COLORS } from '../../theme/teamTokens';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
@@ -211,6 +213,48 @@ const ConstructorDetails: React.FC = () => {
     return entry ? entry.poleCount : 0;
   }, [latestSeason, mappedPolesPerSeason, seasons]);
 
+  // Normalize numeric fields and sort by season label for charting consistency
+  const sortedPoints = useMemo(() => {
+    const normalized = mappedPointsPerSeason.map(p => ({
+      ...p,
+      points: Number((p as any).points ?? 0),
+      wins: Number((p as any).wins ?? 0),
+      podiums: Number((p as any).podiums ?? 0),
+    }));
+    
+    // Sort by season year (not label) to ensure proper chronological order
+    const sorted = normalized.sort((a, b) => {
+      const seasonA = seasons.find(s => s.id === a.season)?.year || 0;
+      const seasonB = seasons.find(s => s.id === b.season)?.year || 0;
+      return seasonA - seasonB;
+    });
+    
+    // Debug log to help diagnose chart issues
+    console.log('Chart data for Points by Season:', sorted.map(s => ({
+      seasonLabel: s.seasonLabel,
+      points: s.points,
+      season: s.season
+    })));
+    
+    return sorted;
+  }, [mappedPointsPerSeason, seasons]);
+
+  // Dataset availability flags
+  const hasPoints = sortedPoints.length > 0 && sortedPoints.some(p => Number(p.points) >= 0);
+  const hasWins = sortedPoints.some(p => Number(p.wins || 0) > 0);
+  const hasPodiumsData = sortedPoints.some(p => Number(p.podiums || 0) > 0);
+  const hasPoles = mappedPolesPerSeason.length > 0 && mappedPolesPerSeason.some(p => Number(p.poleCount || 0) > 0);
+
+  // Reusable fallback for charts with no data
+  const NoData = ({ message = 'No data available' }: { message?: string }) => (
+    <Flex w="100%" h="90%" align="center" justify="center">
+      <VStack spacing={2} opacity={0.7}>
+        <WarningTwoIcon boxSize={6} />
+        <Text fontSize="sm">{message}</Text>
+      </VStack>
+    </Flex>
+  );
+
   const totalPoints = useMemo(
     () => pointsPerSeason.reduce((acc, s) => acc + (s.points || 0), 0),
     [pointsPerSeason]
@@ -269,7 +313,19 @@ const ConstructorDetails: React.FC = () => {
   if (loading) return <ConstructorsDetailsSkeleton />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
-  const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
+  // Check if this is a historical team
+  const isHistorical = !teamCarImages[constructor.name];
+  
+  // Use country colors for historical teams, team colors for active teams
+  // Normalize team line color to always include leading '#'
+  const lineColor = isHistorical
+    ? `#${COUNTRY_COLORS[constructor.nationality]?.hex || COUNTRY_COLORS['default'].hex}`
+    : `#${teamColors[constructor.name] || teamColors.Default}`;
+
+  // Use country gradient for historical teams, team color for active teams
+  const headerGradient = isHistorical 
+    ? COUNTRY_COLORS[constructor.nationality]?.gradient || COUNTRY_COLORS['default'].gradient
+    : `linear-gradient(135deg, ${lineColor} 0%, rgba(0,0,0,0.6) 100%)`;
 
   return (
     <Box bg={pageBgColor} color={pageTextColor} minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
@@ -298,7 +354,8 @@ const ConstructorDetails: React.FC = () => {
         minH={{ base: '180px', md: '240px' }}
         borderRadius="md"
         position="relative"
-        bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
+        overflow="hidden"
+        bgGradient={headerGradient}
         direction={{ base: 'column', md: 'row' }}
         gap={{ base: 4, md: 0 }}
         _before={{
@@ -348,9 +405,9 @@ const ConstructorDetails: React.FC = () => {
         </Flex>
 
         {/* Middle: Team Car Image */}
-        {teamCarImages[constructor.name] && (
+        {(teamCarImages[constructor.name] || isHistorical) && (
           <Image
-            src={teamCarImages[constructor.name]}
+            src={isHistorical ? '/assets/F1Car.png' : teamCarImages[constructor.name]}
             alt={`${constructor.name} car`}
             maxH={{ base: '140px', md: '220px' }}
             maxW={{ base: '280px', md: '440px' }}
@@ -385,106 +442,128 @@ const ConstructorDetails: React.FC = () => {
         {/* Points by Season */}
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Points by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="points" 
-                stroke={teamColor} 
-                strokeWidth={3}
-                dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {hasPoints ? (
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={sortedPoints}>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+                <XAxis dataKey="seasonLabel" stroke={axisColor}/>
+                <YAxis stroke={axisColor}/>
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: tooltipBg,
+                    border: `1px solid ${tooltipBorder}`,
+                    borderRadius: '8px',
+                    color: tooltipTextColor
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="points" 
+                  stroke={lineColor}
+                  strokeWidth={3}
+                  connectNulls={true}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  dot={{ fill: lineColor, strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: lineColor, strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <NoData message="No points recorded" />
+          )}
         </Box>
 
         {/* Wins by Season */}
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Wins by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="wins" 
-                stroke="#F56565" 
-                strokeWidth={3}
-                dot={{ fill: '#F56565', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: '#F56565', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {hasWins ? (
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={sortedPoints}>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+                <XAxis dataKey="seasonLabel" stroke={axisColor}/>
+                <YAxis stroke={axisColor}/>
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: tooltipBg,
+                    border: `1px solid ${tooltipBorder}`,
+                    borderRadius: '8px',
+                    color: tooltipTextColor
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="wins" 
+                  stroke="#F56565" 
+                  strokeWidth={3}
+                  connectNulls
+                  dot={{ fill: '#F56565', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: '#F56565', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <NoData message="No wins recorded" />
+          )}
         </Box>
 
         {/* Podiums by Season */}
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Podiums by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="podiums" 
-                stroke="#ECC94B" 
-                strokeWidth={3}
-                dot={{ fill: '#ECC94B', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: '#ECC94B', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {hasPodiumsData ? (
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={sortedPoints}>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+                <XAxis dataKey="seasonLabel" stroke={axisColor}/>
+                <YAxis stroke={axisColor}/>
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: tooltipBg,
+                    border: `1px solid ${tooltipBorder}`,
+                    borderRadius: '8px',
+                    color: tooltipTextColor
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="podiums" 
+                  stroke="#ECC94B" 
+                  strokeWidth={3}
+                  connectNulls
+                  dot={{ fill: '#ECC94B', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: '#ECC94B', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <NoData message="No podiums recorded" />
+          )}
         </Box>
 
         {/* Poles by Season */}
         <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
           <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Poles by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={mappedPolesPerSeason}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonYear" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Bar dataKey="poleCount" fill={teamColor} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {hasPoles ? (
+            <ResponsiveContainer width="100%" height="90%">
+              <BarChart data={mappedPolesPerSeason}>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
+                <XAxis dataKey="seasonYear" stroke={axisColor}/>
+                <YAxis stroke={axisColor}/>
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: tooltipBg,
+                    border: `1px solid ${tooltipBorder}`,
+                    borderRadius: '8px',
+                    color: tooltipTextColor
+                  }}
+                />
+              <Bar dataKey="poleCount" fill={lineColor} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <NoData message="No pole positions recorded" />
+          )}
         </Box>
       </SimpleGrid>
 
@@ -508,10 +587,10 @@ const ConstructorDetails: React.FC = () => {
               <Line 
                 type="monotone" 
                 dataKey="cumulativePoints" 
-                stroke={teamColor} 
+                stroke={lineColor} 
                 strokeWidth={3}
-                dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
+                dot={{ fill: lineColor, strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: lineColor, strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
