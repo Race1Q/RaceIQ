@@ -1,13 +1,14 @@
 // src/pages/RacesPage/components/RaceDetailsModal.tsx
 import React, { useEffect, useState, Suspense } from 'react';
-import { Box, Flex, IconButton, Text, VStack, HStack, Spinner } from '@chakra-ui/react';
+import { Box, Flex, IconButton, Text, VStack, HStack, Spinner, Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import type { Race } from '../../../types/races';
 import { X } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { Environment } from '@react-three/drei';
 import CircuitTrack3D from './CircuitTrack3D';
 import { apiFetch } from '../../../lib/api';
+import PredictionsTab from './PredictionsTab';
 
 interface Props {
   raceId: number;
@@ -83,58 +84,55 @@ const RaceDetailsModal: React.FC<Props> = ({ raceId, onClose }) => {
           <Text fontWeight="bold" fontSize="lg" color="text-primary">{race?.name ?? 'Race Details'}</Text>
           <IconButton aria-label="Close" onClick={onClose} icon={<X size={18} />} variant="ghost" />
         </Flex>
-
-        <Box h={{ base: '260px', md: '360px' }} bg="#0b0b0b" position="relative">
-          <Suspense fallback={<Flex h="100%" align="center" justify="center"><Spinner /></Flex>}>
-            <Canvas camera={{ position: [0, 20, 40], fov: 40 }}>
-              {race ? (
-                <CircuitTrack3D
-                  circuitId={race.circuit_id}
-                  circuitName={circuitName}
-                  onStatusChange={(_s) => {
-                    // no-op: hook for future in-UI indicators
-                  }}
-                />
-              ) : (
-                <PlaceholderCircuit />
-              )}
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 10, 5]} intensity={0.8} />
-              <OrbitControls enablePan enableZoom enableRotate />
-              <Environment preset="warehouse" />
-            </Canvas>
-          </Suspense>
-          {!race && (
-            <Flex position="absolute" inset={0} align="center" justify="center">
-              <Spinner />
-            </Flex>
-          )}
-        </Box>
-
-        <VStack align="stretch" spacing={2} p={4}>
-          {loading ? (
-            <Flex align="center" justify="center" py={8}><Spinner /></Flex>
-          ) : (
-            <>
-              <HStack justify="space-between">
-                <Text color="text-secondary">Round</Text>
-                <Text color="text-primary" fontWeight="medium">{race?.round}</Text>
-              </HStack>
-              <HStack justify="space-between">
-                <Text color="text-secondary">Date</Text>
-                <Text color="text-primary" fontWeight="medium">{race ? new Date(race.date).toLocaleString() : '-'}</Text>
-              </HStack>
-              <HStack justify="space-between">
-                <Text color="text-secondary">Circuit</Text>
-                <Text color="text-primary" fontWeight="medium">{circuitLoading ? 'Loading…' : (circuitName || `#${race?.circuit_id}`)}</Text>
-              </HStack>
-              <HStack justify="space-between">
-                <Text color="text-secondary">Season</Text>
-                <Text color="text-primary" fontWeight="medium">{race?.season_id}</Text>
-              </HStack>
-            </>
-          )}
-        </VStack>
+        <Tabs isFitted variant="enclosed">
+          <TabList>
+            <Tab>Details</Tab>
+            <Tab>Predictions</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel p={0}>
+              <Box h={{ base: '260px', md: '360px' }} bg="#0b0b0b" position="relative">
+                <Suspense fallback={<Flex h="100%" align="center" justify="center"><Spinner /></Flex>}>
+                  <Canvas camera={{ position: [0, 20, 40], fov: 40 }}>
+                    {race ? (
+                      <CircuitTrack3D
+                        circuitId={race.circuit_id}
+                        circuitName={circuitName}
+                        onStatusChange={(_s) => {
+                          // no-op: hook for future in-UI indicators
+                        }}
+                      />
+                    ) : (
+                      <PlaceholderCircuit />
+                    )}
+                    <Environment preset="city" />
+                  </Canvas>
+                </Suspense>
+              </Box>
+              <VStack p={4} align="start" spacing={3}>
+                {loading ? (
+                  <Spinner />
+                ) : race ? (
+                  <>
+                    <HStack>
+                      <Text fontWeight="bold">Date:</Text>
+                      <Text>{new Date(race.date).toLocaleDateString()}</Text>
+                    </HStack>
+                    <HStack>
+                      <Text fontWeight="bold">Circuit:</Text>
+                      <Text>{circuitLoading ? <Spinner size="xs" /> : circuitName}</Text>
+                    </HStack>
+                  </>
+                ) : (
+                  <Text>Race details not found.</Text>
+                )}
+              </VStack>
+            </TabPanel>
+            <TabPanel>
+              {raceId && <PredictionsTab raceId={raceId} />}
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </MotionBox>
     </Flex>
   );

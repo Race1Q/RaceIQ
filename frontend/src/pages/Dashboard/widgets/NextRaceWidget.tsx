@@ -4,6 +4,7 @@ import { MapPin, Clock } from 'lucide-react';
 import type { NextRace } from '../../../types';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 import WidgetCard from './WidgetCard';
+import PodiumPredictionWidget from './PodiumPredictionWidget';
 
 interface NextRaceWidgetProps {
   data?: NextRace;
@@ -90,6 +91,7 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
             </Text>
           )}
         </VStack>
+        <PodiumPredictionWidget />
       </VStack>
     </WidgetCard>
   );

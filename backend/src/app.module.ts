@@ -29,6 +29,7 @@ import { DriverCareerStatsMaterialized } from './drivers/driver-career-stats-mat
 import { ConstructorStandingMaterialized } from './dashboard/constructor-standings-materialized.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AiModule } from './ai/ai.module';
+import { PredictionsModule } from './predictions/predictions.module';
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -110,8 +111,7 @@ import { User } from './users/entities/user.entity';
     DashboardModule,
     NotificationsModule,
     AiModule,
-    // We have removed all the old, deleted modules 
-    // (LapsModule, RacesModule, etc.)
+    PredictionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

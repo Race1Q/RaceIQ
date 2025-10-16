@@ -37,35 +37,30 @@ async function bootstrap() {
   // Get ConfigService instance
   const configService = app.get(ConfigService);
 
- // Robust CORS configuration
- const allowedOriginsFromEnv = (configService.get<string>('ALLOWED_ORIGINS') ?? '')
-   .split(',')
-   .map((s) => s.trim())
-   .filter(Boolean);
+  // Robust CORS configuration
+  const whitelist = [
+    process.env.FRONTEND_URL, // Your frontend app
+    'http://localhost:3000',  // Swagger UI default
+    'http://127.0.0.1:3000',
+    'http://localhost:5173',  // Default Vite dev server
+  ];
 
- app.enableCors({
-   origin: (origin, callback) => {
-     if (!origin) return callback(null, true);
-     let hostname: string;
-     try {
-       hostname = new URL(origin).hostname;
-     } catch {
-       return callback(new Error('Invalid Origin'), false);
-     }
-     const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(origin);
-     const isAzureStaticApps = /\.azurestaticapps\.net$/.test(hostname);
+  app.enableCors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
 
-     // You can add your custom domain here in the future
-     // const isRaceIQDomain = /(^|\.)raceiq\.app$/i.test(hostname);
+      const allowed = whitelist.some(url => url && origin.startsWith(url));
 
-     const isListed = allowedOriginsFromEnv.includes(origin);
-
-     const allowed = isListed || isLocalhost || isAzureStaticApps;
-     return callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
-   },
-   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-   credentials: true,
- });
+      if (allowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
 
   // Your port logic is correct
   const port = configService.get<number>('PORT') ?? 3000;
