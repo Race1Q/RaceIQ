@@ -1,28 +1,34 @@
 // frontend/src/pages/Dashboard/DashboardPage.tsx
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Box, useDisclosure, Text, Alert, AlertIcon, AlertTitle, HStack, Icon, Spinner } from '@chakra-ui/react';
 import { Responsive as RGL, WidthProvider } from 'react-grid-layout';
 import type { Layouts } from 'react-grid-layout';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useThemeColor } from '../../context/ThemeColorContext';
 import { useDashboardPreferences, type WidgetVisibility, type WidgetSettings } from '../../hooks/useDashboardPreferences';
-import { useDriversData } from '../../hooks/useDriversData';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import { DashboardSharedDataProvider, useDashboardSharedData } from '../../context/DashboardDataContext';
+import { CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DashboardSkeleton from './DashboardSkeleton';
 import DashboardHeader from './components/DashboardHeader';
 import CustomizeDashboardModal from './components/CustomizeDashboardModal';
-import NextRaceWidget from './widgets/NextRaceWidget';
-import ChampionshipStandingsWidget from '@/pages/Dashboard/widgets/ChampionshipStandingsWidget';
-import LastPodiumWidget from './widgets/LastPodiumWidget';
-import FastestLapWidget from './widgets/FastestLapWidget';
-import FavoriteDriverSnapshotWidget from './widgets/FavoriteDriverSnapshotWidget';
-import FavoriteTeamSnapshotWidget from './widgets/FavoriteTeamSnapshotWidget';
-import HeadToHeadQuickCompareWidget from './widgets/HeadToHeadQuickCompareWidget';
-import LatestF1NewsWidget from './widgets/LatestF1NewsWidget';
-import ConstructorStandingsWidget from './widgets/ConstructorStandingsWidget';
-import { AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom'; 
+
+// Lazy load all widgets for better code splitting
+// Priority 1: Above-fold widgets (load immediately)
+const NextRaceWidget = lazy(() => import(/* webpackChunkName: "widget-next-race" */ './widgets/NextRaceWidget'));
+const ChampionshipStandingsWidget = lazy(() => import(/* webpackChunkName: "widget-standings" */ './widgets/ChampionshipStandingsWidget'));
+const ConstructorStandingsWidget = lazy(() => import(/* webpackChunkName: "widget-constructor-standings" */ './widgets/ConstructorStandingsWidget'));
+
+// Priority 2: Mid-fold widgets (slight delay for initial render)
+const LastPodiumWidget = lazy(() => import(/* webpackChunkName: "widget-podium" */ './widgets/LastPodiumWidget'));
+const FastestLapWidget = lazy(() => import(/* webpackChunkName: "widget-fastest-lap" */ './widgets/FastestLapWidget'));
+const FavoriteDriverSnapshotWidget = lazy(() => import(/* webpackChunkName: "widget-fav-driver" */ './widgets/FavoriteDriverSnapshotWidget'));
+const FavoriteTeamSnapshotWidget = lazy(() => import(/* webpackChunkName: "widget-fav-team" */ './widgets/FavoriteTeamSnapshotWidget'));
+
+// Priority 3: Below-fold widgets (load after initial render)
+const HeadToHeadQuickCompareWidget = lazy(() => import(/* webpackChunkName: "widget-head-to-head" */ './widgets/HeadToHeadQuickCompareWidget'));
+const LatestF1NewsWidget = lazy(() => import(/* webpackChunkName: "widget-news" */ './widgets/LatestF1NewsWidget')); 
 
 // Apply WidthProvider to ResponsiveGridLayout
 const ResponsiveGridLayout = WidthProvider(RGL);
@@ -55,7 +61,7 @@ const initialLayouts = {
   ]
 };
 
-function DashboardPage() {
+function DashboardPageContent() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { data: dashboardData, loading, error, isFallback } = useDashboardData();
   const { accentColor, accentColorWithHash } = useThemeColor();
@@ -74,20 +80,19 @@ function DashboardPage() {
     savePreferences,
   } = useDashboardPreferences();
 
-  // Get current year for driver data
-  const currentYear = new Date().getFullYear();
-  const { drivers: allDrivers } = useDriversData(currentYear);
+  // Get shared dashboard data (driver standings, seasons)
+  const { driverStandings } = useDashboardSharedData();
   
   // Track previous visibility state to detect when widgets are re-added
   const prevVisibilityRef = useRef<WidgetVisibility>(widgetVisibility);
 
   // Handle head-to-head widget preference changes
-  const handleHeadToHeadChange = (newPref: { driver1Id?: number; driver2Id?: number }) => {
+  const handleHeadToHeadChange = useCallback((newPref: { driver1Id?: number; driver2Id?: number }) => {
     setWidgetSettings((prevSettings: WidgetSettings) => ({
       ...prevSettings,
       headToHead: newPref,
     }));
-  };
+  }, [setWidgetSettings]);
 
   // Only show a full-page error if the API fails AND we have no fallback data
   if (error && !dashboardData) {
@@ -101,37 +106,87 @@ function DashboardPage() {
     );
   }
 
-  // Widget components map
-  const widgetComponents: { [key: string]: React.ReactNode } = {
-    nextRace: <NextRaceWidget data={dashboardData?.nextRace} />,
-    standings: (
-      <Link to="/standings">
-        <ChampionshipStandingsWidget data={dashboardData?.championshipStandings || []} year={dashboardData?.standingsYear as number} />
-      </Link>
-    ),
-    constructorStandings: (
-      <Link to="/standings/constructors">
-        <ConstructorStandingsWidget data={dashboardData?.constructorStandings} year={dashboardData?.standingsYear} />
-      </Link>
-    ),
-    lastPodium: <LastPodiumWidget data={dashboardData?.lastRacePodium} />,
-    fastestLap: <FastestLapWidget data={dashboardData?.lastRaceFastestLap} />,
-    favoriteDriver: <FavoriteDriverSnapshotWidget />,
-    favoriteTeam: <FavoriteTeamSnapshotWidget />,
-    headToHead: (
-      <HeadToHeadQuickCompareWidget
-        preference={widgetSettings.headToHead}
-        onPreferenceChange={handleHeadToHeadChange}
-        allDrivers={allDrivers.map(driver => ({
-          id: driver.id,
-          name: driver.fullName,
-          teamName: driver.teamName,
-          headshotUrl: driver.headshotUrl,
-        }))}
-      />
-    ),
-    f1News: <LatestF1NewsWidget />,
-  };
+  // Widget loading fallback
+  const WidgetLoadingFallback = () => (
+    <Box display="flex" alignItems="center" justifyContent="center" h="100%" minH="200px">
+      <Spinner size="sm" color={accentColorWithHash} />
+    </Box>
+  );
+
+  // Render widget based on key - only creates visible widgets
+  const renderWidget = useCallback((widgetKey: string) => {
+    switch (widgetKey) {
+      case 'nextRace':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <NextRaceWidget data={dashboardData?.nextRace} />
+          </Suspense>
+        );
+      case 'standings':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <Link to="/standings">
+              <ChampionshipStandingsWidget data={dashboardData?.championshipStandings || []} year={dashboardData?.standingsYear as number} />
+            </Link>
+          </Suspense>
+        );
+      case 'constructorStandings':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <Link to="/standings/constructors">
+              <ConstructorStandingsWidget data={dashboardData?.constructorStandings} year={dashboardData?.standingsYear} />
+            </Link>
+          </Suspense>
+        );
+      case 'lastPodium':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <LastPodiumWidget data={dashboardData?.lastRacePodium} />
+          </Suspense>
+        );
+      case 'fastestLap':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <FastestLapWidget data={dashboardData?.lastRaceFastestLap} />
+          </Suspense>
+        );
+      case 'favoriteDriver':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <FavoriteDriverSnapshotWidget />
+          </Suspense>
+        );
+      case 'favoriteTeam':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <FavoriteTeamSnapshotWidget />
+          </Suspense>
+        );
+      case 'headToHead':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <HeadToHeadQuickCompareWidget
+              preference={widgetSettings.headToHead}
+              onPreferenceChange={handleHeadToHeadChange}
+              allDrivers={driverStandings.map(driver => ({
+                id: driver.id,
+                name: driver.fullName,
+                teamName: driver.teamName,
+                headshotUrl: driver.headshotUrl,
+              }))}
+            />
+          </Suspense>
+        );
+      case 'f1News':
+        return (
+          <Suspense fallback={<WidgetLoadingFallback />}>
+            <LatestF1NewsWidget />
+          </Suspense>
+        );
+      default:
+        return null;
+    }
+  }, [dashboardData, widgetSettings, handleHeadToHeadChange, driverStandings, accentColorWithHash]);
 
   // Effect to handle widget re-addition - reset to original layout
   useEffect(() => {
@@ -158,11 +213,22 @@ function DashboardPage() {
   }, [widgetVisibility, hasLoadedFromServer, setLayouts]);
 
   // Refined layout change handler that preserves hidden widget layouts
-  const handleLayoutChange = (_layout: any, allLayouts: Layouts) => {
+  const handleLayoutChange = useCallback((_layout: any, allLayouts: Layouts) => {
     // Simply update the layouts with the new positions
     // The layouts state should always contain all widgets, visible and hidden
     setLayouts(allLayouts);
-  };
+  }, [setLayouts]);
+
+  // Memoize filtered layouts to avoid recalculating on every render
+  const filteredLayouts = useMemo(() => {
+    const filtered: Layouts = {};
+    Object.keys(layouts).forEach(breakpoint => {
+      filtered[breakpoint] = layouts[breakpoint].filter((item: any) => 
+        widgetVisibility[item.i as keyof WidgetVisibility]
+      );
+    });
+    return filtered;
+  }, [layouts, widgetVisibility]);
 
   // Save status indicator component
   const SaveStatusIndicator = () => {
@@ -232,16 +298,7 @@ function DashboardPage() {
           <DashboardSkeleton />
         ) : (
           <ResponsiveGridLayout
-            layouts={(() => {
-              // Filter layouts to only include visible widgets
-              const filteredLayouts: Layouts = {};
-              Object.keys(layouts).forEach(breakpoint => {
-                filteredLayouts[breakpoint] = layouts[breakpoint].filter((item: any) => 
-                  widgetVisibility[item.i as keyof WidgetVisibility]
-                );
-              });
-              return filteredLayouts;
-            })()}
+            layouts={filteredLayouts}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
             rowHeight={120}
@@ -264,7 +321,7 @@ function DashboardPage() {
               .filter(key => widgetVisibility[key as keyof WidgetVisibility])
               .map(widgetKey => (
                 <Box key={widgetKey}>
-                  {widgetComponents[widgetKey]}
+                  {renderWidget(widgetKey)}
                 </Box>
               ))
             }
@@ -281,6 +338,15 @@ function DashboardPage() {
         onSave={savePreferences}
       />
     </Box>
+  );
+}
+
+// Wrap with shared data provider
+function DashboardPage() {
+  return (
+    <DashboardSharedDataProvider>
+      <DashboardPageContent />
+    </DashboardSharedDataProvider>
   );
 }
 
