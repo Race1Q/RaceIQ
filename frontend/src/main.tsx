@@ -44,7 +44,7 @@ const defaultTheme = createTheme('e10600');
 
 root.render(
   <>
-    <ColorModeScript initialColorMode={defaultTheme.config.initialColorMode} />
+    <ColorModeScript initialColorMode={defaultTheme.config.initialColorMode} storageKey="chakra-ui-color-mode" />
     <Auth0Provider
       domain={auth0Config.domain}
       clientId={auth0Config.clientId}

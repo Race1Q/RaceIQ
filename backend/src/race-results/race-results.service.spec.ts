@@ -832,7 +832,54 @@ describe('RaceResultsService', () => {
 
       seasonRepository.findOne = jest.fn().mockResolvedValue(mockSeason);
       driverStandingsRepo.find = jest.fn().mockResolvedValue(mockDriverStandings);
-      dataSource.query = jest.fn().mockResolvedValue(mockProgressionData);
+      
+      // Mock Supabase client calls
+      supabaseService.client.from = jest.fn().mockImplementation((table) => {
+        if (table === 'race_results') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({ 
+                data: [
+                  { driver_id: 1, points: 25, session_id: 1 },
+                  { driver_id: 2, points: 18, session_id: 2 }
+                ], 
+                error: null 
+              })
+            })
+          };
+        } else if (table === 'sessions') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({ 
+                data: [
+                  { id: 1, race_id: 1 },
+                  { id: 2, race_id: 2 }
+                ], 
+                error: null 
+              })
+            })
+          };
+        } else if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({ 
+                  data: [
+                    { id: 1, season_id: 2023, round: 1, name: 'Bahrain GP' },
+                    { id: 2, season_id: 2023, round: 2, name: 'Saudi Arabian GP' }
+                  ], 
+                  error: null 
+                })
+              })
+            })
+          };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ data: [], error: null })
+          })
+        };
+      });
 
       const result = await service.getDriversProgression(seasonId);
 
