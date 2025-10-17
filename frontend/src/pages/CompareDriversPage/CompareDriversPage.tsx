@@ -268,8 +268,6 @@ const CompareDriversPage = () => {
   const { isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0();
   
   // Theme-aware colors
-  const surfaceBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const primaryTextColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
   const glassmorphismBg = useColorModeValue('gray.50', 'rgba(255, 255, 255, 0.05)');
@@ -612,7 +610,7 @@ const CompareDriversPage = () => {
         </VStack>
         
         {/* Year Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Time Period Selection</Heading>
             <Text fontSize="sm" color={mutedTextColor}>Select one or more years for each driver's comparison data</Text>
@@ -791,7 +789,7 @@ const CompareDriversPage = () => {
         </VStack>
         
         {/* Statistics Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <HStack justify="space-between" align="center">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics to Compare</Heading>
@@ -971,7 +969,7 @@ const CompareDriversPage = () => {
         {/* Composite Score moved to bottom */}
 
         {/* Central-Axis Results Display */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="lg">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics Comparison</Heading>
             
@@ -1038,7 +1036,7 @@ const CompareDriversPage = () => {
 
         {/* Results Summary & Insights */}
         {score && enabledMetricsArray.length > 0 && (
-          <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+          <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
             <VStack spacing="md">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Comparison Summary</Heading>
               
@@ -1143,7 +1141,7 @@ const CompareDriversPage = () => {
 
         {/* Composite Score Visualization - moved to bottom with explanation */}
         {score && (
-          <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+          <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
             <VStack spacing="md">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Composite Score</Heading>
               

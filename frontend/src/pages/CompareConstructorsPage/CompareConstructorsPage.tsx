@@ -22,8 +22,6 @@ const CompareConstructorsPage = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
   
   // Theme-aware colors
-  const surfaceBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const primaryTextColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
   const glassmorphismBg = useColorModeValue('gray.50', 'rgba(255, 255, 255, 0.05)');
@@ -322,37 +320,9 @@ const CompareConstructorsPage = () => {
             Choose the years for each constructor's comparison data
           </Text>
         </VStack>
-        
-        {/* Selected Constructors Preview */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
-          <VStack spacing="md">
-            <Heading size="md" fontFamily="heading" color={primaryTextColor}>Selected Constructors</Heading>
-            <Grid templateColumns={{ base: '1fr', md: '1fr auto 1fr' }} gap="md" w="full" maxW="600px" mx="auto">
-              <Box textAlign="center" p="md" bg={glassmorphismBg} borderRadius="md">
-                <Text fontSize="sm" color={mutedTextColor} mb="xs">Constructor 1</Text>
-                <Text fontFamily="heading" fontWeight="bold">{constructor1?.name || 'Not Selected'}</Text>
-                {constructor1?.nationality && (
-                  <Text fontSize="xs" color={mutedTextColor}>{constructor1.nationality}</Text>
-                )}
-              </Box>
-              
-              <Flex align="center" justify="center">
-                <Text fontSize="lg" color="border-accent" fontFamily="heading">VS</Text>
-              </Flex>
-              
-              <Box textAlign="center" p="md" bg={glassmorphismBg} borderRadius="md">
-                <Text fontSize="sm" color={mutedTextColor} mb="xs">Constructor 2</Text>
-                <Text fontFamily="heading" fontWeight="bold">{constructor2?.name || 'Not Selected'}</Text>
-                {constructor2?.nationality && (
-                  <Text fontSize="xs" color={mutedTextColor}>{constructor2.nationality}</Text>
-                )}
-              </Box>
-            </Grid>
-          </VStack>
-        </Box>
 
         {/* Year Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Time Period Selection</Heading>
             <Text fontSize="sm" color={mutedTextColor}>Select one or more years for each constructor's comparison data</Text>
@@ -549,7 +519,7 @@ const CompareConstructorsPage = () => {
         </VStack>
         
         {/* Statistics Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <HStack justify="space-between" align="center">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics to Compare</Heading>
@@ -723,7 +693,7 @@ const CompareConstructorsPage = () => {
         </VStack>
 
         {/* Central-Axis Results Display */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="lg">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics Comparison</Heading>
             
