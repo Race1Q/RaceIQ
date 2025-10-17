@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { teamColors } from '../../lib/teamColors';
 import { buildApiUrl } from '../../lib/api';
-import StandingsSkeleton from './StandingsSkeleton';
+import AnalyticsStandingsSkeleton from './AnalyticsStandingsSkeleton';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
@@ -290,7 +290,26 @@ const AnalyticsStandings: React.FC = () => {
   );
 
   return (
-    <Box>
+    <Box
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <PageHeader 
         title="Formula 1 Championship Analytics" 
         subtitle="Points progression and championship trends"
@@ -317,7 +336,7 @@ const AnalyticsStandings: React.FC = () => {
         </Flex>
 
         {loading ? (
-          <StandingsSkeleton text="Loading Standings Analytics" />
+          <AnalyticsStandingsSkeleton />
         ) : (
           <Flex gap={6} flexDirection="column" mt={8}>
             {/* Drivers Chart */}

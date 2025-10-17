@@ -7,7 +7,7 @@ import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Headin
 import { WarningTwoIcon } from '@chakra-ui/icons';
 import { useInView } from 'react-intersection-observer';
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
-import { teamColors } from '../../lib/teamColors';
+import { teamColors, getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import { getTeamCarModel } from '../../lib/teamCarModels';
 import { COUNTRY_COLORS } from '../../theme/teamTokens';
@@ -327,9 +327,11 @@ const ConstructorDetails: React.FC = () => {
   const isHistorical = !teamCarImages[constructor.name];
   
   // Prioritize defined team colors, fall back to country colors if no team color exists
-  const hasTeamColor = !!teamColors[constructor.name];
+  // Use getTeamColor which handles normalization and lookups
+  const teamColorHex = getTeamColor(constructor.name); // returns hex without #
+  const hasTeamColor = teamColorHex !== teamColors['Default'];
   const lineColor = hasTeamColor
-    ? `#${teamColors[constructor.name]}`
+    ? `#${teamColorHex}`
     : `#${COUNTRY_COLORS[constructor.nationality]?.hex || COUNTRY_COLORS['default'].hex}`;
 
   // Use team color gradient if available, otherwise country gradient
