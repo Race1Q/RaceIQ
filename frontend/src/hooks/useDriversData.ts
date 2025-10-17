@@ -29,12 +29,7 @@ export const useDriversData = (year: number) => {
         }
         const data = await response.json();
 
-        // NEW DEBUGGING: Raw payload and first standing shape
-        console.log("Raw API Response from /api/standings:", data);
         const driverStandings = (data as any)?.driverStandings || [];
-        if (driverStandings.length > 0) {
-          console.log("Inspecting FIRST raw standing object:", driverStandings[0]);
-        }
 
         // REVISED MAPPING: flattened fields on standing
         const hydratedDrivers = (driverStandings as any[])
@@ -42,32 +37,18 @@ export const useDriversData = (year: number) => {
             if (!standing || !standing.driverId) return null;
             const teamName = standing.constructorName || 'Unknown Team';
             const fullName = standing.driverFullName || `${standing.driverFirstName || ''} ${standing.driverLastName || ''}`.trim();
-            const headshotUrl = standing.driverProfileImageUrl || '';
-            
-            // DEBUG: Track image URL resolution for drivers page
-            console.log(`🔍 Drivers Page Image Debug for ${fullName}:`, {
-              driverId: standing.driverId,
-              fullName,
-              standing: {
-                driverProfileImageUrl: standing.driverProfileImageUrl
-              },
-              resolvedHeadshotUrl: headshotUrl,
-              hasHeadshotUrl: !!headshotUrl
-            });
-            
             return {
               id: standing.driverId as number,
               fullName,
               driverNumber: standing.driverNumber ?? null,
               countryCode: standing.driverCountryCode ?? null,
               teamName,
-              headshotUrl,
+              headshotUrl: standing.driverProfileImageUrl || '',
               teamColor: teamColors[teamName] ? `#${teamColors[teamName]}` : `#${teamColors['Default']}`,
             } as Driver;
           })
           .filter(Boolean) as Driver[];
 
-        console.log("Processed (Hydrated) Drivers:", hydratedDrivers);
         
         setDrivers(hydratedDrivers);
 

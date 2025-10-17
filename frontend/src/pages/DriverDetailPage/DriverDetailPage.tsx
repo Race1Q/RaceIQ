@@ -1,6 +1,6 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid, useColorModeValue } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
@@ -190,8 +190,6 @@ const DriverDetailPage: React.FC = () => {
                   h={{ base: '190px', md: '300px' }}
                   zIndex={3}
                   objectFit="contain"
-                  onLoad={() => console.log(`✅ Driver image loaded successfully: ${driverDetails.imageUrl}`)}
-                  onError={(e) => console.log(`❌ Driver image failed to load: ${driverDetails.imageUrl}`, e)}
                 />
               )}
             </Box>

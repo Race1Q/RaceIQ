@@ -17,7 +17,6 @@ import {
 } from '@chakra-ui/react';
 import { Icon } from '@chakra-ui/icons';
 import { Trophy, Award, Timer, Star } from 'lucide-react';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamColors } from '../../lib/teamColors';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
 import ReactCountryFlag from 'react-country-flag';
@@ -34,8 +33,9 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
     return null;
   }
 
-  // Import optimization utility at top of file
-  const imageUrl = driverHeadshots[featuredDriver.fullName] || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col/image.png';
+  // Use API image URL with Max Verstappen fallback
+  const maxVerstappenFallback = 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png';
+  const imageUrl = featuredDriver.imageUrl || maxVerstappenFallback;
 
   const getTeamColor = (teamName: string): string => {
     const hex = teamColors[teamName] ?? teamColors['Default'];

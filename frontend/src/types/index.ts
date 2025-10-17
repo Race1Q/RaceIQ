@@ -173,6 +173,7 @@ export interface FeaturedDriver {
   seasonWins: number;
   seasonPoles: number;
   position: number;
+  imageUrl?: string;
   careerStats: {
     wins: number;
     podiums: number;
