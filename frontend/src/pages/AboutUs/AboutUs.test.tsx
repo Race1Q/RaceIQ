@@ -3,42 +3,47 @@ import { render, screen } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { vi, describe, it, expect } from 'vitest';
 import AboutUs from './AboutUs';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Mock CSS module
-vi.mock('./AboutUs.module.css', () => ({ default: {} }), { virtual: true });
-
-// Mock HeroSection to avoid external image work
-vi.mock('../../components/HeroSection/HeroSection', () => ({
-  default: ({ title, subtitle }: any) => (
-    <section data-testid="hero">
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </section>
-  ),
-}));
-
-// Mock TeamMemberCard for stable counting
-vi.mock('../../components/TeamMemberCard/TeamMemberCard', () => ({
-  default: ({ name, role }: any) => (
-    <div role="listitem">
-      <span>{name}</span> — <span>{role}</span>
-    </div>
-  ),
-}));
+vi.mock('./AboutUs.module.css', () => ({ default: {} }));
 
 function renderWithProviders(ui: React.ReactElement) {
-  return render(<ChakraProvider>{ui}</ChakraProvider>);
+  return render(
+    <ChakraProvider>
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
+    </ChakraProvider>
+  );
 }
 
 describe('AboutUs page', () => {
   it('renders and shows key section headings', () => {
     renderWithProviders(<AboutUs />);
 
-    // Hero
-    expect(screen.getByTestId('hero')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /beyond the finish line/i })
-    ).toBeInTheDocument();
+    // Hero section - check for About RaceIQ heading
+    expect(screen.getByRole('heading', { name: /about raceiq/i })).toBeInTheDocument();
 
     // Sections
     expect(screen.getByRole('heading', { name: /what we offer/i })).toBeInTheDocument();
@@ -48,12 +53,14 @@ describe('AboutUs page', () => {
 
   it('renders exactly 6 team members', () => {
     renderWithProviders(<AboutUs />);
-    const members = screen.getAllByRole('listitem');
-    expect(members).toHaveLength(6);
-
-    // Spot checks
-    expect(screen.getByText(/^Abdullah$/)).toBeInTheDocument();
-    expect(screen.getByText(/^MA$/)).toBeInTheDocument(); // exact match avoids conflicts with "Umayr"
+    
+    // Check for team member images
+    expect(screen.getByAltText('Abdullah')).toBeInTheDocument();
+    expect(screen.getByAltText('Shives')).toBeInTheDocument();
+    expect(screen.getByAltText('Jay')).toBeInTheDocument();
+    expect(screen.getByAltText('Kovis')).toBeInTheDocument();
+    expect(screen.getByAltText('Umayr')).toBeInTheDocument();
+    expect(screen.getByAltText('MA')).toBeInTheDocument();
   });
 
   it('renders 5 tech items; 4 are images with alts; OpenF1 uses icon only', () => {

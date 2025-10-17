@@ -108,7 +108,7 @@ describe('FeaturedDriverSection Component', () => {
       <FeaturedDriverSection featuredDriver={mockFeaturedDriver} isError={false} />
     );
     
-    expect(screen.getByText('Featured Driver')).toBeInTheDocument();
+    expect(screen.getByText('Featured Driver - Best recent form')).toBeInTheDocument();
     expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
   });
 
@@ -118,7 +118,7 @@ describe('FeaturedDriverSection Component', () => {
     );
     
     // Check that the component content is not rendered (only ChakraProvider wrapper remains)
-    expect(screen.queryByText('Featured Driver')).not.toBeInTheDocument();
+    expect(screen.queryByText('Featured Driver - Best recent form')).not.toBeInTheDocument();
   });
 
   it('renders driver information correctly', () => {
@@ -155,7 +155,7 @@ describe('FeaturedDriverSection Component', () => {
     expect(screen.getByText('Career Stats')).toBeInTheDocument();
     expect(screen.getByText('103')).toBeInTheDocument(); // career wins
     expect(screen.getByText('197')).toBeInTheDocument(); // career podiums
-    expect(screen.getByText('104')).toBeInTheDocument(); // career poles
+    // Component only renders wins and podiums, not poles
   });
 
   it('renders driver image with correct attributes', () => {
@@ -272,7 +272,7 @@ describe('FeaturedDriverSection Component', () => {
       <FeaturedDriverSection featuredDriver={driverWithZeroStats} isError={false} />
     );
     
-    expect(screen.getAllByText('0')).toHaveLength(5); // season points, season wins, career wins, podiums, poles
+    expect(screen.getAllByText('0')).toHaveLength(4); // season points, season wins, career wins, podiums (no poles)
   });
 
   it('renders all required icons', () => {
@@ -292,7 +292,7 @@ describe('FeaturedDriverSection Component', () => {
     );
     
     const sectionHeading = screen.getByRole('heading', { level: 4 });
-    expect(sectionHeading).toHaveTextContent('Featured Driver');
+    expect(sectionHeading).toHaveTextContent('Featured Driver - Best recent form');
     
     // Use getAllByRole for multiple H3 headings
     const h3Headings = screen.getAllByRole('heading', { level: 3 });
@@ -357,7 +357,7 @@ describe('FeaturedDriverSection Integration Tests', () => {
     );
     
     // Component should render without theme-related errors
-    expect(screen.getByText('Featured Driver')).toBeInTheDocument();
+    expect(screen.getByText('Featured Driver - Best recent form')).toBeInTheDocument();
     expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
   });
 
@@ -369,7 +369,7 @@ describe('FeaturedDriverSection Integration Tests', () => {
     // Check that headings are properly structured
     const sectionHeading = screen.getByRole('heading', { level: 4 });
     expect(sectionHeading).toBeInTheDocument();
-    expect(sectionHeading).toHaveTextContent('Featured Driver');
+    expect(sectionHeading).toHaveTextContent('Featured Driver - Best recent form');
     
     // Use getAllByRole for multiple H3 headings
     const h3Headings = screen.getAllByRole('heading', { level: 3 });

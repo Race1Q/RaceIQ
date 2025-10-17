@@ -1,11 +1,44 @@
 // frontend/src/components/TeamCard/TeamCard.test.tsx
 import { render, screen } from '@testing-library/react';
+import { ChakraProvider } from '@chakra-ui/react';
+import { vi, describe, it, expect } from 'vitest';
 import { TeamCard } from './TeamCard';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
+
+const renderWithProviders = (ui: React.ReactElement) => {
+  return render(
+    <ChakraProvider>
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
+    </ChakraProvider>
+  );
+};
 
 describe('TeamCard', () => {
   it('renders without crashing', () => {
-    const mockOnClick = jest.fn();
-    render(
+    const mockOnClick = vi.fn();
+    renderWithProviders(
       <TeamCard
         teamKey="red_bull"
         countryName="Austria"
@@ -22,8 +55,8 @@ describe('TeamCard', () => {
   });
 
   it('renders with custom team name override', () => {
-    const mockOnClick = jest.fn();
-    render(
+    const mockOnClick = vi.fn();
+    renderWithProviders(
       <TeamCard
         teamKey="historical"
         teamName="Lotus"
