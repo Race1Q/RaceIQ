@@ -312,7 +312,7 @@ const AnalyticsStandings: React.FC = () => {
     >
       <PageHeader 
         title="Formula 1 Championship Analytics" 
-        subtitle="Points progression and championship trends"
+        subtitle="Explore and Analyze both F1 Championships"
       />
       <LayoutContainer>
         <Flex 

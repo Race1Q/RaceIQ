@@ -70,7 +70,7 @@ const DriverStandingsPage: React.FC = () => {
     >
       <PageHeader 
         title="Formula 1 Championship Standings" 
-        subtitle="Driver standings and statistics"
+        subtitle=" Explore F1 Driver Standings and statistics"
       />
       <LayoutContainer>
         <Flex mb={12} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>

@@ -111,7 +111,7 @@ const ConstructorStandings: React.FC = () => {
     >
       <PageHeader 
         title="Formula 1 Championship Standings" 
-        subtitle="Constructor standings and statistics"
+        subtitle="Explore F1 Constructor Standings and statistics"
       />
       <LayoutContainer>
         <Flex 

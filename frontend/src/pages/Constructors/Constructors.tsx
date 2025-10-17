@@ -64,7 +64,7 @@ const getTeamKey = (constructorName: string): keyof typeof TEAM_META => {
     'Alfa Romeo': 'historical',
     'Racing Point': 'aston_martin',
     'Force India': 'aston_martin',
-    'Renault': 'alpine',
+    'Renault': 'renault',
     'Lotus F1': 'alpine',
     'Toro Rosso': 'rb',
   };
