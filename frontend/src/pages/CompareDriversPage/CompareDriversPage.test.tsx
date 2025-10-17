@@ -6,6 +6,7 @@ import { render, screen } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import CompareDriversPage from './CompareDriversPage';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
 
 // Mock Auth0
 vi.mock('@auth0/auth0-react', () => ({
@@ -19,6 +20,17 @@ vi.mock('@auth0/auth0-react', () => ({
     },
     loginWithRedirect: vi.fn(),
     logout: vi.fn(),
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
   }),
 }));
 
@@ -116,7 +128,11 @@ vi.mock('./components/ComparisonTable', () => ({
 function renderPage(ui: React.ReactNode) {
   return render(
     <ChakraProvider>
-      <MemoryRouter>{ui}</MemoryRouter>
+      <MemoryRouter>
+        <ThemeColorProvider>
+          {ui}
+        </ThemeColorProvider>
+      </MemoryRouter>
     </ChakraProvider>
   );
 }

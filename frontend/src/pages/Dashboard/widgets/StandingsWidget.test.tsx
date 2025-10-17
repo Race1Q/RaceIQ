@@ -156,11 +156,11 @@ describe('StandingsWidget', () => {
   it('displays correct points', () => {
     renderWithProviders(<StandingsWidget data={mockStandingsData} />);
 
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
-    expect(screen.getByText('18 pts')).toBeInTheDocument();
-    expect(screen.getByText('15 pts')).toBeInTheDocument();
-    expect(screen.getByText('12 pts')).toBeInTheDocument();
-    expect(screen.getByText('10 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
+    expect(screen.getByText('18')).toBeInTheDocument();
+    expect(screen.getByText('15')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
   });
 
   it('renders team color indicators', () => {
@@ -219,7 +219,7 @@ describe('StandingsWidget', () => {
 
     expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
     expect(screen.getByText('Charles Leclerc')).toBeInTheDocument();
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 
   it('renders with correct layout structure', () => {
@@ -233,7 +233,7 @@ describe('StandingsWidget', () => {
     expect(standingsItems).toHaveLength(5);
     
     // Check for points display
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 
   it('handles single driver standings', () => {
@@ -245,7 +245,7 @@ describe('StandingsWidget', () => {
 
     expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
     expect(screen.getByText('1.')).toBeInTheDocument();
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 
   it('renders without crashing', () => {
@@ -268,6 +268,6 @@ describe('StandingsWidget', () => {
 
     expect(screen.getByText('Championship Standings')).toBeInTheDocument();
     expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 });

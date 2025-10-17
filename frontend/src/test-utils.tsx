@@ -4,26 +4,20 @@ import type { RenderOptions } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
-import { ThemeColorProvider } from './context/ThemeColorContext';
 
-// Mock Auth0
-vi.mock('@auth0/auth0-react', () => ({
-  useAuth0: () => ({
-    isAuthenticated: false,
-    user: null,
+// Mock the ThemeColorContext module globally with a simple stub
+// This provides useThemeColor to components without requiring Auth0/useUserProfile dependencies
+vi.mock('./context/ThemeColorContext', () => ({
+  ThemeColorProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useThemeColor: () => ({
+    accentColor: 'e10600',
+    accentColorWithHash: '#e10600',
+    accentColorLight: '#ff2020',
+    accentColorDark: '#c10500',
+    accentColorRgba: (alpha: number) => `rgba(225, 6, 0, ${alpha})`,
     isLoading: false,
-    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
-  }),
-  Auth0Provider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
-// Mock useUserProfile
-vi.mock('./hooks/useUserProfile', () => ({
-  useUserProfile: () => ({
-    profile: null,
-    favoriteConstructor: null,
-    favoriteDriver: null,
-    loading: false,
+    useCustomTeamColor: true,
+    toggleCustomTeamColor: () => {},
   }),
 }));
 
@@ -44,9 +38,7 @@ function AllTheProviders({ children, initialRoute = '/' }: { children: React.Rea
   return (
     <ChakraProvider theme={testTheme}>
       <MemoryRouter initialEntries={[initialRoute]}>
-        <ThemeColorProvider>
-          {children}
-        </ThemeColorProvider>
+        {children}
       </MemoryRouter>
     </ChakraProvider>
   );
