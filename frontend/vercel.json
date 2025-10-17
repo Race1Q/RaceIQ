@@ -2,11 +2,24 @@
   "headers": [
     {
       "source": "/(.*)\\.js",
-      "headers": [{ "key": "Content-Type", "value": "text/javascript" }]
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.mjs",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
     },
     {
       "source": "/(.*)\\.wasm",
-      "headers": [{ "key": "Content-Type", "value": "application/wasm" }]
+      "headers": [
+        { "key": "Content-Type", "value": "application/wasm" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
     }
   ],
   "rewrites": [

@@ -21,7 +21,7 @@ Add these environment variables:
 ```bash
 # AI Configuration (REQUIRED)
 AI_FEATURES_ENABLED=true
-GEMINI_API_KEY=AIzaSyD-dx7VhoB49SeksKCd4u8BnFYQ17as3fU
+GEMINI_API_KEY=your_actual_gemini_api_key_here
 GEMINI_MODEL=gemini-2.0-flash-exp
 AI_NEWS_TTL_MIN=60
 AI_BIO_TTL_H=48
