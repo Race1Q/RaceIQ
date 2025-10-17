@@ -38,7 +38,7 @@ const DriverStandingsPage: React.FC = () => {
 
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 1950; year--) {
+    for (let year = 2025; year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;

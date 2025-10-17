@@ -51,10 +51,10 @@ const AnalyticsStandings: React.FC = () => {
   const [selectedSeasonId, setSelectedSeasonId] = useState<number>(26); // Default to 2025 season ID
   const [seasonChanging, setSeasonChanging] = useState(false);
 
-  // Generate season options from 2025 → 1950 (same as other standings pages)
+  // Generate season options from 2025 → 2000 (same as other standings pages)
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 1950; year--) {
+    for (let year = 2025; year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;
@@ -324,7 +324,7 @@ const AnalyticsStandings: React.FC = () => {
             {driversProgression.length > 0 && (
               <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
-                  2025 Drivers Points Progression
+                  {selectedSeason} Drivers Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={driversChartData}>
@@ -364,7 +364,7 @@ const AnalyticsStandings: React.FC = () => {
             {constructorsProgression.length > 0 && (
               <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
-                  2025 Constructors Points Progression
+                  {selectedSeason} Constructors Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={constructorsChartData}>

@@ -37,10 +37,10 @@ const ConstructorStandings: React.FC = () => {
   const [selectedSeason, setSelectedSeason] = useState<number>(new Date().getFullYear());
   const { standings: supaStandings, loading, error } = useConstructorStandings(selectedSeason);
 
-  // Generate season options from 2025 → 1950
+  // Generate season options from 2025 → 2000
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 1950; year--) {
+    for (let year = 2025; year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;
