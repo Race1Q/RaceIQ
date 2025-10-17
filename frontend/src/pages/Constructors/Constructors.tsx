@@ -64,7 +64,7 @@ const getTeamKey = (constructorName: string): keyof typeof TEAM_META => {
     'Alfa Romeo': 'historical',
     'Racing Point': 'aston_martin',
     'Force India': 'aston_martin',
-    'Renault': 'alpine',
+    'Renault': 'renault',
     'Lotus F1': 'alpine',
     'Toro Rosso': 'rb',
   };
@@ -322,6 +322,7 @@ const Constructors = () => {
       <Box 
         color="text-primary" 
         py={{ base: 'md', md: 'lg' }}
+        minH="100vh"
         sx={{
           background: `
             radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),

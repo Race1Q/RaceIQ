@@ -1,6 +1,6 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Image, Badge, Skeleton, SkeletonText, ScaleFade, useColorModeValue } from '@chakra-ui/react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Image, Skeleton, SkeletonText, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { buildApiUrl } from '../../lib/api';
 import { ChevronRight, ChevronLeft, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
@@ -207,23 +207,6 @@ const DriverStatsColumn = ({
               zIndex={1}
             />
           </Box>
-          <Badge
-            position="absolute"
-            top="-8px"
-            right="-8px"
-            bg={`#${teamColor}`}
-            color={useColorModeValue('gray.800', 'white')}
-            borderRadius="full"
-            w="32px"
-            h="32px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            fontSize="sm"
-            fontWeight="bold"
-          >
-            {driver.id}
-          </Badge>
         </Box>
         <VStack spacing="xs" textAlign="center">
           <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color={useColorModeValue('gray.800', 'white')}>
@@ -285,8 +268,6 @@ const CompareDriversPage = () => {
   const { isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0();
   
   // Theme-aware colors
-  const surfaceBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const primaryTextColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
   const glassmorphismBg = useColorModeValue('gray.50', 'rgba(255, 255, 255, 0.05)');
@@ -629,7 +610,7 @@ const CompareDriversPage = () => {
         </VStack>
         
         {/* Year Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Time Period Selection</Heading>
             <Text fontSize="sm" color={mutedTextColor}>Select one or more years for each driver's comparison data</Text>
@@ -808,7 +789,7 @@ const CompareDriversPage = () => {
         </VStack>
         
         {/* Statistics Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <HStack justify="space-between" align="center">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics to Compare</Heading>
@@ -840,7 +821,7 @@ const CompareDriversPage = () => {
             <Text fontSize="sm" color={mutedTextColor}>
               Select the metrics you want to compare. Choose at least one statistic.
             </Text>
-            <Flex gap="sm" flexWrap="wrap" justify="center">
+            <Flex gap="sm" flexWrap="wrap" justify="center" minH="80px" alignItems="flex-start">
               {Object.entries(availableMetrics).map(([key, label]) => (
                 <Button
                   key={key}
@@ -895,9 +876,10 @@ const CompareDriversPage = () => {
           </VStack>
         </Box>
 
-        {canProceedToResults && (
-          <ScaleFade in={canProceedToResults} initialScale={0.9}>
-            <Flex justify="flex-end" mt="xl">
+        {/* Fixed height spacer to keep button position stable */}
+        <Box minH="100px" mt="xl">
+          {canProceedToResults && (
+            <Flex justify="flex-end">
               <Button
                 rightIcon={<ChevronRight size={20} />}
                 onClick={nextStep}
@@ -905,23 +887,21 @@ const CompareDriversPage = () => {
                 bg="border-accent"
                 _hover={{ 
                   bg: 'border-accentDark',
-                  transform: 'translateY(-2px)',
                   boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
                 }}
                 _active={{
-                  transform: 'translateY(0px)',
+                  bg: 'border-accentDark',
                   boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                 }}
                 color={useColorModeValue('gray.800', 'white')}
                 fontFamily="heading"
-                transition="all 0.2s ease"
                 boxShadow="0 4px 15px rgba(0,0,0,0.1)"
               >
                 View Comparison
               </Button>
             </Flex>
-          </ScaleFade>
-        )}
+          )}
+        </Box>
       </VStack>
     );
   };
@@ -989,7 +969,7 @@ const CompareDriversPage = () => {
         {/* Composite Score moved to bottom */}
 
         {/* Central-Axis Results Display */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="lg">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics Comparison</Heading>
             
@@ -1056,7 +1036,7 @@ const CompareDriversPage = () => {
 
         {/* Results Summary & Insights */}
         {score && enabledMetricsArray.length > 0 && (
-          <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+          <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
             <VStack spacing="md">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Comparison Summary</Heading>
               
@@ -1161,7 +1141,7 @@ const CompareDriversPage = () => {
 
         {/* Composite Score Visualization - moved to bottom with explanation */}
         {score && (
-          <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+          <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
             <VStack spacing="md">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Composite Score</Heading>
               

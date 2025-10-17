@@ -7,6 +7,7 @@ export interface ConstructorStandingRow {
   seasonYear: number;
   constructorId: number;
   constructorName: string;
+  nationality: string;
   seasonPoints: number;
   seasonWins: number;
   seasonPodiums: number;
@@ -41,10 +42,10 @@ export const useConstructorStandings = (
             return;
           }
 
-          // 2) Get constructors list
-          const constructorsRes = await fetch(buildApiUrl('/api/constructors'));
-          if (!constructorsRes.ok) throw new Error('Failed to fetch constructors');
-          const constructors = await constructorsRes.json();
+        // 2) Get constructors list FOR THE SELECTED YEAR
+        const constructorsRes = await fetch(buildApiUrl(`/api/constructors?year=${seasonYear}`));
+        if (!constructorsRes.ok) throw new Error('Failed to fetch constructors');
+        const constructors = await constructorsRes.json();
 
           // 3) For each constructor, fetch season points (public endpoint)
           const standingsPromises = constructors.map(async (constructor: any) => {
@@ -58,6 +59,7 @@ export const useConstructorStandings = (
                 seasonYear,
                 constructorId: constructor.id,
                 constructorName: constructor.name,
+                nationality: constructor.nationality || '',
                 seasonPoints: current.points || 0,
                 seasonWins: current.wins || 0,
                 seasonPodiums: current.podiums || 0,
@@ -105,10 +107,10 @@ export const useConstructorStandings = (
           },
         });
 
-        // Get all constructors first
-        const constructorsResponse = await fetch(buildApiUrl('/api/constructors'), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      // Get all constructors for the selected year
+      const constructorsResponse = await fetch(buildApiUrl(`/api/constructors?year=${seasonYear}`), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
         
         if (!constructorsResponse.ok) {
           throw new Error('Failed to fetch constructors');
@@ -158,6 +160,7 @@ export const useConstructorStandings = (
               seasonYear: seasonYear,
               constructorId: constructor.id,
               constructorName: constructor.name,
+              nationality: constructor.nationality || '',
               seasonPoints: currentSeasonData.points || 0,
               seasonWins: currentSeasonData.wins || 0,
               seasonPodiums: currentSeasonData.podiums || 0,

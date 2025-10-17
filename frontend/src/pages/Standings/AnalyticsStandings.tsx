@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { teamColors } from '../../lib/teamColors';
 import { buildApiUrl } from '../../lib/api';
-import StandingsSkeleton from './StandingsSkeleton';
+import AnalyticsStandingsSkeleton from './AnalyticsStandingsSkeleton';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
@@ -51,10 +51,10 @@ const AnalyticsStandings: React.FC = () => {
   const [selectedSeasonId, setSelectedSeasonId] = useState<number>(26); // Default to 2025 season ID
   const [seasonChanging, setSeasonChanging] = useState(false);
 
-  // Generate season options from 2025 → 1950 (same as other standings pages)
+  // Generate season options from 2025 → 2000 (same as other standings pages)
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 1950; year--) {
+    for (let year = 2025; year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;
@@ -290,10 +290,29 @@ const AnalyticsStandings: React.FC = () => {
   );
 
   return (
-    <Box>
+    <Box
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <PageHeader 
         title="Formula 1 Championship Analytics" 
-        subtitle="Points progression and championship trends"
+        subtitle="Explore and Analyze both F1 Championships"
       />
       <LayoutContainer>
         <Flex 
@@ -317,14 +336,14 @@ const AnalyticsStandings: React.FC = () => {
         </Flex>
 
         {loading ? (
-          <StandingsSkeleton text="Loading Standings Analytics" />
+          <AnalyticsStandingsSkeleton />
         ) : (
           <Flex gap={6} flexDirection="column" mt={8}>
             {/* Drivers Chart */}
             {driversProgression.length > 0 && (
               <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
-                  2025 Drivers Points Progression
+                  {selectedSeason} Drivers Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={driversChartData}>
@@ -364,7 +383,7 @@ const AnalyticsStandings: React.FC = () => {
             {constructorsProgression.length > 0 && (
               <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
                 <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
-                  2025 Constructors Points Progression
+                  {selectedSeason} Constructors Points Progression
                 </Text>
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={constructorsChartData}>

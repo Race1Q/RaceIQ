@@ -56,6 +56,20 @@ export class ConstructorsController {
     return this.constructorsService.getPointsPerSeason(id);
   }
 
+  @Get(':id/championships')
+  async getConstructorChampionships(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ championships: number }> {
+    return this.constructorsService.getConstructorWorldChampionships(id);
+  }
+
+  @Get(':id/best-track')
+  async getConstructorBestTrack(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ circuitName: string; totalPoints: number; races: number; wins: number }> {
+    return this.constructorsService.getConstructorBestTrack(id);
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<ConstructorEntity> {
     return this.constructorsService.findOne(id);

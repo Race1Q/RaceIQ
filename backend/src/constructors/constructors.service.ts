@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Repository, DataSource } from 'typeorm';
 import { ConstructorEntity } from './constructors.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { RaceResult } from '../race-results/race-results.entity';
@@ -20,6 +20,7 @@ export class ConstructorsService {
     private readonly raceRepository: Repository<Race>,
     @InjectRepository(DriverStandingMaterialized)
     private readonly standingsViewRepository: Repository<DriverStandingMaterialized>,
+    private readonly dataSource: DataSource,
   ) {}
   private readonly logger = new Logger(ConstructorsService.name);
 
@@ -267,7 +268,91 @@ export class ConstructorsService {
     }
   }
 
- 
+  /**
+   * Calculate the number of world championships won by a constructor
+   * by counting seasons where they finished 1st in the final constructor standings
+   */
+  async getConstructorWorldChampionships(constructorId: number): Promise<{ championships: number }> {
+    try {
+      // Query to find all seasons where this constructor won the championship (position = 1)
+      const result = await this.dataSource.query(`
+        WITH latest_race_per_season AS (
+          SELECT 
+            s.year,
+            MAX(r.round) as final_round
+          FROM races r
+          INNER JOIN seasons s ON r.season_id = s.id
+          WHERE EXISTS (
+            SELECT 1 FROM constructor_standings cs
+            WHERE cs.race_id = r.id AND cs.constructor_id = $1
+          )
+          GROUP BY s.year
+        ),
+        final_standings AS (
+          SELECT 
+            s.year,
+            cs.position,
+            cs.constructor_id
+          FROM constructor_standings cs
+          INNER JOIN races r ON cs.race_id = r.id
+          INNER JOIN seasons s ON r.season_id = s.id
+          INNER JOIN latest_race_per_season lrs ON s.year = lrs.year AND r.round = lrs.final_round
+          WHERE cs.constructor_id = $1
+        )
+        SELECT COUNT(*) as championships
+        FROM final_standings
+        WHERE position = 1
+      `, [constructorId]);
+
+      return { championships: parseInt(result[0]?.championships || '0', 10) };
+    } catch (error) {
+      this.logger.error(`Error calculating world championships for constructor ${constructorId}:`, error);
+      return { championships: 0 };
+    }
+  }
+
+  /**
+   * Find the best track for a constructor based on total points scored
+   */
+  async getConstructorBestTrack(constructorId: number): Promise<{ 
+    circuitName: string; 
+    totalPoints: number; 
+    races: number;
+    wins: number;
+  }> {
+    try {
+      const result = await this.dataSource.query(`
+        SELECT 
+          c.name as circuit_name,
+          SUM(rr.points) as total_points,
+          COUNT(DISTINCT rr.id) as races,
+          COUNT(CASE WHEN rr.position = 1 THEN 1 END) as wins
+        FROM race_results rr
+        INNER JOIN sessions s ON rr.session_id = s.id AND s.type = 'RACE'
+        INNER JOIN races r ON s.race_id = r.id
+        INNER JOIN circuits c ON r.circuit_id = c.id
+        WHERE rr.constructor_id = $1
+        GROUP BY c.id, c.name
+        HAVING SUM(rr.points) > 0
+        ORDER BY total_points DESC, wins DESC
+        LIMIT 1
+      `, [constructorId]);
+
+      if (result.length === 0) {
+        return { circuitName: 'N/A', totalPoints: 0, races: 0, wins: 0 };
+      }
+
+      return {
+        circuitName: result[0].circuit_name,
+        totalPoints: parseFloat(result[0].total_points || '0'),
+        races: parseInt(result[0].races || '0', 10),
+        wins: parseInt(result[0].wins || '0', 10),
+      };
+    } catch (error) {
+      this.logger.error(`Error calculating best track for constructor ${constructorId}:`, error);
+      return { circuitName: 'N/A', totalPoints: 0, races: 0, wins: 0 };
+    }
+  }
 }
 
 

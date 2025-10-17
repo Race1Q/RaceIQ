@@ -164,21 +164,19 @@ const DriverDetailPage: React.FC = () => {
 
             {/* 3) Driver image + car */}
             <Box justifySelf="center" position="relative" w={{ base: '100%', md: '420px' }} minW={{ base: 'auto', md: '420px' }} minH={{ base: '160px', md: '260px' }}>
-              {teamCarImages[driverDetails.teamName] && (
-                <Image
-                  src={teamCarImages[driverDetails.teamName]}
-                  alt={`${driverDetails.teamName} car`}
-                  position="absolute"
-                  bottom="8px"
-                  left="50%"
-                  transform="translateX(-50%)"
-                  w={{ base: '85%', md: '420px' }}
-                  maxW="none"
-                  opacity={0.4}
-                  objectFit="contain"
-                  zIndex={1}
-                />
-              )}
+              <Image
+                src={teamCarImages[driverDetails.teamName] || '/assets/logos/F1Car.png'}
+                alt={`${driverDetails.teamName} car`}
+                position="absolute"
+                bottom="8px"
+                left="50%"
+                transform="translateX(-50%)"
+                w={{ base: '85%', md: '420px' }}
+                maxW="none"
+                opacity={0.4}
+                objectFit="contain"
+                zIndex={1}
+              />
               {driverDetails.imageUrl && (
                 <Image
                   src={driverDetails.imageUrl}
