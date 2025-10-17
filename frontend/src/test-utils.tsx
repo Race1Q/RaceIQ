@@ -3,6 +3,29 @@ import { render } from '@testing-library/react';
 import type { RenderOptions } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
+import { ThemeColorProvider } from './context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+  Auth0Provider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// Mock useUserProfile
+vi.mock('./hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Test theme with all required colors
 const testTheme = extendTheme({
@@ -21,7 +44,9 @@ function AllTheProviders({ children, initialRoute = '/' }: { children: React.Rea
   return (
     <ChakraProvider theme={testTheme}>
       <MemoryRouter initialEntries={[initialRoute]}>
-        {children}
+        <ThemeColorProvider>
+          {children}
+        </ThemeColorProvider>
       </MemoryRouter>
     </ChakraProvider>
   );

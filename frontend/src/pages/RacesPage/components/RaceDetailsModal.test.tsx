@@ -4,6 +4,26 @@ import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import RaceDetailsModal from './RaceDetailsModal';
 import type { Race } from '../../../types/races';
+import { ThemeColorProvider } from '../../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
@@ -71,7 +91,9 @@ const testTheme = extendTheme({
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <ChakraProvider theme={testTheme}>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 };

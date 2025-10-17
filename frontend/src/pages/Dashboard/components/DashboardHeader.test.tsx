@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import DashboardHeader from './DashboardHeader';
+import { ThemeColorProvider } from '../../../context/ThemeColorContext';
 
 // Mock Auth0
 const mockUser = {
@@ -13,6 +14,16 @@ const mockUser = {
 const mockUseAuth0 = vi.fn();
 vi.mock('@auth0/auth0-react', () => ({
   useAuth0: () => mockUseAuth0(),
+}));
+
+// Mock useUserProfile
+vi.mock('../../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
 }));
 
 // Mock lucide-react icons
@@ -38,7 +49,9 @@ const testTheme = extendTheme({
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <ChakraProvider theme={testTheme}>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 };
@@ -50,6 +63,7 @@ describe('DashboardHeader', () => {
     vi.clearAllMocks();
     mockUseAuth0.mockReturnValue({
       user: mockUser,
+      getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
     });
   });
 
@@ -63,9 +77,10 @@ describe('DashboardHeader', () => {
   it('renders customize button with settings icon', () => {
     renderWithProviders(<DashboardHeader onCustomizeClick={mockOnCustomizeClick} />);
 
-    const customizeButton = screen.getByRole('button', { name: /customize/i });
+    const customizeButton = screen.getByRole('button');
     expect(customizeButton).toBeInTheDocument();
     expect(customizeButton).toHaveTextContent('Customize');
+    expect(customizeButton).toHaveTextContent('Settings');
     
     expect(screen.getByTestId('settings-icon')).toBeInTheDocument();
   });
@@ -73,7 +88,7 @@ describe('DashboardHeader', () => {
   it('calls onCustomizeClick when customize button is clicked', () => {
     renderWithProviders(<DashboardHeader onCustomizeClick={mockOnCustomizeClick} />);
 
-    const customizeButton = screen.getByRole('button', { name: /customize/i });
+    const customizeButton = screen.getByRole('button');
     fireEvent.click(customizeButton);
 
     expect(mockOnCustomizeClick).toHaveBeenCalledTimes(1);
@@ -82,6 +97,7 @@ describe('DashboardHeader', () => {
   it('handles missing user name gracefully', () => {
     mockUseAuth0.mockReturnValue({
       user: null,
+      getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
     });
 
     renderWithProviders(<DashboardHeader onCustomizeClick={mockOnCustomizeClick} />);
@@ -92,6 +108,7 @@ describe('DashboardHeader', () => {
   it('handles user without name property', () => {
     mockUseAuth0.mockReturnValue({
       user: { email: 'test@example.com' },
+      getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
     });
 
     renderWithProviders(<DashboardHeader onCustomizeClick={mockOnCustomizeClick} />);
@@ -102,7 +119,7 @@ describe('DashboardHeader', () => {
   it('applies correct styling to customize button', () => {
     renderWithProviders(<DashboardHeader onCustomizeClick={mockOnCustomizeClick} />);
 
-    const customizeButton = screen.getByRole('button', { name: /customize/i });
+    const customizeButton = screen.getByRole('button');
     expect(customizeButton).toBeInTheDocument();
     // Just check that the button exists and is clickable
     expect(customizeButton).toBeEnabled();
@@ -125,7 +142,7 @@ describe('DashboardHeader', () => {
     renderWithProviders(<DashboardHeader onCustomizeClick={mockOnCustomizeClick} />);
 
     // Check button has proper role and is focusable
-    const customizeButton = screen.getByRole('button', { name: /customize/i });
+    const customizeButton = screen.getByRole('button');
     expect(customizeButton).toBeInTheDocument();
     expect(customizeButton).not.toHaveAttribute('disabled');
     

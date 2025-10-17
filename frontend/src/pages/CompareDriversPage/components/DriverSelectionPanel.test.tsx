@@ -158,32 +158,8 @@ describe('DriverSelectionPanel', () => {
     expect(screen.getByTestId('select-value')).toHaveTextContent('Max Verstappen');
   });
 
-  it('renders driver image with provided or fallback src', () => {
-    renderComponent({
-      title: 'Select Driver 1',
-      allDrivers: mockAllDrivers,
-      selectedDriverData: mockSelectedDriverData,
-      onDriverSelect: mockOnDriverSelect,
-    });
-
-    const driverImage = screen.getByAltText('Max Verstappen');
-    // The component prefers driverHeadshots mapping; if mapping present the src will not equal raw imageUrl.
-    // Assert it contains either provided filename or an https fallback path.
-    const src = driverImage.getAttribute('src') || '';
-    expect(src).toMatch(/max-verstappen|https:\/\//);
-  });
-
-  it('applies team color border when driver is selected', () => {
-    renderComponent({
-      title: 'Select Driver 1',
-      allDrivers: mockAllDrivers,
-      selectedDriverData: mockSelectedDriverData,
-      onDriverSelect: mockOnDriverSelect,
-    });
-
-    // Check that the selected driver section exists by looking for the image
-    expect(screen.getByAltText('Max Verstappen')).toBeInTheDocument();
-  });
+  // Note: Driver images and team names were moved to ComparisonTable header
+  // so we no longer test for them here in DriverSelectionPanel
 
   it('renders extra control when provided', () => {
     const extraControl = <div data-testid="extra-control">Extra Control</div>;
@@ -219,8 +195,8 @@ describe('DriverSelectionPanel', () => {
       onDriverSelect: mockOnDriverSelect,
     });
 
-    // Should not have driver image when no driver is selected
-    expect(screen.queryByAltText('Max Verstappen')).not.toBeInTheDocument();
+    // Verify no driver is selected in the dropdown
+    expect(screen.getByTestId('select-value')).toHaveTextContent('No Selection');
   });
 
   it('handles driver selection with different driver data', () => {
@@ -239,11 +215,10 @@ describe('DriverSelectionPanel', () => {
       onDriverSelect: mockOnDriverSelect,
     });
 
-    // Check that Lewis Hamilton appears multiple times (in options and selected section)
+    // Check that Lewis Hamilton appears in the dropdown (in options and selected value)
     const lewisElements = screen.getAllByText('Lewis Hamilton');
     expect(lewisElements.length).toBeGreaterThan(1);
-    expect(screen.getByText('Mercedes')).toBeInTheDocument();
-    expect(screen.getByAltText('Lewis Hamilton')).toBeInTheDocument();
+    expect(screen.getByTestId('select-value')).toHaveTextContent('Lewis Hamilton');
   });
 
   it('renders with different panel titles', () => {
@@ -268,11 +243,10 @@ describe('DriverSelectionPanel', () => {
     // Check that all main elements are present
     expect(screen.getByText('Select Driver 1')).toBeInTheDocument();
     expect(screen.getByTestId('searchable-select')).toBeInTheDocument();
-    expect(screen.getByAltText('Max Verstappen')).toBeInTheDocument();
     
-    // Check that Max Verstappen appears multiple times (in options and selected section)
+    // Check that Max Verstappen appears in dropdown (in options and selected value)
     const maxElements = screen.getAllByText('Max Verstappen');
     expect(maxElements.length).toBeGreaterThan(1);
-    expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
+    expect(screen.getByTestId('select-value')).toHaveTextContent('Max Verstappen');
   });
 });

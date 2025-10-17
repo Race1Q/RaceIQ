@@ -3,6 +3,26 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import CustomizeDashboardModal from './CustomizeDashboardModal';
+import { ThemeColorProvider } from '../../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 const testTheme = extendTheme({
   colors: {
@@ -29,7 +49,9 @@ const testTheme = extendTheme({
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <ChakraProvider theme={testTheme}>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 };
