@@ -207,47 +207,7 @@ const ConstructorDetails: React.FC = () => {
     return entry ? entry.poleCount : 0;
   }, [latestSeason, mappedPolesPerSeason, seasons]);
 
-  // Normalize numeric fields and sort by season label for charting consistency
-  const sortedPoints = useMemo(() => {
-    const normalized = mappedPointsPerSeason.map(p => ({
-      ...p,
-      points: Number((p as any).points ?? 0),
-      wins: Number((p as any).wins ?? 0),
-      podiums: Number((p as any).podiums ?? 0),
-    }));
-    
-    // Sort by season year (not label) to ensure proper chronological order
-    const sorted = normalized.sort((a, b) => {
-      const seasonA = seasons.find(s => s.id === a.season)?.year || 0;
-      const seasonB = seasons.find(s => s.id === b.season)?.year || 0;
-      return seasonA - seasonB;
-    });
-    
-    // Debug log to help diagnose chart issues
-    console.log('Chart data for Points by Season:', sorted.map(s => ({
-      seasonLabel: s.seasonLabel,
-      points: s.points,
-      season: s.season
-    })));
-    
-    return sorted;
-  }, [mappedPointsPerSeason, seasons]);
 
-  // Dataset availability flags
-  const hasPoints = sortedPoints.length > 0 && sortedPoints.some(p => Number(p.points) >= 0);
-  const hasWins = sortedPoints.some(p => Number(p.wins || 0) > 0);
-  const hasPodiumsData = sortedPoints.some(p => Number(p.podiums || 0) > 0);
-  const hasPoles = mappedPolesPerSeason.length > 0 && mappedPolesPerSeason.some(p => Number(p.poleCount || 0) > 0);
-
-  // Reusable fallback for charts with no data
-  const NoData = ({ message = 'No data available' }: { message?: string }) => (
-    <Flex w="100%" h="90%" align="center" justify="center">
-      <VStack spacing={2} opacity={0.7}>
-        <WarningTwoIcon boxSize={6} />
-        <Text fontSize="sm">{message}</Text>
-      </VStack>
-    </Flex>
-  );
 
   const totalPoints = useMemo(
     () => pointsPerSeason.reduce((acc, s) => acc + (s.points || 0), 0),

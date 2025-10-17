@@ -86,6 +86,15 @@ import { User } from './users/entities/user.entity';
           ],
           synchronize: false, // trust the db schema
           ssl: isLocal ? false : { rejectUnauthorized: false },
+          // Connection pool configuration for better stability
+          extra: {
+            max: 10,                      // Maximum pool size
+            idleTimeoutMillis: 30000,     // Close idle clients after 30 seconds
+            connectionTimeoutMillis: 10000, // Return error after 10 seconds if connection can't be established
+          },
+          keepConnectionAlive: true,      // Keep connection alive between hot-reloads
+          retryAttempts: 3,               // Retry connecting 3 times
+          retryDelay: 3000,               // Wait 3 seconds between retries
         };
       },
     }),
