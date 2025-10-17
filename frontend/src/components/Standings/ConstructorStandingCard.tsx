@@ -3,22 +3,30 @@ import { Box, Flex, Text, HStack, Stat, StatLabel, StatNumber, Badge, useColorMo
 import { useNavigate } from 'react-router-dom';
 import { teamColors } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
+import { COUNTRY_COLORS } from '../../theme/teamTokens';
 import TeamLogo from '../TeamLogo/TeamLogo';
 
 interface ConstructorStandingCardProps {
   constructorId: number;
   position: number;
   constructorName: string;
+  nationality: string;
   points: number;
   wins: number;
   podiums: number;
 }
 
 export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = ({
-  constructorId, position, constructorName, points, wins, podiums
+  constructorId, position, constructorName, nationality, points, wins, podiums
 }) => {
   const navigate = useNavigate();
-  const teamColor = `#${teamColors[constructorName] || teamColors.Default}`;
+  
+  // Prioritize defined team colors, fall back to country colors if no team color exists
+  const hasTeamColor = !!teamColors[constructorName];
+  const teamColor = hasTeamColor
+    ? `#${teamColors[constructorName]}`
+    : `#${COUNTRY_COLORS[nationality]?.hex || COUNTRY_COLORS['default'].hex}`;
+  
   const subtleBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
   const baseGradient = useColorModeValue(
     `linear(to-r, ${teamColor}15, ${teamColor}08)`, // much more subtle
@@ -120,27 +128,25 @@ export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = (
       </Flex>
       
       {/* Car Image - Uses remaining space on the right */}
-      {teamCarImages[constructorName] && (
-        <Box 
-          flex={1} 
-          maxW={{ base: "120px", md: "150px" }}
-          display="flex" 
-          alignItems="center" 
-          justifyContent="center"
-          flexShrink={0}
-        >
-          <Image
-            src={teamCarImages[constructorName]}
-            alt={`${constructorName} car`}
-            maxH={{ base: '60px', md: '80px' }}
-            maxW="100%"
-            w="auto"
-            h="auto"
-            objectFit="contain"
-            borderRadius="md"
-          />
-        </Box>
-      )}
+      <Box 
+        flex={1} 
+        maxW={{ base: "120px", md: "150px" }}
+        display="flex" 
+        alignItems="center" 
+        justifyContent="center"
+        flexShrink={0}
+      >
+        <Image
+          src={teamCarImages[constructorName] || '/assets/logos/F1Car.png'}
+          alt={`${constructorName} car`}
+          maxH={{ base: '60px', md: '80px' }}
+          maxW="100%"
+          w="auto"
+          h="auto"
+          objectFit="contain"
+          borderRadius="md"
+        />
+      </Box>
       <HStack spacing={{ base: 2, md: 4 }} pr={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
         <Stat textAlign="right" minW={{ base: "45px", md: "60px" }}>
           <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Points</StatLabel>

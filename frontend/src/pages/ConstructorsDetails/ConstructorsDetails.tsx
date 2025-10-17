@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue, VStack } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue, VStack, Spinner } from '@chakra-ui/react';
 import { WarningTwoIcon } from '@chakra-ui/icons';
 import { useInView } from 'react-intersection-observer';
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
@@ -67,7 +67,8 @@ const ConstructorDetails: React.FC = () => {
   const [totalPoles, setTotalPoles] = useState<number>(0);
   const [polesBySeason, setPolesBySeason] = useState<SeasonPoles[]>([]);
   const [loading, setLoading] = useState(true);
-  const [topRace, setTopRace] = useState<{ round: number; raceName: string; points: number } | null>(null);
+  const [worldChampionships, setWorldChampionships] = useState<number>(0);
+  const [bestTrack, setBestTrack] = useState<{ circuitName: string; totalPoints: number; races: number; wins: number } | null>(null);
 
   // Intersection Observer to only load charts when visible
   const { ref: chartsRef, inView: chartsInView } = useInView({
@@ -113,12 +114,14 @@ const ConstructorDetails: React.FC = () => {
       setLoading(true);
       try {
         // ⚡ OPTIMIZATION: Run all independent API calls in PARALLEL
-        const [constructorData, seasonPointsData, seasonsData, polesData, polesBySeasonData] = await Promise.all([
+        const [constructorData, seasonPointsData, seasonsData, polesData, polesBySeasonData, championshipsData, bestTrackData] = await Promise.all([
           authedFetch(`/api/constructors/${constructorId}`),
           authedFetch(`/api/race-results/constructor/${constructorId}/season-points`),
           authedFetch(`/api/seasons`),
           authedFetch(`/api/races/constructor/${constructorId}/poles`),
           authedFetch(`/api/races/constructor/${constructorId}/poles-by-season`),
+          authedFetch(`/api/constructors/${constructorId}/championships`),
+          authedFetch(`/api/constructors/${constructorId}/best-track`),
         ]);
 
         // Set all state at once
@@ -127,6 +130,8 @@ const ConstructorDetails: React.FC = () => {
         setSeasons(seasonsData);
         setTotalPoles(polesData.poles);
         setPolesBySeason(polesBySeasonData);
+        setWorldChampionships(championshipsData.championships || 0);
+        setBestTrack(bestTrackData);
 
         // Fetch cumulative progression (depends on seasons data)
         if (seasonsData.length > 0) {
@@ -140,13 +145,6 @@ const ConstructorDetails: React.FC = () => {
             `/api/race-results/constructor/${constructorId}/season/${latestSeasonId}/progression`
           );
           setCumulativeProgression(cumulativeData);
-          
-          if (cumulativeData.length > 0) {
-            const bestRace = cumulativeData.reduce((prev, curr) =>
-              curr.racePoints > prev.racePoints ? curr : prev
-            );
-            setTopRace({ round: bestRace.round, raceName: bestRace.raceName, points: bestRace.racePoints });
-          }
         }
 
       } catch (err: unknown) {
@@ -264,15 +262,28 @@ const ConstructorDetails: React.FC = () => {
     [pointsPerSeason]
   );
 
+  const totalRaces = useMemo(
+    () => pointsPerSeason.reduce((acc, s) => acc + (s.totalRaces || 0), 0),
+    [pointsPerSeason]
+  );
+
   // Map totals to DriverDetails-style Stat cards (hooks must be before early returns)
   const totalStats: Stat[] = useMemo(
     () => [
+      { label: 'World Championships', value: worldChampionships },
+      { 
+        label: 'Best Track', 
+        value: bestTrack ? bestTrack.circuitName : 'Loading...',
+        colSpan: 2,
+        textAlign: 'center'
+      },
+      { label: 'Total Races Entered', value: totalRaces },
       { label: 'Total Points', value: totalPoints },
       { label: 'Total Wins', value: totalWins },
       { label: 'Total Podiums', value: totalPodiums },
       { label: 'Total Poles', value: totalPoles },
     ],
-    [totalPoints, totalWins, totalPodiums, totalPoles]
+    [worldChampionships, bestTrack, totalRaces, totalPoints, totalWins, totalPodiums, totalPoles]
   );
 
   const latestSeasonYear = useMemo(() => {
@@ -298,7 +309,6 @@ const ConstructorDetails: React.FC = () => {
   const tooltipBg = useColorModeValue('white', 'gray.800');
   const tooltipBorder = useColorModeValue('#E2E8F0', '#4A5568');
   const tooltipTextColor = useColorModeValue('gray.800', 'white');
-  const bestRaceBg = useColorModeValue('gray.50', 'gray.700');
   
   // Page-level theme colors
   const pageBgColor = useColorModeValue('#F0F2F5', '#0a0a0a');
@@ -313,19 +323,19 @@ const ConstructorDetails: React.FC = () => {
   if (loading) return <ConstructorsDetailsSkeleton />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
-  // Check if this is a historical team
+  // Check if this is a historical team (for car image display)
   const isHistorical = !teamCarImages[constructor.name];
   
-  // Use country colors for historical teams, team colors for active teams
-  // Normalize team line color to always include leading '#'
-  const lineColor = isHistorical
-    ? `#${COUNTRY_COLORS[constructor.nationality]?.hex || COUNTRY_COLORS['default'].hex}`
-    : `#${teamColors[constructor.name] || teamColors.Default}`;
+  // Prioritize defined team colors, fall back to country colors if no team color exists
+  const hasTeamColor = !!teamColors[constructor.name];
+  const lineColor = hasTeamColor
+    ? `#${teamColors[constructor.name]}`
+    : `#${COUNTRY_COLORS[constructor.nationality]?.hex || COUNTRY_COLORS['default'].hex}`;
 
-  // Use country gradient for historical teams, team color for active teams
-  const headerGradient = isHistorical 
-    ? COUNTRY_COLORS[constructor.nationality]?.gradient || COUNTRY_COLORS['default'].gradient
-    : `linear-gradient(135deg, ${lineColor} 0%, rgba(0,0,0,0.6) 100%)`;
+  // Use team color gradient if available, otherwise country gradient
+  const headerGradient = hasTeamColor
+    ? `linear-gradient(135deg, ${lineColor} 0%, rgba(0,0,0,0.6) 100%)`
+    : COUNTRY_COLORS[constructor.nationality]?.gradient || COUNTRY_COLORS['default'].gradient;
 
   return (
     <Box 
@@ -375,7 +385,7 @@ const ConstructorDetails: React.FC = () => {
             minH={{ base: '180px', md: '240px' }}
             borderRadius="md"
             position="relative"
-            bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
+            bgGradient={headerGradient}
             overflow="hidden"
             _before={{
               content: '""',
@@ -446,7 +456,7 @@ const ConstructorDetails: React.FC = () => {
               </Flex>
 
               {/* Car Image Container - Properly constrained */}
-              {teamCarImages[constructor.name] && (
+              {(teamCarImages[constructor.name] || isHistorical) && (
                 <Box
                   gridColumn={{ base: "1", lg: "2", xl: "3" }}
                   gridRow={{ base: "2", lg: "1" }}
@@ -458,7 +468,7 @@ const ConstructorDetails: React.FC = () => {
                   position="relative"
                 >
                   <Image
-                    src={teamCarImages[constructor.name]}
+                    src={isHistorical ? '/assets/F1Car.png' : teamCarImages[constructor.name]}
                     alt={`${constructor.name} car`}
                     maxH={{ base: '140px', md: '200px', lg: '240px', xl: '280px' }}
                     maxW="100%"
@@ -502,7 +512,7 @@ const ConstructorDetails: React.FC = () => {
         {chartsInView ? (
           <Suspense fallback={
             <Box textAlign="center" py={8}>
-              <Spinner size="lg" color={teamColor} />
+              <Spinner size="lg" color={lineColor} />
               <Text mt={4} color="text-muted">Loading charts...</Text>
             </Box>
           }>
@@ -510,7 +520,7 @@ const ConstructorDetails: React.FC = () => {
               mappedPointsPerSeason={mappedPointsPerSeason}
               mappedPolesPerSeason={mappedPolesPerSeason}
               cumulativeProgression={cumulativeProgression}
-              teamColor={teamColor}
+              teamColor={lineColor}
               chartBgColor={chartBgColor}
               chartTextColor={chartTextColor}
               gridColor={gridColor}
@@ -520,8 +530,6 @@ const ConstructorDetails: React.FC = () => {
               tooltipTextColor={tooltipTextColor}
               seasons={seasons}
               latestSeason={latestSeason}
-              topRace={topRace}
-              bestRaceBg={bestRaceBg}
             />
           </Suspense>
         ) : (
@@ -567,7 +575,7 @@ const ConstructorDetails: React.FC = () => {
             {modelInView ? (
               <Suspense fallback={
                 <Box textAlign="center" py={16}>
-                  <Spinner size="xl" color={teamColor} thickness="4px" />
+                  <Spinner size="xl" color={lineColor} thickness="4px" />
                   <Text mt={6} color="text-muted" fontSize="lg">Loading 3D Model...</Text>
                   <Text mt={2} color="text-muted" fontSize="sm">This may take a moment</Text>
                 </Box>

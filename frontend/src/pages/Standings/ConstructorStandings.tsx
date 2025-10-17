@@ -20,7 +20,7 @@ interface UiConstructorStanding {
   podiums: number;
   constructorId: number;
   constructorName: string;
-  nationality?: string; // not present in materialized view currently
+  nationality: string;
 }
 
 type GroupedConstructors = { [teamName: string]: UiConstructorStanding[] };
@@ -55,6 +55,7 @@ const ConstructorStandings: React.FC = () => {
         podiums: row.seasonPodiums || 0,
         constructorId: row.constructorId,
         constructorName: row.constructorName,
+        nationality: row.nationality || '',
       }));
       setStandings(mapped);
     }
@@ -144,6 +145,7 @@ const ConstructorStandings: React.FC = () => {
                       constructorId={standing.constructorId}
                       position={standing.position}
                       constructorName={standing.constructorName}
+                      nationality={standing.nationality}
                       points={standing.points}
                       wins={standing.wins}
                       podiums={standing.podiums}
