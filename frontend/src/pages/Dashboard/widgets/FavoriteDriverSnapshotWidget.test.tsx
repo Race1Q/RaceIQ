@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -11,6 +11,18 @@ vi.mock('@auth0/auth0-react', () => ({
   useAuth0: () => ({
     isAuthenticated: false,
     user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useDashboardSharedData from context
+vi.mock('../../../context/DashboardDataContext', () => ({
+  useDashboardSharedData: () => ({
+    driverStandings: [
+      { id: 1, fullName: 'Max Verstappen', teamName: 'Red Bull Racing', number: 1, countryCode: 'NLD', points: 454, position: 1 }
+    ],
+    constructorStandings: [],
     isLoading: false,
   }),
 }));
@@ -33,6 +45,15 @@ vi.mock('../../../lib/teamColors', () => ({
     'Red Bull Racing': '1E40AF',
     'Mercedes': '00D2BE',
     'Default': '666666',
+  },
+  getTeamColor: (teamName: string | undefined | null, opts?: { hash?: boolean }) => {
+    const colors: any = {
+      'Red Bull Racing': '1E40AF',
+      'Mercedes': '00D2BE',
+      'Default': '666666',
+    };
+    const hex = colors[teamName || ''] || colors['Default'];
+    return opts?.hash ? `#${hex}` : hex;
   },
 }));
 
@@ -117,7 +138,7 @@ describe('FavoriteDriverSnapshotWidget', () => {
 
     expect(screen.getByText('Favorite Driver')).toBeInTheDocument();
     expect(screen.getByText('No favorite driver set')).toBeInTheDocument();
-    expect(screen.getByText('Set Favorite')).toBeInTheDocument();
+    expect(screen.getByText('Select Driver')).toBeInTheDocument();
     expect(screen.getByTestId('user-plus-icon')).toBeInTheDocument();
   });
 
@@ -149,10 +170,10 @@ describe('FavoriteDriverSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteDriverSnapshotWidget />);
 
-    const refreshButton = screen.getByRole('button', { name: /refresh favorite driver/i });
-    fireEvent.click(refreshButton);
-
-    expect(mockRefetch).toHaveBeenCalledTimes(1);
+    // Component shows Change Driver link, not a refresh button
+    const changeDriverLink = screen.getByRole('link', { name: /change driver/i });
+    expect(changeDriverLink).toBeInTheDocument();
+    expect(changeDriverLink).toHaveAttribute('href', '/profile');
   });
 
   it('shows loading state on refresh button when loading', () => {
@@ -218,9 +239,9 @@ describe('FavoriteDriverSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteDriverSnapshotWidget />);
 
-    const setFavoriteButton = screen.getByText('Set Favorite');
-    expect(setFavoriteButton).toBeInTheDocument();
-    expect(setFavoriteButton.closest('a')).toHaveAttribute('href', '/profile');
+    const selectDriverButton = screen.getByText('Select Driver');
+    expect(selectDriverButton).toBeInTheDocument();
+    expect(selectDriverButton.closest('a')).toHaveAttribute('href', '/profile');
   });
 
   it('displays driver image with fallback', () => {
@@ -235,8 +256,8 @@ describe('FavoriteDriverSnapshotWidget', () => {
 
     const driverImage = screen.getByAltText('Max Verstappen');
     expect(driverImage).toBeInTheDocument();
-    // In test environment, local images don't exist so fallback is used
-    expect(driverImage).toHaveAttribute('src', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face');
+    // Uses the mocked image from driverHeadshots
+    expect(driverImage).toHaveAttribute('src', '/images/verstappen.jpg');
   });
 
   it('handles unknown driver (no image in driverHeadshots)', () => {
@@ -287,9 +308,9 @@ describe('FavoriteDriverSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteDriverSnapshotWidget />);
 
-    // Check for title and refresh button
+    // Check for title and change driver link
     expect(screen.getByText('Favorite Driver')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /refresh favorite driver/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /change driver/i })).toBeInTheDocument();
     
     // Check for driver information
     expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
@@ -333,7 +354,11 @@ describe('FavoriteDriverSnapshotWidget', () => {
 
     rerender(
       <ChakraProvider theme={testTheme}>
-        <FavoriteDriverSnapshotWidget />
+        <ThemeColorProvider>
+          <BrowserRouter>
+            <FavoriteDriverSnapshotWidget />
+          </BrowserRouter>
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 

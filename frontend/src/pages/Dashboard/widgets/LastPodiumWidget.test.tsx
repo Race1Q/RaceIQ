@@ -11,6 +11,7 @@ vi.mock('@auth0/auth0-react', () => ({
     isAuthenticated: false,
     user: null,
     isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
   }),
 }));
 
@@ -127,7 +128,7 @@ describe('LastPodiumWidget', () => {
   });
 
   it('handles null data gracefully', () => {
-    renderWithProviders(<LastPodiumWidget data={null} />);
+    renderWithProviders(<LastPodiumWidget data={undefined} />);
 
     expect(screen.getByText('Last Race Podium')).toBeInTheDocument();
     expect(screen.getByText('Loading...')).toBeInTheDocument();
@@ -282,7 +283,9 @@ describe('LastPodiumWidget', () => {
     // Test loaded state
     rerender(
       <ChakraProvider theme={testTheme}>
-        <LastPodiumWidget data={mockPodiumData} />
+        <ThemeColorProvider>
+          <LastPodiumWidget data={mockPodiumData} />
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 

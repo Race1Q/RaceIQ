@@ -3,6 +3,27 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ChakraProvider } from '@chakra-ui/react';
 import SearchableSelect, { type SelectOption } from './SearchableSelect';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Mock chakra-react-select
 vi.mock('chakra-react-select', () => ({
@@ -75,7 +96,9 @@ vi.mock('@chakra-ui/react', async () => {
 function renderWithProviders(ui: React.ReactNode) {
   return render(
     <ChakraProvider>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 }
@@ -230,7 +253,8 @@ describe('SearchableSelect Component', () => {
   it('applies custom focus border color', () => {
     renderWithProviders(<SearchableSelect {...defaultProps} />);
     
-    expect(screen.getByTestId('focus-border-color')).toHaveTextContent('brand.red');
+    // Should display the resolved color value
+    expect(screen.getByTestId('focus-border-color')).toHaveTextContent('#e10600');
   });
 
   it('passes through additional props', () => {

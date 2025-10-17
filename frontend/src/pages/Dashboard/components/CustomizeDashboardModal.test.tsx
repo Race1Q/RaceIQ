@@ -11,6 +11,7 @@ vi.mock('@auth0/auth0-react', () => ({
     isAuthenticated: false,
     user: null,
     isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
   }),
 }));
 
@@ -87,7 +88,7 @@ describe('CustomizeDashboardModal', () => {
     );
 
     expect(screen.getByText('Customize Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Choose which widgets to display on your dashboard')).toBeInTheDocument();
+    expect(screen.getByText(/Choose which widgets to display on your dashboard/i)).toBeInTheDocument();
   });
 
   it('does not render modal when closed', () => {
@@ -270,7 +271,7 @@ describe('CustomizeDashboardModal', () => {
     expect(screen.getByText('Customize Dashboard')).toBeInTheDocument();
     
     // Check for modal content structure
-    expect(screen.getByText('Choose which widgets to display on your dashboard')).toBeInTheDocument();
+    expect(screen.getByText(/Choose which widgets to display on your dashboard/i)).toBeInTheDocument();
   });
 
   it('handles rapid toggle changes', () => {

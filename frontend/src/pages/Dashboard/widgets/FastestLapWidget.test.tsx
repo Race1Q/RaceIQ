@@ -11,6 +11,7 @@ vi.mock('@auth0/auth0-react', () => ({
     isAuthenticated: false,
     user: null,
     isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
   }),
 }));
 
@@ -192,7 +193,9 @@ describe('FastestLapWidget', () => {
     // Test loaded state
     rerender(
       <ChakraProvider theme={testTheme}>
-        <FastestLapWidget data={mockFastestLapData} />
+        <ThemeColorProvider>
+          <FastestLapWidget data={mockFastestLapData} />
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 

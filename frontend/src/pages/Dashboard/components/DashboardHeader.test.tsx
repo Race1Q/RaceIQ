@@ -26,6 +26,19 @@ vi.mock('../../../hooks/useUserProfile', () => ({
   }),
 }));
 
+// Mock buildApiUrl to prevent fetch errors
+vi.mock('../../../lib/api', () => ({
+  buildApiUrl: (path: string) => `http://localhost:3000${path}`,
+}));
+
+// Mock global fetch
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: async () => ({}),
+  } as Response)
+);
+
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
   Settings: () => <div data-testid="settings-icon">⚙️</div>,

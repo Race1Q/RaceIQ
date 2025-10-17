@@ -11,6 +11,7 @@ vi.mock('@auth0/auth0-react', () => ({
     isAuthenticated: false,
     user: null,
     isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
   }),
 }));
 
@@ -262,7 +263,9 @@ describe('StandingsWidget', () => {
     // Test loaded state
     rerender(
       <ChakraProvider theme={testTheme}>
-        <StandingsWidget data={mockStandingsData} />
+        <ThemeColorProvider>
+          <StandingsWidget data={mockStandingsData} />
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 

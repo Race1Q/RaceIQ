@@ -17,6 +17,18 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
   // Base background colors
   const baseBg = useColorModeValue('white', 'black');
   
+  // Safely parse team color or use default
+  const safeTeamColor = teamColor || 'E10600'; // Default F1 red
+  const cleanColor = safeTeamColor.replace('#', '');
+  
+  // Parse RGB values safely
+  const getRgbValues = () => {
+    if (cleanColor.length >= 6) {
+      return `${parseInt(cleanColor.slice(0, 2), 16)}, ${parseInt(cleanColor.slice(2, 4), 16)}, ${parseInt(cleanColor.slice(4, 6), 16)}`;
+    }
+    return '225, 6, 0'; // Default F1 red RGB
+  };
+  
   return (
     <Box position="relative" mb="md">
       <Flex
@@ -38,7 +50,7 @@ const TeamBanner: React.FC<TeamBannerProps> = ({ teamName, teamColor }) => {
           left: 0,
           width: '100%',
           height: '100%',
-          background: `linear-gradient(135deg, rgba(${parseInt(teamColor.slice(0, 2), 16)}, ${parseInt(teamColor.slice(2, 4), 16)}, ${parseInt(teamColor.slice(4, 6), 16)}, 0.15), transparent)`,
+          background: `linear-gradient(135deg, rgba(${getRgbValues()}, 0.15), transparent)`,
           borderRadius: 'inherit',
           zIndex: 1,
         }}

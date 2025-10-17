@@ -11,6 +11,15 @@ vi.mock('../../lib/colorUtils', () => ({
   darkenColor: vi.fn((hex: string) => hex),
 }));
 
+// Mock driverHeadshots
+vi.mock('../../lib/driverHeadshots', () => ({
+  driverHeadshots: {
+    'Max Verstappen': 'max.png',
+  },
+  optimizeF1ImageUrl: (url: string) => url,
+  createF1ImageSrcSet: (url: string) => url,
+}));
+
 // Mock ReactCountryFlag component
 vi.mock('react-country-flag', () => ({
   default: ({ countryCode, title }: { countryCode: string; title: string }) => (
@@ -219,12 +228,13 @@ describe('DriverProfileCard Component', () => {
   it('uses fallback image when driver image is not provided', () => {
     const driverWithoutImage = {
       ...mockDriver,
+      name: 'Unknown Driver', // Driver not in driverHeadshots map
       image: ''
     };
     
     renderWithProviders(<DriverProfileCard driver={driverWithoutImage} />);
     
-    const image = screen.getByRole('img', { name: /max verstappen/i });
+    const image = screen.getByRole('img', { name: /unknown driver/i });
     expect(image).toHaveAttribute('src', 'mocked-user-icon.png');
   });
 
