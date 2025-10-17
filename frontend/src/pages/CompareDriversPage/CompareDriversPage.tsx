@@ -1,6 +1,6 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Image, Badge, Skeleton, SkeletonText, ScaleFade, useColorModeValue } from '@chakra-ui/react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Image, Skeleton, SkeletonText, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { buildApiUrl } from '../../lib/api';
 import { ChevronRight, ChevronLeft, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
@@ -207,23 +207,6 @@ const DriverStatsColumn = ({
               zIndex={1}
             />
           </Box>
-          <Badge
-            position="absolute"
-            top="-8px"
-            right="-8px"
-            bg={`#${teamColor}`}
-            color={useColorModeValue('gray.800', 'white')}
-            borderRadius="full"
-            w="32px"
-            h="32px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            fontSize="sm"
-            fontWeight="bold"
-          >
-            {driver.id}
-          </Badge>
         </Box>
         <VStack spacing="xs" textAlign="center">
           <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color={useColorModeValue('gray.800', 'white')}>
@@ -840,7 +823,7 @@ const CompareDriversPage = () => {
             <Text fontSize="sm" color={mutedTextColor}>
               Select the metrics you want to compare. Choose at least one statistic.
             </Text>
-            <Flex gap="sm" flexWrap="wrap" justify="center">
+            <Flex gap="sm" flexWrap="wrap" justify="center" minH="80px" alignItems="flex-start">
               {Object.entries(availableMetrics).map(([key, label]) => (
                 <Button
                   key={key}
@@ -895,9 +878,10 @@ const CompareDriversPage = () => {
           </VStack>
         </Box>
 
-        {canProceedToResults && (
-          <ScaleFade in={canProceedToResults} initialScale={0.9}>
-            <Flex justify="flex-end" mt="xl">
+        {/* Fixed height spacer to keep button position stable */}
+        <Box minH="100px" mt="xl">
+          {canProceedToResults && (
+            <Flex justify="flex-end">
               <Button
                 rightIcon={<ChevronRight size={20} />}
                 onClick={nextStep}
@@ -905,23 +889,21 @@ const CompareDriversPage = () => {
                 bg="border-accent"
                 _hover={{ 
                   bg: 'border-accentDark',
-                  transform: 'translateY(-2px)',
                   boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
                 }}
                 _active={{
-                  transform: 'translateY(0px)',
+                  bg: 'border-accentDark',
                   boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                 }}
                 color={useColorModeValue('gray.800', 'white')}
                 fontFamily="heading"
-                transition="all 0.2s ease"
                 boxShadow="0 4px 15px rgba(0,0,0,0.1)"
               >
                 View Comparison
               </Button>
             </Flex>
-          </ScaleFade>
-        )}
+          )}
+        </Box>
       </VStack>
     );
   };
