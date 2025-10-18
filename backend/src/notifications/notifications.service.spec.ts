@@ -276,7 +276,7 @@ describe('NotificationsService', () => {
 
         expect(result.success).toBe(true);
         expect(result.status).toBe(200);
-        expect(result.data).toEqual({ messageId: mockMessageId });
+        expect(result.data).toEqual({ via: 'smtp', messageId: mockMessageId });
         expect(mockTransporter.sendMail).toHaveBeenCalledTimes(1);
       });
 
