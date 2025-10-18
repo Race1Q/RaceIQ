@@ -40,8 +40,11 @@ export function useHomePageData(): HomePageData {
     const toast = useToast();
 
     useEffect(() => {
+        let alive = true; // Cleanup flag to prevent state updates on unmounted component
+        
         const fetchHomePageData = async () => {
             try {
+                if (!alive) return; // Early exit if unmounted
                 setLoading(true);
                 setError(null);
                 setIsFallback(false);
@@ -64,9 +67,12 @@ export function useHomePageData(): HomePageData {
                   recentFormSample: driverData.recentForm?.slice(0, 2)
                 });
 
-                setFeaturedDriver(driverData);
-                setSeasonSchedule(Array.isArray(scheduleData) ? scheduleData : []);
+                if (alive) {
+                  setFeaturedDriver(driverData);
+                  setSeasonSchedule(Array.isArray(scheduleData) ? scheduleData : []);
+                }
             } catch (err) {
+                if (!alive) return; // Don't update state if unmounted
                 const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
                 console.error('Error fetching home page data:', errorMessage);
                 setError(errorMessage);
@@ -81,11 +87,17 @@ export function useHomePageData(): HomePageData {
                     isClosable: true,
                 });
             } finally {
-                setLoading(false);
+                if (alive) {
+                  setLoading(false);
+                }
             }
         };
 
         fetchHomePageData();
+        
+        return () => {
+          alive = false; // Mark as unmounted to prevent state updates
+        };
     }, [toast]);
 
     return { featuredDriver, seasonSchedule, loading, error, isFallback };

@@ -17,8 +17,11 @@ export const useDriversData = (year: number) => {
   const [isFallback, setIsFallback] = useState(false);
 
   useEffect(() => {
+    let alive = true; // Cleanup flag to prevent state updates on unmounted component
+    
     const fetchDriverStandings = async () => {
       try {
+        if (!alive) return; // Early exit if unmounted
         setLoading(true);
         setError(null);
         
@@ -28,6 +31,8 @@ export const useDriversData = (year: number) => {
           throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
+
+        if (!alive) return; // Check again after async operation
 
         const driverStandings = (data as any)?.driverStandings || [];
 
@@ -49,10 +54,12 @@ export const useDriversData = (year: number) => {
           })
           .filter(Boolean) as Driver[];
 
-        
-        setDrivers(hydratedDrivers);
+        if (alive) {
+          setDrivers(hydratedDrivers);
+        }
 
       } catch (err: unknown) {
+        if (!alive) return; // Don't update state if unmounted
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
         console.error('Failed to fetch driver standings, loading fallback data.', errorMessage);
         setError(errorMessage);
@@ -66,11 +73,17 @@ export const useDriversData = (year: number) => {
           isClosable: true,
         });
       } finally {
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     };
 
     fetchDriverStandings();
+    
+    return () => {
+      alive = false; // Mark as unmounted to prevent state updates
+    };
   }, [year, toast]);
 
   // Memoize the grouped data so it's only recalculated when drivers change

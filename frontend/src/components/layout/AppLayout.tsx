@@ -20,7 +20,11 @@ function AppLayout({ children }: AppLayoutProps) {
   const { accentColorWithHash } = useThemeColor();
   
   // Responsive behavior: show sidebar on desktop, hide on mobile
-  const isDesktop = useBreakpointValue({ base: false, lg: true });
+  // Add fallback to prevent undefined which causes blank screens during navigation
+  const isDesktop = useBreakpointValue({ base: false, lg: true }, {
+    ssr: false,
+    fallback: 'lg'
+  }) ?? false;
 
   return (
     <PageShell>

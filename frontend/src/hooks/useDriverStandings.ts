@@ -26,8 +26,11 @@ export const useDriverStandings = (season: number) => {
   const toast = useToast();
 
   useEffect(() => {
+    let alive = true; // Cleanup flag to prevent state updates on unmounted component
+    
     const fetchStandings = async () => {
       try {
+        if (!alive) return; // Early exit if unmounted
         setLoading(true);
         setError(null);
 
@@ -36,6 +39,9 @@ export const useDriverStandings = (season: number) => {
             audience: import.meta.env.VITE_AUTH0_AUDIENCE,
           },
         });
+        
+        if (!alive) return; // Check after async operation
+        
         const response = await fetch(buildApiUrl(`/api/drivers/standings/${season}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -45,6 +51,9 @@ export const useDriverStandings = (season: number) => {
         }
 
         const dataFromApi = await response.json();
+        
+        if (!alive) return; // Check after async operation
+        
         console.log('Raw Driver Standings from API: ', dataFromApi);
 
         // Map API fields to frontend interface
@@ -62,10 +71,13 @@ export const useDriverStandings = (season: number) => {
           seasonYear: d.seasonyear ?? season,
         }));
 
-        setStandings(mapped);
-        console.log('Processed (Hydrated) Drivers: ', mapped);
+        if (alive) {
+          setStandings(mapped);
+          console.log('Processed (Hydrated) Drivers: ', mapped);
+        }
 
       } catch (err) {
+        if (!alive) return; // Don't update state if unmounted
         const errorMessage = err instanceof Error ? err.message : 'Failed to load standings.';
         setError(errorMessage);
         toast({
@@ -76,11 +88,17 @@ export const useDriverStandings = (season: number) => {
           isClosable: true,
         });
       } finally {
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     };
 
     fetchStandings();
+    
+    return () => {
+      alive = false; // Mark as unmounted to prevent state updates
+    };
   }, [season, getAccessTokenSilently, toast]);
 
   return { standings, loading, error };

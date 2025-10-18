@@ -13,18 +13,26 @@ export const useDashboardData = () => {
   const toast = useToast();
 
   useEffect(() => {
+    let alive = true; // Cleanup flag to prevent state updates on unmounted component
+    
     const fetchData = async () => {
       try {
+        if (!alive) return; // Early exit if unmounted
         setLoading(true);
         setError(null);
         setIsFallback(false);
+        
         const response = await fetch(buildApiUrl('/api/dashboard'));
         if (!response.ok) {
           throw new Error(`API Error: ${response.status} ${response.statusText}`);
         }
         const dashboardData: DashboardData = await response.json();
-        setData(dashboardData);
+        
+        if (alive) {
+          setData(dashboardData);
+        }
       } catch (err) {
+        if (!alive) return; // Don't update state if unmounted
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
         console.error("Dashboard API failed, loading fallback data.", errorMessage);
         setError(errorMessage);
@@ -39,11 +47,17 @@ export const useDashboardData = () => {
           isClosable: true,
         });
       } finally {
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+    
+    return () => {
+      alive = false; // Mark as unmounted to prevent state updates
+    };
   }, [toast]);
 
   // 4. Return the new isFallback state

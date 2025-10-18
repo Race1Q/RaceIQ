@@ -32,35 +32,40 @@ const SidebarNav = ({ isExpanded, onClose }: { isExpanded: boolean; onClose?: ()
 
   return (
     <VStack spacing="sm" align="stretch">
-      {navLinks.map(({ path, label, icon: IconComponent }) => (
-        <Button
-          key={path}
-          as={Link}
-          to={path}
-          variant="ghost"
-          color={useActiveRoute(path) ? accentColorWithHash : 'text-primary'}
-          fontFamily="heading"
-          justifyContent={isExpanded ? "flex-start" : "center"}
-          h="48px"
-          minH="48px"
-          _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}
-          isActive={useActiveRoute(path)}
-          _active={{ bg: 'bg-surface-raised', color: accentColorWithHash }}
-          position="relative"
-          onClick={onClose}
-          _after={{
-            content: '""', position: 'absolute',
-            width: useActiveRoute(path) ? '3px' : '0',
-            height: '100%', left: 0, bgColor: accentColorWithHash,
-            transition: 'width 0.3s ease',
-          }}
-        >
-          <HStack spacing="sm">
-            <Icon as={IconComponent} boxSize={5} />
-            {isExpanded && <Text whiteSpace="nowrap">{label}</Text>}
-          </HStack>
-        </Button>
-      ))}
+      {navLinks.map(({ path, label, icon: IconComponent }) => {
+        // Optimize: Call useActiveRoute once per link instead of 3 times
+        const isActive = useActiveRoute(path);
+        
+        return (
+          <Button
+            key={path}
+            as={Link}
+            to={path}
+            variant="ghost"
+            color={isActive ? accentColorWithHash : 'text-primary'}
+            fontFamily="heading"
+            justifyContent={isExpanded ? "flex-start" : "center"}
+            h="48px"
+            minH="48px"
+            _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}
+            isActive={isActive}
+            _active={{ bg: 'bg-surface-raised', color: accentColorWithHash }}
+            position="relative"
+            onClick={onClose}
+            _after={{
+              content: '""', position: 'absolute',
+              width: isActive ? '3px' : '0',
+              height: '100%', left: 0, bgColor: accentColorWithHash,
+              transition: 'width 0.3s ease',
+            }}
+          >
+            <HStack spacing="sm">
+              <Icon as={IconComponent} boxSize={5} />
+              {isExpanded && <Text whiteSpace="nowrap">{label}</Text>}
+            </HStack>
+          </Button>
+        );
+      })}
     </VStack>
   );
 };
