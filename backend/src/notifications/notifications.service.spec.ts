@@ -3,9 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { NotificationsService } from './notifications.service';
 import * as nodemailer from 'nodemailer';
+import axios from 'axios';
 
 // Mock nodemailer
 jest.mock('nodemailer');
+jest.mock('axios');
+
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
@@ -72,6 +76,100 @@ describe('NotificationsService', () => {
   });
 
   describe('sendRaceUpdateEmail', () => {
+    describe('External API Mode', () => {
+      beforeEach(() => {
+        mockedAxios.post.mockReset();
+        // Default config returns external API settings and enables external flag
+        configService.get.mockImplementation((key: any) => {
+          const mockValues: Record<string, any> = {
+            'ENABLE_EXTERNAL_API': 'true',
+            'SMTP_HOST': '',
+            'NOTIFICATIONS_OVERRIDE_TO': '',
+            'NOTIFICATIONS_FROM_EMAIL': 'no-reply@raceiq.local',
+            'EXTERNAL_API_BASE_URL': 'https://other-group.azurewebsites.net',
+            'EXTERNAL_API_KEY': 'test-token',
+          };
+          return mockValues[key];
+        });
+      });
+
+      it('should send email via external API and return success', async () => {
+        mockedAxios.post.mockResolvedValue({ status: 200 } as any);
+
+        const result = await service.sendRaceUpdateEmail('user@example.com', 'details');
+
+        expect(mockedAxios.post).toHaveBeenCalledWith(
+          'https://other-group.azurewebsites.net/api/email/send',
+          {
+            to: 'user@example.com',
+            subject: 'RaceIQ Upcoming Races',
+            message: 'details',
+            recipient_name: 'user',
+          },
+          expect.objectContaining({
+            headers: expect.objectContaining({ 'Content-Type': 'application/json', Authorization: expect.stringContaining('Bearer ') }),
+          }),
+        );
+        expect(result).toEqual({ success: true, status: 200, data: { via: 'external-api' } });
+      });
+
+      it('should fall back to mock when external API fails', async () => {
+        mockedAxios.post.mockRejectedValue(new Error('Request failed with status code 401'));
+
+        const result = await service.sendRaceUpdateEmail('user@example.com', 'details');
+
+        // external failed, should gracefully fall back to mock (no SMTP configured in this suite)
+        expect(result.success).toBe(true);
+        expect(result.status).toBe(200);
+        expect(result.data).toEqual({ via: 'mock' });
+      });
+
+      it('should fall back to mock when external API config missing', async () => {
+        configService.get.mockImplementation((key: any) => {
+          const mockValues: Record<string, any> = {
+            'SMTP_HOST': '',
+            'NOTIFICATIONS_OVERRIDE_TO': '',
+            'NOTIFICATIONS_FROM_EMAIL': 'no-reply@raceiq.local',
+            'EXTERNAL_API_BASE_URL': '', // missing
+            'EXTERNAL_API_KEY': '', // missing
+          };
+          return mockValues[key];
+        });
+
+        const result = await service.sendRaceUpdateEmail('user@example.com', 'details');
+
+        // missing config should not error; should fall back to mock
+        expect(result.success).toBe(true);
+        expect(result.status).toBe(200);
+        expect(result.data).toEqual({ via: 'mock' });
+      });
+
+      it('should attempt external API without Authorization when EXTERNAL_API_KEY missing', async () => {
+        configService.get.mockImplementation((key: any) => {
+          const mockValues: Record<string, any> = {
+            'ENABLE_EXTERNAL_API': 'true',
+            'SMTP_HOST': '',
+            'NOTIFICATIONS_OVERRIDE_TO': '',
+            'NOTIFICATIONS_FROM_EMAIL': 'no-reply@raceiq.local',
+            'EXTERNAL_API_BASE_URL': 'https://other-group.azurewebsites.net',
+            'EXTERNAL_API_KEY': '', // missing key
+          };
+          return mockValues[key];
+        });
+
+        mockedAxios.post.mockResolvedValue({ status: 200, data: { success: true } } as any);
+
+        const result = await service.sendRaceUpdateEmail('user@example.com', 'details');
+
+        expect(mockedAxios.post).toHaveBeenCalledWith(
+          'https://other-group.azurewebsites.net/api/email/send',
+          expect.objectContaining({ to: 'user@example.com' }),
+          expect.objectContaining({ headers: expect.not.objectContaining({ Authorization: expect.any(String) }) })
+        );
+        expect(result.success).toBe(true);
+        expect(result.status).toBe(200);
+      });
+    });
     describe('Mock Mode (No SMTP Host)', () => {
       beforeEach(() => {
         // Ensure no SMTP_HOST is set for mock mode
@@ -90,7 +188,7 @@ describe('NotificationsService', () => {
 
         expect(result.success).toBe(true);
         expect(result.status).toBe(200);
-        expect(result.data).toEqual({ mock: true });
+        expect(result.data).toEqual({ via: 'mock' });
       });
 
       it('should use default from email in mock mode', async () => {
@@ -173,7 +271,7 @@ describe('NotificationsService', () => {
 
         expect(result.success).toBe(true);
         expect(result.status).toBe(200);
-        expect(result.data).toEqual({ messageId: mockMessageId });
+        expect(result.data).toEqual({ messageId: mockMessageId, via: 'smtp' });
         expect(mockTransporter.sendMail).toHaveBeenCalledTimes(1);
       });
 
@@ -263,7 +361,7 @@ describe('NotificationsService', () => {
 
         expect(result.success).toBe(true);
         expect(result.status).toBe(200);
-        expect(result.data).toEqual({ mock: true });
+        expect(result.data).toEqual({ via: 'mock' });
       });
 
       it('should handle empty race details', async () => {
@@ -271,7 +369,7 @@ describe('NotificationsService', () => {
 
         expect(result.success).toBe(true);
         expect(result.status).toBe(200);
-        expect(result.data).toEqual({ mock: true });
+        expect(result.data).toEqual({ via: 'mock' });
       });
 
       it('should handle very long email addresses', async () => {

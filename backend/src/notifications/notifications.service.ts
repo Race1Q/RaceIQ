@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import axios from 'axios';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
   private transporter: nodemailer.Transporter | null = null;
+  private useExternal = false;
 
   constructor(private readonly config: ConfigService) {
     const host = this.config.get<string>('SMTP_HOST');
@@ -24,12 +26,98 @@ export class NotificationsService {
     } else {
       this.logger.warn('SMTP_HOST not set; operating in mock email mode.');
     }
+
+    // Determine if external API should be used
+    this.useExternal = ((this.config.get<string>('ENABLE_EXTERNAL_API') || process.env.ENABLE_EXTERNAL_API || '').toLowerCase() === 'true');
+    this.logger.log(`NotificationsService usingExternal=${this.useExternal} mode=${this.transporter ? 'smtp' : 'mock'}`);
   }
 
   async sendRaceUpdateEmail(recipientEmail: string, raceDetails: string): Promise<{ success: boolean; status: number; data?: unknown }> {
     const overrideTo = this.config.get<string>('NOTIFICATIONS_OVERRIDE_TO');
     const to = overrideTo || recipientEmail;
     const from = this.config.get<string>('NOTIFICATIONS_FROM_EMAIL') || this.config.get<string>('SMTP_USER') || 'no-reply@raceiq.local';
+
+    // Parse boolean flag strictly to decide on external API usage
+  const useExternal = ((this.config.get<string>('ENABLE_EXTERNAL_API') || '').toLowerCase() === 'true');
+
+    // When enabled, try sending via external API first; on any failure, fall back to SMTP/mock
+    if (useExternal) {
+      const baseUrl = this.config.get<string>('EXTERNAL_API_BASE_URL');
+      const apiKey = this.config.get<string>('EXTERNAL_API_KEY');
+
+      if (!baseUrl) {
+        this.logger.warn('ENABLE_EXTERNAL_API=true but EXTERNAL_API_BASE_URL is not set; falling back to SMTP/mock');
+      } else {
+        try {
+          const url = `${baseUrl.replace(/\/$/, '')}/api/email/send`;
+
+          // Compose LockedIn email payload
+          // Their EmailJS template has fixed sections, so we keep the message minimal to avoid duplication
+          const subject = this.config.get<string>('NOTIFICATIONS_SUBJECT') || 'RaceIQ Upcoming Races';
+          
+          // Prefer deployed URL; if FRONTEND_URL points to localhost, override with production
+          let actionUrl = this.config.get<string>('NOTIFICATIONS_ACTION_URL')
+            || this.config.get<string>('FRONTEND_URL')
+            || 'https://race-iq.vercel.app';
+          if (typeof actionUrl === 'string' && /localhost|127\.0\.0\.1/i.test(actionUrl)) {
+            actionUrl = 'https://race-iq.vercel.app';
+          }
+          const recipientName = (to && typeof to === 'string' && to.includes('@')) ? to.split('@')[0] : 'RaceIQ User';
+
+          // Build a clean message that includes all race info inline
+          // Their template shows various sections, so we put everything in the main message
+          let externalMessage = '';
+          try {
+            const parsed = JSON.parse(raceDetails);
+            const races = Array.isArray(parsed?.races) ? parsed.races : [];
+            if (races.length > 0) {
+              const top = races.slice(0, 3);
+              const raceList = top.map((r: any, i: number) => 
+                `${i + 1}. ${r.grandPrix} (${r.date})`
+              ).join('\n');
+              externalMessage = `\nHere are your next Formula 1 races:\n\n${raceList}\n\nVisit RaceIQ for live timing, lap analysis, and more!`;
+            }
+          } catch {
+            // leave externalMessage as provided text if parsing fails
+            externalMessage = raceDetails || 'Check out the latest F1 race updates on RaceIQ!';
+          }
+
+          // Build minimal payload - only required fields to avoid triggering extra template sections
+          // Their template may have defaults for venue/duration/organizer, so we only send what we control
+          const payload: Record<string, string> = {
+            to,
+            subject,
+            message: externalMessage,
+            recipient_name: recipientName,
+          };
+
+          // Remove undefined or empty optional fields to avoid extra template sections
+          Object.keys(payload).forEach((k) => {
+            if (payload[k] === undefined || payload[k] === null || payload[k] === '') {
+              delete payload[k];
+            }
+          });
+
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+          const resp = await axios.post(url, payload, {
+            headers,
+            timeout: 10000,
+          });
+
+          if (resp.status === 200 && resp.data?.success !== false) {
+            this.logger.log(`[EMAIL EXT] Sent via external API for ${to}`);
+            return { success: true, status: 200, data: { via: 'external-api' } };
+          }
+
+          this.logger.warn(`[EMAIL EXT] Non-200 (${resp.status}) for ${to}; falling back to SMTP/mock`);
+        } catch (err: any) {
+          const detail = err?.message ?? String(err);
+          this.logger.error(`[EMAIL EXT] Failed for ${to}: ${detail}; falling back to SMTP/mock`);
+        }
+      }
+    }
 
     // Parse raceDetails as JSON if possible, fallback to string
     let races: any[] = [];
@@ -107,7 +195,7 @@ export class NotificationsService {
 
     if (!this.transporter) {
       this.logger.log(`[EMAIL MOCK]\nFROM: ${from}\nTO: ${to}\nSUBJECT: RaceIQ Upcoming Races\nBODY:\n${htmlBody}`);
-      return { success: true, status: 200, data: { mock: true } };
+      return { success: true, status: 200, data: { via: 'mock' } };
     }
 
     try {
@@ -118,8 +206,8 @@ export class NotificationsService {
         text: `Hi ${username},\nHere are the next 3 Formula 1 races:\n` + races.map(r => `${r.round}. ${r.grandPrix} (${r.date})`).join('\n'),
         html: htmlBody
       });
-      this.logger.log(`Email sent to ${to} messageId=${info.messageId}`);
-      return { success: true, status: 200, data: { messageId: info.messageId } };
+  this.logger.log(`Email sent to ${to} messageId=${info.messageId}`);
+  return { success: true, status: 200, data: { via: 'smtp', messageId: info.messageId } };
     } catch (e: any) {
       this.logger.error(`SMTP send failed: ${e.message}`);
       return { success: false, status: 502, data: { error: 'SMTP send failed', detail: e.message } };
