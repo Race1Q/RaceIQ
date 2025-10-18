@@ -1,4 +1,5 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScopesGuard } from '../auth/scopes.guard';
 import { Scopes } from '../auth/scopes.decorator';
@@ -6,6 +7,7 @@ import { Scopes } from '../auth/scopes.decorator';
 @Controller('admin')
 @UseGuards(JwtAuthGuard, ScopesGuard)
 export class AdminController {
+  @ApiExcludeEndpoint()
   @Get('dashboard')
   @Scopes('admin:all')
   dashboard() {
@@ -19,6 +21,7 @@ export class AdminController {
   }
 
   // Handy debug to see token claims (keep admin-only)
+  @ApiExcludeEndpoint()
   @Get('me')
   @Scopes('admin:all')
   me(@Req() req: any) {

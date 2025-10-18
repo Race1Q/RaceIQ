@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, ParseIntPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse, ApiQuery, ApiParam, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../auth/public.decorator';
 import { NewsService } from './services/news.service';
@@ -39,6 +39,7 @@ export class AiController {
     return this.newsService.getNews(topic);
   }
 
+  @ApiExcludeEndpoint()
   @Get('driver/:driverId/bio')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated driver biography' })
@@ -53,6 +54,7 @@ export class AiController {
     return this.bioService.getDriverBio(driverId, seasonNumber);
   }
 
+  @ApiExcludeEndpoint()
   @Get('track/:slug/preview')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated track preview with strategy insights' })
@@ -67,6 +69,7 @@ export class AiController {
     return this.previewService.getTrackPreview(slug, eventIdNumber);
   }
 
+  @ApiExcludeEndpoint()
   @Get('constructor/:constructorId/info')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated constructor team analysis' })
@@ -93,6 +96,7 @@ export class AiController {
     return this.standingsAnalysisService.getStandingsAnalysis(seasonNumber);
   }
 
+  @ApiExcludeEndpoint()
   @Get('driver/:driverId/fun-facts')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated fun facts about a driver' })

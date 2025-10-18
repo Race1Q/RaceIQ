@@ -2,7 +2,7 @@
 
 import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DriversService } from './drivers.service';
 import { Driver } from './drivers.entity';
 import { DriverStatsResponseDto, DriverComparisonStatsResponseDto } from './dto/driver-stats.dto';
@@ -36,6 +36,7 @@ export class DriversController {
     return this.driversService.findAll({ year: yearNumber });
   }
 
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ summary: 'Get a single driver by ID (public)' })
   @ApiOkResponse({ type: Driver })
@@ -46,6 +47,7 @@ export class DriversController {
   }
 
   // Made public: comparison stats are now accessible without authentication
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ summary: 'Get driver comparison stats by ID for a specific year (public)' })
   @ApiQuery({ name: 'year', required: false, type: Number, description: 'Optional year for season-specific stats' })
@@ -60,6 +62,7 @@ export class DriversController {
     return this.driversService.getDriverStats(id, yearNumber);
   }
 
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ summary: 'Get driver aggregated career stats (public)' })
   @ApiOkResponse({ type: DriverStatsResponseDto })
@@ -71,6 +74,7 @@ export class DriversController {
     return this.driversService.getDriverCareerStats(id);
   }
 
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ summary: "Get a driver's recent race form (last 5 races) (public)" })
   @ApiOkResponse({ description: 'An array of recent race results.' })
@@ -82,6 +86,7 @@ export class DriversController {
     return this.driversService.getDriverRecentForm(id);
   }
 
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ summary: 'Get driver standings for a specific season' })
   @ApiOkResponse({ description: 'An array of driver standings for the season.' })
@@ -93,6 +98,7 @@ export class DriversController {
     return this.driversService.getDriverStandings(season);
   }
 
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ 
     summary: 'Get driver season statistics for trend graphs',
@@ -107,6 +113,7 @@ export class DriversController {
     return this.driversService.findDriverSeasonStats(id);
   }
 
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ 
     summary: 'Get driver current season progression',

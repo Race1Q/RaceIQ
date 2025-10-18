@@ -1,4 +1,5 @@
 import { Controller, Get, Param, ParseIntPipe, Header } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { StandingsService } from './standings.service';
 import { StandingsResponseDto } from './dto/standings-response.dto';
 import { FeaturedDriverDto } from './dto/featured-driver.dto';
@@ -18,6 +19,7 @@ export class StandingsController {
     return this.standingsService.getFeaturedDriverDebug();
   }
 
+  @ApiExcludeEndpoint()
   @Get(':year/:round')
   async getStandings(
     @Param('year', ParseIntPipe) year: number,
@@ -26,6 +28,7 @@ export class StandingsController {
     return this.standingsService.getStandingsByYearAndRound(year, round);
   }
 
+  @ApiExcludeEndpoint()
   @Get('year/:year')
   async getStandingsByYear(
     @Param('year', ParseIntPipe) year: number,

@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, UseGuards, Req, Patch } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
@@ -11,6 +12,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   // Simple test endpoint to check if backend is working
+  @ApiExcludeEndpoint()
   @Get('test')
   async testBackend() {
     try {
@@ -29,6 +31,7 @@ export class UsersController {
   }
 
   // Test endpoint to check if user creation is working
+  @ApiExcludeEndpoint()
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req: any) {
@@ -40,6 +43,7 @@ export class UsersController {
   }
 
   // Manual test endpoint to create a user (for debugging)
+  @ApiExcludeEndpoint()
   @Post('test-create')
   async testCreateUser(@Body() body: { auth0Sub: string; email?: string }) {
     try {
@@ -58,6 +62,7 @@ export class UsersController {
 
   // Endpoint to ensure user exists in database (called after Auth0 signup)
   // Updated to use the new ensureExists method as specified in the prompt
+  @ApiExcludeEndpoint()
   @Post('ensure-exists')
   @UseGuards(AuthGuard('jwt')) // This protects the endpoint
   async ensureUserExists(@Req() req): Promise<User> {
