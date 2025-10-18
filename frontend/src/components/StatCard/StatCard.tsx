@@ -37,37 +37,40 @@ const StatCard: React.FC<StatCardProps> = ({
         transform: 'translateY(-2px)'
       }}
     >
-      <HStack spacing={4} align="center">
+      <VStack align="center" spacing={3} textAlign="center">
         <Box
           p={3}
           borderRadius="md"
           bg={`${color}20`}
           border="1px solid"
           borderColor={`${color}40`}
-          flexShrink={0}
         >
           <Icon as={icon} boxSize={6} color={color} />
         </Box>
-        <VStack align="flex-start" spacing={0} flex="1">
+        <VStack align="center" spacing={1}>
           <Text
-            fontSize="2xl"
+            fontSize={{ base: "lg", md: "xl", lg: "2xl" }}
             fontWeight="bold"
             color={textColor}
             lineHeight={1}
+            wordBreak="break-word"
+            textAlign="center"
           >
             {value}
           </Text>
           <Text
-            fontSize="sm"
+            fontSize={{ base: "xs", md: "sm" }}
             color={labelColor}
             textTransform="uppercase"
             letterSpacing="0.05em"
             fontWeight="500"
+            textAlign="center"
+            wordBreak="break-word"
           >
             {label}
           </Text>
         </VStack>
-      </HStack>
+      </VStack>
     </Box>
   );
 };

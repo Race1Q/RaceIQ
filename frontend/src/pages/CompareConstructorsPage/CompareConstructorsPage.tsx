@@ -1,6 +1,6 @@
 // frontend/src/pages/CompareConstructorsPage/CompareConstructorsPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Skeleton, SkeletonText, ScaleFade, useColorModeValue } from '@chakra-ui/react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Skeleton, SkeletonText, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Download } from 'lucide-react';
@@ -22,8 +22,6 @@ const CompareConstructorsPage = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
   
   // Theme-aware colors
-  const surfaceBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const primaryTextColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
   const glassmorphismBg = useColorModeValue('gray.50', 'rgba(255, 255, 255, 0.05)');
@@ -79,9 +77,32 @@ const CompareConstructorsPage = () => {
     return years.filter(year => year >= debutYear);
   };
 
+  // Map UI metric keys to internal hook keys and back
+  const uiToInternal: Record<string, keyof typeof enabledMetrics> = {
+    wins: 'wins',
+    podiums: 'podiums',
+    poles: 'poles',
+    fastest_laps: 'fastestLaps',
+    points: 'points',
+    dnf: 'dnfs',
+    races: 'races',
+  } as any;
+  const internalToUi: Record<string, string> = {
+    wins: 'wins',
+    podiums: 'podiums',
+    poles: 'poles',
+    fastestLaps: 'fastest_laps',
+    points: 'points',
+    dnfs: 'dnf',
+    races: 'races',
+  };
+
   // Step navigation helpers
   const canProceedToParameters = !!(constructor1 && constructor2);
-  const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+  const enabledMetricsArray = Object.keys(enabledMetrics)
+    .filter(key => enabledMetrics[key as keyof typeof enabledMetrics])
+    .map(key => internalToUi[key])
+    .filter(Boolean);
   const canProceedToResults = canProceedToParameters && enabledMetricsArray.length > 0 && selectedYears1.length > 0 && selectedYears2.length > 0;
 
   // Auto-progress through phases (matching drivers behavior)
@@ -103,6 +124,13 @@ const CompareConstructorsPage = () => {
     }
   }, [selectedYears1, selectedYears2, currentPhase]);
 
+  // Scroll to top when navigating to results step
+  useEffect(() => {
+    if (currentStep === 'results') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
+
   const exportPdf = async () => {
     if (!constructor1 || !constructor2 || !stats1 || !stats2) {
       alert('Please select both constructors and complete the comparison before exporting.');
@@ -112,6 +140,23 @@ const CompareConstructorsPage = () => {
     try {
       const teamColor1 = getTeamColor(constructor1.name || '');
       const teamColor2 = getTeamColor(constructor2.name || '');
+
+      // Build an enabled metrics object from what the user selected (start all false)
+      const enabledFromSelection: any = {
+        wins: false,
+        podiums: false,
+        poles: false,
+        fastestLaps: false,
+        points: false,
+        dnfs: false,
+        races: false,
+      };
+      enabledMetricsArray.forEach((uiKey) => {
+        const internal = uiToInternal[uiKey];
+        if (internal && internal in enabledFromSelection) {
+          enabledFromSelection[internal] = true;
+        }
+      });
 
       await ConstructorPdfComparisonCard({
         constructor1: {
@@ -124,7 +169,7 @@ const CompareConstructorsPage = () => {
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
-        enabledMetrics,
+        enabledMetrics: enabledFromSelection,
         score,
       });
     } catch (error) {
@@ -275,43 +320,9 @@ const CompareConstructorsPage = () => {
             Choose the years for each constructor's comparison data
           </Text>
         </VStack>
-        
-        {/* Selected Constructors Preview */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
-          <VStack spacing="md">
-            <Heading size="md" fontFamily="heading" color={primaryTextColor}>Selected Constructors</Heading>
-            <Grid templateColumns={{ base: '1fr', md: '1fr auto 1fr' }} gap="md" w="full" maxW="600px" mx="auto">
-              <Box textAlign="center" p="md" bg={glassmorphismBg} borderRadius="md">
-                <Text fontSize="sm" color={mutedTextColor} mb="xs">Constructor 1</Text>
-                <Text fontFamily="heading" fontWeight="bold">{constructor1?.name || 'Not Selected'}</Text>
-                {constructor1?.nationality && (
-                  <Text fontSize="xs" color={mutedTextColor}>{constructor1.nationality}</Text>
-                )}
-                {constructor1?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{constructor1.id}</Text>
-                )}
-              </Box>
-              
-              <Flex align="center" justify="center">
-                <Text fontSize="lg" color="border-accent" fontFamily="heading">VS</Text>
-              </Flex>
-              
-              <Box textAlign="center" p="md" bg={glassmorphismBg} borderRadius="md">
-                <Text fontSize="sm" color={mutedTextColor} mb="xs">Constructor 2</Text>
-                <Text fontFamily="heading" fontWeight="bold">{constructor2?.name || 'Not Selected'}</Text>
-                {constructor2?.nationality && (
-                  <Text fontSize="xs" color={mutedTextColor}>{constructor2.nationality}</Text>
-                )}
-                {constructor2?.id && (
-                  <Text fontSize="xs" color="border-accent" fontWeight="bold">#{constructor2.id}</Text>
-                )}
-              </Box>
-            </Grid>
-          </VStack>
-        </Box>
 
         {/* Year Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Time Period Selection</Heading>
             <Text fontSize="sm" color={mutedTextColor}>Select one or more years for each constructor's comparison data</Text>
@@ -384,11 +395,6 @@ const CompareConstructorsPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears1.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears1.join(', ')}
-                  </Text>
-                )}
               </VStack>
 
               {/* Constructor 2 Year Selection */}
@@ -458,11 +464,6 @@ const CompareConstructorsPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears2.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears2.join(', ')}
-                  </Text>
-                )}
               </VStack>
             </Grid>
 
@@ -503,7 +504,10 @@ const CompareConstructorsPage = () => {
       dnf: 'DNFs',
     };
 
-    const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+    const enabledMetricsArray = Object.keys(enabledMetrics)
+      .filter(key => enabledMetrics[key as keyof typeof enabledMetrics])
+      .map(key => internalToUi[key])
+      .filter(Boolean);
 
     return (
       <VStack spacing="xl" align="stretch">
@@ -515,7 +519,7 @@ const CompareConstructorsPage = () => {
         </VStack>
         
         {/* Statistics Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <HStack justify="space-between" align="center">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics to Compare</Heading>
@@ -529,11 +533,15 @@ const CompareConstructorsPage = () => {
                   const allSelected = allMetricKeys.every(key => enabledMetricsArray.includes(key));
                   
                   if (allSelected) {
-                    allMetricKeys.forEach(key => toggleMetric(key as any));
+                    allMetricKeys.forEach(key => {
+                      const mapped = uiToInternal[key];
+                      if (mapped) toggleMetric(mapped as any);
+                    });
                   } else {
                     allMetricKeys.forEach(key => {
                       if (!enabledMetricsArray.includes(key)) {
-                        toggleMetric(key as any);
+                        const mapped = uiToInternal[key];
+                        if (mapped) toggleMetric(mapped as any);
                       }
                     });
                   }
@@ -566,7 +574,10 @@ const CompareConstructorsPage = () => {
                     boxShadow: enabledMetricsArray.includes(key) ? "0 0 15px rgba(225, 6, 0, 0.5)" : "0 4px 15px rgba(0,0,0,0.1)"
                   }}
                   _active={{ transform: 'scale(0.95)' }}
-                  onClick={() => toggleMetric(key as any)}
+                  onClick={() => {
+                    const mapped = uiToInternal[key];
+                    if (mapped) toggleMetric(mapped as any);
+                  }}
                   fontFamily="heading"
                   transition="all 0.2s ease"
                   position="relative"
@@ -602,9 +613,10 @@ const CompareConstructorsPage = () => {
           </VStack>
         </Box>
 
-        {canProceedToResults && (
-          <ScaleFade in={canProceedToResults} initialScale={0.9}>
-            <Flex justify="flex-end" mt="xl">
+        {/* Fixed height spacer to keep button position stable */}
+        <Box minH="100px" mt="xl">
+          {canProceedToResults && (
+            <Flex justify="flex-end">
               <Button
                 rightIcon={<ChevronRight size={20} />}
                 onClick={nextStep}
@@ -612,23 +624,21 @@ const CompareConstructorsPage = () => {
                 bg="border-accent"
                 _hover={{ 
                   bg: 'border-accentDark',
-                  transform: 'translateY(-2px)',
                   boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
                 }}
                 _active={{
-                  transform: 'translateY(0px)',
+                  bg: 'border-accentDark',
                   boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                 }}
                 color={useColorModeValue('gray.800', 'white')}
                 fontFamily="heading"
-                transition="all 0.2s ease"
                 boxShadow="0 4px 15px rgba(0,0,0,0.1)"
               >
                 View Comparison
               </Button>
             </Flex>
-          </ScaleFade>
-        )}
+          )}
+        </Box>
       </VStack>
     );
   };
@@ -654,15 +664,15 @@ const CompareConstructorsPage = () => {
   // Step 3: Results Display Component
   const Step3Results = () => {
     // Get team colors
-    const constructor1TeamColor = constructor1 ? getTeamColor(constructor1.name || '') : '#e10600';
-    const constructor2TeamColor = constructor2 ? getTeamColor(constructor2.name || '') : '#e10600';
+    const constructor1TeamColor = constructor1 ? getTeamColor(constructor1.name || '', { hash: true }) : '#e10600';
+    const constructor2TeamColor = constructor2 ? getTeamColor(constructor2.name || '', { hash: true }) : '#e10600';
 
     // Available metrics for comparison
     const availableMetrics = {
       wins: 'Wins',
       podiums: 'Podiums',
       poles: 'Pole Positions',
-      fastestLaps: 'Fastest Laps',
+      fastest_laps: 'Fastest Laps',
       points: 'Points',
       races: 'Races',
       dnf: 'DNFs',
@@ -683,7 +693,7 @@ const CompareConstructorsPage = () => {
         </VStack>
 
         {/* Central-Axis Results Display */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="lg">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics Comparison</Heading>
             
@@ -715,6 +725,76 @@ const CompareConstructorsPage = () => {
             )}
           </VStack>
         </Box>
+
+        {/* Composite Score Visualization */}
+        {score && enabledMetricsArray.length > 0 && (() => {
+          const totalScore = score ? (score.c1 || 0) + (score.c2 || 0) : 0;
+          const constructor1Percentage = totalScore > 0 ? ((score.c1 || 0) / totalScore) * 100 : 50;
+          const constructor2Percentage = totalScore > 0 ? ((score.c2 || 0) / totalScore) * 100 : 50;
+          
+          return (
+            <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+              <VStack spacing="md">
+                <Heading size="md" fontFamily="heading" color="text-primary">Composite Score</Heading>
+              
+              {/* Tug-of-War Style Bar */}
+              <Box w="full" maxW="800px" mx="auto">
+                <Flex align="center" justify="space-between" mb="sm">
+                  <Text fontSize="sm" color="text-muted" fontFamily="heading">
+                    {constructor1?.name}
+                  </Text>
+                  <Text fontSize="sm" color="text-muted" fontFamily="heading">
+                    {constructor2?.name}
+                  </Text>
+                </Flex>
+                
+                <Box position="relative" h="8px" bg="border-subtle" borderRadius="full" overflow="hidden">
+                  <Flex h="full">
+                    <Box
+                      h="full"
+                      bg={constructor1TeamColor}
+                      w={`${constructor1Percentage}%`}
+                      transition="width 0.8s ease"
+                    />
+                    <Box
+                      h="full"
+                      bg={constructor2TeamColor}
+                      w={`${constructor2Percentage}%`}
+                      transition="width 0.8s ease"
+                    />
+                  </Flex>
+                </Box>
+                
+                <Flex align="center" justify="space-between" mt="sm">
+                  <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={constructor1TeamColor}>
+                    {score.c1?.toFixed(1) || '0.0'}
+                  </Text>
+                  <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={constructor2TeamColor}>
+                    {score.c2?.toFixed(1) || '0.0'}
+                  </Text>
+                </Flex>
+              </Box>
+
+              <VStack spacing="2" align="center" maxW="900px">
+                <Text fontSize="sm" color="text-primary" fontWeight="bold">How this score works</Text>
+                <Text fontSize="xs" color="text-muted" textAlign="center">
+                  We compare constructors on each enabled metric, normalize to 0–1, then average and scale to 0–100.
+                </Text>
+                <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={2} w="full">
+                  <Box p="sm" bg="bg-glassmorphism" borderRadius="md" textAlign="center">
+                    <Text fontSize="xs" color="text-muted" mb="1">Higher is better</Text>
+                    <Text fontSize="xs" color="text-primary" fontWeight="bold">Wins, Podiums, Points</Text>
+                  </Box>
+                  <Box p="sm" bg="bg-glassmorphism" borderRadius="md" textAlign="center">
+                    <Text fontSize="xs" color="text-muted" mb="1">Lower is better</Text>
+                    <Text fontSize="xs" color="text-primary" fontWeight="bold">DNFs</Text>
+                  </Box>
+                </Grid>
+              </VStack>
+            </VStack>
+          </Box>
+          );
+        })()}
 
         {/* Action Buttons */}
         <Flex justify="space-between" mt="xl">
@@ -758,7 +838,26 @@ const CompareConstructorsPage = () => {
   };
 
   return (
-    <Box>
+    <Box
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <PageHeader 
         title="Constructor Comparison" 
         subtitle="Compare F1 constructors head-to-head"

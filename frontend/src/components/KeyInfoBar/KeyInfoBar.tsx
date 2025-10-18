@@ -35,7 +35,7 @@ const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver, teamColor }) => {
 
   return (
     <Box
-      bg="bg-surface"
+      bg="transparent"
       border="1px solid"
       borderColor="border-primary"
       borderRadius="lg"
@@ -47,6 +47,7 @@ const KeyInfoBar: React.FC<KeyInfoBarProps> = ({ driver, teamColor }) => {
       maxW="1100px"
       boxShadow="xl"
       overflow="hidden"
+      backdropFilter="blur(12px)"
     >
       <Flex
         direction={{ base: 'column', lg: 'row' }}

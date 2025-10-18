@@ -4,10 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/gauge.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- API Base Configuration - Set to production API URL -->
+    <meta name="api-base" content="https://raceiq-api.onrender.com" />
     <title>RaceIQ</title>
+    
+    <!-- Performance: Preconnect to critical origins with proper crossorigin -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Damion&display=swap" rel="stylesheet">
+    <link rel="dns-prefetch" href="https://media.formula1.com">
+    <link rel="dns-prefetch" href="https://images.unsplash.com">
+    
+    <!-- Performance: Inline critical font loading with display=swap -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Damion&display=swap" media="print" onload="this.media='all'; this.onload=null;">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Damion&display=swap"></noscript>
+    
+    <!-- Performance: Preload critical font for better FCP -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/damion/v14/hv-XlzJ3KEUe_YZUbWY3MTFgVg.woff2" as="font" type="font/woff2" crossorigin>
+    
+    <!-- Performance: Preload critical app entry -->
+    <link rel="modulepreload" href="/src/main.tsx">
   </head>
   <body>
     <div id="root"></div>

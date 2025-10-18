@@ -5,9 +5,10 @@ import { In, Repository } from 'typeorm';
 import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Public } from '../auth/public.decorator';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RaceDto } from './dto/race.dto';
 import { ErrorResponse } from '../common/dto/error-response.dto';
+import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @ApiTags('Races')
 @Controller('races')
@@ -18,7 +19,10 @@ export class RacesController {
   @Public()
   @ApiOperation({ summary: 'List races' })
   @ApiOkResponse({ type: RaceDto, isArray: true })
-  @ApiBadRequestResponse({ type: ErrorResponse })
+  @ApiBadRequestResponse({ 
+    description: 'Invalid input. (e.g., invalid query parameters).',
+    type: ApiErrorDto,
+  })
   findAll(@Query() query: any) {
     return this.racesService.findAll(query); // accepts season | season_id | year
   }
@@ -31,19 +35,36 @@ export class RacesController {
     return this.racesService.listYears(); // e.g., [2025, 2024, ...]
   }
 
+  @ApiExcludeEndpoint()
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a single race by id' })
   @ApiOkResponse({ type: RaceDto })
-  @ApiNotFoundResponse({ type: ErrorResponse })
+  @ApiNotFoundResponse({
+    description: 'The race with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., ID format is invalid).',
+    type: ApiErrorDto,
+  })
   findOne(@Param('id') id: string) {
     return this.racesService.findOne(id);
   }
 
+  @ApiExcludeEndpoint()
   @Get('constructor/:constructorId/poles')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Total pole positions for a constructor' })
   @ApiOkResponse({ schema: { properties: { constructorId: { type: 'number' }, poles: { type: 'number' } } } })
+  @ApiNotFoundResponse({
+    description: 'The constructor with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., constructorId is not a number).',
+    type: ApiErrorDto,
+  })
 async getConstructorPoles(
   @Param('constructorId', ParseIntPipe) constructorId: number,
 ): Promise<{ constructorId: number; poles: number }> {
@@ -51,18 +72,36 @@ async getConstructorPoles(
   return { constructorId, poles };
 }
 
+@ApiExcludeEndpoint()
 @Get('constructor/:constructorId/poles-by-season')
 @ApiBearerAuth()
 @ApiOperation({ summary: 'Constructor pole positions broken down by season' })
+  @ApiNotFoundResponse({
+    description: 'The constructor with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., constructorId is not a number).',
+    type: ApiErrorDto,
+  })
 async getConstructorPolesBySeason(
   @Param('constructorId', ParseIntPipe) constructorId: number,
 ): Promise<any[]> {
   return this.racesService.getConstructorPolePositionsBySeason(constructorId);
 }
 
+@ApiExcludeEndpoint()
 @Get('constructor/:constructorId/points-by-circuit')
 @ApiBearerAuth()
 @ApiOperation({ summary: 'Constructor points aggregated by circuit' })
+  @ApiNotFoundResponse({
+    description: 'The constructor with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., constructorId is not a number).',
+    type: ApiErrorDto,
+  })
   async getConstructorPointsByCircuit(
     @Param('constructorId', ParseIntPipe) constructorId: number,
   ) {
@@ -91,12 +130,30 @@ export class RaceResultsController {
   }
 
   // supports: /race-results/by-race/985
+  @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The race with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., raceId is not a number).',
+    type: ApiErrorDto,
+  })
   @Get('by-race/:raceId')
   async byParamA(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.fetchForRace(raceId);
   }
 
   // supports: /race-results/race/985
+  @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The race with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., raceId is not a number).',
+    type: ApiErrorDto,
+  })
   @Get('race/:raceId')
   async byParamB(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.fetchForRace(raceId);

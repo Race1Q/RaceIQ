@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, LessThanOrEqual } from 'typeorm';
 import { Season } from '../seasons/seasons.entity';
 import { Race } from '../races/races.entity';
 import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
+import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
 import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
 import { DriverStandingDto, ConstructorStanding, StandingsResponseDto } from './dto/standings-response.dto';
@@ -26,6 +27,8 @@ export class StandingsService {
     private readonly sessionRepository: Repository<Session>,
     @InjectRepository(RaceResult)
     private readonly raceResultRepository: Repository<RaceResult>,
+    @InjectRepository(QualifyingResult)
+    private readonly qualifyingResultRepository: Repository<QualifyingResult>,
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(ConstructorEntity)
@@ -64,6 +67,8 @@ export class StandingsService {
   }
 
   async getFeaturedDriver(): Promise<FeaturedDriverDto> {
+    console.log('[DEBUG] getFeaturedDriver: Starting...');
+    
     // Get current season year
     const latestYearResult = await this.standingsViewRepository
       .createQueryBuilder('ds')
@@ -74,6 +79,7 @@ export class StandingsService {
       throw new NotFoundException('No standings data available to determine featured driver.');
     }
     const currentYear = latestYearResult.latestYear;
+    console.log('[DEBUG] getFeaturedDriver: Current year =', currentYear);
 
     // Select best recentForm directly from materialized view (precomputed in DB)
     const rows: any[] = await this.standingsViewRepository.query(
@@ -89,7 +95,7 @@ export class StandingsService {
           "seasonWins",
           "seasonPodiums",
           "recentForm",
-          coalesce(last5_positions, '{}'::int4[]) as last5_positions
+          ROW_NUMBER() OVER (ORDER BY "seasonPoints" DESC) as position
         from public.driver_standings_materialized
         where "seasonYear" = $1
         order by "recentForm" asc nulls last
@@ -103,14 +109,70 @@ export class StandingsService {
     }
 
     const best = rows[0];
+    console.log('[DEBUG] getFeaturedDriver: Selected driver =', {
+      driverId: best.driverId,
+      driverFullName: best.driverFullName,
+      position: best.position,
+      seasonPoints: best.seasonPoints,
+      recentForm: best.recentForm
+    });
 
     const careerStats = await this.careerStatsViewRepo.findOne({ where: { driverId: best.driverId } });
 
-    const recentFormArray = Array.isArray(best.last5_positions)
-      ? (best.last5_positions as number[]).map((p: number) => ({ position: p, raceName: 'Recent', countryCode: best.countryCode ?? null }))
-      : [];
+    // Find the latest year with qualifying data for this driver
+    const latestQualifyingYearResult = await this.qualifyingResultRepository
+      .createQueryBuilder('qr')
+      .select('MAX(season.year)', 'latestYear')
+      .innerJoin('qr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('r.season', 'season')
+      .where('qr.driver_id = :driverId', { driverId: best.driverId })
+      .andWhere("s.type = 'QUALIFYING'")
+      .getRawOne<{ latestYear: number }>();
 
-    return {
+    const latestQualifyingYear = latestQualifyingYearResult?.latestYear || null;
+
+    console.log(`[FeaturedDriver] Driver: ${best.driverFullName}, Current Season: ${currentYear}, Latest Qualifying Data Year: ${latestQualifyingYear}`);
+
+    // Fetch career poles from qualifying results table (all years)
+    const careerPolesResult = await this.qualifyingResultRepository
+      .createQueryBuilder('qr')
+      .select('COUNT(CASE WHEN qr.position = 1 THEN 1 END) AS poles')
+      .innerJoin('qr.session', 's')
+      .innerJoin('s.race', 'r')
+      .innerJoin('r.season', 'season')
+      .where('qr.driver_id = :driverId', { driverId: best.driverId })
+      .andWhere("s.type = 'QUALIFYING'")
+      .getRawOne<{ poles: string }>();
+
+    const totalPoles = parseInt(careerPolesResult?.poles || '0', 10);
+
+    // Fetch season poles from the latest year with qualifying data (not necessarily current season)
+    let seasonPoles = 0;
+    if (latestQualifyingYear) {
+      const seasonPolesResult = await this.qualifyingResultRepository
+        .createQueryBuilder('qr')
+        .select('COUNT(CASE WHEN qr.position = 1 THEN 1 END) AS poles')
+        .innerJoin('qr.session', 's')
+        .innerJoin('s.race', 'r')
+        .innerJoin('r.season', 'season')
+        .where('qr.driver_id = :driverId', { driverId: best.driverId })
+        .andWhere("s.type = 'QUALIFYING'")
+        .andWhere('season.year = :year', { year: latestQualifyingYear })
+        .getRawOne<{ poles: string }>();
+
+      seasonPoles = parseInt(seasonPolesResult?.poles || '0', 10);
+      console.log(`[FeaturedDriver] Career Poles: ${totalPoles}, Season Poles (${latestQualifyingYear}): ${seasonPoles}`);
+    } else {
+      console.log(`[FeaturedDriver] No qualifying data found for driver ${best.driverId}`);
+    }
+
+    // Get actual recent form with real race names
+    console.log('[DEBUG] getFeaturedDriver: Fetching recent form for driver', best.driverId);
+    const recentFormArray = await this.driversService.getDriverRecentForm(best.driverId);
+    console.log('[DEBUG] getFeaturedDriver: Recent form data =', recentFormArray);
+
+    const result = {
       id: best.driverId,
       fullName: best.driverFullName,
       driverNumber: best.driverNumber ?? null,
@@ -118,14 +180,23 @@ export class StandingsService {
       teamName: best.constructorName,
       seasonPoints: Number(best.seasonPoints) || 0,
       seasonWins: best.seasonWins || 0,
+      seasonPoles: seasonPoles,
       position: Number(best.position) || 0,
       careerStats: {
         wins: (careerStats as any)?.totalWins ?? 0,
         podiums: ((careerStats as any)?.totalPodiums ?? Number(best.seasonPodiums)) || 0,
-        poles: 0,
+        poles: totalPoles,
       },
       recentForm: recentFormArray,
     };
+    
+    console.log('[DEBUG] getFeaturedDriver: Final result =', {
+      position: result.position,
+      recentFormLength: result.recentForm.length,
+      recentFormSample: result.recentForm.slice(0, 2)
+    });
+    
+    return result;
   }
 
   async getFeaturedDriverDebug(): Promise<any> {
@@ -172,6 +243,7 @@ export class StandingsService {
           });
         }
       } catch (error) {
+        console.error('SERVICE FAILED:', error);
         console.warn(`Could not get recent form for driver ${driver.driverId}:`, error);
         continue;
       }
@@ -250,5 +322,7 @@ export class StandingsService {
     }));
   }
 }
+
+
 
 

@@ -1,7 +1,8 @@
 // frontend/src/pages/CompareDriversPage/CompareDriversPage.tsx
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Fade, SlideFade, Image, Badge, Skeleton, SkeletonText, ScaleFade, useColorModeValue } from '@chakra-ui/react';
+import { Box, Heading, Grid, Flex, Text, Button, VStack, HStack, Image, Skeleton, SkeletonText, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
+import { buildApiUrl } from '../../lib/api';
 import { ChevronRight, ChevronLeft, Trophy, Zap, Star, Target, Flag, Clock, Award } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { useDriverComparison } from '../../hooks/useDriverComparison';
@@ -13,7 +14,6 @@ import CompareTabs from '../../components/compare/CompareTabs';
 import { DriverPdfComparisonCard } from '../../components/compare/DriverPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 import { TEAM_META } from '../../theme/teamTokens';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 import { driverTeamMapping } from '../../lib/driverTeamMapping';
 
 // Function to get team gradient by team name
@@ -77,14 +77,14 @@ const StatCard = ({
       bg={cardBg}
       borderRadius="md"
       border="2px solid"
-      borderColor={isWinner ? `#${teamColor}` : cardBorder}
+      borderColor={isWinner ? `${teamColor}` : cardBorder}
       w="100%"
       transition="all 0.3s ease"
       position="relative"
       _hover={{
         transform: 'translateY(-2px)',
-        boxShadow: isWinner ? `0 8px 25px #${teamColor}30` : `0 8px 25px ${shadowColor}`,
-        borderColor: isWinner ? `#${teamColor}` : cardBorderHover
+        boxShadow: isWinner ? `0 8px 25px ${teamColor}30` : `0 8px 25px ${shadowColor}`,
+        borderColor: isWinner ? `${teamColor}` : cardBorderHover
       }}
       _before={isWinner ? {
         content: '""',
@@ -93,27 +93,27 @@ const StatCard = ({
         top: 0,
         bottom: 0,
         width: '4px',
-        background: `#${teamColor}`,
+        background: `${teamColor}`,
         borderRadius: 'md 0 0 md',
       } : undefined}
     >
       <HStack>
-        <Box as={icon} color={isWinner ? `#${teamColor}` : iconColor} w="16px" h="16px" />
+        <Box as={icon} color={isWinner ? `${teamColor}` : iconColor} w="16px" h="16px" />
         <Text fontSize="sm" color={textColor}>{label}</Text>
       </HStack>
       <HStack spacing={2}>
         <Heading 
           size="md" 
           fontFamily="heading" 
-          color={isWinner ? `#${teamColor}` : valueColor}
+          color={isWinner ? `${teamColor}` : valueColor}
           fontWeight={isWinner ? "bold" : "normal"}
-          textShadow={isWinner ? `0 0 8px #${teamColor}40` : "none"}
+          textShadow={isWinner ? `0 0 8px ${teamColor}40` : "none"}
           transition="all 0.3s ease"
         >
           {value}
         </Heading>
         {isWinner && (
-          <Box as={Trophy} color={`#${teamColor}`} w="16px" h="16px" />
+          <Box as={Trophy} color={`${teamColor}`} w="16px" h="16px" />
         )}
       </HStack>
     </Flex>
@@ -182,7 +182,7 @@ const DriverStatsColumn = ({
             alignItems="center"
             justifyContent="center"
             border="4px solid"
-            borderColor={`#${teamColor}`}
+            borderColor={teamColor}
             boxShadow="lg"
             overflow="hidden"
             position="relative"
@@ -206,23 +206,6 @@ const DriverStatsColumn = ({
               zIndex={1}
             />
           </Box>
-          <Badge
-            position="absolute"
-            top="-8px"
-            right="-8px"
-            bg={`#${teamColor}`}
-            color={useColorModeValue('gray.800', 'white')}
-            borderRadius="full"
-            w="32px"
-            h="32px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            fontSize="sm"
-            fontWeight="bold"
-          >
-            {driver.id}
-          </Badge>
         </Box>
         <VStack spacing="xs" textAlign="center">
           <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color={useColorModeValue('gray.800', 'white')}>
@@ -284,8 +267,6 @@ const CompareDriversPage = () => {
   const { isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0();
   
   // Theme-aware colors
-  const surfaceBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const primaryTextColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
   const glassmorphismBg = useColorModeValue('gray.50', 'rgba(255, 255, 255, 0.05)');
@@ -324,8 +305,12 @@ const CompareDriversPage = () => {
   // Function to fetch driver career info
   const fetchDriverCareerInfo = async (driverId: string) => {
     try {
-      const token = await getAccessTokenSilently();
-      const response = await fetch(`/api/drivers/${driverId}/career-stats`, {
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        },
+      });
+      const response = await fetch(buildApiUrl(`/api/drivers/${driverId}/career-stats`), {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -406,6 +391,13 @@ const CompareDriversPage = () => {
     }
   }, [canProceedToStats, currentPhase]);
 
+  // Scroll to top when navigating to results step
+  useEffect(() => {
+    if (currentStep === 'results') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
+
   
   const nextStep = () => {
     if (currentStep === 'parameters' && currentPhase === 'stats' && canProceedToResults) {
@@ -454,18 +446,62 @@ const CompareDriversPage = () => {
       const teamColor1 = getTeamColor(driver1.teamName || 'Default');
       const teamColor2 = getTeamColor(driver2.teamName || 'Default');
 
+      // Map UI metric keys to internal metric keys expected by the PDF (and hook)
+      const uiToInternal: Record<string, string> = {
+        wins: 'wins',
+        podiums: 'podiums',
+        poles: 'poles',
+        fastest_laps: 'fastestLaps',
+        points: 'points',
+        races: 'races', // not used in PDF driver stats but kept for future
+        dnf: 'dnfs',
+        avg_finish: 'avgFinish', // not used in current PDF driver stats
+      };
+
+      // Build an enabled metrics object from what the user selected (start all false)
+      const enabledFromSelection: any = {
+        wins: false,
+        podiums: false,
+        fastestLaps: false,
+        points: false,
+        sprintWins: false,
+        sprintPodiums: false,
+        dnfs: false,
+        poles: false,
+      };
+      enabledMetricsArray.forEach((uiKey) => {
+        const internal = uiToInternal[uiKey];
+        if (internal && internal in enabledFromSelection) {
+          enabledFromSelection[internal] = true;
+        }
+      });
+
+      // Helper function to simplify F1 image URLs for PDF compatibility
+      const simplifyImageUrl = (url: string) => {
+        if (!url) return '';
+        // Remove the complex transformation part and use a simpler URL structure
+        const match = url.match(/https:\/\/media\.formula1\.com\/([^\/]+)\/content\/dam\/fom-website\/drivers\/([^\/]+)\/([^\/]+)\/([^\/]+)\.png/);
+        if (match) {
+          // Try to construct a simpler URL
+          return `https://media.formula1.com/content/dam/fom-website/drivers/${match[2]}/${match[3]}/${match[4]}.png`;
+        }
+        return url;
+      };
+
       await DriverPdfComparisonCard({
         driver1: {
           ...driver1,
           teamColorHex: teamColor1,
+          imageUrl: simplifyImageUrl(driver1.imageUrl || ''),
         },
         driver2: {
           ...driver2,
           teamColorHex: teamColor2,
+          imageUrl: simplifyImageUrl(driver2.imageUrl || ''),
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
-        enabledMetrics,
+        enabledMetrics: enabledFromSelection,
         score,
       });
     } catch (error) {
@@ -573,7 +609,7 @@ const CompareDriversPage = () => {
         </VStack>
         
         {/* Year Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Time Period Selection</Heading>
             <Text fontSize="sm" color={mutedTextColor}>Select one or more years for each driver's comparison data</Text>
@@ -640,11 +676,6 @@ const CompareDriversPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears1.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears1.join(', ')}
-                  </Text>
-                )}
               </VStack>
 
               {/* Driver 2 Year Selection */}
@@ -708,11 +739,6 @@ const CompareDriversPage = () => {
                     <Text fontSize="sm" color={mutedTextColor}>No years available</Text>
                   )}
                 </Flex>
-                {selectedYears2.length > 0 && (
-                  <Text fontSize="xs" color="border-accent" textAlign="center">
-                    Selected: {selectedYears2.join(', ')}
-                  </Text>
-                )}
               </VStack>
             </Grid>
 
@@ -762,7 +788,7 @@ const CompareDriversPage = () => {
         </VStack>
         
         {/* Statistics Selection */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="md" align="stretch">
             <HStack justify="space-between" align="center">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics to Compare</Heading>
@@ -794,7 +820,7 @@ const CompareDriversPage = () => {
             <Text fontSize="sm" color={mutedTextColor}>
               Select the metrics you want to compare. Choose at least one statistic.
             </Text>
-            <Flex gap="sm" flexWrap="wrap" justify="center">
+            <Flex gap="sm" flexWrap="wrap" justify="center" minH="80px" alignItems="flex-start">
               {Object.entries(availableMetrics).map(([key, label]) => (
                 <Button
                   key={key}
@@ -849,9 +875,10 @@ const CompareDriversPage = () => {
           </VStack>
         </Box>
 
-        {canProceedToResults && (
-          <ScaleFade in={canProceedToResults} initialScale={0.9}>
-            <Flex justify="flex-end" mt="xl">
+        {/* Fixed height spacer to keep button position stable */}
+        <Box minH="100px" mt="xl">
+          {canProceedToResults && (
+            <Flex justify="flex-end">
               <Button
                 rightIcon={<ChevronRight size={20} />}
                 onClick={nextStep}
@@ -859,23 +886,21 @@ const CompareDriversPage = () => {
                 bg="border-accent"
                 _hover={{ 
                   bg: 'border-accentDark',
-                  transform: 'translateY(-2px)',
                   boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
                 }}
                 _active={{
-                  transform: 'translateY(0px)',
+                  bg: 'border-accentDark',
                   boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                 }}
                 color={useColorModeValue('gray.800', 'white')}
                 fontFamily="heading"
-                transition="all 0.2s ease"
                 boxShadow="0 4px 15px rgba(0,0,0,0.1)"
               >
                 View Comparison
               </Button>
             </Flex>
-          </ScaleFade>
-        )}
+          )}
+        </Box>
       </VStack>
     );
   };
@@ -901,13 +926,27 @@ const CompareDriversPage = () => {
 
   // Step 3: Results Display Component
   const Step3Results = () => {
-    // Get driver headshots - use stats data if available, fallback to legacy
-    const driver1Headshot = (stats1 ? driverHeadshots[driver1?.fullName || ''] : driver1 ? driverHeadshots[driver1.fullName] : null);
-    const driver2Headshot = (stats2 ? driverHeadshots[driver2?.fullName || ''] : driver2 ? driverHeadshots[driver2.fullName] : null);
+    // Get driver headshots from API data
+    const driver1Headshot = driver1?.imageUrl || null;
+    const driver2Headshot = driver2?.imageUrl || null;
+    
+    // DEBUG: Track image URLs in compare page
+    console.log(`🔍 CompareDriversPage image debug:`, {
+      driver1: {
+        fullName: driver1?.fullName,
+        imageUrl: driver1?.imageUrl,
+        hasImageUrl: !!driver1?.imageUrl
+      },
+      driver2: {
+        fullName: driver2?.fullName,
+        imageUrl: driver2?.imageUrl,
+        hasImageUrl: !!driver2?.imageUrl
+      }
+    });
     
     // Get team colors using proper driver-team mapping
-    const driver1TeamColor = getTeamColor(getDriverTeam(driver1));
-    const driver2TeamColor = getTeamColor(getDriverTeam(driver2));
+    const driver1TeamColor = getTeamColor(getDriverTeam(driver1), { hash: true });
+    const driver2TeamColor = getTeamColor(getDriverTeam(driver2), { hash: true });
 
     // Available metrics for comparison
     const availableMetrics = {
@@ -943,7 +982,7 @@ const CompareDriversPage = () => {
         {/* Composite Score moved to bottom */}
 
         {/* Central-Axis Results Display */}
-        <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+        <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
           <VStack spacing="lg">
             <Heading size="md" fontFamily="heading" color={primaryTextColor}>Statistics Comparison</Heading>
             
@@ -1010,7 +1049,7 @@ const CompareDriversPage = () => {
 
         {/* Results Summary & Insights */}
         {score && enabledMetricsArray.length > 0 && (
-          <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+          <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
             <VStack spacing="md">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Comparison Summary</Heading>
               
@@ -1115,7 +1154,7 @@ const CompareDriversPage = () => {
 
         {/* Composite Score Visualization - moved to bottom with explanation */}
         {score && (
-          <Box p="lg" bg={surfaceBg} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+          <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
             <VStack spacing="md">
               <Heading size="md" fontFamily="heading" color={primaryTextColor}>Composite Score</Heading>
               
@@ -1227,7 +1266,26 @@ const CompareDriversPage = () => {
   };
 
   return (
-    <Box>
+    <Box
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <PageHeader 
         title="Driver Comparison" 
         subtitle="Compare F1 drivers head-to-head"

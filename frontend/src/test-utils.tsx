@@ -3,6 +3,31 @@ import { render } from '@testing-library/react';
 import type { RenderOptions } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
+
+// Mock the ThemeColorContext module globally with a simple stub
+// This provides useThemeColor to components without requiring Auth0/useUserProfile dependencies
+vi.mock('./context/ThemeColorContext', () => ({
+  ThemeColorProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useThemeColor: () => ({
+    accentColor: 'e10600',
+    accentColorWithHash: '#e10600',
+    accentColorLight: '#ff2020',
+    accentColorDark: '#c10500',
+    accentColorRgba: (alpha: number) => `rgba(225, 6, 0, ${alpha})`,
+    isLoading: false,
+    useCustomTeamColor: true,
+    toggleCustomTeamColor: () => {},
+  }),
+}));
+
+// Mock the ProfileUpdateContext module
+vi.mock('./context/ProfileUpdateContext', () => ({
+  ProfileUpdateProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useProfileUpdate: () => ({
+    triggerUpdate: vi.fn(),
+  }),
+}));
 
 // Test theme with all required colors
 const testTheme = extendTheme({

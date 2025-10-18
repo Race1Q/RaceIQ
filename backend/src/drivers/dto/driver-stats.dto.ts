@@ -14,6 +14,7 @@ class CurrentSeasonStatsDto {
   wins: number;
   podiums: number;
   fastestLaps: number;
+  poles: number;
   standing: string;
 }
 
@@ -21,6 +22,7 @@ class CareerStatsDto {
   wins: number;
   podiums: number;
   fastestLaps: number;
+  poles: number;
   points: number;
   grandsPrixEntered: number;
   dnfs: number;
@@ -43,15 +45,36 @@ interface TransformedDriver {
   country_code: string | null;
   driver_number: number | null;
   date_of_birth: Date | null;
-  bio: string | null;
-  fun_fact: string | null;
+  // bio and fun_fact removed - not stored in database
+  // AI-generated bios available via /api/ai/driver/:id/bio endpoint
   teamName?: string; // For enriched driver data
 }
+
+import { ApiProperty } from '@nestjs/swagger';
 
 export class DriverStatsResponseDto {
   driver: TransformedDriver;
   careerStats: CareerStatsDto;
   currentSeasonStats: CurrentSeasonStatsDto;
+
+  @ApiProperty({
+    description: "The driver's all-time fastest lap time in milliseconds, if available.",
+    example: 76330,
+    nullable: true,
+  })
+  bestLapMs: number | null;
+
+  constructor(
+    driver: TransformedDriver,
+    careerStats: CareerStatsDto,
+    currentSeasonStats: CurrentSeasonStatsDto,
+    bestLapMs: number | null,
+  ) {
+    this.driver = driver;
+    this.careerStats = careerStats;
+    this.currentSeasonStats = currentSeasonStats;
+    this.bestLapMs = bestLapMs;
+  }
 }
 
 // NEW: Driver comparison stats response

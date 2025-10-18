@@ -1,30 +1,25 @@
 // frontend/src/pages/Constructors/ConstructorDetails.tsx
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue } from '@chakra-ui/react';
+import { Box, Flex, Text, Button, useToast, Image, SimpleGrid, Container, Heading, useColorModeValue, VStack, Spinner } from '@chakra-ui/react';
+import { WarningTwoIcon } from '@chakra-ui/icons';
+import { useInView } from 'react-intersection-observer';
 import ConstructorsDetailsSkeleton from './ConstructorsDetailsSkeleton';
-import { teamColors } from '../../lib/teamColors';
+import { teamColors, getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
 import { getTeamCarModel } from '../../lib/teamCarModels';
+import { COUNTRY_COLORS } from '../../theme/teamTokens';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import { buildApiUrl } from '../../lib/api';
 import StatSection from '../../components/DriverDetails/StatSection';
 import type { Stat } from '../../types';
 import ConstructorInfoCard from '../../components/ConstructorInfoCard/ConstructorInfoCard';
-import F1CockpitXR from '../../experiences/xr/F1CockpitXR';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from 'recharts';
+
+// Lazy load heavy components for better performance - ONLY when visible
+const F1CockpitXR = lazy(() => import('../../experiences/xr/F1CockpitXR'));
+const LazyCharts = lazy(() => import('./ConstructorChartsLazy'));
 
 
 interface Constructor {
@@ -72,7 +67,20 @@ const ConstructorDetails: React.FC = () => {
   const [totalPoles, setTotalPoles] = useState<number>(0);
   const [polesBySeason, setPolesBySeason] = useState<SeasonPoles[]>([]);
   const [loading, setLoading] = useState(true);
-  const [topRace, setTopRace] = useState<{ round: number; raceName: string; points: number } | null>(null);
+  const [worldChampionships, setWorldChampionships] = useState<number>(0);
+  const [bestTrack, setBestTrack] = useState<{ circuitName: string; totalPoints: number; races: number; wins: number } | null>(null);
+
+  // Intersection Observer to only load charts when visible
+  const { ref: chartsRef, inView: chartsInView } = useInView({
+    triggerOnce: true,
+    rootMargin: '200px', // Start loading 200px before visible
+  });
+
+  // Intersection Observer for 3D model
+  const { ref: modelRef, inView: modelInView } = useInView({
+    triggerOnce: true,
+    rootMargin: '300px', // Start loading 300px before visible
+  });
 
 
   const authedFetch = useCallback(
@@ -105,22 +113,30 @@ const ConstructorDetails: React.FC = () => {
       if (!constructorId) return;
       setLoading(true);
       try {
-        const constructorData: Constructor = await authedFetch(
-          `/api/constructors/${constructorId}`
-        );
+        // ⚡ OPTIMIZATION: Run all independent API calls in PARALLEL
+        const [constructorData, seasonPointsData, seasonsData, polesData, polesBySeasonData, championshipsData, bestTrackData] = await Promise.all([
+          authedFetch(`/api/constructors/${constructorId}`),
+          authedFetch(`/api/race-results/constructor/${constructorId}/season-points`),
+          authedFetch(`/api/seasons`),
+          authedFetch(`/api/races/constructor/${constructorId}/poles`),
+          authedFetch(`/api/races/constructor/${constructorId}/poles-by-season`),
+          authedFetch(`/api/constructors/${constructorId}/championships`),
+          authedFetch(`/api/constructors/${constructorId}/best-track`),
+        ]);
+
+        // Set all state at once
         setConstructor(constructorData);
-
-        const seasonPointsData: SeasonPoints[] = await authedFetch(
-          `/api/race-results/constructor/${constructorId}/season-points`
-        );
         setPointsPerSeason(seasonPointsData);
-
-        const seasonsData: Season[] = await authedFetch(`/api/seasons`);
         setSeasons(seasonsData);
+        setTotalPoles(polesData.poles);
+        setPolesBySeason(polesBySeasonData);
+        setWorldChampionships(championshipsData.championships || 0);
+        setBestTrack(bestTrackData);
 
+        // Fetch cumulative progression (depends on seasons data)
         if (seasonsData.length > 0) {
           const latestSeasonObj = seasonsData.reduce(
-            (prev, curr) => (curr.year > prev.year ? curr : prev),
+            (prev: Season, curr: Season) => (curr.year > prev.year ? curr : prev),
             seasonsData[0]
           );
           const latestSeasonId = latestSeasonObj.id;
@@ -129,27 +145,7 @@ const ConstructorDetails: React.FC = () => {
             `/api/race-results/constructor/${constructorId}/season/${latestSeasonId}/progression`
           );
           setCumulativeProgression(cumulativeData);
-          if (cumulativeData.length > 0) {
-            const bestRace = cumulativeData.reduce((prev, curr) =>
-              curr.racePoints > prev.racePoints ? curr : prev
-            );
-            setTopRace({ round: bestRace.round, raceName: bestRace.raceName, points: bestRace.racePoints });
-          }
-          
-        }        
-
-        // Poles
-        const polesData = await authedFetch(
-          `/api/races/constructor/${constructorId}/poles`
-        );
-        setTotalPoles(polesData.poles);
-        //console.log('Total Poles:', polesData.poles);
-
-        const polesBySeasonData: SeasonPoles[] = await authedFetch(
-          `/api/races/constructor/${constructorId}/poles-by-season`
-        );
-        setPolesBySeason(polesBySeasonData);
-        //console.log('Poles by Season:', polesBySeasonData);
+        }
 
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
@@ -211,6 +207,8 @@ const ConstructorDetails: React.FC = () => {
     return entry ? entry.poleCount : 0;
   }, [latestSeason, mappedPolesPerSeason, seasons]);
 
+
+
   const totalPoints = useMemo(
     () => pointsPerSeason.reduce((acc, s) => acc + (s.points || 0), 0),
     [pointsPerSeason]
@@ -224,15 +222,28 @@ const ConstructorDetails: React.FC = () => {
     [pointsPerSeason]
   );
 
+  const totalRaces = useMemo(
+    () => pointsPerSeason.reduce((acc, s) => acc + (s.totalRaces || 0), 0),
+    [pointsPerSeason]
+  );
+
   // Map totals to DriverDetails-style Stat cards (hooks must be before early returns)
   const totalStats: Stat[] = useMemo(
     () => [
+      { label: 'World Championships', value: worldChampionships },
+      { 
+        label: 'Best Track', 
+        value: bestTrack ? bestTrack.circuitName : 'Loading...',
+        colSpan: 2,
+        textAlign: 'center'
+      },
+      { label: 'Total Races Entered', value: totalRaces },
       { label: 'Total Points', value: totalPoints },
       { label: 'Total Wins', value: totalWins },
       { label: 'Total Podiums', value: totalPodiums },
       { label: 'Total Poles', value: totalPoles },
     ],
-    [totalPoints, totalWins, totalPodiums, totalPoles]
+    [worldChampionships, bestTrack, totalRaces, totalPoints, totalWins, totalPodiums, totalPoles]
   );
 
   const latestSeasonYear = useMemo(() => {
@@ -258,21 +269,61 @@ const ConstructorDetails: React.FC = () => {
   const tooltipBg = useColorModeValue('white', 'gray.800');
   const tooltipBorder = useColorModeValue('#E2E8F0', '#4A5568');
   const tooltipTextColor = useColorModeValue('gray.800', 'white');
-  const bestRaceBg = useColorModeValue('gray.50', 'gray.700');
   
   // Page-level theme colors
   const pageBgColor = useColorModeValue('#F0F2F5', '#0a0a0a');
   const pageTextColor = useColorModeValue('#1A202C', '#ffffff');
   const surfaceBgColor = useColorModeValue('#FFFFFF', '#0f0f0f');
   const borderColor = useColorModeValue('#E2E8F0', '#333333');
+  
+  // Cockpit viewer colors (must be before early returns)
+  const cockpitBgColor = useColorModeValue('gray.100', 'gray.900');
+  const cockpitShadow = useColorModeValue('0 4px 20px rgba(0,0,0,0.1)', '0 4px 20px rgba(0,0,0,0.5)');
 
   if (loading) return <ConstructorsDetailsSkeleton />;
   if (!constructor) return <Text color="red.500">Constructor not found.</Text>;
 
-  const teamColor = `#${teamColors[constructor.name] || teamColors.Default}`;
+  // Check if this is a historical team (for car image display)
+  const isHistorical = !teamCarImages[constructor.name];
+  
+  // Prioritize defined team colors, fall back to country colors if no team color exists
+  // Use getTeamColor which handles normalization and lookups
+  const teamColorHex = getTeamColor(constructor.name); // returns hex without #
+  const hasTeamColor = teamColorHex !== teamColors['Default'];
+  const lineColor = hasTeamColor
+    ? `#${teamColorHex}`
+    : `#${COUNTRY_COLORS[constructor.nationality]?.hex || COUNTRY_COLORS['default'].hex}`;
+
+  // Use team color gradient if available, otherwise country gradient
+  const headerGradient = hasTeamColor
+    ? `linear-gradient(135deg, ${lineColor} 0%, rgba(0,0,0,0.6) 100%)`
+    : COUNTRY_COLORS[constructor.nationality]?.gradient || COUNTRY_COLORS['default'].gradient;
 
   return (
-    <Box bg={pageBgColor} color={pageTextColor} minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+    <Box 
+      color={pageTextColor} 
+      minH="100vh" 
+      pb={{ base: 4, md: 6, lg: 8 }} 
+      fontFamily="var(--font-display)"
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       {/* Top Utility Bar */}
       <Box bg={surfaceBgColor} borderBottom="1px solid" borderColor={borderColor}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
@@ -290,80 +341,118 @@ const ConstructorDetails: React.FC = () => {
       {/* Header Bar */}
       <Box bg={pageBgColor} color={pageTextColor} py={{ base: 6, md: 8 }}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
-          <Flex
-        justify="space-between"
-        align="center"
-        mb={4}
-        p={{ base: 6, md: 8 }}
-        minH={{ base: '180px', md: '240px' }}
-        borderRadius="md"
-        position="relative"
-        bgGradient={`linear-gradient(135deg, ${teamColor} 0%, rgba(0,0,0,0.6) 100%)`}
-        direction={{ base: 'column', md: 'row' }}
-        gap={{ base: 4, md: 0 }}
-        _before={{
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          background:
-            'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
-          zIndex: 0,
-        }}
-      >
-        {/* Left: Team Logo + Info */}
-        <Flex direction={{ base: 'column', sm: 'row' }} align="center" gap={4} zIndex={1}>
-          <Box boxSize={{ base: '80px', md: '100px' }} display="flex" alignItems="center" justifyContent="center">
-            <TeamLogo teamName={constructor.name} />
-          </Box>
-          <Flex direction="column" justify="center" align={{ base: 'center', sm: 'flex-start' }}>
-            <Heading as="h1" lineHeight={1} color="white" textAlign={{ base: 'center', sm: 'left' }}>
-              <Text
-                fontFamily="heading"
-                textTransform="uppercase"
-                fontWeight="900"
-                letterSpacing={{ base: '0.01em', md: '0.02em' }}
-                fontSize={{ base: '4xl', md: '7xl', xl: '8xl' }}
-                lineHeight={0.95}
-              >
-                {constructor.name}
-              </Text>
-            </Heading>
+          <Box
+            mb={4}
+            p={{ base: 6, md: 8 }}
+            minH={{ base: '180px', md: '240px' }}
+            borderRadius="md"
+            position="relative"
+            bgGradient={headerGradient}
+            overflow="hidden"
+            _before={{
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              background:
+                'radial-gradient(1200px 600px at 85% 30%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 60%)',
+              zIndex: 0,
+            }}
+          >
+            {/* Responsive Grid Layout */}
             <Box
-              mt={{ base: 2, md: 3 }}
-              display="inline-block"
-              bg="blackAlpha.300"
-              border="1px solid"
-              borderColor="whiteAlpha.300"
-              borderRadius="md"
-              px={3}
-              py={2}
-              backdropFilter="blur(6px)"
+              display="grid"
+              gridTemplateColumns={{ 
+                base: "1fr", 
+                lg: "auto 1fr auto", 
+                xl: "auto 1fr auto auto" 
+              }}
+              gridTemplateRows={{ base: "auto auto auto", lg: "1fr" }}
+              gap={{ base: 4, lg: 6 }}
+              alignItems="center"
+              minH="full"
+              position="relative"
+              zIndex={1}
             >
-              <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>
-                Nationality: {constructor.nationality}
-              </Text>
+              {/* Left: Team Logo + Info */}
+              <Flex 
+                direction={{ base: 'column', md: 'row' }} 
+                align="center" 
+                gap={4}
+                gridColumn={{ base: "1", lg: "1" }}
+                gridRow={{ base: "1", lg: "1" }}
+                justifySelf={{ base: "center", lg: "start" }}
+              >
+                <Box boxSize={{ base: '70px', md: '90px' }} display="flex" alignItems="center" justifyContent="center">
+                  <TeamLogo teamName={constructor.name} />
+                </Box>
+                <Flex direction="column" justify="center" align={{ base: 'center', md: 'flex-start' }}>
+                  <Heading as="h1" lineHeight={1} color="white" textAlign={{ base: 'center', md: 'left' }}>
+                    <Text
+                      fontFamily="heading"
+                      textTransform="uppercase"
+                      fontWeight="900"
+                      letterSpacing={{ base: '0.01em', md: '0.02em' }}
+                      fontSize={{ base: '3xl', md: '5xl', xl: '6xl' }}
+                      lineHeight={0.95}
+                    >
+                      {constructor.name}
+                    </Text>
+                  </Heading>
+                  <Box
+                    mt={{ base: 2, md: 3 }}
+                    display="inline-block"
+                    bg="blackAlpha.300"
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    borderRadius="md"
+                    px={3}
+                    py={2}
+                    backdropFilter="blur(6px)"
+                  >
+                    <Text color="gray.200" fontSize={{ base: 'sm', md: 'md' }}>
+                      Nationality: {constructor.nationality}
+                    </Text>
+                  </Box>
+                </Flex>
+              </Flex>
+
+              {/* Car Image Container - Properly constrained */}
+              {(teamCarImages[constructor.name] || isHistorical) && (
+                <Box
+                  gridColumn={{ base: "1", lg: "2", xl: "3" }}
+                  gridRow={{ base: "2", lg: "1" }}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent={{ base: "center", lg: "center", xl: "flex-end" }}
+                  maxW={{ base: "100%", lg: "400px", xl: "550px" }}
+                  overflow="hidden"
+                  position="relative"
+                >
+                  <Image
+                    src={isHistorical ? '/assets/F1Car.png' : teamCarImages[constructor.name]}
+                    alt={`${constructor.name} car`}
+                    maxH={{ base: '140px', md: '200px', lg: '240px', xl: '280px' }}
+                    maxW="100%"
+                    w="auto"
+                    h="auto"
+                    objectFit="contain"
+                    flexShrink={0}
+                    transform={{ base: "none", lg: "translateX(10px)", xl: "translateX(20px)" }}
+                    filter="drop-shadow(0 4px 8px rgba(0,0,0,0.3))"
+                  />
+                </Box>
+              )}
+
+              {/* Right Spacer - Only on extra large screens */}
+              <Box 
+                display={{ base: "none", xl: "block" }}
+                gridColumn="4"
+                gridRow="1"
+                w="60px"
+              />
             </Box>
-          </Flex>
-        </Flex>
-
-        {/* Middle: Team Car Image */}
-        {teamCarImages[constructor.name] && (
-          <Image
-            src={teamCarImages[constructor.name]}
-            alt={`${constructor.name} car`}
-            maxH={{ base: '140px', md: '220px' }}
-            maxW={{ base: '280px', md: '440px' }}
-            w="auto"
-            h="auto"
-            objectFit="contain"
-            flexShrink={0}
-          />
-        )}
-
-        {/* Right: Placeholder to maintain spacing */}
-        <Box display={{ base: 'none', md: 'block' }} />
-      </Flex>
+          </Box>
         </Container>
       </Box>
 
@@ -380,165 +469,46 @@ const ConstructorDetails: React.FC = () => {
         <StatSection title="Career Totals" stats={totalStats} />
       </Box>
 
-      {/* Graphs Grid - 2 per row on desktop, 1 per row on mobile */}
-      <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} mb={6}>
-        {/* Points by Season */}
-        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
-          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Points by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="points" 
-                stroke={teamColor} 
-                strokeWidth={3}
-                dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Box>
+      {/* Lazy-loaded Charts Section - Only loads when in view */}
+      <Box ref={chartsRef} minH="600px">
+        {chartsInView ? (
+          <Suspense fallback={
+            <Box textAlign="center" py={8}>
+              <Spinner size="lg" color={lineColor} />
+              <Text mt={4} color="text-muted">Loading charts...</Text>
+            </Box>
+          }>
+            <LazyCharts
+              mappedPointsPerSeason={mappedPointsPerSeason}
+              mappedPolesPerSeason={mappedPolesPerSeason}
+              cumulativeProgression={cumulativeProgression}
+              teamColor={lineColor}
+              chartBgColor={chartBgColor}
+              chartTextColor={chartTextColor}
+              gridColor={gridColor}
+              axisColor={axisColor}
+              tooltipBg={tooltipBg}
+              tooltipBorder={tooltipBorder}
+              tooltipTextColor={tooltipTextColor}
+              seasons={seasons}
+              latestSeason={latestSeason}
+            />
+          </Suspense>
+        ) : (
+          <Box textAlign="center" py={16}>
+            <Text color="text-muted">Scroll down to view performance charts</Text>
+          </Box>
+        )}
+      </Box>
 
-        {/* Wins by Season */}
-        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
-          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Wins by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="wins" 
-                stroke="#F56565" 
-                strokeWidth={3}
-                dot={{ fill: '#F56565', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: '#F56565', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Box>
-
-        {/* Podiums by Season */}
-        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
-          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Podiums by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={[...mappedPointsPerSeason].sort((a,b)=>Number(a.seasonLabel)-Number(b.seasonLabel))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonLabel" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="podiums" 
-                stroke="#ECC94B" 
-                strokeWidth={3}
-                dot={{ fill: '#ECC94B', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: '#ECC94B', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Box>
-
-        {/* Poles by Season */}
-        <Box w="100%" h="300px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary">
-          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Poles by Season</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={mappedPolesPerSeason}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor}/>
-              <XAxis dataKey="seasonYear" stroke={axisColor}/>
-              <YAxis stroke={axisColor}/>
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Bar dataKey="poleCount" fill={teamColor} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Box>
-      </SimpleGrid>
-
-      {/* Cumulative Progression - Full Width */}
-      {cumulativeProgression.length > 0 && (
-        <Box w="100%" h="400px" bg={chartBgColor} p={4} borderRadius="md" border="1px solid" borderColor="border-primary" mb={6}>
-          <Text fontSize="lg" fontWeight="bold" mb={2} color={chartTextColor}>Cumulative Points Progression ({seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'})</Text>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={cumulativeProgression}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-              <XAxis dataKey="round" stroke={axisColor} />
-              <YAxis stroke={axisColor} />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '8px',
-                  color: tooltipTextColor
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="cumulativePoints" 
-                stroke={teamColor} 
-                strokeWidth={3}
-                dot={{ fill: teamColor, strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: teamColor, strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Box>
-      )}
-
-      {/* Best Race */}
-      {topRace && (
-        <Box p={4} bg={bestRaceBg} borderRadius="md" minW="200px" border="1px solid" borderColor="border-primary">
-          <Text fontSize="lg" fontWeight="bold" textAlign="left" color={chartTextColor}>
-            {constructor.name} {seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'} BEST RACE:
-          </Text>
-          <Text fontSize="lg" fontWeight="bold" textAlign="left" color={chartTextColor}>
-            Round {topRace.round}: {topRace.raceName}
-          </Text>
-          <Text fontSize="xl" mt={2} textAlign="left" color={chartTextColor}>Points: {topRace.points}</Text>
-        </Box>
-      )}
-
-      {/* AI Team Analysis - moved below all stats and graphs */}
+      {/* AI Team Analysis */}
       <Box mb={6}>
         <ConstructorInfoCard constructorId={constructor.id} season={latestSeasonYear} />
       </Box>
 
-      {/* 3D Cockpit Viewer - Available for all teams */}
+      {/* 3D Cockpit Viewer - Available for all teams (Truly lazy loaded with Intersection Observer) */}
       {["Red Bull", "Mercedes", "Ferrari", "McLaren", "Aston Martin", "Alpine F1 Team", "Williams", "RB F1 Team", "Sauber", "Haas F1 Team"].includes(constructor.name) && (
-        <Box mb={{ base: 4, md: 6 }}>
+        <Box mb={{ base: 4, md: 6 }} ref={modelRef}>
           <Flex justify="space-between" align="center" mb={{ base: 3, md: 4 }} flexWrap="wrap" gap={2}>
             <Heading 
               as="h2" 
@@ -553,14 +523,32 @@ const ConstructorDetails: React.FC = () => {
             </Text>
           </Flex>
           <Box 
-            bg={useColorModeValue('gray.100', 'gray.900')} 
+            bg={cockpitBgColor}
             borderRadius="md" 
             overflow="hidden"
             border="1px solid"
             borderColor={borderColor}
-            boxShadow={useColorModeValue('0 4px 20px rgba(0,0,0,0.1)', '0 4px 20px rgba(0,0,0,0.5)')}
+            boxShadow={cockpitShadow}
+            minH="400px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
           >
-            <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} teamName={constructor.name} />
+            {modelInView ? (
+              <Suspense fallback={
+                <Box textAlign="center" py={16}>
+                  <Spinner size="xl" color={lineColor} thickness="4px" />
+                  <Text mt={6} color="text-muted" fontSize="lg">Loading 3D Model...</Text>
+                  <Text mt={2} color="text-muted" fontSize="sm">This may take a moment</Text>
+                </Box>
+              }>
+                <F1CockpitXR modelUrl={getTeamCarModel(constructor.name)} teamName={constructor.name} />
+              </Suspense>
+            ) : (
+              <Box textAlign="center" py={16}>
+                <Text color="text-muted" fontSize="lg">Scroll to load 3D model</Text>
+              </Box>
+            )}
           </Box>
         </Box>
       )}

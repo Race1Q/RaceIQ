@@ -3,6 +3,27 @@ import { render, screen } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { vi, describe, it, expect } from 'vitest';
 import LastPodiumWidget from './LastPodiumWidget';
+import { ThemeColorProvider } from '../../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Mock teamColors
 vi.mock('../../../lib/teamColors', () => ({
@@ -37,7 +58,9 @@ const testTheme = extendTheme({
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <ChakraProvider theme={testTheme}>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 };
@@ -105,7 +128,7 @@ describe('LastPodiumWidget', () => {
   });
 
   it('handles null data gracefully', () => {
-    renderWithProviders(<LastPodiumWidget data={null} />);
+    renderWithProviders(<LastPodiumWidget data={undefined} />);
 
     expect(screen.getByText('Last Race Podium')).toBeInTheDocument();
     expect(screen.getByText('Loading...')).toBeInTheDocument();
@@ -260,7 +283,9 @@ describe('LastPodiumWidget', () => {
     // Test loaded state
     rerender(
       <ChakraProvider theme={testTheme}>
-        <LastPodiumWidget data={mockPodiumData} />
+        <ThemeColorProvider>
+          <LastPodiumWidget data={mockPodiumData} />
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 

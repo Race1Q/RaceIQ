@@ -3,9 +3,9 @@ import { Box, VStack, Heading, Text, Image, Flex, useColorModeValue } from '@cha
 import ReactCountryFlag from 'react-country-flag';
 import userIcon from '../../assets/UserIcon.png';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 // Import our new color helpers
 import { lightenColor, darkenColor } from '../../lib/colorUtils';
+import { optimizeF1ImageUrl, createF1ImageSrcSet, getImageSizes } from '../../lib/imageOptimizer';
 
 interface Driver {
   id: string;
@@ -26,6 +26,7 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
 
   const [firstName, ...lastNameParts] = driver.name.split(' ');
   const lastName = lastNameParts.join(' ');
+
 
   const countryCode = countryCodeMap[driver.nationality] || driver.nationality;
   const isNumberAvailable = driver.number && driver.number !== 'N/A';
@@ -201,7 +202,9 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
 
           {/* Driver Image - Fitting within card */}
           <Image
-            src={driverHeadshots[driver.name] || driver.image || userIcon}
+            src={optimizeF1ImageUrl(driver.image, 'medium') || userIcon}
+            srcSet={createF1ImageSrcSet(driver.image)}
+            sizes={getImageSizes('card')}
             alt={driver.name}
             position="absolute"
             right="10px"
@@ -214,6 +217,8 @@ const DriverProfileCard: React.FC<DriverProfileCardProps> = ({ driver }) => {
             filter="drop-shadow(5px 5px 10px rgba(0,0,0,0.4))"
             transition="transform 0.3s ease"
             _groupHover={{ transform: 'scale(1.05)' }}
+            loading="lazy"
+            decoding="async"
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
           />
         </Box>

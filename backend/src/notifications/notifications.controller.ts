@@ -1,8 +1,10 @@
 import { Body, Controller, HttpException, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiExcludeEndpoint, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import { UsersService } from '../users/users.service';
+import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 class SendRaceUpdateDto {
   raceDetails!: string; // only need race details from client now
@@ -16,6 +18,15 @@ export class NotificationsController {
     private readonly usersService: UsersService,
   ) {}
 
+  @ApiExcludeEndpoint()
+  @ApiUnauthorizedResponse({
+    description: 'Authentication token is missing or invalid.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., DTO validation failed, raceDetails is required).',
+    type: ApiErrorDto,
+  })
   @Post('send-race-update')
   async sendRaceUpdate(@AuthUser() authUser: any, @Body() body: SendRaceUpdateDto) {
     const { raceDetails } = body ?? {} as SendRaceUpdateDto;

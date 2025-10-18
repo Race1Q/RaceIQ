@@ -5,24 +5,30 @@ import type { Stat } from '../../types';
 
 interface StatCardProps {
   stat: Stat;
+  gridColumn?: { base?: string; md?: string };
 }
 
-const StatCard: React.FC<StatCardProps> = ({ stat }) => {
+const StatCard: React.FC<StatCardProps> = ({ stat, gridColumn }) => {
+  const alignment = stat.textAlign || 'flex-start';
+  const textAlignment = stat.textAlign || 'left';
+  
   return (
     <VStack
-      bg="bg-surface"
+      bg="transparent"
       p="md"
       borderRadius="lg"
       border="1px solid"
       borderColor="border-primary"
-      align="flex-start"
+      align={alignment}
       spacing={0}
       h="100%"
+      backdropFilter="blur(8px)"
+      gridColumn={gridColumn}
     >
-      <Text fontSize="sm" color="text-muted" textTransform="uppercase">
+      <Text fontSize="sm" color="text-muted" textTransform="uppercase" textAlign={textAlignment}>
         {stat.label}
       </Text>
-      <Heading size="lg" fontFamily="heading">
+      <Heading size="lg" fontFamily="heading" textAlign={textAlignment}>
         {stat.value}
       </Heading>
     </VStack>

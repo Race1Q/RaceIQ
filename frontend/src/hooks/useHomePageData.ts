@@ -24,7 +24,9 @@ const fallbackFeaturedDriver: FeaturedDriver = {
     teamName: 'Red Bull Racing',
     seasonPoints: 400,
     seasonWins: 15,
+    seasonPoles: 8,
     position: 1,
+    imageUrl: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png',
     careerStats: { wins: 60, podiums: 105, poles: 35 },
     recentForm: [{ position: 1, raceName: 'Previous GP', countryCode: 'USA' }],
 };
@@ -47,17 +49,20 @@ export function useHomePageData(): HomePageData {
                 const currentYear = new Date().getFullYear();
 
                 // Fetch both in parallel with caching and timeout
+                // Using timestamp to force cache refresh for debugging
+                const cacheKey = `home:featured:${Date.now()}`;
                 const [driverData, scheduleData] = await Promise.all([
-                  fetchCached<FeaturedDriver>('home:featured', buildApiUrl('/api/standings/featured-driver')),
+                  fetchCached<FeaturedDriver>(cacheKey, buildApiUrl('/api/standings/featured-driver')),
                   fetchCached<Race[]>(`home:races:${currentYear}`, buildApiUrl(`/api/seasons/${currentYear}/races`)),
                 ]);
                 
-                // Minimal, non-noisy log in dev only
-                if (import.meta.env.DEV) {
-                  console.debug('[Home] featured=', driverData.fullName, 'recentForm avg=', driverData?.recentForm?.length
-                    ? (driverData.recentForm.slice(0,5).reduce((s,r)=>s + r.position,0) / Math.min(5, driverData.recentForm.length)).toFixed(2)
-                    : 'n/a');
-                }
+                // Debug logging to see what data we're getting
+                console.log('[DEBUG] useHomePageData: Received driver data =', {
+                  fullName: driverData.fullName,
+                  position: driverData.position,
+                  recentFormLength: driverData.recentForm?.length,
+                  recentFormSample: driverData.recentForm?.slice(0, 2)
+                });
 
                 setFeaturedDriver(driverData);
                 setSeasonSchedule(Array.isArray(scheduleData) ? scheduleData : []);

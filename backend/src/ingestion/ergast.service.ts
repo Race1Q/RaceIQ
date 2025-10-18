@@ -197,8 +197,7 @@ export class ErgastService {
         location: circuit.Location.locality,
         country_code: countryCode,
         map_url: circuit.url,
-        length_km: null,
-        race_distance_km: null,
+        // length_km and race_distance_km removed - not in database
       };
     });
 
@@ -571,6 +570,7 @@ export class ErgastService {
             this.logger.log(`Successfully processed ${year} Round ${round}.`);
 
         } catch (error) {
+            console.error('SERVICE FAILED:', error);
             this.logger.error(`Failed to process results for ${year} Round ${round}. Skipping.`, error.stack);
         }
 
@@ -827,6 +827,7 @@ export class ErgastService {
         offset += this.pageLimit;
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
+        console.error('SERVICE FAILED:', error);
         if (error.response?.status === 429) {
           const waitTime = Math.pow(2, attempt) * 1000 + Math.random() * 500;
           this.logger.warn(`Rate limited. Waiting ${waitTime.toFixed(0)}ms before retrying...`);

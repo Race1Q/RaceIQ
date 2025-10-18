@@ -158,7 +158,7 @@ describe('HomePage', () => {
   it('renders recent races section for all users', () => {
     renderPage(<HomePage />);
 
-    expect(screen.getByText('Recent Races')).toBeInTheDocument();
+    expect(screen.getByText('RECENT RACES')).toBeInTheDocument();
     expect(screen.getByTestId('race-slider')).toBeInTheDocument();
     expect(screen.getByText('Races: 2')).toBeInTheDocument();
   });
@@ -182,14 +182,15 @@ describe('HomePage', () => {
 
     const scrollWrappers = screen.getAllByTestId('scroll-wrapper');
     expect(scrollWrappers).toHaveLength(2);
-    expect(screen.getByTestId('section-connector')).toBeInTheDocument();
+    const sectionConnectors = screen.getAllByTestId('section-connector');
+    expect(sectionConnectors.length).toBeGreaterThan(0);
   });
 
   it('renders proper heading structure', () => {
     renderPage(<HomePage />);
 
     // Check that the Recent Races heading is properly structured
-    const recentRacesHeading = screen.getByRole('heading', { name: 'Recent Races' });
+    const recentRacesHeading = screen.getByRole('heading', { name: 'RECENT RACES' });
     expect(recentRacesHeading).toBeInTheDocument();
     expect(recentRacesHeading.tagName).toBe('H4');
   });
@@ -211,7 +212,8 @@ describe('HomePage', () => {
     const scrollWrappers = screen.getAllByTestId('scroll-wrapper');
     expect(scrollWrappers).toHaveLength(2);
     
-    // Check that section connector is present
-    expect(screen.getByTestId('section-connector')).toBeInTheDocument();
+    // Check that section connectors are present
+    const sectionConnectors = screen.getAllByTestId('section-connector');
+    expect(sectionConnectors.length).toBeGreaterThan(0);
   });
 });

@@ -29,11 +29,9 @@ export async function fetchCached<T>(
     }
   } catch {}
 
-  // Foreground fetch with timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8_000);
+  // Foreground fetch without timeout - let it wait for natural response
   try {
-    const res = await fetch(url, { ...init, signal: controller.signal });
+    const res = await fetch(url, init);
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     const data = (await res.json()) as T;
     const entry = { t: now, v: data };
@@ -42,8 +40,9 @@ export async function fetchCached<T>(
     // Background refresh to keep warm
     queueMicrotask(() => refreshInBackground<T>(key, url, init));
     return data;
-  } finally {
-    clearTimeout(timeoutId);
+  } catch (error) {
+    // Re-throw the error so it can be handled by the calling code
+    throw error;
   }
 }
 

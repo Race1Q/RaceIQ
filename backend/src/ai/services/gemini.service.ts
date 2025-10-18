@@ -67,10 +67,12 @@ export class GeminiService {
         const parsedResponse = JSON.parse(text) as T;
         return parsedResponse;
       } catch (parseError) {
+        console.error('SERVICE FAILED:', parseError);
         this.logger.error(`Failed to parse Gemini JSON response: ${text}`, parseError);
         throw new Error('Invalid JSON response from Gemini');
       }
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error('Error calling Gemini API', error);
       throw error;
     }
@@ -86,6 +88,7 @@ export class GeminiService {
       JSON.parse(jsonStr);
       return jsonStr;
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.debug('JSON parse failed, attempting to fix common issues...');
       
       // Simple approach: Replace double quotes that appear within string values
@@ -114,6 +117,7 @@ export class GeminiService {
         this.logger.debug('Successfully fixed JSON by replacing nested quotes');
         return fixed;
       } catch (secondError) {
+        console.error('SERVICE FAILED:', secondError);
         this.logger.warn('Could not automatically fix JSON');
         throw error; // Throw original error
       }

@@ -56,14 +56,14 @@ const StatCard = ({
       bg={cardBg}
       borderRadius="md"
       border="2px solid"
-      borderColor={isWinner ? `#${teamColor}` : cardBorder}
+      borderColor={isWinner ? `${teamColor}` : cardBorder}
       w="100%"
     transition="all 0.3s ease"
     position="relative"
     _hover={{
       transform: 'translateY(-2px)',
-      boxShadow: isWinner ? `0 8px 25px #${teamColor}30` : `0 8px 25px ${shadowColor}`,
-      borderColor: isWinner ? `#${teamColor}` : cardBorderHover
+      boxShadow: isWinner ? `0 8px 25px ${teamColor}30` : `0 8px 25px ${shadowColor}`,
+      borderColor: isWinner ? `${teamColor}` : cardBorderHover
     }}
     _before={isWinner ? {
       content: '""',
@@ -72,27 +72,27 @@ const StatCard = ({
       top: 0,
       bottom: 0,
       width: '4px',
-      background: `#${teamColor}`,
+      background: teamColor,
       borderRadius: 'md 0 0 md',
     } : undefined}
   >
     <HStack>
-      <Box as={icon} color={isWinner ? `#${teamColor}` : iconColor} w="16px" h="16px" />
+      <Box as={icon} color={isWinner ? `${teamColor}` : iconColor} w="16px" h="16px" />
       <Text fontSize="sm" color={textColor}>{label}</Text>
     </HStack>
     <HStack spacing={2}>
       <Text 
         fontSize="lg" 
         fontFamily="heading" 
-        color={isWinner ? `#${teamColor}` : valueColor} 
+        color={isWinner ? `${teamColor}` : valueColor} 
         fontWeight={isWinner ? "bold" : "normal"}
-        textShadow={isWinner ? `0 0 8px #${teamColor}40` : "none"}
+        textShadow={isWinner ? `0 0 8px ${teamColor}40` : "none"}
         transition="all 0.3s ease"
       >
         {value}
       </Text>
       {isWinner && (
-        <Box as={Trophy} color={`#${teamColor}`} w="16px" h="16px" />
+        <Box as={Trophy} color={teamColor} w="16px" h="16px" />
       )}
     </HStack>
   </Flex>
@@ -135,7 +135,7 @@ const ConstructorStatsColumn = ({
     'wins': Trophy,
     'podiums': Star,
     'poles': Flag,
-    'fastestLaps': Zap,
+    'fastest_laps': Zap,
     'points': Target,
     'races': Clock,
     'dnf': Award,
@@ -193,23 +193,6 @@ const ConstructorStatsColumn = ({
               })()}
             </Box>
           </Box>
-          <Badge
-            position="absolute"
-            top="-8px"
-            right="-8px"
-            bg={teamColor}
-            color="white"
-            borderRadius="full"
-            w="32px"
-            h="32px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            fontSize="sm"
-            fontWeight="bold"
-          >
-            {constructor.id}
-          </Badge>
         </Box>
         <VStack spacing="xs" textAlign="center">
           <Text fontFamily="heading" fontWeight="bold" fontSize="lg" color={useColorModeValue('gray.800', 'white')}>
@@ -236,7 +219,7 @@ const ConstructorStatsColumn = ({
             'wins': 'wins',
             'podiums': 'podiums', 
             'poles': 'poles',
-            'fastestLaps': 'fastestLaps',
+            'fastest_laps': 'fastestLaps',
             'points': 'points',
             'races': 'races',
             'dnf': 'dnfs',

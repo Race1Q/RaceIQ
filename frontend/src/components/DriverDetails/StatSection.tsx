@@ -15,7 +15,11 @@ const StatSection: React.FC<StatSectionProps> = ({ title, stats }) => {
       <Heading size="md" fontFamily="heading">{title}</Heading>
       <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }} gap="md">
         {stats.map((stat) => (
-          <StatCard key={stat.label} stat={stat} />
+          <StatCard 
+            key={stat.label} 
+            stat={stat} 
+            gridColumn={stat.colSpan ? { base: `span ${Math.min(stat.colSpan, 2)}`, md: `span ${stat.colSpan}` } : undefined}
+          />
         ))}
       </Grid>
     </VStack>

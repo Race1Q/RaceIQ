@@ -183,7 +183,8 @@ describe('useDriversData', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.drivers[0].headshotUrl).toBe('default.png');
+    // Hook returns empty string when no headshot URL is provided, component handles the default
+    expect(result.current.drivers[0].headshotUrl).toBe('');
   });
 
   it('groups drivers by team correctly', async () => {

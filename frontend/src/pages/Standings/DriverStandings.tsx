@@ -38,7 +38,7 @@ const DriverStandingsPage: React.FC = () => {
 
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 1950; year--) {
+    for (let year = 2025; year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;
@@ -48,10 +48,29 @@ const DriverStandingsPage: React.FC = () => {
   // no internal tab state; we navigate to constructors page for second view
 
   return (
-    <Box>
+    <Box
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <PageHeader 
         title="Formula 1 Championship Standings" 
-        subtitle="Driver standings and statistics"
+        subtitle=" Explore F1 Driver Standings and statistics"
       />
       <LayoutContainer>
         <Flex mb={12} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>

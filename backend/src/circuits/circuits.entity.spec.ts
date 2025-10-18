@@ -186,114 +186,20 @@ describe('Circuit Entity', () => {
     });
   });
 
-  describe('length_km column', () => {
-    it('should have length_km property', () => {
-      const circuit = new Circuit();
-      expect(circuit).toHaveProperty('length_km');
-    });
+  // length_km column tests removed - column not in database
+  /* describe('length_km column', () => {
+    // Tests removed - column doesn't exist in database
+  }); */
 
-    it('should accept number type for length_km', () => {
-      const circuit = new Circuit();
-      circuit.length_km = 3.337;
-      expect(typeof circuit.length_km).toBe('number');
-      expect(circuit.length_km).toBe(3.337);
-    });
+  // race_distance_km column tests removed - column not in database
+  /* describe('race_distance_km column', () => {
+    // Tests removed - column doesn't exist in database
+  }); */
 
-    it('should accept null for length_km', () => {
-      const circuit = new Circuit();
-      (circuit as any).length_km = null;
-      expect(circuit.length_km).toBeNull();
-    });
-
-    it('should handle decimal values', () => {
-      const circuit = new Circuit();
-      circuit.length_km = 5.891;
-      expect(circuit.length_km).toBe(5.891);
-    });
-
-    it('should handle zero value', () => {
-      const circuit = new Circuit();
-      circuit.length_km = 0;
-      expect(circuit.length_km).toBe(0);
-    });
-  });
-
-  describe('race_distance_km column', () => {
-    it('should have race_distance_km property', () => {
-      const circuit = new Circuit();
-      expect(circuit).toHaveProperty('race_distance_km');
-    });
-
-    it('should accept number type for race_distance_km', () => {
-      const circuit = new Circuit();
-      circuit.race_distance_km = 260.286;
-      expect(typeof circuit.race_distance_km).toBe('number');
-      expect(circuit.race_distance_km).toBe(260.286);
-    });
-
-    it('should accept null for race_distance_km', () => {
-      const circuit = new Circuit();
-      (circuit as any).race_distance_km = null;
-      expect(circuit.race_distance_km).toBeNull();
-    });
-
-    it('should handle large values', () => {
-      const circuit = new Circuit();
-      circuit.race_distance_km = 1000.5;
-      expect(circuit.race_distance_km).toBe(1000.5);
-    });
-  });
-
-  describe('track_layout column', () => {
-    it('should have track_layout property', () => {
-      const circuit = new Circuit();
-      expect(circuit).toHaveProperty('track_layout');
-    });
-
-    it('should accept object type for track_layout', () => {
-      const circuit = new Circuit();
-      const trackLayout = {
-        type: 'FeatureCollection',
-        features: [],
-      };
-      circuit.track_layout = trackLayout;
-      expect(typeof circuit.track_layout).toBe('object');
-      expect(circuit.track_layout).toEqual(trackLayout);
-    });
-
-    it('should accept null for track_layout', () => {
-      const circuit = new Circuit();
-      (circuit as any).track_layout = null;
-      expect(circuit.track_layout).toBeNull();
-    });
-
-    it('should handle complex GeoJSON objects', () => {
-      const circuit = new Circuit();
-      const complexLayout = {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: { name: 'Start/Finish Line' },
-            geometry: {
-              type: 'Point',
-              coordinates: [0, 0],
-            },
-          },
-          {
-            type: 'Feature',
-            properties: { name: 'Track' },
-            geometry: {
-              type: 'LineString',
-              coordinates: [[0, 0], [1, 1], [2, 2]],
-            },
-          },
-        ],
-      };
-      circuit.track_layout = complexLayout;
-      expect(circuit.track_layout).toEqual(complexLayout);
-    });
-  });
+  // track_layout column tests removed - column not in database
+  /* describe('track_layout column', () => {
+    // Tests removed - column doesn't exist in database
+  }); */
 
   describe('country relationship', () => {
     it('should have country property', () => {
@@ -338,9 +244,7 @@ describe('Circuit Entity', () => {
       circuit.location = 'Monte Carlo';
       circuit.country_code = 'MCO';
       circuit.map_url = 'https://example.com/monaco-map';
-      circuit.length_km = 3.337;
-      circuit.race_distance_km = 260.286;
-      circuit.track_layout = { type: 'FeatureCollection', features: [] };
+      // length_km, race_distance_km, and track_layout removed - not in database
       circuit.country = mockCountry;
 
       expect(circuit.id).toBe(1);
@@ -348,9 +252,7 @@ describe('Circuit Entity', () => {
       expect(circuit.location).toBe('Monte Carlo');
       expect(circuit.country_code).toBe('MCO');
       expect(circuit.map_url).toBe('https://example.com/monaco-map');
-      expect(circuit.length_km).toBe(3.337);
-      expect(circuit.race_distance_km).toBe(260.286);
-      expect(circuit.track_layout).toEqual({ type: 'FeatureCollection', features: [] });
+      // length_km, race_distance_km, and track_layout removed - not in database
       expect(circuit.country).toBe(mockCountry);
     });
 
@@ -380,18 +282,14 @@ describe('Circuit Entity', () => {
       (circuit as any).location = null;
       (circuit as any).country_code = null;
       (circuit as any).map_url = null;
-      (circuit as any).length_km = null;
-      (circuit as any).race_distance_km = null;
-      (circuit as any).track_layout = null;
+      // length_km, race_distance_km, and track_layout removed - not in database
       (circuit as any).country = null;
 
       expect(circuit.name).toBe('Test');
       expect(circuit.location).toBeNull();
       expect(circuit.country_code).toBeNull();
       expect(circuit.map_url).toBeNull();
-      expect(circuit.length_km).toBeNull();
-      expect(circuit.race_distance_km).toBeNull();
-      expect(circuit.track_layout).toBeNull();
+      // length_km, race_distance_km, and track_layout removed - not in database
       expect(circuit.country).toBeNull();
     });
   });
@@ -445,11 +343,7 @@ describe('Circuit Entity', () => {
 
     it('should handle extreme numeric values', () => {
       const circuit = new Circuit();
-      circuit.length_km = 0.001;
-      circuit.race_distance_km = 999999.999;
-
-      expect(circuit.length_km).toBe(0.001);
-      expect(circuit.race_distance_km).toBe(999999.999);
+      // length_km and race_distance_km removed - not in database
     });
 
     it('should handle complex track layout objects', () => {
@@ -491,8 +385,7 @@ describe('Circuit Entity', () => {
         },
       };
 
-      circuit.track_layout = complexLayout;
-      expect(circuit.track_layout).toEqual(complexLayout);
+      // track_layout removed - not in database
     });
   });
 
@@ -506,9 +399,7 @@ describe('Circuit Entity', () => {
       circuit.location = 'Test Location';
       circuit.country_code = 'TST';
       circuit.map_url = 'https://example.com';
-      circuit.length_km = 5.0;
-      circuit.race_distance_km = 300.0;
-      circuit.track_layout = { type: 'FeatureCollection', features: [] };
+      // length_km, race_distance_km, and track_layout removed - not in database
       circuit.country = mockCountry;
 
       expect(typeof circuit.id).toBe('number');
@@ -516,9 +407,7 @@ describe('Circuit Entity', () => {
       expect(typeof circuit.location).toBe('string');
       expect(typeof circuit.country_code).toBe('string');
       expect(typeof circuit.map_url).toBe('string');
-      expect(typeof circuit.length_km).toBe('number');
-      expect(typeof circuit.race_distance_km).toBe('number');
-      expect(typeof circuit.track_layout).toBe('object');
+      // length_km, race_distance_km, and track_layout removed - not in database
       expect(typeof circuit.country).toBe('object');
     });
   });

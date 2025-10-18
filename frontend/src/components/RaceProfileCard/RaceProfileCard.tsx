@@ -1,8 +1,9 @@
 // frontend/src/components/RaceProfileCard/RaceProfileCard.tsx
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Box, VStack, HStack, Heading, Text, Flex } from '@chakra-ui/react';
 import ReactCountryFlag from 'react-country-flag';
+import { useInView } from 'react-intersection-observer';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
 import { getCircuitImage } from '../../lib/circuitImages';
 import type { Race } from '../../types/races';
@@ -16,8 +17,14 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
   const gradientStart = `hsl(${(race.round * 20) % 360}, 70%, 50%)`;
   const gradientEnd = `hsl(${(race.round * 20 + 40) % 360}, 70%, 30%)`;
 
-  // Get circuit image if available
-  const circuitImage = getCircuitImage(race.circuit_id);
+  // Intersection Observer - only load background image when card is near viewport
+  const { ref: imageLoadRef, inView } = useInView({
+    triggerOnce: true,
+    rootMargin: '400px', // Start loading 400px before visible
+  });
+
+  // Get circuit image if available - but only use it if card is in view
+  const circuitImage = inView ? getCircuitImage(race.circuit_id) : null;
 
   const twoLetter = countryCodeMap[(race as any)?.circuit?.country_code?.toUpperCase?.() ?? ''] ?? '';
   const flagAccentMap: Record<string, string> = {
@@ -64,7 +71,7 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
   // 3D Hover Effect State
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
   const [isHovered, setIsHovered] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardElement, setCardElement] = useState<HTMLDivElement | null>(null);
 
   // Calculate 3D tilt based on mouse position - enhanced range
   const tiltX = (mousePosition.y - 0.5) * -20; // -10 to +10 degrees
@@ -72,9 +79,9 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
 
   // Mouse tracking handler
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    if (!cardElement) return;
     
-    const rect = cardRef.current.getBoundingClientRect();
+    const rect = cardElement.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
     
@@ -87,11 +94,18 @@ const RaceProfileCard: React.FC<RaceProfileCardProps> = ({ race }) => {
     setMousePosition({ x: 0.5, y: 0.5 });
   };
 
+  // Callback ref to handle both intersection observer and mouse tracking
+  const setRefs = React.useCallback((node: HTMLDivElement | null) => {
+    setCardElement(node);
+    imageLoadRef(node);
+  }, [imageLoadRef]);
+
   return (
     <Flex
-      ref={cardRef}
+      ref={setRefs}
       direction="column"
       h="100%"
+      minH={{ base: '220px', md: '350px' }}
       bg="bg-surface"
       borderRadius="lg"
       borderWidth="1px"

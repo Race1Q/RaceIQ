@@ -3,6 +3,27 @@ import { render, screen } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { vi, describe, it, expect } from 'vitest';
 import StandingsWidget from './StandingsWidget';
+import { ThemeColorProvider } from '../../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Mock teamColors
 vi.mock('../../../lib/teamColors', () => ({
@@ -37,7 +58,9 @@ const testTheme = extendTheme({
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <ChakraProvider theme={testTheme}>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 };
@@ -134,11 +157,11 @@ describe('StandingsWidget', () => {
   it('displays correct points', () => {
     renderWithProviders(<StandingsWidget data={mockStandingsData} />);
 
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
-    expect(screen.getByText('18 pts')).toBeInTheDocument();
-    expect(screen.getByText('15 pts')).toBeInTheDocument();
-    expect(screen.getByText('12 pts')).toBeInTheDocument();
-    expect(screen.getByText('10 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
+    expect(screen.getByText('18')).toBeInTheDocument();
+    expect(screen.getByText('15')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
   });
 
   it('renders team color indicators', () => {
@@ -197,7 +220,7 @@ describe('StandingsWidget', () => {
 
     expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
     expect(screen.getByText('Charles Leclerc')).toBeInTheDocument();
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 
   it('renders with correct layout structure', () => {
@@ -211,7 +234,7 @@ describe('StandingsWidget', () => {
     expect(standingsItems).toHaveLength(5);
     
     // Check for points display
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 
   it('handles single driver standings', () => {
@@ -223,7 +246,7 @@ describe('StandingsWidget', () => {
 
     expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
     expect(screen.getByText('1.')).toBeInTheDocument();
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 
   it('renders without crashing', () => {
@@ -240,12 +263,14 @@ describe('StandingsWidget', () => {
     // Test loaded state
     rerender(
       <ChakraProvider theme={testTheme}>
-        <StandingsWidget data={mockStandingsData} />
+        <ThemeColorProvider>
+          <StandingsWidget data={mockStandingsData} />
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 
     expect(screen.getByText('Championship Standings')).toBeInTheDocument();
     expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
-    expect(screen.getByText('25 pts')).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
   });
 });

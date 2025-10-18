@@ -27,6 +27,7 @@ import { RaceFastestLapMaterialized } from './dashboard/race-fastest-laps-materi
 import { WinsPerSeasonMaterialized } from './drivers/wins-per-season-materialized.entity';
 import { DriverCareerStatsMaterialized } from './drivers/driver-career-stats-materialized.entity';
 import { ConstructorStandingMaterialized } from './dashboard/constructor-standings-materialized.entity';
+import { ConstructorStandingsMaterialized } from './constructors/constructor-standings-materialized.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AiModule } from './ai/ai.module';
 import { PredictionsModule } from './predictions/predictions.module';
@@ -84,9 +85,19 @@ import { User } from './users/entities/user.entity';
           WinsPerSeasonMaterialized,
           DriverCareerStatsMaterialized,
           ConstructorStandingMaterialized,
+          ConstructorStandingsMaterialized, // ✅ NEW entity for bulk constructor stats
           ],
           synchronize: false, // trust the db schema
           ssl: isLocal ? false : { rejectUnauthorized: false },
+          // Connection pool configuration for better stability
+          extra: {
+            max: 10,                      // Maximum pool size
+            idleTimeoutMillis: 30000,     // Close idle clients after 30 seconds
+            connectionTimeoutMillis: 10000, // Return error after 10 seconds if connection can't be established
+          },
+          keepConnectionAlive: true,      // Keep connection alive between hot-reloads
+          retryAttempts: 3,               // Retry connecting 3 times
+          retryDelay: 3000,               // Wait 3 seconds between retries
         };
       },
     }),

@@ -25,7 +25,28 @@ function HomePage() {
   // Show hero section immediately, load data in background
 
   return (
-    <Box w="100%" minH="100vh" bg="bg-primary">
+    <Box 
+      w="100%" 
+      minH="100vh"
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <HeroSection />
       
       {!isAuthenticated && (
@@ -41,6 +62,7 @@ function HomePage() {
           
           <ScrollAnimationWrapper delay={0.2}>
             <ComparePreviewSection />
+            <SectionConnector mt={{ base: -18, md: -12 }} />
           </ScrollAnimationWrapper>
         </>
       )}
@@ -55,19 +77,28 @@ function HomePage() {
               </VStack>
             )}
             <VStack spacing={{ base: 8, md: 12 }} width="100%" overflow="hidden">
-              <Heading
-                as="h4"
-                size="sm"
-                color="brand.red"
-                textTransform="uppercase"
-                letterSpacing="wider"
-                fontWeight="bold"
-                mb={{ base: 4, md: 8 }}
-                textAlign="center"
-                fontSize={{ base: 'xs', md: 'sm' }}
-              >
-                Recent Races
-              </Heading>
+              <VStack spacing={{ base: 2, md: 4 }} align="center">
+                <Heading
+                  as="h4"
+                  size="sm"
+                  color="border-accent"
+                  textTransform="uppercase"
+                  letterSpacing="wider"
+                  fontWeight="bold"
+                >
+                  RECENT RACES
+                </Heading>
+                <Heading 
+                  as="h2" 
+                  size={{ base: 'xl', md: '2xl' }}
+                  color="text-primary"
+                  fontFamily="heading"
+                  lineHeight="shorter"
+                  textAlign="center"
+                >
+                  Track Every Race.
+                </Heading>
+              </VStack>
               {/* Render skeleton while loading; slider when data is ready */}
               {dataLoading ? (
                 <RecentRacesSkeleton />

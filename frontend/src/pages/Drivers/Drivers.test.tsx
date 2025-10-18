@@ -6,6 +6,7 @@ import { render, screen } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import Drivers from './Drivers';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
 
 // Mock Auth0 - simple approach like existing tests
 vi.mock('@auth0/auth0-react', () => ({
@@ -19,6 +20,17 @@ vi.mock('@auth0/auth0-react', () => ({
     },
     loginWithRedirect: vi.fn(),
     logout: vi.fn(),
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
   }),
 }));
 
@@ -136,7 +148,11 @@ Object.defineProperty(window, 'scrollTo', {
 function renderPage(ui: React.ReactNode) {
   return render(
     <ChakraProvider>
-      <MemoryRouter>{ui}</MemoryRouter>
+      <MemoryRouter>
+        <ThemeColorProvider>
+          {ui}
+        </ThemeColorProvider>
+      </MemoryRouter>
     </ChakraProvider>
   );
 }
@@ -149,11 +165,11 @@ describe('Drivers', () => {
   it('renders team filter tabs for all teams', () => {
     renderPage(<Drivers />);
 
-    // Check that all team filter tabs are rendered
-    expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Red Bull Racing' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ferrari' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'McLaren' })).toBeInTheDocument();
+    // Check that all team filter tabs are rendered (they have role="tab")
+    expect(screen.getByRole('tab', { name: 'All' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Red Bull Racing' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Ferrari' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'McLaren' })).toBeInTheDocument();
   });
 
   it('renders driver cards for all teams when All is selected', () => {
@@ -234,7 +250,7 @@ describe('Drivers', () => {
     renderPage(<Drivers />);
 
     // Check that all main sections are present
-    expect(screen.getAllByRole('button')).toHaveLength(4); // All + 3 team tabs
+    expect(screen.getAllByRole('tab')).toHaveLength(4); // All + 3 team tabs
     expect(screen.getAllByTestId('driver-card')).toHaveLength(6); // 6 drivers total
     expect(screen.getAllByTestId('team-banner')).toHaveLength(3); // 3 teams
   });

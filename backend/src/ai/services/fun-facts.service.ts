@@ -96,6 +96,7 @@ export class FunFactsService {
 
       return response;
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating driver fun facts: ${error.message}`, error.stack);
 
       // Try to return stale cache on error

@@ -117,6 +117,7 @@ export class OpenF1Service {
       const response = await firstValueFrom(this.httpService.get<T[]>(url));
       return response.data;
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       // Add robust retry logic for rate limiting
       if (error.response?.status === 429) {
         const waitTime = Math.pow(2, attempt) * 1000 + Math.random() * 500;
@@ -420,7 +421,10 @@ export class OpenF1Service {
           if (qualiToInsert.length > 0) {
             await this.supabaseService.client.from('qualifying_results').insert(qualiToInsert);
           }
-        } catch (e) { this.logger.warn(`No qualifying data found in Ergast for ${year} R${race.round}`); }
+        } catch (e) { 
+          console.error('SERVICE FAILED:', e);
+          this.logger.warn(`No qualifying data found in Ergast for ${year} R${race.round}`); 
+        }
       }
       if (raceSession) {
         await this.supabaseService.client.from('race_results').delete().eq('session_id', raceSession.id);
@@ -443,7 +447,10 @@ export class OpenF1Service {
           if (raceResultsToInsert.length > 0) {
             await this.supabaseService.client.from('race_results').insert(raceResultsToInsert);
           }
-        } catch (e) { this.logger.warn(`No race results data found in Ergast for ${year} R${race.round}`); }
+        } catch (e) { 
+          console.error('SERVICE FAILED:', e);
+          this.logger.warn(`No race results data found in Ergast for ${year} R${race.round}`); 
+        }
       }
 
       // --- 4. OPENF1 DATA INGESTION (NOW RELIABLE) ---
@@ -546,13 +553,12 @@ export class OpenF1Service {
       .filter(point => point.driver_number === referenceDriverNum)
       .map(point => ({ x: point.x, y: point.y, z: point.z }));
 
-    // 9. Save the coordinate array to our database
+    // 9. Track layout storage removed - track_layout column doesn't exist in database
     if (lapTrace.length > 0) {
-      const { error: updateError } = await this.supabaseService.client
-        .from('circuits')
-        .update({ track_layout: lapTrace })
-        .eq('id', circuitIdToUpdate);
-
+      // TODO: Implement track layout storage if needed in the future
+      this.logger.log(`Track layout generated for circuit ${circuitIdToUpdate} with ${lapTrace.length} points (not saved to DB)`);
+      
+      const updateError = null; // Skip database update
       if (updateError) {
         this.logger.error(`Failed to save layout for circuit ${circuitIdToUpdate}:`, updateError);
       } else {

@@ -21,7 +21,7 @@ async function bootstrap() {
     .setVersion(version)
     .addBearerAuth()
     // Explicit servers for prod + local (paths already include /api from global prefix)
-    .addServer('https://raceiq-api.azurewebsites.net')
+    .addServer('https://raceiq-api.onrender.com')
     .addServer('http://localhost:3000')
     .build();
 
@@ -37,30 +37,39 @@ async function bootstrap() {
   // Get ConfigService instance
   const configService = app.get(ConfigService);
 
-  // Robust CORS configuration
-  const whitelist = [
-    process.env.FRONTEND_URL, // Your frontend app
-    'http://localhost:3000',  // Swagger UI default
-    'http://127.0.0.1:3000',
-    'http://localhost:5173',  // Default Vite dev server
-  ];
+ // Robust CORS configuration
+ const allowedOriginsFromEnv = (
+   configService.get<string>('ALLOWED_ORIGINS') ||
+   configService.get<string>('FRONTEND_URL') ||
+   ''
+ )
+   .split(',')
+   .map((s) => s.trim())
+   .filter(Boolean);
 
-  app.enableCors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+ app.enableCors({
+   origin: (origin, callback) => {
+     if (!origin) return callback(null, true);
+     let hostname: string;
+     try {
+       hostname = new URL(origin).hostname;
+     } catch {
+       return callback(new Error('Invalid Origin'), false);
+     }
+     const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(origin);
+     const isVercel = /(^|\.)race-iq\.vercel\.app$/i.test(hostname);
 
-      const allowed = whitelist.some(url => url && origin.startsWith(url));
+     // You can add your custom domain here in the future
+     // const isRaceIQDomain = /(^|\.)raceiq\.app$/i.test(hostname);
 
-      if (allowed) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Accept, Authorization',
-  });
+     const isListed = allowedOriginsFromEnv.includes(origin);
+
+     const allowed = isListed || isLocalhost || isVercel;
+     return callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
+   },
+   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+   credentials: true,
+ });
 
   // Your port logic is correct
   const port = configService.get<number>('PORT') ?? 3000;

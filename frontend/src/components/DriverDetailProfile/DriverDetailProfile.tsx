@@ -18,6 +18,7 @@ const DriverDetailProfile: React.FC<DriverDetailProfileProps> = ({ name, team, i
   const [firstName, ...lastNameParts] = nameToSplit.split(' ');
   const lastName = lastNameParts.join(' ');
 
+
   return (
     <div className={styles.profileCard}>
       <div className={styles.imageContainer}>

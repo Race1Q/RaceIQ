@@ -404,7 +404,30 @@ const RaceDetailPage: React.FC = () => {
   const circuitBackground = getCircuitBackground(race.circuit_id) || getDefaultCircuitBackground();
 
   return (
-    <Box bg={primaryBg} color={primaryTextColor} minH="100vh" pb={{ base: 4, md: 6, lg: 8 }} fontFamily="var(--font-display)">
+    <Box 
+      color={primaryTextColor} 
+      minH="100vh" 
+      pb={{ base: 4, md: 6, lg: 8 }} 
+      fontFamily="var(--font-display)"
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       {/* Top Utility Bar */}
       <Box bg={surfaceBg} borderBottom="1px solid" borderColor={borderPrimary}>
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }} py={{ base: 2, md: 3 }}>
@@ -1101,7 +1124,30 @@ const RaceDetailPageLayout: React.FC = () => {
   const primaryTextColor = useColorModeValue('gray.800', 'white');
 
   return (
-    <Box minH="100vh" display="flex" flexDirection="column" bg={primaryBg} color={primaryTextColor}>
+    <Box 
+      minH="100vh" 
+      display="flex" 
+      flexDirection="column" 
+      color={primaryTextColor}
+      sx={{
+        background: `
+          radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+          linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+        `,
+        backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+        backgroundColor: '#0a0a0a',
+        _light: {
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#f8f9fa',
+        }
+      }}
+    >
       <Box flex="1" overflow="hidden">
         <RaceDetailPage />
       </Box>

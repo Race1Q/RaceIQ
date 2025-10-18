@@ -9,48 +9,35 @@ import { useThemeColor } from '../../../context/ThemeColorContext';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { buildApiUrl } from '../../../lib/api';
+import { useDashboardSharedData } from '../../../context/DashboardDataContext';
 
 function FavoriteTeamSnapshotWidget() {
   const { favoriteConstructor, loading, error } = useUserProfile();
   const { getAccessTokenSilently } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
+  const { seasons } = useDashboardSharedData();
   const [points, setPoints] = useState<number | null>(null);
   const [position, setPosition] = useState<number | null>(null);
-  
-  // Debug logging
-  console.log('🏎️ [FavoriteTeamWidget] State:', { favoriteConstructor, loading, error });
 
-  // Fetch current season points for the favorite constructor using the same method as useConstructorStandings
+  // Fetch current season points for the favorite constructor using shared seasons data
   useEffect(() => {
     const fetchPoints = async () => {
       try {
-        if (!favoriteConstructor) return;
+        if (!favoriteConstructor || seasons.length === 0) return;
         const season = new Date().getFullYear();
-        const token = await getAccessTokenSilently();
-        const teamName = favoriteConstructor.name;
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          },
+        });
         const constructorId = (favoriteConstructor as any).id;
         
-        console.log('🏎️ [FavoriteTeamWidget] Fetching for:', { teamName, constructorId, season });
-        
-        // Get season data to find season ID
-        const seasonsResponse = await fetch(buildApiUrl('/api/seasons'), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (!seasonsResponse.ok) {
-          console.log('🏎️ [FavoriteTeamWidget] Failed to fetch seasons:', seasonsResponse.status);
-          return;
-        }
-        
-        const seasons = await seasonsResponse.json();
+        // Use shared seasons data to find season ID
         const targetSeason = seasons.find((s: any) => s.year === season);
         
         if (!targetSeason) {
-          console.log('🏎️ [FavoriteTeamWidget] Season not found:', season);
           return;
         }
-        
-        console.log('🏎️ [FavoriteTeamWidget] Found season:', targetSeason);
         
         // Fetch season points for this specific constructor
         const response = await fetch(
@@ -61,36 +48,28 @@ function FavoriteTeamSnapshotWidget() {
         );
         
         if (!response.ok) {
-          console.log('🏎️ [FavoriteTeamWidget] Failed to fetch constructor points:', response.status);
           return;
         }
         
         const seasonPoints = await response.json();
-        console.log('🏎️ [FavoriteTeamWidget] Season points data:', seasonPoints);
         
         const currentSeasonData = seasonPoints.find((sp: any) => sp.season === targetSeason.id);
         
         if (currentSeasonData) {
           const points = Number(currentSeasonData.points || 0);
-          const wins = Number(currentSeasonData.wins || 0);
-          const podiums = Number(currentSeasonData.podiums || 0);
-          
-          console.log('🏎️ [FavoriteTeamWidget] Found season data:', { points, wins, podiums });
           
           // For position, we need to get all constructors and sort them
           // For now, let's just set the points and leave position as null
           setPoints(points);
           setPosition(null); // We'll calculate this later if needed
-        } else {
-          console.log('🏎️ [FavoriteTeamWidget] No data found for current season');
         }
-      } catch (error) {
-        console.log('🏎️ [FavoriteTeamWidget] Fetch error:', error);
+      } catch {
+        // Error is non-critical
       }
     };
 
     fetchPoints();
-  }, [favoriteConstructor, getAccessTokenSilently]);
+  }, [favoriteConstructor, getAccessTokenSilently, seasons]);
 
   if (loading) {
     return (
@@ -159,6 +138,8 @@ function FavoriteTeamSnapshotWidget() {
             <Box
               w="50px"
               h="50px"
+              minW="50px"
+              minH="50px"
               borderRadius="md"
               overflow="hidden"
               border="2px solid"
@@ -169,9 +150,13 @@ function FavoriteTeamSnapshotWidget() {
               <Image
                 src={teamLogo}
                 alt={`${teamName} Logo`}
+                width="50px"
+                height="50px"
                 w="full"
                 h="full"
                 objectFit="contain"
+                loading="eager"
+                decoding="async"
                 p="1"
                 fallbackSrc="/assets/placeholder.svg"
               />

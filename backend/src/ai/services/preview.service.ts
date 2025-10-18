@@ -98,6 +98,7 @@ export class PreviewService {
 
       return response;
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating track preview: ${error.message}`, error.stack);
 
       // Try to return stale cache on error

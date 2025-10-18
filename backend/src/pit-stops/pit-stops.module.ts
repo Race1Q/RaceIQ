@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PitStop } from './pit-stops.entity';
 import { PitStopsController } from './pit-stops.controller';
@@ -8,8 +8,8 @@ import { DriversModule } from '../drivers/drivers.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([PitStop]),
-    RacesModule,
-    DriversModule,
+    forwardRef(() => RacesModule),   // Circular dependency
+    forwardRef(() => DriversModule), // Circular dependency
   ],
   controllers: [PitStopsController],
   exports: [TypeOrmModule],

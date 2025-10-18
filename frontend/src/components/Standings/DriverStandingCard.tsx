@@ -3,6 +3,7 @@ import { Box, Flex, Avatar, Text, HStack, Badge, Tooltip, Stat, StatLabel, StatN
 import { useNavigate } from 'react-router-dom';
 import { teamColors } from '../../lib/teamColors';
 import { driverHeadshots } from '../../lib/driverHeadshots';
+import { optimizeF1ImageUrl } from '../../lib/imageOptimizer';
 
 interface DriverStandingCardProps {
   id: number;
@@ -22,8 +23,8 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
   const teamColor = `#${teamColors[constructor] || teamColors.Default}`;
   const subtleBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
   
-  // Get the driver headshot URL with fallback chain
-  const headshotUrl = driverHeadshots[fullName] || profileImageUrl || undefined;
+  // Get the driver headshot URL with fallback chain and optimize for smaller size
+  const headshotUrl = optimizeF1ImageUrl(driverHeadshots[fullName] || profileImageUrl, 'small') || undefined;
   
   // Create soft gradient tints using hex with alpha (#RRGGBBAA)
   const baseGradient = useColorModeValue(
@@ -93,15 +94,26 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
       <Box position="absolute" left={0} top={0} bottom={0} w="6px" bg={teamColor} boxShadow={`0 0 0 1px ${teamColor}AA, 0 0 12px ${teamColor}80 inset`} />
 
       <Text fontWeight="bold" w={{ base: "30px", md: "40px" }} textAlign="center" fontSize={{ base: "md", md: "lg" }}>{position}</Text>
-      <Avatar
-        name={fullName}
-        src={headshotUrl}
-        size={{ base: "md", md: "lg" }}
-        borderWidth="2px"
-        borderColor={teamColor}
-        boxShadow={`0 0 0 1px ${teamColor}AA, 0 0 10px -2px ${teamColor}`}
-        bg={`${teamColor}22`}
-      />
+      <Box
+        w={{ base: "48px", md: "64px" }}
+        h={{ base: "48px", md: "64px" }}
+        minW={{ base: "48px", md: "64px" }}
+        minH={{ base: "48px", md: "64px" }}
+        flexShrink={0}
+      >
+        <Avatar
+          name={fullName}
+          src={headshotUrl}
+          size={{ base: "md", md: "lg" }}
+          borderWidth="2px"
+          borderColor={teamColor}
+          boxShadow={`0 0 0 1px ${teamColor}AA, 0 0 10px -2px ${teamColor}`}
+          bg={`${teamColor}22`}
+          loading="lazy"
+          w="full"
+          h="full"
+        />
+      </Box>
       <Flex direction="column" flex={1} minW={0}>
         <Text fontWeight={700} noOfLines={1} letterSpacing="wide" fontSize={{ base: "sm", md: "md" }}>{fullName}</Text>
         <HStack spacing={2} mt={1}>

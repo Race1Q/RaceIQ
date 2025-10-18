@@ -4,43 +4,79 @@ import '@testing-library/jest-dom';
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
+import { MemoryRouter } from 'react-router-dom';
 import ComparePreviewSection from './ComparePreviewSection';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
+
+// Mock react-router-dom
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 // Mock Auth0
 const mockLoginWithRedirect = vi.fn();
 vi.mock('@auth0/auth0-react', () => ({
   useAuth0: () => ({
     loginWithRedirect: mockLoginWithRedirect,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
   }),
 }));
 
-// Mock Supabase
-vi.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        gte: vi.fn(() => ({
-          gte: vi.fn(() => ({
-            data: [
-              {
-                fullName: 'Fernando Alonso',
-                teamName: 'Aston Martin',
-                championships: 2,
-                allTimeFastestLapMs: 78900,
-              },
-              {
-                fullName: 'Sebastian Vettel',
-                teamName: 'Aston Martin',
-                championships: 4,
-                allTimeFastestLapMs: 76500,
-              },
-            ],
-            error: null,
-          })),
-        })),
-      })),
-    })),
-  },
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
+
+// Mock apiFetch from API library
+vi.mock('../../lib/api', () => ({
+  apiFetch: vi.fn((url: string) => {
+    // Mock /drivers/champions endpoint
+    if (url.includes('/drivers/champions')) {
+      return Promise.resolve([
+        {
+          driverId: 1,
+          driverFullName: 'Lewis Hamilton',
+          profileImageUrl: 'lewis.jpg',
+          championships: 7,
+        },
+        {
+          driverId: 2,
+          driverFullName: 'Max Verstappen',
+          profileImageUrl: 'max.jpg',
+          championships: 4,
+        },
+      ]);
+    }
+    // Mock /drivers/:id/career-stats endpoint
+    if (url.includes('/drivers/1/career-stats')) {
+      return Promise.resolve({
+        driver: { teamName: 'Mercedes', image_url: 'lewis.jpg' },
+        careerStats: { wins: 103 },
+        bestLapMs: 78123,
+      });
+    }
+    if (url.includes('/drivers/2/career-stats')) {
+      return Promise.resolve({
+        driver: { teamName: 'Red Bull Racing', image_url: 'max.jpg' },
+        careerStats: { wins: 53 },
+        bestLapMs: 77456,
+      });
+    }
+    return Promise.resolve(null);
+  }),
 }));
 
 // Mock driver headshots
@@ -67,7 +103,11 @@ vi.mock('../../lib/teamColors', () => ({
 function renderWithChakra(ui: React.ReactNode) {
   return render(
     <ChakraProvider>
-      {ui}
+      <ThemeColorProvider>
+        <MemoryRouter>
+          {ui}
+        </MemoryRouter>
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 }
@@ -141,8 +181,9 @@ describe('ComparePreviewSection', () => {
     renderWithChakra(<ComparePreviewSection />);
     
     await waitFor(() => {
+      // Based on mock data: Lewis Hamilton (7) and Max Verstappen (4)
       expect(screen.getByText('7')).toBeInTheDocument(); // Lewis Hamilton championships
-      expect(screen.getByText('3')).toBeInTheDocument(); // Max Verstappen championships
+      expect(screen.getByText('4')).toBeInTheDocument(); // Max Verstappen championships
     });
   });
 
@@ -188,7 +229,7 @@ describe('ComparePreviewSection', () => {
     const customizeButton = screen.getByText('Customize Your Comparison');
     fireEvent.click(customizeButton);
     
-    expect(mockLoginWithRedirect).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/compare-login');
   });
 
   it('formats lap time correctly for null values', async () => {

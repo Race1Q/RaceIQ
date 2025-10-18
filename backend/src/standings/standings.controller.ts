@@ -1,7 +1,9 @@
 import { Controller, Get, Param, ParseIntPipe, Header } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiExcludeEndpoint, ApiNotFoundResponse } from '@nestjs/swagger';
 import { StandingsService } from './standings.service';
 import { StandingsResponseDto } from './dto/standings-response.dto';
 import { FeaturedDriverDto } from './dto/featured-driver.dto';
+import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @Controller('standings')
 export class StandingsController {
@@ -13,11 +15,21 @@ export class StandingsController {
     return this.standingsService.getFeaturedDriver();
   }
 
+  @ApiExcludeEndpoint()
   @Get('featured-driver-debug')
   async getFeaturedDriverDebug(): Promise<any> {
     return this.standingsService.getFeaturedDriverDebug();
   }
 
+  @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The standings for the specified year and round were not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., year or round is not a number).',
+    type: ApiErrorDto,
+  })
   @Get(':year/:round')
   async getStandings(
     @Param('year', ParseIntPipe) year: number,
@@ -26,6 +38,15 @@ export class StandingsController {
     return this.standingsService.getStandingsByYearAndRound(year, round);
   }
 
+  @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The standings for the specified year were not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., year is not a number).',
+    type: ApiErrorDto,
+  })
   @Get('year/:year')
   async getStandingsByYear(
     @Param('year', ParseIntPipe) year: number,

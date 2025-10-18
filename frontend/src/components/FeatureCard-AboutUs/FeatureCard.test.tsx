@@ -3,6 +3,27 @@ import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ChakraProvider } from '@chakra-ui/react';
 import FeatureCard from './FeatureCard';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Mock a simple icon component for testing
 const MockIcon = ({ size }: { size?: number }) => (
@@ -15,7 +36,9 @@ const MockIcon = ({ size }: { size?: number }) => (
 function renderWithProviders(ui: React.ReactNode) {
   return render(
     <ChakraProvider>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 }

@@ -1,6 +1,6 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid, useColorModeValue } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';
@@ -58,7 +58,28 @@ const DriverDetailPage: React.FC = () => {
       </Box>
 
       {/* Header Bar (matching Constructors header) */}
-      <Box bg="bg-primary" color="text-primary" py={{ base: 6, md: 8 }}>
+      <Box 
+        color="text-primary" 
+        py={{ base: 6, md: 8 }}
+        sx={{
+          background: `
+            radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0),
+            linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+            linear-gradient(-45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%)
+          `,
+          backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+          backgroundColor: '#0a0a0a',
+          _light: {
+            background: `
+              radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
+              linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%),
+              linear-gradient(-45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)
+            `,
+            backgroundSize: '20px 20px, 20px 20px, 20px 20px',
+            backgroundColor: '#f8f9fa',
+          }
+        }}
+      >
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
           <Grid
             templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }}
@@ -143,21 +164,19 @@ const DriverDetailPage: React.FC = () => {
 
             {/* 3) Driver image + car */}
             <Box justifySelf="center" position="relative" w={{ base: '100%', md: '420px' }} minW={{ base: 'auto', md: '420px' }} minH={{ base: '160px', md: '260px' }}>
-              {teamCarImages[driverDetails.teamName] && (
-                <Image
-                  src={teamCarImages[driverDetails.teamName]}
-                  alt={`${driverDetails.teamName} car`}
-                  position="absolute"
-                  bottom="8px"
-                  left="50%"
-                  transform="translateX(-50%)"
-                  w={{ base: '85%', md: '420px' }}
-                  maxW="none"
-                  opacity={0.4}
-                  objectFit="contain"
-                  zIndex={1}
-                />
-              )}
+              <Image
+                src={teamCarImages[driverDetails.teamName] || '/assets/logos/F1Car.png'}
+                alt={`${driverDetails.teamName} car`}
+                position="absolute"
+                bottom="8px"
+                left="50%"
+                transform="translateX(-50%)"
+                w={{ base: '85%', md: '420px' }}
+                maxW="none"
+                opacity={0.4}
+                objectFit="contain"
+                zIndex={1}
+              />
               {driverDetails.imageUrl && (
                 <Image
                   src={driverDetails.imageUrl}
