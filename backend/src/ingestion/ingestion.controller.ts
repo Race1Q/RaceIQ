@@ -1,7 +1,8 @@
 import { Controller, Post, Logger, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
+import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @Controller('ingestion')
 export class IngestionController {
@@ -87,6 +88,10 @@ export class IngestionController {
   // OPEN F1 INGESTION
 
   @ApiExcludeEndpoint()
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., year parameter is not a valid number).',
+    type: ApiErrorDto,
+  })
   @Post('openf1-sessions/:year')
   async ingestOpenF1Sessions(@Param('year') year: string) {
     this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Sessions for ${year} ---`);
@@ -95,6 +100,10 @@ export class IngestionController {
   }
 
   @ApiExcludeEndpoint()
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., year parameter is not a valid number).',
+    type: ApiErrorDto,
+  })
   @Post('openf1-granular/:year')
   async ingestOpenF1Granular(@Param('year') year: string) {
     this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Granular Data for ${year} ---`);
@@ -103,6 +112,10 @@ export class IngestionController {
   }
 
   @ApiExcludeEndpoint()
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., year is not a number).',
+    type: ApiErrorDto,
+  })
   @Post('openf1/modern-results/:year')
   async ingestOpenF1ModernResults(@Param('year', ParseIntPipe) year: number) {
     this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Modern Results, Laps, and Pit Stops for ${year} ---`);

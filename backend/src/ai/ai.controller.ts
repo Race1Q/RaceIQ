@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, ParseIntPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiQuery, ApiParam, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiNotFoundResponse, ApiTags, ApiOperation, ApiOkResponse, ApiQuery, ApiParam, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../auth/public.decorator';
 import { NewsService } from './services/news.service';
@@ -15,6 +15,7 @@ import { AiTrackPreviewDto } from './dto/ai-preview.dto';
 import { AiConstructorInfoDto } from './dto/ai-constructor-info.dto';
 import { AiStandingsAnalysisDto } from './dto/ai-standings-analysis.dto';
 import { AiDriverFunFactsDto } from './dto/ai-fun-facts.dto';
+import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -40,6 +41,14 @@ export class AiController {
   }
 
   @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The driver with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., driverId is not a number, season parameter is invalid).',
+    type: ApiErrorDto,
+  })
   @Get('driver/:driverId/bio')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated driver biography' })
@@ -55,6 +64,14 @@ export class AiController {
   }
 
   @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The track with the specified slug was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., eventId parameter is not a number).',
+    type: ApiErrorDto,
+  })
   @Get('track/:slug/preview')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated track preview with strategy insights' })
@@ -70,6 +87,14 @@ export class AiController {
   }
 
   @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The constructor with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., constructorId is not a number, season parameter is invalid).',
+    type: ApiErrorDto,
+  })
   @Get('constructor/:constructorId/info')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated constructor team analysis' })
@@ -97,6 +122,14 @@ export class AiController {
   }
 
   @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The driver with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., driverId is not a number, season parameter is invalid).',
+    type: ApiErrorDto,
+  })
   @Get('driver/:driverId/fun-facts')
   @Public()
   @ApiOperation({ summary: 'Get AI-generated fun facts about a driver' })
