@@ -1,8 +1,9 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, Header } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiExcludeEndpoint, ApiNotFoundResponse, ApiOperation, ApiQuery, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { ConstructorComparisonStatsResponseDto } from './dto/constructor-stats.dto';
+import { ConstructorStatsBulkResponseDto } from './dto/constructor-stats-bulk.dto';
 import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @ApiTags('Constructors')
@@ -136,6 +137,27 @@ export class ConstructorsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ circuitName: string; totalPoints: number; races: number; wins: number }> {
     return this.constructorsService.getConstructorBestTrack(id);
+  }
+  
+  @Get('stats/bulk')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
+  @ApiOperation({ 
+    summary: 'Get bulk constructor statistics', 
+    description: 'Returns statistics for all constructors in a single request, optimized for performance using materialized views.' 
+  })
+  @ApiQuery({ name: 'year', required: false, description: 'Season year (defaults to current year)' })
+  @ApiQuery({ name: 'includeHistorical', required: false, description: 'Include historical constructors (defaults to false)' })
+  @ApiOkResponse({ type: ConstructorStatsBulkResponseDto, description: 'Bulk constructor statistics' })
+  @ApiBadRequestResponse({ type: ApiErrorDto, description: 'Invalid input parameters' })
+  @ApiNotFoundResponse({ type: ApiErrorDto, description: 'No data found for the specified year' })
+  async getBulkConstructorStats(
+    @Query('year') year?: string,
+    @Query('includeHistorical') includeHistorical?: boolean
+  ): Promise<ConstructorStatsBulkResponseDto> {
+    return this.constructorsService.getBulkConstructorStats(
+      year ? parseInt(year, 10) : undefined,
+      includeHistorical
+    );
   }
   
   @ApiExcludeEndpoint()

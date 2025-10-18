@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, DataSource } from 'typeorm';
 import { ConstructorEntity } from './constructors.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
+import { ConstructorStandingsMaterialized } from './constructor-standings-materialized.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Race } from '../races/races.entity';
-import { ConstructorComparisonStatsResponseDto, ConstructorStatsDto } from './dto/constructor-stats.dto'; 
+import { ConstructorComparisonStatsResponseDto, ConstructorStatsDto } from './dto/constructor-stats.dto';
+import { ConstructorStatsBulkResponseDto } from './dto/constructor-stats-bulk.dto'; 
 
 @Injectable()
 export class ConstructorsService {
@@ -20,6 +22,8 @@ export class ConstructorsService {
     private readonly raceRepository: Repository<Race>,
     @InjectRepository(DriverStandingMaterialized)
     private readonly standingsViewRepository: Repository<DriverStandingMaterialized>,
+    @InjectRepository(ConstructorStandingsMaterialized)
+    private readonly constructorStandingsRepository: Repository<ConstructorStandingsMaterialized>,
     private readonly dataSource: DataSource,
   ) {}
   private readonly logger = new Logger(ConstructorsService.name);
@@ -355,6 +359,68 @@ export class ConstructorsService {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error calculating best track for constructor ${constructorId}:`, error);
       return { circuitName: 'N/A', totalPoints: 0, races: 0, wins: 0 };
+    }
+  }
+
+  async getBulkConstructorStats(
+    year?: number, 
+    includeHistorical: boolean = false
+  ): Promise<ConstructorStatsBulkResponseDto> {
+    const targetYear = year || new Date().getFullYear();
+    
+    try {
+      // Get all constructor standings from materialized view
+      const standings = await this.constructorStandingsRepository.find({
+        where: { seasonYear: targetYear },
+        order: { position: 'ASC' }
+      });
+
+      // Get all constructors (active + historical if requested)
+      const constructors = includeHistorical 
+        ? await this.constructorRepository.find({ order: { name: 'ASC' } })
+        : await this.constructorRepository.find({ 
+            where: { is_active: true }, 
+            order: { name: 'ASC' } 
+          });
+
+      // Create a map for quick lookup
+      const standingsMap = new Map();
+      standings.forEach(standing => {
+        // Convert constructorId to number to match constructor.id type
+        standingsMap.set(Number(standing.constructorId), standing);
+      });
+
+      // Combine constructor info with standings
+      const result = constructors.map(constructor => {
+        const standing = standingsMap.get(constructor.id);
+        
+        return {
+          constructorId: constructor.id,
+          constructorName: constructor.name,
+          nationality: constructor.nationality,
+          isActive: constructor.is_active,
+          stats: standing ? {
+            points: Number(standing.seasonPoints) || 0,
+            wins: standing.seasonWins || 0,
+            podiums: standing.seasonPodiums || 0,
+            position: standing.position || 0
+          } : {
+            points: 0,
+            wins: 0,
+            podiums: 0,
+            position: 0
+          }
+        };
+      });
+
+      return {
+        seasonYear: targetYear,
+        constructors: result
+      };
+    } catch (error) {
+      console.error('BULK STATS FAILED:', error);
+      this.logger.error(`Error fetching bulk constructor stats for year ${targetYear}:`, error);
+      throw new NotFoundException(`Failed to fetch constructor stats for year ${targetYear}`);
     }
   }
 }

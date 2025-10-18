@@ -225,7 +225,6 @@ export function TeamCard({
             filter="drop-shadow(0 20px 18px rgba(0,0,0,0.45))"
             draggable={false}
             loading="eager"
-            fetchPriority="high"
             decoding="async"
           />
         </Box>
