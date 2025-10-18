@@ -1,4 +1,5 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { ConstructorComparisonStatsResponseDto } from './dto/constructor-stats.dto';
@@ -25,6 +26,7 @@ export class ConstructorsController {
     return this.constructorsService.findAll(yearNumber);
   }
 
+  @ApiExcludeEndpoint()
   @Get(':id/stats/all')
   async getConstructorStatsAllYears(
     @Param('id', ParseIntPipe) id: number,
@@ -32,6 +34,7 @@ export class ConstructorsController {
     return this.constructorsService.getConstructorStatsAllYears(id);
   }
 
+  @ApiExcludeEndpoint()
   @Get(':id/stats')
   async getConstructorStats(
     @Param('id', ParseIntPipe) id: number,
@@ -41,6 +44,7 @@ export class ConstructorsController {
     return this.constructorsService.getConstructorStats(id, yearNumber);
   }
 
+  @ApiExcludeEndpoint()
   @Get(':id/stats/:year')
   async getConstructorStatsByYear(
     @Param('id', ParseIntPipe) id: number,
@@ -49,6 +53,7 @@ export class ConstructorsController {
     return this.constructorsService.getConstructorStats(id, year);
   }
 
+  @ApiExcludeEndpoint()
   @Get(':id/points-per-season')
   async getPointsPerSeason(
     @Param('id', ParseIntPipe) id: number,
@@ -56,6 +61,7 @@ export class ConstructorsController {
     return this.constructorsService.getPointsPerSeason(id);
   }
 
+  @ApiExcludeEndpoint()
   @Get(':id/championships')
   async getConstructorChampionships(
     @Param('id', ParseIntPipe) id: number,

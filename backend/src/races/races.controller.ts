@@ -5,7 +5,7 @@ import { In, Repository } from 'typeorm';
 import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Public } from '../auth/public.decorator';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RaceDto } from './dto/race.dto';
 import { ErrorResponse } from '../common/dto/error-response.dto';
 
@@ -31,6 +31,7 @@ export class RacesController {
     return this.racesService.listYears(); // e.g., [2025, 2024, ...]
   }
 
+  @ApiExcludeEndpoint()
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a single race by id' })
@@ -40,6 +41,7 @@ export class RacesController {
     return this.racesService.findOne(id);
   }
 
+  @ApiExcludeEndpoint()
   @Get('constructor/:constructorId/poles')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Total pole positions for a constructor' })
@@ -51,6 +53,7 @@ async getConstructorPoles(
   return { constructorId, poles };
 }
 
+@ApiExcludeEndpoint()
 @Get('constructor/:constructorId/poles-by-season')
 @ApiBearerAuth()
 @ApiOperation({ summary: 'Constructor pole positions broken down by season' })
@@ -60,6 +63,7 @@ async getConstructorPolesBySeason(
   return this.racesService.getConstructorPolePositionsBySeason(constructorId);
 }
 
+@ApiExcludeEndpoint()
 @Get('constructor/:constructorId/points-by-circuit')
 @ApiBearerAuth()
 @ApiOperation({ summary: 'Constructor points aggregated by circuit' })
@@ -91,12 +95,14 @@ export class RaceResultsController {
   }
 
   // supports: /race-results/by-race/985
+  @ApiExcludeEndpoint()
   @Get('by-race/:raceId')
   async byParamA(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.fetchForRace(raceId);
   }
 
   // supports: /race-results/race/985
+  @ApiExcludeEndpoint()
   @Get('race/:raceId')
   async byParamB(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.fetchForRace(raceId);

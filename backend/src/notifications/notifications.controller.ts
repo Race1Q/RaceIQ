@@ -1,4 +1,5 @@
 import { Body, Controller, HttpException, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -16,6 +17,7 @@ export class NotificationsController {
     private readonly usersService: UsersService,
   ) {}
 
+  @ApiExcludeEndpoint()
   @Post('send-race-update')
   async sendRaceUpdate(@AuthUser() authUser: any, @Body() body: SendRaceUpdateDto) {
     const { raceDetails } = body ?? {} as SendRaceUpdateDto;

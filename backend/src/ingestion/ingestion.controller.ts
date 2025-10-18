@@ -1,4 +1,5 @@
 import { Controller, Post, Logger, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
 
@@ -13,12 +14,14 @@ export class IngestionController {
 
   // ERGAST INGESTION
 
+  @ApiExcludeEndpoint()
   @Get('test')
   getTest() {
     this.logger.log('--- Test endpoint was reached successfully! ---');
     return { status: 'ok', message: 'Ingestion controller is working!' };
   }
 
+  @ApiExcludeEndpoint()
   @Post('circuits')
   async ingestCircuits() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Circuits ---');
@@ -26,6 +29,7 @@ export class IngestionController {
     return { message: 'Circuit ingestion job started. Check server logs for progress.' };
   }
 
+  @ApiExcludeEndpoint()
   @Post('constructors')
   async ingestConstructors() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Constructors ---');
@@ -33,6 +37,7 @@ export class IngestionController {
     return { message: 'Constructor ingestion job started. Check server logs for progress.' };
   }
 
+  @ApiExcludeEndpoint()
   @Post('drivers')
   async ingestDrivers() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Drivers ---');
@@ -40,6 +45,7 @@ export class IngestionController {
     return { message: 'Driver ingestion job started. Check server logs for progress.' };
   }
 
+  @ApiExcludeEndpoint()
   @Post('races-and-sessions')
   async ingestRacesAndSessions() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Races and Sessions ---');
@@ -47,6 +53,7 @@ export class IngestionController {
     return { message: 'Race and session ingestion job started. Check server logs.' };
   }
 
+  @ApiExcludeEndpoint()
   @Post('seasons')
   async ingestSeasons() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Seasons ---');
@@ -54,6 +61,7 @@ export class IngestionController {
     return { message: 'Seasons ingestion job started. Check server logs.' };
   }
 
+  @ApiExcludeEndpoint()
   @Post('results')
   async ingestAllResults() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting All Results ---');
@@ -61,6 +69,7 @@ export class IngestionController {
     return { message: 'All results ingestion job started. This will take a long time. Check server logs.' };
   }
 
+  @ApiExcludeEndpoint()
   @Post('standings')
   async ingestAllStandings() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting All Standings ---');
@@ -77,6 +86,7 @@ export class IngestionController {
 
   // OPEN F1 INGESTION
 
+  @ApiExcludeEndpoint()
   @Post('openf1-sessions/:year')
   async ingestOpenF1Sessions(@Param('year') year: string) {
     this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Sessions for ${year} ---`);
@@ -84,6 +94,7 @@ export class IngestionController {
     return { message: `OpenF1 session ingestion for ${year} started. Check server logs.` };
   }
 
+  @ApiExcludeEndpoint()
   @Post('openf1-granular/:year')
   async ingestOpenF1Granular(@Param('year') year: string) {
     this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Granular Data for ${year} ---`);
@@ -91,6 +102,7 @@ export class IngestionController {
     return { message: `OpenF1 granular data ingestion for ${year} started. Check server logs.` };
   }
 
+  @ApiExcludeEndpoint()
   @Post('openf1/modern-results/:year')
   async ingestOpenF1ModernResults(@Param('year', ParseIntPipe) year: number) {
     this.logger.log(`--- MANUAL TRIGGER: Ingesting OpenF1 Modern Results, Laps, and Pit Stops for ${year} ---`);
@@ -99,6 +111,7 @@ export class IngestionController {
     return { message: `OpenF1 modern results, laps, and pit stops ingestion for ${year} started. Check server logs.` };
   }
 
+  @ApiExcludeEndpoint()
   @Post('track-layouts')
   async ingestTrackLayouts() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Track Layouts ---');

@@ -1,4 +1,5 @@
 import { Controller, Get, Patch, Body, UseGuards, Delete, SetMetadata } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,6 +15,7 @@ export const Permissions = (...permissions: string[]) => SetMetadata('permission
 export class ProfileController {
   constructor(private readonly usersService: UsersService) {}
 
+  @ApiExcludeEndpoint()
   @Get()
   async getProfile(@AuthUser() authUser: any): Promise<User> {
     // Passport's JWT strategy attaches a payload to request.user
@@ -21,6 +23,7 @@ export class ProfileController {
     return this.usersService.getProfile(authUser.sub);
   }
 
+  @ApiExcludeEndpoint()
   @Patch()
   async updateProfile(
     @AuthUser() authUser: any,
@@ -29,6 +32,7 @@ export class ProfileController {
     return this.usersService.updateProfile(authUser.sub, updateProfileDto);
   }
 
+  @ApiExcludeEndpoint()
   @Delete()
   @UseGuards(PermissionsGuard)
   @Permissions('delete:users')
