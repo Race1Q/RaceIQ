@@ -1,6 +1,5 @@
 // frontend/src/pages/CompareDriversPage/components/ComparisonTable.tsx
 import { Box, Heading, Thead, Tbody, Tr, Th, Td, HStack, Text, VStack, Grid, Button, Image } from '@chakra-ui/react';
-import { driverHeadshots } from '../../../lib/driverHeadshots';
 import ResponsiveTable from '../../../components/layout/ResponsiveTable';
 import type { DriverDetails, DriverComparisonStats, EnabledMetrics, DriverSelection, MetricKey, CompositeScore } from '../../../hooks/useDriverComparison';
 import { useThemeColor } from '../../../context/ThemeColorContext';
@@ -291,7 +290,9 @@ export const ComparisonTable: React.FC<Props> = ({
                   <Th textAlign="center">
                     <VStack spacing={2}>
                       <Image
-                        src={driverHeadshots[driver1.fullName] || (driver1 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                        src={(driver1 as any).imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkRyaXZlciBJbWFnZTwvdGV4dD48L3N2Zz4='}
+                        onLoad={() => console.log(`✅ ComparisonTable driver1 image loaded: ${(driver1 as any).imageUrl || 'placeholder'}`)}
+                        onError={(e) => console.log(`❌ ComparisonTable driver1 image failed: ${(driver1 as any).imageUrl}`, e)}
                         alt={driver1.fullName}
                         boxSize={{ base: '64px', md: '96px' }}
                         objectFit="cover"
@@ -307,7 +308,9 @@ export const ComparisonTable: React.FC<Props> = ({
                   <Th textAlign="center">
                     <VStack spacing={2}>
                       <Image
-                        src={driverHeadshots[driver2.fullName] || (driver2 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                        src={(driver2 as any).imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkRyaXZlciBJbWFnZTwvdGV4dD48L3N2Zz4='}
+                        onLoad={() => console.log(`✅ ComparisonTable driver2 image loaded: ${(driver2 as any).imageUrl || 'placeholder'}`)}
+                        onError={(e) => console.log(`❌ ComparisonTable driver2 image failed: ${(driver2 as any).imageUrl}`, e)}
                         alt={driver2.fullName}
                         boxSize={{ base: '64px', md: '96px' }}
                         objectFit="cover"
@@ -385,7 +388,9 @@ export const ComparisonTable: React.FC<Props> = ({
               <Th textAlign="center">
                 <VStack spacing={2}>
                   <Image
-                    src={driverHeadshots[driver1.fullName] || (driver1 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                    src={(driver1 as any).imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkRyaXZlciBJbWFnZTwvdGV4dD48L3N2Zz4='}
+                    onLoad={() => console.log(`✅ ComparisonTable mobile driver1 image loaded: ${(driver1 as any).imageUrl || 'placeholder'}`)}
+                    onError={(e) => console.log(`❌ ComparisonTable mobile driver1 image failed: ${(driver1 as any).imageUrl}`, e)}
                     alt={driver1.fullName}
                     boxSize={{ base: '64px', md: '96px' }}
                     objectFit="cover"
@@ -401,7 +406,9 @@ export const ComparisonTable: React.FC<Props> = ({
               <Th textAlign="center">
                 <VStack spacing={2}>
                   <Image
-                    src={driverHeadshots[driver2.fullName] || (driver2 as any).imageUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png'}
+                    src={(driver2 as any).imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkRyaXZlciBJbWFnZTwvdGV4dD48L3N2Zz4='}
+                    onLoad={() => console.log(`✅ ComparisonTable mobile driver2 image loaded: ${(driver2 as any).imageUrl || 'placeholder'}`)}
+                    onError={(e) => console.log(`❌ ComparisonTable mobile driver2 image failed: ${(driver2 as any).imageUrl}`, e)}
                     alt={driver2.fullName}
                     boxSize={{ base: '64px', md: '96px' }}
                     objectFit="cover"

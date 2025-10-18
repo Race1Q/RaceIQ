@@ -57,8 +57,6 @@ interface ConstructorChartsProps {
   tooltipTextColor: string;
   seasons: Season[];
   latestSeason: LatestSeason | null;
-  topRace: { round: number; raceName: string; points: number } | null;
-  bestRaceBg: string;
 }
 
 const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
@@ -75,8 +73,6 @@ const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
   tooltipTextColor,
   seasons,
   latestSeason,
-  topRace,
-  bestRaceBg,
 }) => {
   // Memoize sorted data to prevent unnecessary re-sorting on every render
   const sortedPointsData = React.useMemo(() => 
@@ -227,19 +223,6 @@ const ConstructorChartsLazy: React.FC<ConstructorChartsProps> = ({
               />
             </LineChart>
           </ResponsiveContainer>
-        </Box>
-      )}
-
-      {/* Best Race */}
-      {topRace && (
-        <Box p={4} bg={bestRaceBg} borderRadius="md" minW="200px" border="1px solid" borderColor="border-primary">
-          <Text fontSize="lg" fontWeight="bold" textAlign="left" color={chartTextColor}>
-            Best Race ({seasons.find(s => s.id === latestSeason?.season)?.year || 'Latest'}):
-          </Text>
-          <Text fontSize="lg" fontWeight="bold" textAlign="left" color={chartTextColor}>
-            Round {topRace.round}: {topRace.raceName}
-          </Text>
-          <Text fontSize="xl" mt={2} textAlign="left" color={chartTextColor}>Points: {topRace.points}</Text>
         </Box>
       )}
     </>

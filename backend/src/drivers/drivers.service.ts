@@ -2,7 +2,7 @@
 
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository, DataSource } from 'typeorm';
+import { In, Repository, DataSource, MoreThan } from 'typeorm';
 import { Driver } from './drivers.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
@@ -140,7 +140,7 @@ export class DriversService {
     console.log(`[getDriverCareerStats] Fetching career stats for driver ${driverId}`);
 
     // Add queries for poles data (career and current season)
-    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings, worldChampionships, careerPolesResult, seasonPolesResult] = await Promise.all([
+    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings, worldChampionships, careerPolesResult, seasonPolesResult, bestLapRow] = await Promise.all([
       this.findOne(driverId),
       this.careerStatsViewRepo.findOne({ where: { driverId } }),
       this.standingsViewRepo.findOne({ where: { driverId, seasonYear: currentYear } }),
@@ -184,6 +184,13 @@ export class DriversService {
         .andWhere("s.type = 'QUALIFYING'")
         .andWhere('season.year = :year', { year: currentYear })
         .getRawOne<{ poles: string }>(),
+      // NEW QUERY: Driver's all-time best lap from race_fastest_laps_materialized
+      this.dataSource
+        .query(
+          'SELECT MIN("lapTimeMs") AS "bestLapMs" FROM race_fastest_laps_materialized WHERE "driverId" = $1',
+          [driverId]
+        )
+        .then((rows: Array<{ bestLapMs: number | null }>) => rows?.[0] ?? { bestLapMs: null }),
     ]);
 
     if (!driver || !careerStats) {
@@ -228,9 +235,11 @@ export class DriversService {
       teamName: teamResult?.teamName || 'N/A', // Legacy field for compatibility
     };
 
-    return {
-      driver: transformedDriver,
-      careerStats: {
+    const bestLapMs = bestLapRow?.bestLapMs ?? null;
+
+    return new DriverStatsResponseDto(
+      transformedDriver,
+      {
         wins: careerStats.totalWins,
         podiums: careerStats.totalPodiums,
         fastestLaps: careerStats.totalFastestLaps,
@@ -249,7 +258,7 @@ export class DriversService {
           wins: w.wins 
         })),
       },
-      currentSeasonStats: {
+      {
         wins: currentSeason?.seasonWins || 0,
         podiums: currentSeason?.seasonPodiums || 0,
         fastestLaps: seasonFastestLaps, // USE THE LIVE DATA
@@ -257,7 +266,8 @@ export class DriversService {
         // BUG FIX: Use the calculated position from standings
         standing: driverPosition > 0 ? `P${driverPosition}` : 'N/A', 
       },
-    };
+      bestLapMs,
+    );
   }
 
   /**
@@ -570,6 +580,85 @@ export class DriversService {
     } catch (error) {
       this.logger.error(`Error fetching driver season progression for driver ${driverId}:`, error);
       throw new NotFoundException(`Season progression not found for driver ID ${driverId}`);
+    }
+  }
+
+  /**
+   * Get all drivers who have won at least one race in any season (seasonWins > 0)
+   * Used for compare section to show drivers with season wins
+   */
+  async findAllWinners(): Promise<any[]> {
+    try {
+      const winners = await this.standingsViewRepo.find({
+        where: {
+          seasonWins: MoreThan(0)
+        },
+        order: {
+          seasonWins: 'DESC',
+          seasonYear: 'DESC'
+        }
+      });
+
+      this.logger.log(`Retrieved ${winners.length} drivers with season wins`);
+      
+      return winners.map(winner => ({
+        driverId: winner.driverId,
+        driverFullName: winner.driverFullName,
+        seasonYear: winner.seasonYear,
+        constructorName: winner.constructorName,
+        seasonWins: winner.seasonWins,
+        seasonPoints: winner.seasonPoints,
+        seasonPodiums: winner.seasonPodiums,
+        driverNumber: winner.driverNumber,
+        countryCode: winner.countryCode,
+        profileImageUrl: winner.profileImageUrl
+      }));
+    } catch (error) {
+      this.logger.error('Error fetching drivers with season wins:', error);
+      throw new NotFoundException('Failed to fetch drivers with season wins');
+    }
+  }
+
+  /**
+   * Get all drivers who have won at least one world championship
+   * Used for compare section to show only championship-winning drivers
+   */
+  async getChampions(): Promise<any[]> {
+    try {
+      // Query to get unique drivers with championships > 0
+      const query = `
+        SELECT DISTINCT ON (d.id)
+          d.id AS "driverId",
+          d.first_name || ' ' || d.last_name AS "driverFullName",
+          d.profile_image_url AS "profileImageUrl",
+          d.driver_number AS "driverNumber",
+          d.country_code AS "countryCode",
+          dcs.championships
+        FROM
+          drivers d
+        INNER JOIN
+          driver_career_stats_materialized dcs ON d.id = dcs."driverId"
+        WHERE
+          dcs.championships > 0
+        ORDER BY
+          d.id, dcs.championships DESC;
+      `;
+      
+      const champions = await this.dataSource.query(query);
+      
+      this.logger.log(`Retrieved ${champions.length} drivers with world championships`);
+      
+      return champions.map(champion => ({
+        driverId: champion.driverId,
+        driverFullName: champion.driverFullName,
+        profileImageUrl: champion.profileImageUrl,
+        driverNumber: champion.driverNumber,
+        countryCode: champion.countryCode,
+        championships: champion.championships
+      }));
+    } catch (error) {
+      this.logger.error('Error fetching champion drivers:', error);
+      throw new NotFoundException('Failed to fetch champion drivers');
     }
   }
 }

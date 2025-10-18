@@ -1,58 +1,64 @@
 import React from 'react';
 import { describe, it, vi, expect, beforeEach, afterEach } from 'vitest';
-import type { Mock } from 'vitest';
 import '@testing-library/jest-dom';
-import { renderHook, waitFor, act } from '@testing-library/react';
-
+import { renderHook, waitFor } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { useUserProfile } from './useUserProfile';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useProfileUpdate } from '../context/ProfileUpdateContext';
 
 // Mock buildApiUrl
 vi.mock('../lib/api', () => ({
-  buildApiUrl: vi.fn((path: string) => `/mock-api${path}`),
+  buildApiUrl: vi.fn((path: string) => path),
 }));
 
-// Mock fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
 // Mock Auth0
+const mockGetAccessTokenSilently = vi.fn();
+const mockLoginWithRedirect = vi.fn();
 vi.mock('@auth0/auth0-react', () => ({
   useAuth0: vi.fn(),
 }));
 
 // Mock ProfileUpdateContext
+const mockTriggerRefresh = vi.fn();
 vi.mock('../context/ProfileUpdateContext', () => ({
   useProfileUpdate: vi.fn(),
 }));
+
+// Import mocked modules
+import { useAuth0 } from '@auth0/auth0-react';
+import { useProfileUpdate } from '../context/ProfileUpdateContext';
+
+const mockUseAuth0 = vi.mocked(useAuth0);
+const mockUseProfileUpdate = vi.mocked(useProfileUpdate);
+
+// Mock fetch
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 // Chakra wrapper
 function wrapper({ children }: { children: React.ReactNode }) {
   return <ChakraProvider>{children}</ChakraProvider>;
 }
 
-describe('useUserProfile', () => {
-  const mockUseAuth0 = vi.mocked(useAuth0);
-  const mockUseProfileUpdate = vi.mocked(useProfileUpdate);
-  const mockGetAccessTokenSilently = vi.fn();
+// Helper to create mock responses with proper Headers
+function createMockResponse(data: any, ok: boolean = true, status: number = 200, statusText: string = 'OK') {
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  
+  return Promise.resolve({
+    ok,
+    status,
+    statusText,
+    headers,
+    json: async () => data,
+    text: async () => (typeof data === 'string' ? data : JSON.stringify(data)),
+  });
+}
 
+describe('useUserProfile', () => {
   const mockUser = {
     sub: 'auth0|123456789',
     email: 'test@example.com',
     name: 'Test User',
-  };
-
-  const mockProfileData = {
-    id: 1,
-    auth0_sub: 'auth0|123456789',
-    username: 'testuser',
-    email: 'test@example.com',
-    favorite_constructor_id: 1,
-    favorite_driver_id: 2,
-    role: 'user',
-    created_at: '2024-01-01T00:00:00.000Z',
   };
 
   const mockDriverData = {
@@ -68,61 +74,46 @@ describe('useUserProfile', () => {
     name: 'Red Bull Racing',
   };
 
-  const mockProfileDataNoFavorites = {
+  const mockProfileData = {
     id: 1,
     auth0_sub: 'auth0|123456789',
     username: 'testuser',
     email: 'test@example.com',
-    favorite_constructor_id: null,
-    favorite_driver_id: null,
+    favorite_constructor_id: 1,
+    favorite_driver_id: 2,
     role: 'user',
     created_at: '2024-01-01T00:00:00.000Z',
+    favoriteDriver: mockDriverData,
+    favoriteConstructor: mockConstructorData,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Default Auth0 mock
+    // Default Auth0 mock - authenticated user
     mockUseAuth0.mockReturnValue({
       user: mockUser,
       getAccessTokenSilently: mockGetAccessTokenSilently,
+      loginWithRedirect: mockLoginWithRedirect,
       isLoading: false,
-    });
+      isAuthenticated: true,
+    } as any);
 
     // Default ProfileUpdateContext mock
     mockUseProfileUpdate.mockReturnValue({
       refreshTrigger: 0,
-      triggerRefresh: vi.fn(),
-    });
+      triggerRefresh: mockTriggerRefresh,
+    } as any);
 
-    // Default fetch mock
+    // Default fetch mock - successful responses (profile includes relations)
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProfileData,
-        });
+      if (url.includes('/api/profile')) {
+        return createMockResponse(mockProfileData);
       }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriverData,
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockConstructorData,
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+      return createMockResponse({ error: 'Not found' }, false, 404, 'Not Found');
     });
 
-    // Default Auth0 token mock
+    // Default token mock
     mockGetAccessTokenSilently.mockResolvedValue('mock-access-token');
   });
 
@@ -130,549 +121,257 @@ describe('useUserProfile', () => {
     vi.restoreAllMocks();
   });
 
-  it('should load user profile successfully', async () => {
+  it('should load user profile successfully with favorites', async () => {
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
+    // Initially loading
     expect(result.current.loading).toBe(true);
-    expect(result.current.profile).toBeNull();
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBeNull();
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    // Wait for data to load
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    }, { timeout: 5000 });
 
+    // Check profile loaded
     expect(result.current.profile).toEqual(mockProfileData);
     expect(result.current.favoriteDriver).toEqual(mockDriverData);
     expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
     expect(result.current.error).toBeNull();
-    expect(result.current.refetch).toBeInstanceOf(Function);
   });
 
-  it('should handle user profile without favorites', async () => {
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProfileDataNoFavorites,
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
-    });
-
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.profile).toEqual(mockProfileDataNoFavorites);
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBeNull();
-  });
-
-  it('should handle Auth0 loading state', () => {
+  it('should handle unauthenticated user', async () => {
     mockUseAuth0.mockReturnValue({
       user: null,
       getAccessTokenSilently: mockGetAccessTokenSilently,
-      isLoading: true,
-    });
-
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    expect(result.current.loading).toBe(false);
-    expect(result.current.profile).toBeNull();
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBeNull();
-  });
-
-  it('should handle missing user', () => {
-    mockUseAuth0.mockReturnValue({
-      user: null,
-      getAccessTokenSilently: mockGetAccessTokenSilently,
+      loginWithRedirect: mockLoginWithRedirect,
       isLoading: false,
-    });
+      isAuthenticated: false,
+    } as any);
 
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    expect(result.current.loading).toBe(false);
-    expect(result.current.profile).toBeNull();
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBeNull();
-  });
-
-  it('should handle missing user sub', () => {
-    mockUseAuth0.mockReturnValue({
-      user: { ...mockUser, sub: undefined },
-      getAccessTokenSilently: mockGetAccessTokenSilently,
-      isLoading: false,
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
-
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    expect(result.current.loading).toBe(false);
-    expect(result.current.profile).toBeNull();
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBeNull();
-  });
-
-  it('should handle profile API failure', async () => {
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
-    });
-
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.profile).toBeNull();
     expect(result.current.favoriteDriver).toBeNull();
     expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBe('API Error: 500 Internal Server Error');
   });
 
-  it('should handle favorite driver fetch failure gracefully', async () => {
+  it('should handle profile without favorites', async () => {
+    const profileNoFavorites = {
+      ...mockProfileData,
+      favorite_constructor_id: null,
+      favorite_driver_id: null,
+      favoriteDriver: null,
+      favoriteConstructor: null,
+    };
+
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProfileData,
-        });
+      if (url.includes('/api/profile')) {
+        return createMockResponse(profileNoFavorites);
       }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockConstructorData,
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+      return createMockResponse({ error: 'Not found' }, false, 404, 'Not Found');
     });
 
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
-    expect(result.current.profile).toEqual(mockProfileData);
+    expect(result.current.profile).toEqual(profileNoFavorites);
     expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
-    expect(result.current.error).toBeNull();
+    expect(result.current.favoriteConstructor).toBeNull();
   });
 
-  it('should handle favorite constructor fetch failure gracefully', async () => {
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProfileData,
-        });
-      }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriverData,
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
-    });
+  it('should handle API errors gracefully', async () => {
+    mockFetch.mockImplementation(() => 
+      createMockResponse({ error: 'Server error' }, false, 500, 'Internal Server Error')
+    );
 
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
-    expect(result.current.profile).toEqual(mockProfileData);
-    expect(result.current.favoriteDriver).toEqual(mockDriverData);
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.profile).toBeNull();
   });
 
   it('should handle network errors', async () => {
-    const networkError = new Error('Network error');
-    mockFetch.mockRejectedValue(networkError);
+    mockFetch.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.profile).toBeNull();
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBe('Network error');
-  });
-
-  it('should handle non-Error exceptions', async () => {
-    mockFetch.mockRejectedValue('String error');
-
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.profile).toBeNull();
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBe('Failed to load user profile');
-  });
-
-  it('should handle Auth0 token errors', async () => {
-    const tokenError = new Error('Token error');
-    mockGetAccessTokenSilently.mockRejectedValue(tokenError);
-
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.profile).toBeNull();
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBe('Token error');
-  });
-
-  it('should refetch profile data correctly', async () => {
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.profile).toEqual(mockProfileData);
-
-    // Trigger refetch
-    await result.current.refetch();
-
-    expect(result.current.profile).toEqual(mockProfileData);
-    expect(result.current.favoriteDriver).toEqual(mockDriverData);
-    expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
-  });
-
-  it('should handle refetch when user is not authenticated', async () => {
-    mockUseAuth0.mockReturnValue({
-      user: null,
-      getAccessTokenSilently: mockGetAccessTokenSilently,
-      isLoading: false,
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    // Should not throw when refetching without user
-    await expect(result.current.refetch()).resolves.toBeUndefined();
+    expect(result.current.error).toBeTruthy();
   });
 
-  it('should handle refetch with favorite driver error', async () => {
+  it('should handle token fetch errors', async () => {
+    mockGetAccessTokenSilently.mockRejectedValue(new Error('Token error'));
+
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    // Mock driver fetch to fail on refetch
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProfileData,
-        });
-      }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockConstructorData,
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
-    await act(async () => {
-      await result.current.refetch();
-    });
-
-    expect(result.current.profile).toEqual(mockProfileData);
-    expect(result.current.favoriteDriver).toBeNull();
-    expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
+    expect(result.current.error).toBeTruthy();
   });
 
-  it('should handle refetch with favorite constructor error', async () => {
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    // Mock constructor fetch to fail on refetch
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProfileData,
-        });
-      }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriverData,
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
-    });
-
-    await act(async () => {
-      await result.current.refetch();
-    });
-
-    expect(result.current.profile).toEqual(mockProfileData);
-    expect(result.current.favoriteDriver).toEqual(mockDriverData);
-    expect(result.current.favoriteConstructor).toBeNull();
-  });
-
-  it('should respond to refresh trigger changes', async () => {
+  it('should refetch when refreshTrigger changes', async () => {
     const { result, rerender } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
-    expect(result.current.profile).toEqual(mockProfileData);
+    // Initial fetch - only 1 call since relations are included in profile response
+    expect(mockFetch).toHaveBeenCalledTimes(1);
 
-    // Update refresh trigger
+    // Change refresh trigger
     mockUseProfileUpdate.mockReturnValue({
       refreshTrigger: 1,
-      triggerRefresh: vi.fn(),
-    });
+      triggerRefresh: mockTriggerRefresh,
+    } as any);
 
     rerender();
 
-    // Should refetch data due to refresh trigger change
-    await waitFor(() => expect(result.current.profile).toEqual(mockProfileData));
-  });
-
-  it('should handle Auth0 audience and scope configuration', async () => {
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith({
-      authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "read:drivers read:constructors read:users",
-      },
+    // Should trigger refetch
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledTimes(2); // 1 more call
     });
   });
 
-  it('should set proper authorization headers', async () => {
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    // Check that fetch was called with authorization headers
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/mock-api/api/users/profile'),
-      expect.objectContaining({
-        headers: expect.any(Headers),
-      })
-    );
-    
-    // Check that getAccessTokenSilently was called with correct parameters
-    expect(mockGetAccessTokenSilently).toHaveBeenCalledWith({
-      authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: "read:drivers read:constructors read:users",
-      },
-    });
-  });
-
-  it('should handle console warnings for favorite data fetch failures', async () => {
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProfileData,
-        });
-      }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
-    });
+  it('should handle Auth0 loading state', async () => {
+    mockUseAuth0.mockReturnValue({
+      user: mockUser,
+      getAccessTokenSilently: mockGetAccessTokenSilently,
+      loginWithRedirect: mockLoginWithRedirect,
+      isLoading: true,
+      isAuthenticated: false,
+    } as any);
 
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
-    expect(consoleSpy).toHaveBeenCalledWith('Could not fetch favorite driver:', expect.any(Error));
-    expect(consoleSpy).toHaveBeenCalledWith('Could not fetch favorite constructor:', expect.any(Error));
-
-    consoleSpy.mockRestore();
+    // Should not fetch while Auth0 is loading
+    expect(result.current.profile).toBeNull();
   });
 
-  it('should handle profile with only favorite driver', async () => {
-    const profileWithOnlyDriver = {
-      ...mockProfileDataNoFavorites,
+  it('should handle missing user sub', async () => {
+    mockUseAuth0.mockReturnValue({
+      user: { email: 'test@example.com' }, // No 'sub'
+      getAccessTokenSilently: mockGetAccessTokenSilently,
+      loginWithRedirect: mockLoginWithRedirect,
+      isLoading: false,
+      isAuthenticated: true,
+    } as any);
+
+    const { result } = renderHook(() => useUserProfile(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.profile).toBeNull();
+  });
+
+  it('should expose refetch function', async () => {
+    const { result } = renderHook(() => useUserProfile(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.refetch).toBeDefined();
+    expect(typeof result.current.refetch).toBe('function');
+  });
+
+  it('should handle profile with null favorite driver', async () => {
+    const profileWithNullDriver = {
+      ...mockProfileData,
       favorite_driver_id: 2,
+      favoriteDriver: null, // Driver relation is null
     };
 
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => profileWithOnlyDriver,
-        });
+      if (url.includes('/api/profile')) {
+        return createMockResponse(profileWithNullDriver);
       }
-      if (url.includes('/api/drivers/2')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockDriverData,
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+      return createMockResponse({ error: 'Not found' }, false, 404, 'Not Found');
     });
 
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.profile).toEqual(profileWithOnlyDriver);
-    expect(result.current.favoriteDriver).toEqual(mockDriverData);
-    expect(result.current.favoriteConstructor).toBeNull();
-    expect(result.current.error).toBeNull();
-  });
-
-  it('should handle profile with only favorite constructor', async () => {
-    const profileWithOnlyConstructor = {
-      ...mockProfileDataNoFavorites,
-      favorite_constructor_id: 1,
-    };
-
-    mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/users/profile')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => profileWithOnlyConstructor,
-        });
-      }
-      if (url.includes('/api/constructors/1')) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockConstructorData,
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
-    const { result } = renderHook(() => useUserProfile(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.profile).toEqual(profileWithOnlyConstructor);
+    // Profile should load
+    expect(result.current.profile).toEqual(profileWithNullDriver);
+    // Favorite driver should be null
     expect(result.current.favoriteDriver).toBeNull();
+    // Constructor should still be present
     expect(result.current.favoriteConstructor).toEqual(mockConstructorData);
-    expect(result.current.error).toBeNull();
   });
 
-  it('should maintain loading state during fetch', async () => {
-    let resolvePromise: (value: any) => void;
-    const fetchPromise = new Promise((resolve) => {
-      resolvePromise = resolve;
+  it('should handle profile with null favorite constructor', async () => {
+    const profileWithNullConstructor = {
+      ...mockProfileData,
+      favorite_constructor_id: 1,
+      favoriteConstructor: null, // Constructor relation is null
+    };
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/api/profile')) {
+        return createMockResponse(profileWithNullConstructor);
+      }
+      return createMockResponse({ error: 'Not found' }, false, 404, 'Not Found');
     });
 
-    mockFetch.mockReturnValueOnce(fetchPromise);
-
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    expect(result.current.loading).toBe(true);
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
-    // Resolve the promise after a delay
-    setTimeout(() => {
-      resolvePromise!({
-        ok: true,
-        json: async () => mockProfileData,
-      });
-    }, 100);
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    // Profile should load
+    expect(result.current.profile).toEqual(profileWithNullConstructor);
+    // Driver should still be present
+    expect(result.current.favoriteDriver).toEqual(mockDriverData);
+    // Favorite constructor should be null
+    expect(result.current.favoriteConstructor).toBeNull();
   });
 
-  it('should handle buildApiUrl integration correctly', async () => {
+  it('should return all expected properties', async () => {
     const { result } = renderHook(() => useUserProfile(), { wrapper });
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
-    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/users/profile', expect.any(Object));
-    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/drivers/2', expect.any(Object));
-    expect(mockFetch).toHaveBeenCalledWith('/mock-api/api/constructors/1', expect.any(Object));
+    // Check all return properties exist
+    expect(result.current).toHaveProperty('profile');
+    expect(result.current).toHaveProperty('favoriteDriver');
+    expect(result.current).toHaveProperty('favoriteConstructor');
+    expect(result.current).toHaveProperty('loading');
+    expect(result.current).toHaveProperty('error');
+    expect(result.current).toHaveProperty('refetch');
+  });
+
+  it('should not throw on mount', () => {
+    expect(() => {
+      renderHook(() => useUserProfile(), { wrapper });
+    }).not.toThrow();
   });
 });

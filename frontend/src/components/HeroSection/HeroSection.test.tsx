@@ -7,6 +7,7 @@ expect.extend(matchers);
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import HeroSection from './HeroSection';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
 
 // Mock Auth0
 vi.mock('@auth0/auth0-react', () => ({
@@ -15,7 +16,18 @@ vi.mock('@auth0/auth0-react', () => ({
     user: null,
     isAuthenticated: false,
     isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
   })),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
 }));
 
 // Mock useParallax hook
@@ -67,7 +79,13 @@ Object.defineProperty(window, 'innerHeight', {
 });
 
 function renderWithChakra(ui: React.ReactNode) {
-  return render(<ChakraProvider>{ui}</ChakraProvider>);
+  return render(
+    <ChakraProvider>
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
+    </ChakraProvider>
+  );
 }
 
 describe('HeroSection', () => {

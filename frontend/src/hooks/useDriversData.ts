@@ -5,7 +5,6 @@ import { useToast } from '@chakra-ui/react';
 import { buildApiUrl } from '../lib/api';
 import { teamColors } from '../lib/teamColors';
 import { fallbackDriverStandings } from '../lib/fallbackData/driverStandings';
-import { driverHeadshots } from '../lib/driverHeadshots';
 import type { Driver } from '../types';
 
 type GroupedDrivers = { [teamName: string]: Driver[] };
@@ -30,12 +29,7 @@ export const useDriversData = (year: number) => {
         }
         const data = await response.json();
 
-        // NEW DEBUGGING: Raw payload and first standing shape
-        console.log("Raw API Response from /api/standings:", data);
         const driverStandings = (data as any)?.driverStandings || [];
-        if (driverStandings.length > 0) {
-          console.log("Inspecting FIRST raw standing object:", driverStandings[0]);
-        }
 
         // REVISED MAPPING: flattened fields on standing
         const hydratedDrivers = (driverStandings as any[])
@@ -49,13 +43,12 @@ export const useDriversData = (year: number) => {
               driverNumber: standing.driverNumber ?? null,
               countryCode: standing.driverCountryCode ?? null,
               teamName,
-              headshotUrl: driverHeadshots[fullName] || standing.driverProfileImageUrl || driverHeadshots.default || '',
+              headshotUrl: standing.driverProfileImageUrl || '',
               teamColor: teamColors[teamName] ? `#${teamColors[teamName]}` : `#${teamColors['Default']}`,
             } as Driver;
           })
           .filter(Boolean) as Driver[];
 
-        console.log("Processed (Hydrated) Drivers:", hydratedDrivers);
         
         setDrivers(hydratedDrivers);
 

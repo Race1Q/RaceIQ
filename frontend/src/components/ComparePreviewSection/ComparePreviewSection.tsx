@@ -16,10 +16,10 @@ import {
   Flex, 
   Spinner
 } from '@chakra-ui/react';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamColors } from '../../lib/teamColors';
-import { supabase } from '../../lib/supabase';
+import { apiFetch } from '../../lib/api';
 import { useThemeColor } from '../../context/ThemeColorContext';
+import userIcon from '../../assets/UserIcon.png'; // Fallback icon
 
 // Interface for comparison driver data (real stats)
 interface ComparisonDriver {
@@ -45,11 +45,12 @@ const ComparePreviewSection: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [randomizeLoading, setRandomizeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Cache for career stats to improve performance
+  const [careerStatsCache] = useState<Map<number, any>>(new Map());
+  // Cache for filtered champions list for even better performance
+  const [championsCache, setChampionsCache] = useState<any[] | null>(null);
 
-  // Helper: centralized headshot lookup with local default
-  const getDriverImageUrl = (fullName: string): string => {
-    return driverHeadshots[fullName] || driverHeadshots['default'];
-  };
 
   // Helper: team color from shared map
   const getTeamColor = (teamName: string): string => {
@@ -100,7 +101,7 @@ const ComparePreviewSection: React.FC = () => {
       fastestLap = 'driver2';
     }
 
-    // Championships: higher wins; tie -> null
+    // Championships: higher championship count; tie -> null
     let championships: null | 'driver1' | 'driver2' = null;
     if (driver1.stats.championships > driver2.stats.championships) championships = 'driver1';
     else if (driver2.stats.championships > driver1.stats.championships) championships = 'driver2';
@@ -110,70 +111,150 @@ const ComparePreviewSection: React.FC = () => {
 
   const winners = getWinners();
 
-  // Randomize: query Supabase only on click
+  // Randomize: fetch from backend endpoints (no direct Supabase)
+  // Helper function to get cached or fetch driver stats
+  const getCachedOrFetchDriverStats = async (driverId: number): Promise<any | null> => {
+    if (careerStatsCache.has(driverId)) {
+      return careerStatsCache.get(driverId);
+    }
+    try {
+      const stats = await apiFetch<any>(`/api/drivers/${driverId}/career-stats`);
+      careerStatsCache.set(driverId, stats);
+      return stats;
+    } catch (error) {
+      console.error(`Failed to fetch stats for driver ${driverId}:`, error);
+      return null;
+    }
+  };
+
+
   const handleRandomize = async () => {
     try {
       setRandomizeLoading(true);
       setError(null);
 
-      // Fetch from materialized view with filters
-      const { data, error } = await supabase
-        .from('driver_career_stats_materialized')
-        .select('*')
-        .gte('championships', 1)
-        .gte('lastActiveYear', 2000);
+      // Step 1: Use cached champions or fetch from new endpoint
+      let champions: any[] = [];
+      
+      if (championsCache) {
+        // Use cached champions for instant response
+        champions = championsCache;
+        console.log('🔍 Using cached champions:', champions.length);
+      } else {
+        // Fetch all drivers with championships from new endpoint
+        console.log('🔍 Fetching champions from /api/drivers/champions...');
+        const championsResponse = await apiFetch<any[]>('/api/drivers/champions');
+        
+        if (!Array.isArray(championsResponse) || championsResponse.length === 0) {
+          throw new Error('No champions returned from backend');
+        }
 
-      if (error) {
-        throw new Error(`Supabase Query Error: ${error.message}`);
+        // Cache the champions for future use
+        setChampionsCache(championsResponse);
+        champions = championsResponse;
+        console.log('🔍 Cached champions for future use:', champions.length);
       }
 
-      const eligible = Array.isArray(data) ? data : [];
-      if (eligible.length < 2) {
-        throw new Error('Not enough eligible drivers to randomize');
+      // Step 2: Check if we have enough champions
+      if (champions.length < 2) {
+        throw new Error(`Only ${champions.length} champions found. Need at least 2.`);
       }
 
-      // pick two distinct random indices
-      const firstIndex = Math.floor(Math.random() * eligible.length);
-      let secondIndex = Math.floor(Math.random() * eligible.length);
-      if (secondIndex === firstIndex) {
-        secondIndex = (secondIndex + 1) % eligible.length;
+      // Step 3: Randomly select TWO distinct champions
+      const shuffledChampions = [...champions].sort(() => Math.random() - 0.5);
+      const selectedChampion1 = shuffledChampions[0];
+      const selectedChampion2 = shuffledChampions[1];
+
+      // Step 4: Fetch detailed stats for only the two selected champions
+      console.log('🔍 Fetching detailed stats for selected champions...');
+      const [d1Stats, d2Stats] = await Promise.all([
+        getCachedOrFetchDriverStats(selectedChampion1.driverId),
+        getCachedOrFetchDriverStats(selectedChampion2.driverId)
+      ]);
+
+      if (!d1Stats || !d2Stats) {
+        throw new Error('Failed to fetch detailed stats for selected champions');
       }
 
-      const d1 = eligible[firstIndex] as any;
-      const d2 = eligible[secondIndex] as any;
+      // Step 5: Build driver data using the champions data and detailed stats
+      const d1 = {
+        driverId: selectedChampion1.driverId,
+        fullName: selectedChampion1.driverFullName,
+        teamName: d1Stats?.driver?.teamName || 'Unknown Team',
+        imageUrl: selectedChampion1.profileImageUrl || d1Stats?.driver?.image_url || d1Stats?.driver?.profile_image_url || '',
+        championships: selectedChampion1.championships || 0, // Use championship count from champions endpoint
+        wins: d1Stats?.careerStats?.wins || 0, // Use career wins for comparison
+        allTimeFastestLapMs: d1Stats?.bestLapMs ?? null,
+      };
 
-      // Try to resolve names/teams across possible column aliases
-      const d1FullName: string = d1.fullName || `${d1.first_name ?? ''} ${d1.last_name ?? ''}`.trim() || d1.driverFullName || 'Unknown Driver 1';
-      const d2FullName: string = d2.fullName || `${d2.first_name ?? ''} ${d2.last_name ?? ''}`.trim() || d2.driverFullName || 'Unknown Driver 2';
-      const d1Team: string = d1.teamName || d1.constructorName || d1.team_name || 'Unknown Team';
-      const d2Team: string = d2.teamName || d2.constructorName || d2.team_name || 'Unknown Team';
+      const d2 = {
+        driverId: selectedChampion2.driverId,
+        fullName: selectedChampion2.driverFullName,
+        teamName: d2Stats?.driver?.teamName || 'Unknown Team',
+        imageUrl: selectedChampion2.profileImageUrl || d2Stats?.driver?.image_url || d2Stats?.driver?.profile_image_url || '',
+        championships: selectedChampion2.championships || 0, // Use championship count from champions endpoint
+        wins: d2Stats?.careerStats?.wins || 0, // Use career wins for comparison
+        allTimeFastestLapMs: d2Stats?.bestLapMs ?? null,
+      };
 
-      const d1Championships: number = typeof d1.championships === 'number' ? d1.championships : (d1.worldChampionships ?? 0);
-      const d2Championships: number = typeof d2.championships === 'number' ? d2.championships : (d2.worldChampionships ?? 0);
+      // DEBUG: Sample of champions pool
+      console.log('🔍 ComparePreview (backend) champions pool:', {
+        size: champions.length,
+        sample: champions.slice(0, 3).map(d => ({
+          name: d.driverFullName,
+          championships: d.championships
+        }))
+      });
 
-      const d1LapMs: number | null = typeof d1.allTimeFastestLapMs === 'number' ? d1.allTimeFastestLapMs : (typeof d1.fastestLapMs === 'number' ? d1.fastestLapMs : null);
-      const d2LapMs: number | null = typeof d2.allTimeFastestLapMs === 'number' ? d2.allTimeFastestLapMs : (typeof d2.fastestLapMs === 'number' ? d2.fastestLapMs : null);
+      const d1FullName: string = d1.fullName || 'Unknown Driver 1';
+      const d2FullName: string = d2.fullName || 'Unknown Driver 2';
+      const d1Team: string = d1.teamName || 'Unknown Team';
+      const d2Team: string = d2.teamName || 'Unknown Team';
+      const d1LapMs: number | null = d1.allTimeFastestLapMs;
+      const d2LapMs: number | null = d2.allTimeFastestLapMs;
+      
+      // DEBUG: Show resolved values with real bestLapMs
+      console.log('🔍 ComparePreview (backend) resolved:', {
+        driver1: {
+          fullName: d1FullName,
+          hasImageUrl: !!d1.imageUrl,
+          imageUrl: d1.imageUrl || 'No image URL from API',
+          championships: d1.championships,
+          bestLapMs: d1.allTimeFastestLapMs,
+          hasBestLap: !!d1.allTimeFastestLapMs,
+          teamName: d1Team
+        },
+        driver2: {
+          fullName: d2FullName,
+          hasImageUrl: !!d2.imageUrl,
+          imageUrl: d2.imageUrl || 'No image URL from API',
+          championships: d2.championships,
+          bestLapMs: d2.allTimeFastestLapMs,
+          hasBestLap: !!d2.allTimeFastestLapMs,
+          teamName: d2Team
+        }
+      });
 
       const newComparisonData: ComparisonData = {
         driver1: {
           fullName: d1FullName,
           teamName: d1Team,
-          imageUrl: getDriverImageUrl(d1FullName),
+          imageUrl: d1.imageUrl || '',
           teamColorToken: getTeamColor(d1Team),
-          stats: {
-            championships: d1Championships,
-            allTimeFastestLapMs: d1LapMs,
-          },
+        stats: {
+          championships: d1.championships, // Use actual championship count for comparison
+          allTimeFastestLapMs: d1LapMs,
+        },
         },
         driver2: {
           fullName: d2FullName,
           teamName: d2Team,
-          imageUrl: getDriverImageUrl(d2FullName),
+          imageUrl: d2.imageUrl || '',
           teamColorToken: getTeamColor(d2Team),
-          stats: {
-            championships: d2Championships,
-            allTimeFastestLapMs: d2LapMs,
-          },
+        stats: {
+          championships: d2.championships, // Use actual championship count for comparison
+          allTimeFastestLapMs: d2LapMs,
+        },
         },
       };
 
@@ -189,11 +270,14 @@ const ComparePreviewSection: React.FC = () => {
 
   // Initial load: set mock data synchronously, no fetch
   useEffect(() => {
+    // DEBUG: This is using MOCK DATA, not real API data
+    console.log('🔍 ComparePreviewSection: Using MOCK DATA (not API data)');
+    
     const mockComparisonData: ComparisonData = {
       driver1: {
         fullName: 'Lewis Hamilton',
         teamName: 'Mercedes',
-        imageUrl: getDriverImageUrl('Lewis Hamilton'),
+        imageUrl: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png',
         teamColorToken: getTeamColor('Mercedes'),
         stats: {
           championships: 7,
@@ -203,10 +287,10 @@ const ComparePreviewSection: React.FC = () => {
       driver2: {
         fullName: 'Max Verstappen',
         teamName: 'Red Bull Racing',
-        imageUrl: getDriverImageUrl('Max Verstappen'),
+        imageUrl: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png',
         teamColorToken: getTeamColor('Red Bull Racing'),
         stats: {
-          championships: 3,
+          championships: 4,
           allTimeFastestLapMs: 77456, // 1:17.456
         },
       },
@@ -235,7 +319,7 @@ const ComparePreviewSection: React.FC = () => {
           zIndex: 0,
         }}
       >
-        <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1}>
+        <Container maxW="1400px" py={{ base: '2xl', md: '3xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1} minH="80vh">
           <Flex justify="center" p="xl">
             <Spinner size="lg" color={accentColorWithHash} />
           </Flex>
@@ -267,8 +351,8 @@ const ComparePreviewSection: React.FC = () => {
         zIndex: 0,
       }}
     >
-      <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1} w="100%">
-        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 6, md: 'xl' }} alignItems="center">
+      <Container maxW="1400px" py={{ base: '2xl', md: '3xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1} w="100%" minH="80vh">
+        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 6, md: 'xl' }} alignItems="center" h="full" minH="60vh">
           {/* Left Column - Information & CTA */}
           <GridItem>
             <VStack align="flex-start" justify="center" spacing="lg" h="full">
@@ -360,13 +444,14 @@ const ComparePreviewSection: React.FC = () => {
                       bg="white"
                     >
                       <Image
-                        src={comparisonData.driver1.imageUrl}
+                        src={comparisonData.driver1.imageUrl || userIcon}
                         alt={comparisonData.driver1.fullName}
                         boxSize={{ base: '80px', md: '140px' }}
                         objectFit="cover"
                         borderRadius="full"
                         border="3px solid"
                         borderColor="white"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
                       />
                     </Box>
                   </Box>
@@ -395,13 +480,14 @@ const ComparePreviewSection: React.FC = () => {
                       bg="white"
                     >
                       <Image
-                        src={comparisonData.driver2.imageUrl}
+                        src={comparisonData.driver2.imageUrl || userIcon}
                         alt={comparisonData.driver2.fullName}
                         boxSize={{ base: '80px', md: '140px' }}
                         objectFit="cover"
                         borderRadius="full"
                         border="3px solid"
                         borderColor="white"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
                       />
                     </Box>
                   </Box>

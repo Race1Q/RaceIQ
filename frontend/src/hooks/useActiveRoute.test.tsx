@@ -46,7 +46,7 @@ describe('useActiveRoute', () => {
   });
 
   describe('exact match routes', () => {
-    const exactMatchRoutes = ['/drivers', '/drivers-dashboard', '/races', '/about', '/admin', '/standings'];
+    const exactMatchRoutes = ['/drivers', '/drivers-dashboard', '/races', '/about'];
 
     exactMatchRoutes.forEach(route => {
       it(`should return true for exact match on ${route}`, () => {

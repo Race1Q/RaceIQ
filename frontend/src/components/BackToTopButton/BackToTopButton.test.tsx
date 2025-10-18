@@ -3,6 +3,27 @@ import { render, fireEvent, screen, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import { ChakraProvider } from '@chakra-ui/react';
 import BackToTopButton from './BackToTopButton';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
+  }),
+}));
 
 // Mock window.scrollTo
 const mockScrollTo = vi.fn();
@@ -33,7 +54,9 @@ function simulateScroll(scrollY: number) {
 function renderWithChakra(ui: React.ReactNode) {
   return render(
     <ChakraProvider>
-      {ui}
+      <ThemeColorProvider>
+        {ui}
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 }
@@ -161,7 +184,9 @@ describe('BackToTopButton', () => {
     // Re-render the component
     rerender(
       <ChakraProvider>
-        <BackToTopButton />
+        <ThemeColorProvider>
+          <BackToTopButton />
+        </ThemeColorProvider>
       </ChakraProvider>
     );
     

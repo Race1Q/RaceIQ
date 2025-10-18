@@ -4,13 +4,39 @@ import '@testing-library/jest-dom';
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
+import { MemoryRouter } from 'react-router-dom';
 import ComparePreviewSection from './ComparePreviewSection';
+import { ThemeColorProvider } from '../../context/ThemeColorContext';
+
+// Mock react-router-dom
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 // Mock Auth0
 const mockLoginWithRedirect = vi.fn();
 vi.mock('@auth0/auth0-react', () => ({
   useAuth0: () => ({
     loginWithRedirect: mockLoginWithRedirect,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+  }),
+}));
+
+// Mock useUserProfile
+vi.mock('../../hooks/useUserProfile', () => ({
+  useUserProfile: () => ({
+    profile: null,
+    favoriteConstructor: null,
+    favoriteDriver: null,
+    loading: false,
   }),
 }));
 
@@ -67,7 +93,11 @@ vi.mock('../../lib/teamColors', () => ({
 function renderWithChakra(ui: React.ReactNode) {
   return render(
     <ChakraProvider>
-      {ui}
+      <ThemeColorProvider>
+        <MemoryRouter>
+          {ui}
+        </MemoryRouter>
+      </ThemeColorProvider>
     </ChakraProvider>
   );
 }
@@ -188,7 +218,7 @@ describe('ComparePreviewSection', () => {
     const customizeButton = screen.getByText('Customize Your Comparison');
     fireEvent.click(customizeButton);
     
-    expect(mockLoginWithRedirect).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/compare-login');
   });
 
   it('formats lap time correctly for null values', async () => {

@@ -1,24 +1,34 @@
 import React from 'react';
 import { Box, Flex, Text, HStack, Stat, StatLabel, StatNumber, Badge, useColorModeValue, Image } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { teamColors } from '../../lib/teamColors';
+import { teamColors, getTeamColor } from '../../lib/teamColors';
 import { teamCarImages } from '../../lib/teamCars';
+import { COUNTRY_COLORS } from '../../theme/teamTokens';
 import TeamLogo from '../TeamLogo/TeamLogo';
 
 interface ConstructorStandingCardProps {
   constructorId: number;
   position: number;
   constructorName: string;
+  nationality: string;
   points: number;
   wins: number;
   podiums: number;
 }
 
 export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = ({
-  constructorId, position, constructorName, points, wins, podiums
+  constructorId, position, constructorName, nationality, points, wins, podiums
 }) => {
   const navigate = useNavigate();
-  const teamColor = `#${teamColors[constructorName] || teamColors.Default}`;
+  
+  // Prioritize defined team colors, fall back to country colors if no team color exists
+  // Use getTeamColor which handles normalization and lookups
+  const teamColorHex = getTeamColor(constructorName); // returns hex without #
+  const hasTeamColor = teamColorHex !== teamColors['Default'];
+  const teamColor = hasTeamColor
+    ? `#${teamColorHex}`
+    : `#${COUNTRY_COLORS[nationality]?.hex || COUNTRY_COLORS['default'].hex}`;
+  
   const subtleBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
   const baseGradient = useColorModeValue(
     `linear(to-r, ${teamColor}15, ${teamColor}08)`, // much more subtle
@@ -101,38 +111,48 @@ export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = (
         <TeamLogo teamName={constructorName} />
       </Box>
       
-      <Flex direction="column" flex={1} minW={0} mr={4} ml={6}>
-        <Text fontWeight={700} letterSpacing="wide" noOfLines={1} fontSize={{ base: "sm", md: "md" }} mb={1}>{constructorName}</Text>
-        <HStack spacing={2} mt={1}>
-          <Badge
-            bg={teamColor}
-            color="white"
-            borderRadius="full"
-            px={{ base: 2, md: 3 }}
-            py={0.5}
-            fontSize={{ base: "0.6rem", md: "0.65rem" }}
-            fontWeight="500"
-            textTransform="none"
-            letterSpacing="wide"
-            boxShadow={`0 0 0 1px ${teamColor}99, 0 0 6px ${teamColor}80`}
-          >Team</Badge>
-        </HStack>
-      </Flex>
-      
-      {/* Car Image - Uses remaining space on the right */}
-      {teamCarImages[constructorName] && (
+      {/* Team Name & Car Container */}
+      <Flex 
+        direction={{ base: "column", md: "row" }}
+        flex={1} 
+        minW={0}
+        gap={{ base: 1, md: 4 }}
+        align={{ base: "flex-start", md: "center" }}
+      >
+        {/* Team Name Section */}
+        <Flex direction="column" flex={{ base: "none", md: 1 }} minW={0}>
+          <HStack spacing={2} align="center">
+            <Text fontWeight={700} letterSpacing="wide" noOfLines={1} fontSize={{ base: "sm", md: "md" }}>{constructorName}</Text>
+            <Badge
+              bg={teamColor}
+              color="white"
+              borderRadius="full"
+              px={{ base: 2, md: 3 }}
+              py={0.5}
+              fontSize={{ base: "0.6rem", md: "0.65rem" }}
+              fontWeight="500"
+              textTransform="none"
+              letterSpacing="wide"
+              boxShadow={`0 0 0 1px ${teamColor}99, 0 0 6px ${teamColor}80`}
+              flexShrink={0}
+            >Team</Badge>
+          </HStack>
+        </Flex>
+        
+        {/* Car Image - Underneath team name on mobile, beside on desktop */}
         <Box 
-          flex={1} 
-          maxW={{ base: "120px", md: "150px" }}
-          display="flex" 
+          display="flex"
+          flex={{ base: "none", md: 1 }}
+          maxW={{ base: "100px", md: "150px" }}
           alignItems="center" 
-          justifyContent="center"
+          justifyContent={{ base: "flex-start", md: "center" }}
           flexShrink={0}
+          mt={{ base: 2, md: 0 }}
         >
           <Image
-            src={teamCarImages[constructorName]}
+            src={teamCarImages[constructorName] || '/assets/logos/F1Car.png'}
             alt={`${constructorName} car`}
-            maxH={{ base: '60px', md: '80px' }}
+            maxH={{ base: '45px', md: '80px' }}
             maxW="100%"
             w="auto"
             h="auto"
@@ -140,21 +160,28 @@ export const ConstructorStandingCard: React.FC<ConstructorStandingCardProps> = (
             borderRadius="md"
           />
         </Box>
-      )}
-      <HStack spacing={{ base: 2, md: 4 }} pr={2} flexWrap={{ base: "wrap", md: "nowrap" }}>
-        <Stat textAlign="right" minW={{ base: "45px", md: "60px" }}>
+      </Flex>
+      
+      {/* Mobile: Stack stats vertically, Desktop: Keep horizontal */}
+      <Flex 
+        direction={{ base: "column", md: "row" }} 
+        pr={2}
+        align={{ base: "flex-end", md: "center" }}
+        gap={{ base: 1, md: 6 }}
+      >
+        <Stat textAlign="right" minW={{ base: "40px", md: "60px" }}>
           <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Points</StatLabel>
           <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="700">{points}</StatNumber>
         </Stat>
-        <Stat textAlign="right" minW={{ base: "40px", md: "50px" }}>
+        <Stat textAlign="right" minW={{ base: "35px", md: "50px" }}>
           <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Wins</StatLabel>
           <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="600">{wins}</StatNumber>
         </Stat>
-        <Stat textAlign="right" minW={{ base: "45px", md: "55px" }}>
+        <Stat textAlign="right" minW={{ base: "40px", md: "55px" }}>
           <StatLabel fontSize={{ base: "0.5rem", md: "xs" }} textTransform="uppercase" opacity={0.6}>Podiums</StatLabel>
           <StatNumber fontSize={{ base: "sm", md: "lg" }} fontWeight="600">{podiums}</StatNumber>
         </Stat>
-      </HStack>
+      </Flex>
     </Flex>
   );
 };

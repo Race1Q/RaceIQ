@@ -50,10 +50,31 @@ interface TransformedDriver {
   teamName?: string; // For enriched driver data
 }
 
+import { ApiProperty } from '@nestjs/swagger';
+
 export class DriverStatsResponseDto {
   driver: TransformedDriver;
   careerStats: CareerStatsDto;
   currentSeasonStats: CurrentSeasonStatsDto;
+
+  @ApiProperty({
+    description: "The driver's all-time fastest lap time in milliseconds, if available.",
+    example: 76330,
+    nullable: true,
+  })
+  bestLapMs: number | null;
+
+  constructor(
+    driver: TransformedDriver,
+    careerStats: CareerStatsDto,
+    currentSeasonStats: CurrentSeasonStatsDto,
+    bestLapMs: number | null,
+  ) {
+    this.driver = driver;
+    this.careerStats = careerStats;
+    this.currentSeasonStats = currentSeasonStats;
+    this.bestLapMs = bestLapMs;
+  }
 }
 
 // NEW: Driver comparison stats response

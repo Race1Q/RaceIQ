@@ -301,11 +301,45 @@ export class RaceResultsService {
   }
   
   async getAllConstructorsProgression(seasonId: number) {
-    // Fetch all constructors
+    // First, get all races for this season
+    const { data: races, error: racesError } = await this.supabaseService.client
+      .from('races')
+      .select('id')
+      .eq('season_id', seasonId);
+  
+    if (racesError) throw new Error(racesError.message);
+    if (!races?.length) return [];
+  
+    const raceIds = races.map(r => r.id);
+  
+    // Get sessions for these races
+    const { data: sessions, error: sessionsError } = await this.supabaseService.client
+      .from('sessions')
+      .select('id')
+      .in('race_id', raceIds);
+  
+    if (sessionsError) throw new Error(sessionsError.message);
+    if (!sessions?.length) return [];
+  
+    const sessionIds = sessions.map(s => s.id);
+  
+    // Get unique constructor IDs that actually competed in this season
+    const { data: raceResults, error: resultsError } = await this.supabaseService.client
+      .from('race_results')
+      .select('constructor_id')
+      .in('session_id', sessionIds);
+  
+    if (resultsError) throw new Error(resultsError.message);
+    if (!raceResults?.length) return [];
+  
+    // Get unique constructor IDs
+    const uniqueConstructorIds = [...new Set(raceResults.map(r => r.constructor_id))];
+  
+    // Fetch constructor details for these IDs
     const { data: constructors, error: constructorsError } = await this.supabaseService.client
       .from('constructors')
       .select('id, name')
-      .eq('is_active', true); // only active teams
+      .in('id', uniqueConstructorIds);
   
     if (constructorsError) throw new Error(constructorsError.message);
     if (!constructors?.length) return [];
