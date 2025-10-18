@@ -114,13 +114,23 @@ export class ConstructorsController {
     return this.constructorsService.getConstructorWorldChampionships(id);
   }
 
+  @ApiExcludeEndpoint()
+  @ApiNotFoundResponse({
+    description: 'The constructor with the specified ID was not found.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., ID is not a number).',
+    type: ApiErrorDto,
+  })
   @Get(':id/best-track')
   async getConstructorBestTrack(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ circuitName: string; totalPoints: number; races: number; wins: number }> {
     return this.constructorsService.getConstructorBestTrack(id);
   }
-
+  
+  @ApiExcludeEndpoint()
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<ConstructorEntity> {
     return this.constructorsService.findOne(id);

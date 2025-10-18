@@ -50,6 +50,7 @@ export class DriversController {
     return this.driversService.findAllWinners();
   }
 
+  @ApiExcludeEndpoint()
   @Public()
   @ApiOperation({ summary: 'Get all drivers with world championships' })
   @ApiOkResponse({ description: 'List of unique drivers who have won at least one world championship' })
