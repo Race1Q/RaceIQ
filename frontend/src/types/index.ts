@@ -102,6 +102,8 @@ export interface DashboardData {
 export interface Stat {
   label: string;
   value: string | number;
+  colSpan?: number; // Optional: number of columns to span in the grid
+  textAlign?: 'left' | 'center' | 'right'; // Optional: text alignment
 }
 
 // NEW: This interface matches the exact nested shape of the backend API response
@@ -173,6 +175,7 @@ export interface FeaturedDriver {
   seasonWins: number;
   seasonPoles: number;
   position: number;
+  imageUrl?: string;
   careerStats: {
     wins: number;
     podiums: number;

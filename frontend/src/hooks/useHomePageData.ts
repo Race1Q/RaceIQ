@@ -26,6 +26,7 @@ const fallbackFeaturedDriver: FeaturedDriver = {
     seasonWins: 15,
     seasonPoles: 8,
     position: 1,
+    imageUrl: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png',
     careerStats: { wins: 60, podiums: 105, poles: 35 },
     recentForm: [{ position: 1, raceName: 'Previous GP', countryCode: 'USA' }],
 };

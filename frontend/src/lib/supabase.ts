@@ -42,5 +42,4 @@ const getSupabaseConfig = () => {
 };
 
 const config = getSupabaseConfig();
-console.log('Supabase config loaded successfully:', { url: config.url, key: '***' });
 export const supabase = createClient(config.url, config.key);

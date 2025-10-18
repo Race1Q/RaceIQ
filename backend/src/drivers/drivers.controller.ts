@@ -42,6 +42,24 @@ export class DriversController {
 
   @ApiExcludeEndpoint()
   @Public()
+  @ApiOperation({ summary: 'Get all drivers who have won at least one race in any season' })
+  @ApiOkResponse({ description: 'List of drivers with season wins from driver_standings_materialized' })
+  @ApiNotFoundResponse({ type: ErrorResponse })
+  @Get('winners')
+  async getWinners(): Promise<any[]> {
+    return this.driversService.findAllWinners();
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get all drivers with world championships' })
+  @ApiOkResponse({ description: 'List of unique drivers who have won at least one world championship' })
+  @ApiNotFoundResponse({ type: ErrorResponse })
+  @Get('champions')
+  async getChampions(): Promise<any[]> {
+    return this.driversService.getChampions();
+  }
+
+  @Public()
   @ApiOperation({ summary: 'Get a single driver by ID (public)' })
   @ApiOkResponse({ type: Driver })
   @ApiNotFoundResponse({

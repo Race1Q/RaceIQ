@@ -38,7 +38,7 @@ const DriverStandingsPage: React.FC = () => {
 
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 1950; year--) {
+    for (let year = 2025; year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;
@@ -70,7 +70,7 @@ const DriverStandingsPage: React.FC = () => {
     >
       <PageHeader 
         title="Formula 1 Championship Standings" 
-        subtitle="Driver standings and statistics"
+        subtitle=" Explore F1 Driver Standings and statistics"
       />
       <LayoutContainer>
         <Flex mb={12} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>

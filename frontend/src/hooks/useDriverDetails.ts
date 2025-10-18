@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { driverHeadshots } from '../lib/driverHeadshots';
 import { fallbackDriverDetails } from '../lib/fallbackData/driverDetails';
 import { apiFetch } from '../lib/api';
 
@@ -141,8 +140,7 @@ export const useDriverDetails = (driverId?: string) => {
           countryCode: safeGet(driverEntity, 'country_code', 'countryCode') || '',
           dateOfBirth: safeGet(driverEntity, 'date_of_birth', 'dateOfBirth') || '',
           teamName: safeGet(driverEntity, 'teamName', 'current_team_name') || 'N/A',
-          imageUrl: driverHeadshots[fullName] || 
-                   safeGet(driverEntity, 'image_url', 'profile_image_url', 'imageUrl') || '',
+          imageUrl: safeGet(driverEntity, 'image_url', 'profile_image_url', 'imageUrl') || '',
           number: safeGetNumber(driverEntity, 'driver_number', 'number') || null,
           
           // Stats data (use from stats API if available, otherwise defaults)

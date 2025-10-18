@@ -38,10 +38,23 @@ const TeamLogo: React.FC<TeamLogoProps> = ({ teamName }) => {
   };
 
   const LogoComponent = logoMap[teamName];
-  if (!LogoComponent) return null;
+  const isHistorical = !LogoComponent;
+
+  // Return F1 logo for historical teams
+  if (isHistorical) {
+    return (
+      <div className={styles.logoContainer}>
+        {/* Use asset from public folder to avoid import resolution issues */}
+        <img 
+          src="/assets/logos/F1LOGO.png" 
+          alt="F1 Logo" 
+          className={styles.historicalLogo}
+        />
+      </div>
+    );
+  }
 
   const isThemed = !['Ferrari', 'Red Bull Racing'].includes(teamName);
-
   const isWilliams = teamName === "Williams" || teamName === "Williams Racing";
   
   return (

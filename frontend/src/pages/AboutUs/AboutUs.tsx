@@ -11,9 +11,7 @@ import {
   HStack,
   Image,
   Icon,
-  Flex,
   Circle,
-  Divider,
 } from '@chakra-ui/react';
 import { 
   DatabaseZap, 
@@ -23,9 +21,7 @@ import {
   ChevronRight,
   Github,
   Linkedin,
-  Mail
 } from 'lucide-react';
-import TeamMemberCard from '../../components/TeamMemberCard/TeamMemberCard';
 import FeatureCard from '../../components/FeatureCard-AboutUs/FeatureCard';
 import { useThemeColor } from '../../context/ThemeColorContext';
 
@@ -35,46 +31,46 @@ const AboutUsPage: React.FC = () => {
   // Enhanced team data with social links
   const teamMembers = [
     { 
-      name: 'Abdullah', 
+      name: 'Abdullah Ali', 
       role: 'Frontend Developer',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      github: 'https://github.com/abdullah',
-      linkedin: 'https://linkedin.com/in/abdullah'
+      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Dullz.jpeg',
+      github: 'https://github.com/AbdullahAliCodes',
+      linkedin: 'https://www.linkedin.com/in/abdullah-ali-31463783/'
     },
     { 
-      name: 'Shives', 
+      name: 'Kovendan Raman', 
       role: 'Backend Developer',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      github: 'https://github.com/shives',
-      linkedin: 'https://linkedin.com/in/shives'
+      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Kovis.jpeg',
+      github: 'https://github.com/KovendanRaman',
+      linkedin: 'https://www.linkedin.com/in/kovendan-raman-2976a422a/'
     },
     { 
-      name: 'Jay', 
+      name: 'Jaishil Patel', 
       role: 'Full Stack Developer',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-      github: 'https://github.com/jay',
-      linkedin: 'https://linkedin.com/in/jay'
+      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Jay.jpeg',
+      github: 'https://github.com/Jaishil-Patel',
+      linkedin: 'https://www.linkedin.com/in/jaishil-patel-07766a320/'
     },
     { 
-      name: 'Kovis', 
+      name: 'Shervaan Govinder', 
       role: 'UI/UX Designer',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      github: 'https://github.com/kovis',
-      linkedin: 'https://linkedin.com/in/kovis'
+      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Shives.jpeg',
+      github: 'https://github.com/shives-govinder',
+      linkedin: 'https://www.linkedin.com/in/shervaan-govinder-3a9766277/'
     },
     { 
-      name: 'Umayr', 
+      name: 'Muhammed Umair Gadatia', 
       role: 'Quality Assurance',
-      avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=150&h=150&fit=crop&crop=face',
-      github: 'https://github.com/umayr',
-      linkedin: 'https://linkedin.com/in/umayr'
+      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Umair.jpeg',
+      github: 'https://github.com/umigadat',
+      linkedin: 'https://www.linkedin.com/in/muhammed-umair-gadatia-685921268/'
     },
     { 
-      name: 'MA', 
+      name: 'Muhammad Ahmed', 
       role: 'Project Lead',
-      avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face',
-      github: 'https://github.com/ma',
-      linkedin: 'https://linkedin.com/in/ma'
+      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/MA.jpeg',
+      github: 'https://github.com/muhammadonthemoon',
+      linkedin: 'https://www.linkedin.com/in/muhammad-ahmed-813624231/'
     },
   ];
 
@@ -464,6 +460,7 @@ const AboutUsPage: React.FC = () => {
                         borderColor: accentColorWithHash,
                         transform: 'scale(1.1)',
                       }}
+                      onClick={() => window.open(member.github, '_blank')}
                     >
                       <Icon as={Github} boxSize="16px" color="text-secondary" />
                     </Circle>
@@ -479,6 +476,7 @@ const AboutUsPage: React.FC = () => {
                         borderColor: accentColorWithHash,
                         transform: 'scale(1.1)',
                       }}
+                      onClick={() => window.open(member.linkedin, '_blank')}
                     >
                       <Icon as={Linkedin} boxSize="16px" color="text-secondary" />
                     </Circle>

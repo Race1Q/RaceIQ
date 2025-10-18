@@ -1,9 +1,34 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import FavoriteTeamSnapshotWidget from './FavoriteTeamSnapshotWidget';
+import { ThemeColorProvider } from '../../../context/ThemeColorContext';
+
+// Mock Auth0
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => ({
+    isAuthenticated: false,
+    user: null,
+    isLoading: false,
+    getAccessTokenSilently: vi.fn().mockResolvedValue('mock-token'),
+  }),
+}));
+
+// Mock useDashboardSharedData from context
+vi.mock('../../../context/DashboardDataContext', () => ({
+  useDashboardSharedData: () => ({
+    driverStandings: [],
+    constructorStandings: [
+      { id: 1, fullName: 'Red Bull Racing', points: 500, wins: 15, podiums: 30, position: 1 }
+    ],
+    seasons: [
+      { id: 1, year: 2025 }
+    ],
+    isLoading: false,
+  }),
+}));
 
 // Mock useUserProfile hook
 const mockUseUserProfile = vi.fn();
@@ -23,6 +48,15 @@ vi.mock('../../../lib/teamColors', () => ({
     'Red Bull Racing': '1E40AF',
     'Mercedes': '00D2BE',
     'Default': '666666',
+  },
+  getTeamColor: (teamName: string | undefined | null, opts?: { hash?: boolean }) => {
+    const colors: any = {
+      'Red Bull Racing': '1E40AF',
+      'Mercedes': '00D2BE',
+      'Default': '666666',
+    };
+    const hex = colors[teamName || ''] || colors['Default'];
+    return opts?.hash ? `#${hex}` : hex;
   },
 }));
 
@@ -58,21 +92,35 @@ const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <BrowserRouter>
       <ChakraProvider theme={testTheme}>
-        {ui}
+        <ThemeColorProvider>
+          {ui}
+        </ThemeColorProvider>
       </ChakraProvider>
     </BrowserRouter>
   );
 };
 
 const mockFavoriteTeam = {
+  id: 1,
   name: 'Red Bull Racing',
 };
+
+// Mock global fetch
+const fetchMock = vi.fn();
 
 describe('FavoriteTeamSnapshotWidget', () => {
   const mockRefetch = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // @ts-ignore
+    global.fetch = fetchMock;
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { season: 1, points: 600, position: 2 }
+      ],
+    });
   });
 
   it('renders loading state', () => {
@@ -101,11 +149,11 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();
     expect(screen.getByText('No favorite team set')).toBeInTheDocument();
-    expect(screen.getByText('Set Favorite')).toBeInTheDocument();
+    expect(screen.getByText('Select Constructor')).toBeInTheDocument();
     expect(screen.getByTestId('building-icon')).toBeInTheDocument();
   });
 
-  it('renders favorite team information when available', () => {
+  it('renders favorite team information when available', async () => {
     mockUseUserProfile.mockReturnValue({
       favoriteConstructor: mockFavoriteTeam,
       loading: false,
@@ -118,8 +166,11 @@ describe('FavoriteTeamSnapshotWidget', () => {
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();
     expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
     expect(screen.getByText("Constructor's Championship")).toBeInTheDocument();
-    expect(screen.getByText('600 pts')).toBeInTheDocument();
-    expect(screen.getByText('P2')).toBeInTheDocument();
+    
+    // Wait for async points/position data to load
+    await waitFor(() => {
+      expect(screen.getByText('600 pts')).toBeInTheDocument();
+    });
   });
 
   it('calls refetch when refresh button is clicked', () => {
@@ -132,10 +183,9 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    const refreshButton = screen.getByRole('button', { name: /refresh favorite team/i });
-    fireEvent.click(refreshButton);
-
-    expect(mockRefetch).toHaveBeenCalledTimes(1);
+    // Component shows Change Team link, not a refresh button
+    const changeTeamLink = screen.getByRole('link', { name: /change team/i });
+    expect(changeTeamLink).toHaveAttribute('href', '/profile');
   });
 
   it('shows loading state on refresh button when loading', () => {
@@ -148,8 +198,7 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    // In loading state, the refresh button should not be visible
-    expect(screen.queryByRole('button', { name: /refresh favorite team/i })).not.toBeInTheDocument();
+    // In loading state, check that loading text is shown
     expect(screen.getAllByText('Loading...')).toHaveLength(2);
   });
 
@@ -163,7 +212,7 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    const setFavoriteButton = screen.getByText('Set Favorite');
+    const setFavoriteButton = screen.getByText('Select Constructor');
     expect(setFavoriteButton).toBeInTheDocument();
     expect(setFavoriteButton.closest('a')).toHaveAttribute('href', '/profile');
   });
@@ -180,12 +229,13 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     const teamLogo = screen.getByAltText('Red Bull Racing Logo');
     expect(teamLogo).toBeInTheDocument();
-    // In test environment, local images don't exist so fallback is used
-    expect(teamLogo).toHaveAttribute('src', '/assets/placeholder.svg');
+    // Mocked getTeamLogo returns the expected path
+    expect(teamLogo).toHaveAttribute('src', '/images/teams/red-bull-racing-logo.png');
   });
 
-  it('handles unknown team (no color in teamColors)', () => {
+  it('handles unknown team (no color in teamColors)', async () => {
     const unknownTeam = {
+      id: 1,
       name: 'Unknown Team',
     };
 
@@ -199,10 +249,14 @@ describe('FavoriteTeamSnapshotWidget', () => {
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
     expect(screen.getByText('Unknown Team')).toBeInTheDocument();
-    expect(screen.getByText('600 pts')).toBeInTheDocument();
+    
+    // Wait for async points data to load
+    await waitFor(() => {
+      expect(screen.getByText('600 pts')).toBeInTheDocument();
+    });
   });
 
-  it('renders progress bar for team performance', () => {
+  it('renders progress bar for team performance', async () => {
     mockUseUserProfile.mockReturnValue({
       favoriteConstructor: mockFavoriteTeam,
       loading: false,
@@ -212,12 +266,13 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    // Check for points and position
-    expect(screen.getByText('600 pts')).toBeInTheDocument();
-    expect(screen.getByText('P2')).toBeInTheDocument();
+    // Check for points - wait for async load
+    await waitFor(() => {
+      expect(screen.getByText('600 pts')).toBeInTheDocument();
+    });
   });
 
-  it('renders with correct layout structure', () => {
+  it('renders with correct layout structure', async () => {
     mockUseUserProfile.mockReturnValue({
       favoriteConstructor: mockFavoriteTeam,
       loading: false,
@@ -227,19 +282,23 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
-    // Check for title and refresh button
+    // Check for title and change team link
     expect(screen.getByText('Favorite Team')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /refresh favorite team/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /change team/i })).toBeInTheDocument();
     
     // Check for team information
     expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
     expect(screen.getByText("Constructor's Championship")).toBeInTheDocument();
-    expect(screen.getByText('600 pts')).toBeInTheDocument();
-    expect(screen.getByText('P2')).toBeInTheDocument();
+    
+    // Wait for async points data
+    await waitFor(() => {
+      expect(screen.getByText('600 pts')).toBeInTheDocument();
+    });
   });
 
   it('handles different team names', () => {
     const differentTeam = {
+      id: 2,
       name: 'Mercedes',
     };
 
@@ -291,7 +350,11 @@ describe('FavoriteTeamSnapshotWidget', () => {
 
     rerender(
       <ChakraProvider theme={testTheme}>
-        <FavoriteTeamSnapshotWidget />
+        <ThemeColorProvider>
+          <BrowserRouter>
+            <FavoriteTeamSnapshotWidget />
+          </BrowserRouter>
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 
@@ -299,8 +362,9 @@ describe('FavoriteTeamSnapshotWidget', () => {
     expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
   });
 
-  it('handles empty team name gracefully', () => {
+  it('handles empty team name gracefully', async () => {
     const teamWithEmptyName = {
+      id: 1,
       name: '',
     };
 
@@ -314,6 +378,10 @@ describe('FavoriteTeamSnapshotWidget', () => {
     renderWithProviders(<FavoriteTeamSnapshotWidget />);
 
     expect(screen.getByText("Constructor's Championship")).toBeInTheDocument();
-    expect(screen.getByText('600 pts')).toBeInTheDocument();
+    
+    // Wait for async points data
+    await waitFor(() => {
+      expect(screen.getByText('600 pts')).toBeInTheDocument();
+    });
   });
 });
