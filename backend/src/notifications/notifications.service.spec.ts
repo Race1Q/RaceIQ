@@ -100,13 +100,12 @@ describe('NotificationsService', () => {
 
         expect(mockedAxios.post).toHaveBeenCalledWith(
           'https://other-group.azurewebsites.net/api/email/send',
-          expect.objectContaining({
+          {
             to: 'user@example.com',
-            subject: expect.any(String),
-            message: expect.any(String),
-            recipient_name: expect.any(String),
-            action_url: expect.any(String),
-          }),
+            subject: 'RaceIQ Upcoming Races',
+            message: 'details',
+            recipient_name: 'user',
+          },
           expect.objectContaining({
             headers: expect.objectContaining({ 'Content-Type': 'application/json', Authorization: expect.stringContaining('Bearer ') }),
           }),
@@ -272,7 +271,7 @@ describe('NotificationsService', () => {
 
         expect(result.success).toBe(true);
         expect(result.status).toBe(200);
-        expect(result.data).toEqual({ messageId: mockMessageId });
+        expect(result.data).toEqual({ messageId: mockMessageId, via: 'smtp' });
         expect(mockTransporter.sendMail).toHaveBeenCalledTimes(1);
       });
 
