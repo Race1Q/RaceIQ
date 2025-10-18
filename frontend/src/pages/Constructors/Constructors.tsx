@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { buildApiUrl } from '../../lib/api';
 import { teamCarImages } from '../../lib/teamCars';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
+import { useConstructorStatsBulk } from '../../hooks/useConstructorStatsBulk';
 import { TEAM_META } from '../../theme/teamTokens';
 
 // Import critical layout components normally (don't lazy load)
@@ -132,7 +133,12 @@ const Constructors = () => {
   const [statusFilter, setStatusFilter] = useState<FilterOption>('active');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeason] = useState<number>(new Date().getFullYear());
-  const [careerStatsMap, setCareerStatsMap] = useState<Map<number, { points: number; wins: number; podiums: number }>>(new Map());
+  // Replace individual stats fetching with bulk stats
+  const { 
+    data: bulkStats, 
+    loading: bulkStatsLoading, 
+    error: bulkStatsError 
+  } = useConstructorStatsBulk(selectedSeason, statusFilter === 'all');
 
   // Preload critical car images for better LCP - only first 2 for faster initial load
   useEffect(() => {
@@ -210,54 +216,16 @@ const Constructors = () => {
     fetchConstructors();
   }, [publicFetch, toast]);
 
-  // Fetch career stats for historical constructors - ONLY when viewing historical/all
-  const fetchCareerStats = useCallback(async () => {
-    // Only fetch if user is viewing historical or all teams
-    if (statusFilter === 'active') return;
-    if (!constructors.length) return;
+  // Create stats map from bulk data
+  const statsMap = useMemo(() => {
+    if (!bulkStats) return new Map();
     
-    const historicalConstructors = constructors.filter(c => !c.is_active);
-    if (historicalConstructors.length === 0) return;
-
-    try {
-      const statsPromises = historicalConstructors.map(async (constructor) => {
-        try {
-          const statsData = await publicFetch(
-            buildApiUrl(`/api/constructors/${constructor.id}/stats`)
-          );
-          return {
-            id: constructor.id,
-            stats: {
-              points: statsData.career.points || 0,
-              wins: statsData.career.wins || 0,
-              podiums: statsData.career.podiums || 0,
-            },
-          };
-        } catch (error) {
-          console.error(`Error fetching career stats for constructor ${constructor.id}:`, error);
-          return null;
-        }
-      });
-
-      const results = await Promise.all(statsPromises);
-      const newStatsMap = new Map();
-      results.forEach(result => {
-        if (result) {
-          newStatsMap.set(result.id, result.stats);
-        }
-      });
-      setCareerStatsMap(newStatsMap);
-    } catch (error) {
-      console.error('Error fetching career stats:', error);
-    }
-  }, [constructors, publicFetch, statusFilter]);
-
-  useEffect(() => {
-    // Only fetch historical stats when needed
-    if (statusFilter !== 'active') {
-      fetchCareerStats();
-    }
-  }, [fetchCareerStats, statusFilter]);
+    const map = new Map();
+    bulkStats.constructors.forEach(constructor => {
+      map.set(constructor.constructorId, constructor.stats);
+    });
+    return map;
+  }, [bulkStats]);
 
   const filteredConstructors = useMemo(() => {
     if (!isAuthenticated) {
@@ -290,12 +258,14 @@ const Constructors = () => {
   const sortedConstructors = useMemo(() => {
     const arr = [...filteredConstructors];
     arr.sort((a, b) => {
-      const pa = standingsMap.get(a.name)?.seasonPoints ?? 0;
-      const pb = standingsMap.get(b.name)?.seasonPoints ?? 0;
+      const statsA = statsMap.get(a.id);
+      const statsB = statsMap.get(b.id);
+      const pa = statsA?.points ?? 0;
+      const pb = statsB?.points ?? 0;
       return pb - pa;
     });
     return arr;
-  }, [filteredConstructors, standingsMap]);
+  }, [filteredConstructors, statsMap]);
 
   // Card click handler with useCallback for better performance
   const handleCardClick = useCallback((constructorId: number) => {
@@ -409,16 +379,16 @@ const Constructors = () => {
         }}
       >
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
-          {loading || (standingsLoading && isAuthenticated) ? (
+          {loading || (standingsLoading && isAuthenticated) || bulkStatsLoading ? (
             <ConstructorsSkeleton />
-          ) : error || standingsError ? (
+          ) : error || standingsError || bulkStatsError ? (
             <Text
               color="brand.redLight"
               textAlign="center"
               fontSize="1.2rem"
               p="xl"
             >
-              {error || standingsError}
+              {error || standingsError || bulkStatsError}
             </Text>
           ) : (
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
@@ -428,14 +398,13 @@ const Constructors = () => {
                 const carImage = isHistorical 
                   ? '/assets/F1Car.png' 
                   : (teamCarImages[constructor.name] || '/assets/default-car.png');
-                const standing = standingsMap.get(constructor.name);
                 const flagEmoji = getFlagEmoji(constructor.nationality);
 
-                // Use career stats for historical teams, season stats for active teams
-                const careerStats = careerStatsMap.get(constructor.id);
-                const displayPoints = isHistorical && careerStats ? careerStats.points : (standing?.seasonPoints ?? 0);
-                const displayWins = isHistorical && careerStats ? careerStats.wins : (standing?.seasonWins ?? 0);
-                const displayPodiums = isHistorical && careerStats ? careerStats.podiums : (standing?.seasonPodiums ?? 0);
+                // Get stats from bulk data instead of individual calls
+                const bulkStats = statsMap.get(constructor.id);
+                const displayPoints = bulkStats?.points ?? 0;
+                const displayWins = bulkStats?.wins ?? 0;
+                const displayPodiums = bulkStats?.podiums ?? 0;
 
                 return (
                   <Suspense key={constructor.id} fallback={<TeamCardLoadingFallback />}>

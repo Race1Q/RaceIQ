@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -29,8 +29,8 @@ import { StandingsModule } from '../standings/standings.module';
     DriversModule,
     RacesModule,
     CircuitsModule,
-    ConstructorsModule,
-    StandingsModule,
+    forwardRef(() => ConstructorsModule),
+    forwardRef(() => StandingsModule),
   ],
   controllers: [AiController],
   providers: [
