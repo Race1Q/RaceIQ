@@ -119,8 +119,7 @@ export class DriversService {
       country_code: driver.country_code,
       driver_number: driver.driver_number,
       date_of_birth: driver.date_of_birth,
-      bio: driver.bio,
-      fun_fact: driver.fun_fact,
+      // bio and fun_fact not stored in database - available via AI endpoint
     }));
   }
 
@@ -230,8 +229,7 @@ export class DriversService {
       country_code: driver.country_code,
       driver_number: driver.driver_number,
       date_of_birth: driver.date_of_birth,
-      bio: driver.bio,
-      fun_fact: driver.fun_fact,
+      // bio and fun_fact not stored in database - available via AI endpoint
       teamName: teamResult?.teamName || 'N/A', // Legacy field for compatibility
     };
 

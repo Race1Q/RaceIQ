@@ -10,7 +10,7 @@ export interface DriverDataForBio {
   driverNumber: number | null;
   countryCode: string | null;
   dateOfBirth: string | null;
-  bio: string | null;
+  // bio removed - not stored in database
   funFact: string | null;
   careerStats?: {
     wins: number;
@@ -107,8 +107,8 @@ export class DriverStatsAdapter {
         driverNumber: driver.driver_number,
         countryCode: driver.country_code,
         dateOfBirth: driver.date_of_birth ? driver.date_of_birth.toString() : null,
-        bio: driver.bio,
-        funFact: driver.fun_fact,
+        // bio and fun_fact not stored in database - funFact kept as null for AI generation
+        funFact: null,
         careerStats,
         seasonStats,
       };

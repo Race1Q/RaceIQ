@@ -30,12 +30,16 @@ export class DashboardService {
   }
 
   async getDashboardData(): Promise<DashboardResponseDto> {
+    console.log('🔍 [getDashboardData] Starting dashboard data fetch');
+    
     // Determine latest season year with standings data
     const latestYearResult = await this.standingsViewRepository
       .createQueryBuilder('ds')
       .select('MAX(ds.seasonYear)', 'latestYear')
       .getRawOne();
     const latestYear: number = latestYearResult?.latestYear || new Date().getFullYear();
+    
+    console.log('✅ [getDashboardData] Latest year:', latestYear);
 
     const [
       nextRace,

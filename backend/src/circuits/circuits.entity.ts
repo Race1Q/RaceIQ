@@ -26,14 +26,7 @@ export class Circuit {
   @Column({ type: 'text', nullable: true })
   map_url: string;
 
-  @Column({ type: 'numeric', nullable: true })
-  length_km: number;
-
-  @Column({ type: 'numeric', nullable: true })
-  race_distance_km: number;
-
-  @Column({ type: 'jsonb', nullable: true })
-  track_layout: any; // This is NULL until we run the GeoJSON ingestion
+  // length_km, race_distance_km, and track_layout columns removed - not in database
 
   // This links to our existing Country entity
   @ManyToOne(() => Country)

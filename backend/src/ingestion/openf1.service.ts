@@ -546,13 +546,12 @@ export class OpenF1Service {
       .filter(point => point.driver_number === referenceDriverNum)
       .map(point => ({ x: point.x, y: point.y, z: point.z }));
 
-    // 9. Save the coordinate array to our database
+    // 9. Track layout storage removed - track_layout column doesn't exist in database
     if (lapTrace.length > 0) {
-      const { error: updateError } = await this.supabaseService.client
-        .from('circuits')
-        .update({ track_layout: lapTrace })
-        .eq('id', circuitIdToUpdate);
-
+      // TODO: Implement track layout storage if needed in the future
+      this.logger.log(`Track layout generated for circuit ${circuitIdToUpdate} with ${lapTrace.length} points (not saved to DB)`);
+      
+      const updateError = null; // Skip database update
       if (updateError) {
         this.logger.error(`Failed to save layout for circuit ${circuitIdToUpdate}:`, updateError);
       } else {
