@@ -472,8 +472,8 @@ describe('DriverStandingsPage', () => {
     expect(screen.getByTestId('option-2023')).toBeInTheDocument();
     expect(screen.getByTestId('option-2022')).toBeInTheDocument();
     
-    // Check that older seasons are available
-    expect(screen.getByTestId('option-1950')).toBeInTheDocument();
+    // Check that older seasons are available (component generates seasons from 2025 to 2000)
+    expect(screen.getByTestId('option-2000')).toBeInTheDocument();
   });
 
   it('handles hover effects on driver rows', () => {

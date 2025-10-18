@@ -415,7 +415,7 @@ describe('DriversService', () => {
       mockFastestLapViewRepo.count.mockResolvedValue(5);
       mockStandingsViewRepo.find.mockResolvedValue(mockStandings);
 
-      const mockQueryBuilder = {
+      const mockRaceResultQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -424,7 +424,17 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ teamName: 'Mercedes' }),
       };
 
-      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
+      };
+
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
 
@@ -448,6 +458,22 @@ describe('DriversService', () => {
 
     it('should handle missing career stats', async () => {
       mockCareerStatsViewRepo.findOne.mockResolvedValue(null);
+      mockStandingsViewRepo.findOne.mockResolvedValue(null);
+      mockWinsPerSeasonViewRepo.find.mockResolvedValue([]);
+      mockRaceResultRepository.findOne.mockResolvedValue(null);
+      mockFastestLapViewRepo.count.mockResolvedValue(0);
+      mockStandingsViewRepo.find.mockResolvedValue([]);
+
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '0' }),
+      };
+
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: null }]);
 
       await expect(service.getDriverCareerStats(1)).rejects.toThrow(
         new NotFoundException('Stats not found for driver ID 1')
@@ -456,6 +482,23 @@ describe('DriversService', () => {
 
     it('should handle missing driver', async () => {
       jest.spyOn(service, 'findOne').mockResolvedValue(null);
+      mockCareerStatsViewRepo.findOne.mockResolvedValue(null);
+      mockStandingsViewRepo.findOne.mockResolvedValue(null);
+      mockWinsPerSeasonViewRepo.find.mockResolvedValue([]);
+      mockRaceResultRepository.findOne.mockResolvedValue(null);
+      mockFastestLapViewRepo.count.mockResolvedValue(0);
+      mockStandingsViewRepo.find.mockResolvedValue([]);
+
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '0' }),
+      };
+
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: null }]);
 
       await expect(service.getDriverCareerStats(1)).rejects.toThrow(
         new NotFoundException('Stats not found for driver ID 1')
@@ -471,7 +514,7 @@ describe('DriversService', () => {
       mockFastestLapViewRepo.count.mockResolvedValue(5);
       mockStandingsViewRepo.find.mockResolvedValue(mockStandings);
 
-      const mockQueryBuilder = {
+      const mockRaceResultQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -480,7 +523,17 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue(null),
       };
 
-      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
+      };
+
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
 
@@ -497,7 +550,7 @@ describe('DriversService', () => {
       mockFastestLapViewRepo.count.mockResolvedValue(5);
       mockStandingsViewRepo.find.mockResolvedValue(mockStandings);
 
-      const mockQueryBuilder = {
+      const mockRaceResultQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -506,7 +559,17 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ teamName: 'Mercedes' }),
       };
 
-      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
+      };
+
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
 
@@ -526,7 +589,7 @@ describe('DriversService', () => {
       mockFastestLapViewRepo.count.mockResolvedValue(5);
       mockStandingsViewRepo.find.mockResolvedValue(mockStandings);
 
-      const mockQueryBuilder = {
+      const mockRaceResultQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -535,7 +598,17 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ teamName: 'Red Bull Racing' }),
       };
 
-      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
+      };
+
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
 
@@ -554,7 +627,7 @@ describe('DriversService', () => {
       mockFastestLapViewRepo.count.mockResolvedValue(5);
       mockStandingsViewRepo.find.mockResolvedValue(mockStandings);
 
-      const mockQueryBuilder = {
+      const mockRaceResultQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -564,7 +637,24 @@ describe('DriversService', () => {
         getMany: jest.fn().mockResolvedValue([]), // No seasons found
       };
 
-      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
+      };
+
+      const mockStandingsQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]), // No seasons found
+      };
+
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockStandingsQueryBuilder);
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
 
@@ -974,7 +1064,43 @@ describe('DriversService', () => {
 
     it('should handle complex query errors', async () => {
       jest.spyOn(service, 'findOne').mockResolvedValue({ id: 1 } as Driver);
+      
+      // Mock careerStatsViewRepo.findOne to reject - this is the first Promise in Promise.all
+      // When any promise in Promise.all rejects, the whole Promise.all rejects immediately
       mockCareerStatsViewRepo.findOne.mockRejectedValue(new Error('Stats query failed'));
+      
+      // Mock standingsViewRepo to prevent hanging (even though Promise.all should reject first)
+      mockStandingsViewRepo.findOne.mockResolvedValue(null);
+      mockStandingsViewRepo.find.mockResolvedValue([]);
+      
+      // Mock other repos to prevent hanging
+      mockWinsPerSeasonViewRepo.find.mockResolvedValue([]);
+      mockRaceResultRepository.findOne.mockResolvedValue(null);
+      mockFastestLapViewRepo.count.mockResolvedValue(0);
+      
+      // Mock query builders for race results (for team name query)
+      const mockRaceResultQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue(null),
+      };
+      mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
+      
+      // Mock query builders for qualifying results
+      const mockQualifyingQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ poles: '0' }),
+      };
+      mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      
+      // Mock dataSource query
+      mockDataSource.query.mockResolvedValue([{ bestLapMs: null }]);
 
       await expect(service.getDriverCareerStats(1)).rejects.toThrow('Stats query failed');
     });

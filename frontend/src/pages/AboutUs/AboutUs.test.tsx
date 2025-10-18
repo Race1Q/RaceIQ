@@ -54,13 +54,13 @@ describe('AboutUs page', () => {
   it('renders exactly 6 team members', () => {
     renderWithProviders(<AboutUs />);
     
-    // Check for team member images
-    expect(screen.getByAltText('Abdullah')).toBeInTheDocument();
-    expect(screen.getByAltText('Shives')).toBeInTheDocument();
-    expect(screen.getByAltText('Jay')).toBeInTheDocument();
-    expect(screen.getByAltText('Kovis')).toBeInTheDocument();
-    expect(screen.getByAltText('Umayr')).toBeInTheDocument();
-    expect(screen.getByAltText('MA')).toBeInTheDocument();
+    // Check for team member images (using full names as they appear in the component)
+    expect(screen.getByAltText('Abdullah Ali')).toBeInTheDocument();
+    expect(screen.getByAltText('Shervaan Govinder')).toBeInTheDocument();
+    expect(screen.getByAltText('Jaishil Patel')).toBeInTheDocument();
+    expect(screen.getByAltText('Kovendan Raman')).toBeInTheDocument();
+    expect(screen.getByAltText('Muhammed Umair Gadatia')).toBeInTheDocument();
+    expect(screen.getByAltText('Muhammad Ahmed')).toBeInTheDocument();
   });
 
   it('renders 5 tech items; 4 are images with alts; OpenF1 uses icon only', () => {

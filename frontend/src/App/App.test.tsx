@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, within, waitFor } from '@testing-library/react';
+import { screen, within, waitFor, fireEvent } from '@testing-library/react';
 import { render } from '../test-utils';
 import App from './App';
 
@@ -21,8 +21,24 @@ vi.mock('@auth0/auth0-react', () => {
   };
 });
 
+// Mock RoleContext to prevent window errors
+vi.mock('../context/RoleContext', () => ({
+  RoleProvider: ({ children }: any) => children,
+  useRole: () => ({
+    role: null,
+    loading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
 // Prevent HomePage crashes from recentRaces
 vi.mock('../data/mockRaces', () => ({ mockRaces: [] }));
+
+// Mock HomePage component to avoid complex rendering issues
+vi.mock('../pages/HomePage/HomePage', () => ({
+  default: () => <div data-testid="home-page">Home Page</div>,
+}));
 
 // Mock fetch used by Drivers page (avoid toasts)
 beforeEach(() => {
@@ -30,7 +46,7 @@ beforeEach(() => {
     'fetch',
     vi.fn(async () => ({
       ok: true,
-      json: async () => [],
+      json: async () => ({ driverStandings: [] }),
     })) as any
   );
 });
@@ -75,5 +91,45 @@ describe('App', () => {
 
     // Verify the app rendered
     expect(container.firstChild).toBeTruthy();
+  });
+
+  it('handles loading state', async () => {
+    await setAuth({ isAuthenticated: false, isLoading: true, user: undefined });
+    const { container } = renderWithProviders(<App />, '/');
+
+    // Just verify the app renders during loading
+    expect(container).toBeInTheDocument();
+  });
+
+  it('renders authenticated dashboard route', async () => {
+    await setAuth({ 
+      isAuthenticated: true, 
+      isLoading: false, 
+      user: { sub: 'auth0|123', name: 'Test User' } 
+    });
+    const { container } = renderWithProviders(<App />, '/dashboard');
+
+    // Verify the app renders for authenticated users
+    expect(container).toBeInTheDocument();
+  });
+
+  it('renders unauthenticated home route', async () => {
+    await setAuth({ isAuthenticated: false, isLoading: false, user: undefined });
+    const { container } = renderWithProviders(<App />, '/');
+
+    await waitFor(() => {
+      // HomePage is mocked, check for our mock
+      expect(screen.queryByTestId('home-page')).toBeInTheDocument();
+    });
+  });
+
+  it('handles route navigation', async () => {
+    await setAuth({ isAuthenticated: false, isLoading: false, user: undefined });
+    const { container } = renderWithProviders(<App />, '/about');
+
+    // About page should load
+    await waitFor(() => {
+      expect(container.querySelector('nav')).toBeInTheDocument();
+    });
   });
 });

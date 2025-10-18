@@ -40,33 +40,43 @@ vi.mock('../../hooks/useUserProfile', () => ({
   }),
 }));
 
-// Mock Supabase
-vi.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        gte: vi.fn(() => ({
-          gte: vi.fn(() => ({
-            data: [
-              {
-                fullName: 'Fernando Alonso',
-                teamName: 'Aston Martin',
-                championships: 2,
-                allTimeFastestLapMs: 78900,
-              },
-              {
-                fullName: 'Sebastian Vettel',
-                teamName: 'Aston Martin',
-                championships: 4,
-                allTimeFastestLapMs: 76500,
-              },
-            ],
-            error: null,
-          })),
-        })),
-      })),
-    })),
-  },
+// Mock apiFetch from API library
+vi.mock('../../lib/api', () => ({
+  apiFetch: vi.fn((url: string) => {
+    // Mock /drivers/champions endpoint
+    if (url.includes('/drivers/champions')) {
+      return Promise.resolve([
+        {
+          driverId: 1,
+          driverFullName: 'Lewis Hamilton',
+          profileImageUrl: 'lewis.jpg',
+          championships: 7,
+        },
+        {
+          driverId: 2,
+          driverFullName: 'Max Verstappen',
+          profileImageUrl: 'max.jpg',
+          championships: 4,
+        },
+      ]);
+    }
+    // Mock /drivers/:id/career-stats endpoint
+    if (url.includes('/drivers/1/career-stats')) {
+      return Promise.resolve({
+        driver: { teamName: 'Mercedes', image_url: 'lewis.jpg' },
+        careerStats: { wins: 103 },
+        bestLapMs: 78123,
+      });
+    }
+    if (url.includes('/drivers/2/career-stats')) {
+      return Promise.resolve({
+        driver: { teamName: 'Red Bull Racing', image_url: 'max.jpg' },
+        careerStats: { wins: 53 },
+        bestLapMs: 77456,
+      });
+    }
+    return Promise.resolve(null);
+  }),
 }));
 
 // Mock driver headshots
@@ -171,8 +181,9 @@ describe('ComparePreviewSection', () => {
     renderWithChakra(<ComparePreviewSection />);
     
     await waitFor(() => {
+      // Based on mock data: Lewis Hamilton (7) and Max Verstappen (4)
       expect(screen.getByText('7')).toBeInTheDocument(); // Lewis Hamilton championships
-      expect(screen.getByText('3')).toBeInTheDocument(); // Max Verstappen championships
+      expect(screen.getByText('4')).toBeInTheDocument(); // Max Verstappen championships
     });
   });
 
