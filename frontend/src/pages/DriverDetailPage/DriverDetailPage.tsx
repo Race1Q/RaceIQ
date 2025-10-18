@@ -1,6 +1,6 @@
 // frontend/src/pages/DriverDetailPage/DriverDetailPage.tsx
 import React from 'react';
-import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid, useColorModeValue } from '@chakra-ui/react';
+import { Container, Box, Text, Button, Heading, Grid, HStack, Image, VStack, SimpleGrid } from '@chakra-ui/react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useDriverDetails } from '../../hooks/useDriverDetails';

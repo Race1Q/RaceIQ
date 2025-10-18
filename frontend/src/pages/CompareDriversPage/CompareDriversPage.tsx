@@ -14,7 +14,6 @@ import CompareTabs from '../../components/compare/CompareTabs';
 import { DriverPdfComparisonCard } from '../../components/compare/DriverPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
 import { TEAM_META } from '../../theme/teamTokens';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 import { driverTeamMapping } from '../../lib/driverTeamMapping';
 
 // Function to get team gradient by team name
@@ -493,12 +492,12 @@ const CompareDriversPage = () => {
         driver1: {
           ...driver1,
           teamColorHex: teamColor1,
-          imageUrl: simplifyImageUrl(driverHeadshots[driver1.fullName] || ''),
+          imageUrl: simplifyImageUrl(driver1.imageUrl || ''),
         },
         driver2: {
           ...driver2,
           teamColorHex: teamColor2,
-          imageUrl: simplifyImageUrl(driverHeadshots[driver2.fullName] || ''),
+          imageUrl: simplifyImageUrl(driver2.imageUrl || ''),
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
@@ -927,9 +926,23 @@ const CompareDriversPage = () => {
 
   // Step 3: Results Display Component
   const Step3Results = () => {
-    // Get driver headshots - use stats data if available, fallback to legacy
-    const driver1Headshot = (stats1 ? driverHeadshots[driver1?.fullName || ''] : driver1 ? driverHeadshots[driver1.fullName] : null);
-    const driver2Headshot = (stats2 ? driverHeadshots[driver2?.fullName || ''] : driver2 ? driverHeadshots[driver2.fullName] : null);
+    // Get driver headshots from API data
+    const driver1Headshot = driver1?.imageUrl || null;
+    const driver2Headshot = driver2?.imageUrl || null;
+    
+    // DEBUG: Track image URLs in compare page
+    console.log(`🔍 CompareDriversPage image debug:`, {
+      driver1: {
+        fullName: driver1?.fullName,
+        imageUrl: driver1?.imageUrl,
+        hasImageUrl: !!driver1?.imageUrl
+      },
+      driver2: {
+        fullName: driver2?.fullName,
+        imageUrl: driver2?.imageUrl,
+        hasImageUrl: !!driver2?.imageUrl
+      }
+    });
     
     // Get team colors using proper driver-team mapping
     const driver1TeamColor = getTeamColor(getDriverTeam(driver1), { hash: true });

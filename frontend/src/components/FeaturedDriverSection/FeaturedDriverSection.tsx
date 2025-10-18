@@ -17,7 +17,6 @@ import {
 } from '@chakra-ui/react';
 import { Icon } from '@chakra-ui/icons';
 import { Trophy, Award, Timer, Star } from 'lucide-react';
-import { driverHeadshots } from '../../lib/driverHeadshots';
 import { teamColors } from '../../lib/teamColors';
 import { countryCodeMap } from '../../lib/countryCodeUtils';
 import ReactCountryFlag from 'react-country-flag';
@@ -34,8 +33,9 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
     return null;
   }
 
-  // Import optimization utility at top of file
-  const imageUrl = driverHeadshots[featuredDriver.fullName] || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col/image.png';
+  // Use API image URL with Max Verstappen fallback
+  const maxVerstappenFallback = 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png';
+  const imageUrl = featuredDriver.imageUrl || maxVerstappenFallback;
 
   const getTeamColor = (teamName: string): string => {
     const hex = teamColors[teamName] ?? teamColors['Default'];
@@ -46,7 +46,7 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
   // Deprecated: inline stat cards now include icons; keeping for reference
 
   return (
-    <Box bg="bg-surface-raised" w="100%">
+    <Box bg="bg-surface-raised" w="100%" pb={{ base: 8, md: 12 }}>
       <Container maxW="1400px" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }} w="100%">
         <Heading
           as="h4"
