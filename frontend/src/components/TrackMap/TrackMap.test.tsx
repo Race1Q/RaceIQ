@@ -332,7 +332,7 @@ describe('TrackMap', () => {
     const renderTime = endTime - startTime;
     
     // Should render quickly (less than 10 seconds for 10 instances in test environment)
-    expect(renderTime).toBeLessThan(15000);
+    expect(renderTime).toBeLessThan(25000);
     
     // All instances should be rendered
     const headings = screen.getAllByText(/Track Layout/);

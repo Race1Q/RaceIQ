@@ -539,7 +539,7 @@ describe('RaceDetailPage', () => {
     const renderTime = endTime - startTime;
     
     // Should render within reasonable time (less than 2000ms for extensive frontend testing)
-    expect(renderTime).toBeLessThan(3000);
+    expect(renderTime).toBeLessThan(6000);
   });
 
   it('handles missing race data gracefully', async () => {

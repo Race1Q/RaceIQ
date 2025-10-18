@@ -23,12 +23,14 @@ import { teamCarImages } from '../../lib/teamCars';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import { TEAM_META } from '../../theme/teamTokens';
 
-// Lazy load non-critical components for better code splitting
+// Import critical layout components normally (don't lazy load)
+import ConstructorsSkeleton from './ConstructorsSkeleton';
+import LayoutContainer from '../../components/layout/LayoutContainer';
+import PageHeader from '../../components/layout/PageHeader';
+import FilterTabs from '../../components/FilterTabs/FilterTabs';
+
+// Lazy load ONLY TeamCard for better code splitting
 const TeamCard = lazy(() => import('../../components/TeamCard/TeamCard').then(module => ({ default: module.TeamCard })));
-const ConstructorsSkeleton = lazy(() => import('./ConstructorsSkeleton'));
-const LayoutContainer = lazy(() => import('../../components/layout/LayoutContainer'));
-const PageHeader = lazy(() => import('../../components/layout/PageHeader'));
-const FilterTabs = lazy(() => import('../../components/FilterTabs/FilterTabs'));
 
 // Interfaces
 interface ApiConstructor {
@@ -319,72 +321,66 @@ const Constructors = () => {
 
   return (
     <Box>
-      <Suspense fallback={<Box h="120px" bg="bg-surface-raised" />}>
-        <PageHeader
-          title="Constructors"
-          subtitle="Explore F1 teams and constructors"
-        />
-      </Suspense>
+      <PageHeader
+        title="Constructors"
+        subtitle="Explore F1 teams and constructors"
+      />
 
       {isAuthenticated && (
-        <Suspense fallback={<Box h="100px" />}>
-          <LayoutContainer>
-            <VStack spacing={6} align="stretch">
-              {/* Filter and info bar */}
-              <Flex justify="space-between" align="center" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
-                {/* Filter tabs - left aligned */}
-                <Suspense fallback={<Box h="52px" w="300px" bg="bg-surface" borderRadius="full" />}>
-                  <FilterTabs 
-                    value={statusFilter} 
-                    onChange={(newFilter) => {
-                      setStatusFilter(newFilter);
-                      if (newFilter === 'active') {
-                        setSearchTerm('');
-                      }
-                    }} 
-                  />
-                </Suspense>
-                
-                {/* Broadcast-style stat bar - right aligned */}
-                <HStack spacing={8} color="text-muted" fontSize="sm" fontFamily="heading">
-                  <Text>2025 Season</Text>
-                  <Box w="1px" h="4" bg="border-primary" />
-                  <Text>10 Teams</Text>
-                  <Box w="1px" h="4" bg="border-primary" />
-                  <Text>24 Races</Text>
-                </HStack>
-              </Flex>
+        <LayoutContainer>
+          <VStack spacing={6} align="stretch">
+            {/* Filter and info bar */}
+            <Flex justify="space-between" align="center" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
+              {/* Filter tabs - left aligned */}
+              <FilterTabs 
+                value={statusFilter} 
+                onChange={(newFilter) => {
+                  setStatusFilter(newFilter);
+                  if (newFilter === 'active') {
+                    setSearchTerm('');
+                  }
+                }} 
+              />
+              
+              {/* Broadcast-style stat bar - right aligned */}
+              <HStack spacing={8} color="text-muted" fontSize="sm" fontFamily="heading">
+                <Text>2025 Season</Text>
+                <Box w="1px" h="4" bg="border-primary" />
+                <Text>10 Teams</Text>
+                <Box w="1px" h="4" bg="border-primary" />
+                <Text>24 Races</Text>
+              </HStack>
+            </Flex>
 
-              {/* Search bar for historical/all */}
-              {(statusFilter === 'all' || statusFilter === 'historical') && (
-                <Flex justify="flex-start">
-                  <Box maxW="400px" w="100%">
-                    <InputGroup>
-                      <Input
-                        placeholder="Search by name"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        bg="bg-primary"
-                        borderColor="border-primary"
-                      />
-                      {searchTerm && (
-                        <InputRightElement>
-                          <IconButton
-                            aria-label="Clear search"
-                            icon={<CloseIcon />}
-                            size="sm"
-                            onClick={() => setSearchTerm('')}
-                            variant="ghost"
-                          />
-                        </InputRightElement>
-                      )}
-                    </InputGroup>
-                  </Box>
-                </Flex>
-              )}
-            </VStack>
-          </LayoutContainer>
-        </Suspense>
+            {/* Search bar for historical/all */}
+            {(statusFilter === 'all' || statusFilter === 'historical') && (
+              <Flex justify="flex-start">
+                <Box maxW="400px" w="100%">
+                  <InputGroup>
+                    <Input
+                      placeholder="Search by name"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      bg="bg-primary"
+                      borderColor="border-primary"
+                    />
+                    {searchTerm && (
+                      <InputRightElement>
+                        <IconButton
+                          aria-label="Clear search"
+                          icon={<CloseIcon />}
+                          size="sm"
+                          onClick={() => setSearchTerm('')}
+                          variant="ghost"
+                        />
+                      </InputRightElement>
+                    )}
+                  </InputGroup>
+                </Box>
+              </Flex>
+            )}
+          </VStack>
+        </LayoutContainer>
       )}
 
       <Box 
@@ -414,9 +410,7 @@ const Constructors = () => {
       >
         <Container maxW="container.2xl" px={{ base: 4, md: 6 }}>
           {loading || (standingsLoading && isAuthenticated) ? (
-            <Suspense fallback={<Box minH="60vh" display="flex" alignItems="center" justifyContent="center"><Spinner /></Box>}>
-              <ConstructorsSkeleton />
-            </Suspense>
+            <ConstructorsSkeleton />
           ) : error || standingsError ? (
             <Text
               color="brand.redLight"
