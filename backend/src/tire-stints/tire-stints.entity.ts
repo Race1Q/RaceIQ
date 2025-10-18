@@ -13,12 +13,6 @@ export class TireStint {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', nullable: true })
-  session_id: number;
-
-  @Column({ type: 'int', nullable: true })
-  driver_id: number;
-
   @Column({ type: 'text', nullable: true })
   compound: string;
 
@@ -34,11 +28,11 @@ export class TireStint {
   @Column({ type: 'int', nullable: true })
   tyre_age_at_start: number;
 
-  @ManyToOne(() => Session, 'tireStints')
+  @ManyToOne(() => Session, (session) => session.tireStints)
   @JoinColumn({ name: 'session_id' })
   session: Session;
 
-  @ManyToOne(() => Driver, 'tireStints')
+  @ManyToOne(() => Driver, (driver) => driver.tireStints)
   @JoinColumn({ name: 'driver_id' })
   driver: Driver;
 }
