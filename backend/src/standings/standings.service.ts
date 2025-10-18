@@ -67,6 +67,8 @@ export class StandingsService {
   }
 
   async getFeaturedDriver(): Promise<FeaturedDriverDto> {
+    console.log('[DEBUG] getFeaturedDriver: Starting...');
+    
     // Get current season year
     const latestYearResult = await this.standingsViewRepository
       .createQueryBuilder('ds')
@@ -77,6 +79,7 @@ export class StandingsService {
       throw new NotFoundException('No standings data available to determine featured driver.');
     }
     const currentYear = latestYearResult.latestYear;
+    console.log('[DEBUG] getFeaturedDriver: Current year =', currentYear);
 
     // Select best recentForm directly from materialized view (precomputed in DB)
     const rows: any[] = await this.standingsViewRepository.query(
@@ -92,7 +95,7 @@ export class StandingsService {
           "seasonWins",
           "seasonPodiums",
           "recentForm",
-          coalesce(last5_positions, '{}'::int4[]) as last5_positions
+          ROW_NUMBER() OVER (ORDER BY "seasonPoints" DESC) as position
         from public.driver_standings_materialized
         where "seasonYear" = $1
         order by "recentForm" asc nulls last
@@ -106,6 +109,13 @@ export class StandingsService {
     }
 
     const best = rows[0];
+    console.log('[DEBUG] getFeaturedDriver: Selected driver =', {
+      driverId: best.driverId,
+      driverFullName: best.driverFullName,
+      position: best.position,
+      seasonPoints: best.seasonPoints,
+      recentForm: best.recentForm
+    });
 
     const careerStats = await this.careerStatsViewRepo.findOne({ where: { driverId: best.driverId } });
 
@@ -157,11 +167,12 @@ export class StandingsService {
       console.log(`[FeaturedDriver] No qualifying data found for driver ${best.driverId}`);
     }
 
-    const recentFormArray = Array.isArray(best.last5_positions)
-      ? (best.last5_positions as number[]).map((p: number) => ({ position: p, raceName: 'Recent', countryCode: best.countryCode ?? null }))
-      : [];
+    // Get actual recent form with real race names
+    console.log('[DEBUG] getFeaturedDriver: Fetching recent form for driver', best.driverId);
+    const recentFormArray = await this.driversService.getDriverRecentForm(best.driverId);
+    console.log('[DEBUG] getFeaturedDriver: Recent form data =', recentFormArray);
 
-    return {
+    const result = {
       id: best.driverId,
       fullName: best.driverFullName,
       driverNumber: best.driverNumber ?? null,
@@ -178,6 +189,14 @@ export class StandingsService {
       },
       recentForm: recentFormArray,
     };
+    
+    console.log('[DEBUG] getFeaturedDriver: Final result =', {
+      position: result.position,
+      recentFormLength: result.recentForm.length,
+      recentFormSample: result.recentForm.slice(0, 2)
+    });
+    
+    return result;
   }
 
   async getFeaturedDriverDebug(): Promise<any> {
@@ -224,6 +243,7 @@ export class StandingsService {
           });
         }
       } catch (error) {
+        console.error('SERVICE FAILED:', error);
         console.warn(`Could not get recent form for driver ${driver.driverId}:`, error);
         continue;
       }

@@ -45,6 +45,7 @@ export class PersistentCacheService implements OnModuleInit {
           `Loaded ${loadedCount} cached AI responses from disk (${expiredCount} expired entries skipped)`
         );
       } catch (err) {
+        console.error('SERVICE FAILED:', err);
         this.logger.warn(`Failed to load cache from disk: ${err.message}`);
       }
     } else {
@@ -147,6 +148,7 @@ export class PersistentCacheService implements OnModuleInit {
       
       this.logger.debug(`Persisted ${this.cache.size} cache entries to disk`);
     } catch (err) {
+      console.error('SERVICE FAILED:', err);
       this.logger.error(`Failed to persist cache to disk: ${err.message}`);
     }
   }

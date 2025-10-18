@@ -98,6 +98,7 @@ export class BioService {
 
       return response;
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating driver bio: ${error.message}`, error.stack);
 
       // Try to return stale cache on error

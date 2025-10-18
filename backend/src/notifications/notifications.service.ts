@@ -115,6 +115,7 @@ export class NotificationsService {
 
           this.logger.warn(`[EMAIL EXT] Non-200 (${resp.status}) for ${to}; falling back to SMTP/mock`);
         } catch (err: any) {
+          console.error('SERVICE FAILED:', err);
           const detail = err?.message ?? String(err);
           const responseData = err?.response?.data ? JSON.stringify(err.response.data) : 'no response data';
           this.logger.error(`[EMAIL EXT] Failed for ${to}: ${detail}; Response: ${responseData}; falling back to SMTP/mock`);
@@ -212,6 +213,7 @@ export class NotificationsService {
   this.logger.log(`Email sent to ${to} messageId=${info.messageId}`);
   return { success: true, status: 200, data: { via: 'smtp', messageId: info.messageId } };
     } catch (e: any) {
+      console.error('SERVICE FAILED:', e);
       this.logger.error(`SMTP send failed: ${e.message}`);
       return { success: false, status: 502, data: { error: 'SMTP send failed', detail: e.message } };
     }

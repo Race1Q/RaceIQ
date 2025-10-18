@@ -110,6 +110,7 @@ Make it engaging and informative for F1 fans, with specific insights about the c
       return result;
 
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating standings analysis: ${error.message}`, error.stack);
       
       // Return fallback data

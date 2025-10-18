@@ -6,6 +6,7 @@ import { Season } from '../seasons/seasons.entity';
 import { Race } from '../races/races.entity';
 import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
+import { QualifyingResult } from '../qualifying-results/qualifying-results.entity';
 import { Driver } from '../drivers/drivers.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
 import { DriverStandingMaterialized } from './driver-standings-materialized.entity';
@@ -19,6 +20,7 @@ import { DriversModule } from '../drivers/drivers.module';
       Race,
       Session,
       RaceResult,
+      QualifyingResult,
       Driver,
       ConstructorEntity,
       DriverStandingMaterialized,
