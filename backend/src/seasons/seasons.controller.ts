@@ -9,6 +9,7 @@ import { ApiErrorDto } from '../common/dto/api-error.dto';
 export class SeasonsController {
   constructor(private readonly seasonsService: SeasonsService) {}
 
+  @ApiExcludeEndpoint()
   @Get()
   async findAll(): Promise<Season[]> {
     return this.seasonsService.findAll();

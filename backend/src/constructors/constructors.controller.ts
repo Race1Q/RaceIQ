@@ -1,29 +1,37 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiExcludeEndpoint, ApiNotFoundResponse } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiExcludeEndpoint, ApiNotFoundResponse, ApiOperation, ApiQuery, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { ConstructorComparisonStatsResponseDto } from './dto/constructor-stats.dto';
 import { ApiErrorDto } from '../common/dto/api-error.dto';
 
+@ApiTags('Constructors')
 @Controller('constructors')
 export class ConstructorsController {
   constructor(private readonly constructorsService: ConstructorsService) {}
 
   @Get('active')
+  @ApiOperation({ summary: 'Get all currently active constructors', description: 'Returns a list of all Formula 1 constructors that are currently competing in the championship.' })
+  @ApiOkResponse({ type: [ConstructorEntity], description: 'List of active constructors' })
   async getActiveConstructors(): Promise<ConstructorEntity[]> {
     return this.constructorsService.findAllActive();
   }
 
   @Get('all')
+  @ApiOperation({ summary: 'Get all constructors of all time', description: 'Returns a complete list of all Formula 1 constructors throughout history, including both active and inactive teams.' })
+  @ApiOkResponse({ type: [ConstructorEntity], description: 'List of all constructors' })
   async getAllConstructors(): Promise<ConstructorEntity[]> {
     return this.constructorsService.findAllConstructors();
   }
 
+  @Get()
+  @ApiOperation({ summary: 'Get constructors by year', description: 'Returns constructors that competed in a specific year. If no year is provided, returns all constructors.' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'The year to filter constructors by (e.g., 2024)' })
+  @ApiOkResponse({ type: [ConstructorEntity], description: 'List of constructors for the specified year' })
   @ApiBadRequestResponse({
     description: 'Invalid input. (e.g., year parameter is not a valid number).',
     type: ApiErrorDto,
   })
-  @Get()
   async findAll(
     @Query('year') year?: string,
   ): Promise<ConstructorEntity[]> {

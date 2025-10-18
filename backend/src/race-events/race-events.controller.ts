@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RaceEvent } from './race-events.entity';
@@ -10,6 +11,7 @@ export class RaceEventsController {
     private readonly repo: Repository<RaceEvent>,
   ) {}
 
+  @ApiExcludeEndpoint()
   @Get()
   async findByRaceId(@Query('race_id') raceId: number) {
     // Find all session_ids for this race
