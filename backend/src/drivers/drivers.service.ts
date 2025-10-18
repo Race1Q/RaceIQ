@@ -283,6 +283,7 @@ export class DriversService {
       // Fallback to calculation if not in materialized view
       return await this.calculateWorldChampionships(driverId);
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       console.error(`Error getting world championships for driver ${driverId}:`, error);
       return 0;
     }
@@ -326,6 +327,7 @@ export class DriversService {
 
       return championships;
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       console.error(`Error calculating world championships for driver ${driverId}:`, error);
       return 0;
     }
@@ -371,6 +373,8 @@ export class DriversService {
   
 
   async getDriverRecentForm(driverId: number): Promise<RecentFormResult[]> {
+    console.log('[DEBUG] getDriverRecentForm: Starting for driver', driverId);
+    
     // First, ensure the driver exists. This will throw a 404 if not found.
     await this.findOne(driverId);
 
@@ -390,6 +394,7 @@ export class DriversService {
       .limit(5)
       .getRawMany();
 
+    console.log('[DEBUG] getDriverRecentForm: Raw results =', rawResults);
     return rawResults;
   }
 
@@ -546,6 +551,7 @@ export class DriversService {
         poles: parseInt(row.poles || '0', 10),
       }));
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error fetching driver season stats for driver ${driverId}:`, error);
       throw new NotFoundException(`Season stats not found for driver ID ${driverId}`);
     }
@@ -576,6 +582,7 @@ export class DriversService {
         cumulative_points: parseFloat(row.cumulative_points || '0'),
       }));
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error fetching driver season progression for driver ${driverId}:`, error);
       throw new NotFoundException(`Season progression not found for driver ID ${driverId}`);
     }
@@ -612,6 +619,7 @@ export class DriversService {
         profileImageUrl: winner.profileImageUrl
       }));
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error('Error fetching drivers with season wins:', error);
       throw new NotFoundException('Failed to fetch drivers with season wins');
     }
@@ -655,6 +663,7 @@ export class DriversService {
         championships: champion.championships
       }));
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error('Error fetching champion drivers:', error);
       throw new NotFoundException('Failed to fetch champion drivers');
     }

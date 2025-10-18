@@ -114,6 +114,7 @@ Make it engaging and informative for F1 fans.`;
       return result;
 
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating constructor info: ${error.message}`, error.stack);
       
       // Return fallback data

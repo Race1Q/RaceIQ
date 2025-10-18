@@ -211,6 +211,7 @@ export class ConstructorsService {
         races: Number(stats?.races) || 0,
       };
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error fetching constructor career stats for ID ${constructorId}:`, error);
       return {
         wins: 0,
@@ -255,6 +256,7 @@ export class ConstructorsService {
         races: Number(stats?.races) || 0,
       };
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error fetching constructor year stats for ID ${constructorId}, year ${year}:`, error);
       return {
         wins: 0,
@@ -306,6 +308,7 @@ export class ConstructorsService {
 
       return { championships: parseInt(result[0]?.championships || '0', 10) };
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error calculating world championships for constructor ${constructorId}:`, error);
       return { championships: 0 };
     }
@@ -349,6 +352,7 @@ export class ConstructorsService {
         wins: parseInt(result[0].wins || '0', 10),
       };
     } catch (error) {
+      console.error('SERVICE FAILED:', error);
       this.logger.error(`Error calculating best track for constructor ${constructorId}:`, error);
       return { circuitName: 'N/A', totalPoints: 0, races: 0, wins: 0 };
     }

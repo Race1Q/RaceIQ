@@ -33,6 +33,14 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
     return null;
   }
 
+  // Debug logging to see what data the component receives
+  console.log('[DEBUG] FeaturedDriverSection: Received data =', {
+    fullName: featuredDriver.fullName,
+    position: featuredDriver.position,
+    recentFormLength: featuredDriver.recentForm?.length,
+    recentFormSample: featuredDriver.recentForm?.slice(0, 2)
+  });
+
   // Use API image URL with Max Verstappen fallback
   const maxVerstappenFallback = 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png';
   const imageUrl = featuredDriver.imageUrl || maxVerstappenFallback;
