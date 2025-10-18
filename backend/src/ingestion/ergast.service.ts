@@ -197,8 +197,7 @@ export class ErgastService {
         location: circuit.Location.locality,
         country_code: countryCode,
         map_url: circuit.url,
-        length_km: null,
-        race_distance_km: null,
+        // length_km and race_distance_km removed - not in database
       };
     });
 

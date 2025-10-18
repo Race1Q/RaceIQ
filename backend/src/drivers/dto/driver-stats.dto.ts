@@ -45,8 +45,8 @@ interface TransformedDriver {
   country_code: string | null;
   driver_number: number | null;
   date_of_birth: Date | null;
-  bio: string | null;
-  fun_fact: string | null;
+  // bio and fun_fact removed - not stored in database
+  // AI-generated bios available via /api/ai/driver/:id/bio endpoint
   teamName?: string; // For enriched driver data
 }
 

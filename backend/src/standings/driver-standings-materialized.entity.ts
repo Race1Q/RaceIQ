@@ -34,6 +34,13 @@ export class DriverStandingMaterialized {
 
   @Column({ type: 'int', name: 'seasonPodiums' })
   seasonPodiums: number;
+
+  // Additional columns for recent form calculations
+  @Column({ type: 'numeric', name: 'recentForm', nullable: true })
+  recentForm: number | null;
+
+  @Column({ type: 'int', name: 'last5_positions', array: true, nullable: true })
+  last5_positions: number[] | null;
 }
 
 

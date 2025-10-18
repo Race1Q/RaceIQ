@@ -11,6 +11,13 @@ export class DashboardController {
   @ApiExcludeEndpoint()
   @Get()
   async getDashboardData(): Promise<DashboardResponseDto> {
-    return this.dashboardService.getDashboardData();
+    try {
+      return await this.dashboardService.getDashboardData();
+    } catch (error) {
+      console.error('❌ [DashboardController] Error:', error.message);
+      console.error('❌ [DashboardController] Stack:', error.stack);
+      console.error('❌ [DashboardController] Full error:', error);
+      throw error;
+    }
   }
 }

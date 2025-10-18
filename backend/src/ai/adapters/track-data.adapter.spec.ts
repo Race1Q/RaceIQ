@@ -92,7 +92,7 @@ describe('TrackDataAdapter', () => {
         circuitName: 'Circuit de Monaco',
         location: 'Monte Carlo',
         country: 'MCO',
-        lengthKm: 3.337,
+        lengthKm: undefined, // Not stored in database
       });
       expect(circuitsService.findOne).toHaveBeenCalledWith(1);
     });
