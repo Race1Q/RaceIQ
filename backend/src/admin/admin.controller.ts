@@ -1,13 +1,22 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ScopesGuard } from '../auth/scopes.guard';
 import { Scopes } from '../auth/scopes.decorator';
+import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, ScopesGuard)
 export class AdminController {
   @ApiExcludeEndpoint()
+  @ApiUnauthorizedResponse({
+    description: 'Authentication token is missing or invalid.',
+    type: ApiErrorDto,
+  })
+  @ApiForbiddenResponse({
+    description: 'User does not have the required permissions (scopes) for this resource.',
+    type: ApiErrorDto,
+  })
   @Get('dashboard')
   @Scopes('admin:all')
   dashboard() {
@@ -22,6 +31,14 @@ export class AdminController {
 
   // Handy debug to see token claims (keep admin-only)
   @ApiExcludeEndpoint()
+  @ApiUnauthorizedResponse({
+    description: 'Authentication token is missing or invalid.',
+    type: ApiErrorDto,
+  })
+  @ApiForbiddenResponse({
+    description: 'User does not have the required permissions (scopes) for this resource.',
+    type: ApiErrorDto,
+  })
   @Get('me')
   @Scopes('admin:all')
   me(@Req() req: any) {

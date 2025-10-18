@@ -1,11 +1,12 @@
 import { Controller, Get, Post, Body, UseGuards, Req, Patch } from '@nestjs/common';
-import { ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiExcludeEndpoint, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { User } from './entities/user.entity';
+import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @Controller('users')
 export class UsersController {
@@ -32,6 +33,10 @@ export class UsersController {
 
   // Test endpoint to check if user creation is working
   @ApiExcludeEndpoint()
+  @ApiUnauthorizedResponse({
+    description: 'Authentication token is missing or invalid.',
+    type: ApiErrorDto,
+  })
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req: any) {
@@ -44,6 +49,10 @@ export class UsersController {
 
   // Manual test endpoint to create a user (for debugging)
   @ApiExcludeEndpoint()
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., DTO validation failed).',
+    type: ApiErrorDto,
+  })
   @Post('test-create')
   async testCreateUser(@Body() body: { auth0Sub: string; email?: string }) {
     try {
@@ -63,6 +72,14 @@ export class UsersController {
   // Endpoint to ensure user exists in database (called after Auth0 signup)
   // Updated to use the new ensureExists method as specified in the prompt
   @ApiExcludeEndpoint()
+  @ApiUnauthorizedResponse({
+    description: 'Authentication token is missing or invalid.',
+    type: ApiErrorDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., DTO validation failed).',
+    type: ApiErrorDto,
+  })
   @Post('ensure-exists')
   @UseGuards(AuthGuard('jwt')) // This protects the endpoint
   async ensureUserExists(@Req() req): Promise<User> {
