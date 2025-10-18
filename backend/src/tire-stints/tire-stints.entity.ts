@@ -13,6 +13,12 @@ export class TireStint {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ type: 'int', nullable: true })
+  session_id: number;
+
+  @Column({ type: 'int', nullable: true })
+  driver_id: number;
+
   @Column({ type: 'text', nullable: true })
   compound: string;
 

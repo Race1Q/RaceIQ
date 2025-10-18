@@ -22,13 +22,13 @@ export class TireStintsService {
   async findAll(query: QueryTireStintDto): Promise<TireStint[]> {
     const { session_id, driver_id } = query;
     
-    // Build where conditions using relationship syntax like in races service
+    // Build where conditions using direct column queries
     const whereConditions: any = {};
     if (session_id) {
-      whereConditions.session = { id: session_id };
+      whereConditions.session_id = session_id;
     }
     if (driver_id) {
-      whereConditions.driver = { id: driver_id };
+      whereConditions.driver_id = driver_id;
     }
 
     this.logger.log(`Finding tire stints with query: ${JSON.stringify(query)}`);
