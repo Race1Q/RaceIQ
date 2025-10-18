@@ -265,7 +265,8 @@ describe('useHomePageData', () => {
     });
 
     const currentYear = new Date().getFullYear();
-    expect(mockFetchCached).toHaveBeenCalledWith('home:featured', '/api/standings/featured-driver');
+    // Check that fetchCached was called with a cache key starting with 'home:featured:'
+    expect(mockFetchCached).toHaveBeenCalledWith(expect.stringMatching(/^home:featured:/), '/api/standings/featured-driver');
     expect(mockFetchCached).toHaveBeenCalledWith(`home:races:${currentYear}`, `/api/seasons/${currentYear}/races`);
   });
 

@@ -63,6 +63,8 @@ export const useDriverDetails = (driverId?: string) => {
   const toast = useToast();
 
   useEffect(() => {
+    let alive = true; // Cleanup flag to prevent state updates on unmounted component
+    
     if (!driverId) {
       setError("Driver ID not found in URL.");
       setLoading(false);
@@ -71,6 +73,7 @@ export const useDriverDetails = (driverId?: string) => {
 
     const fetchData = async () => {
       try {
+        if (!alive) return; // Early exit if unmounted
         setLoading(true);
         setError(null);
         setIsFallback(false);
@@ -200,9 +203,12 @@ export const useDriverDetails = (driverId?: string) => {
         };
         // --- END MAPPER ---
 
-        setDriverDetails(mappedData);
+        if (alive) {
+          setDriverDetails(mappedData);
+        }
 
       } catch (err) {
+        if (!alive) return; // Don't update state if unmounted
         const errorMessage = err instanceof Error ? err.message : 'Failed to load driver data.';
         console.error("Driver Details API failed, loading fallback data.", errorMessage);
         setError(errorMessage);
@@ -216,11 +222,17 @@ export const useDriverDetails = (driverId?: string) => {
           isClosable: true,
         });
       } finally {
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+    
+    return () => {
+      alive = false; // Mark as unmounted to prevent state updates
+    };
   }, [driverId, getAccessTokenSilently, toast]);
 
   return { driverDetails, loading, error, isFallback };

@@ -1,6 +1,7 @@
 // src/App/App.tsx
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, Component } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Flex, HStack, Button, Text, Container, Spinner, IconButton, useDisclosure, Drawer, DrawerBody, DrawerHeader, DrawerOverlay, DrawerContent, DrawerCloseButton, VStack } from '@chakra-ui/react';
@@ -39,7 +40,58 @@ const DashboardPage = lazy(() => import('../pages/Dashboard/DashboardPage'));
 const DriverStandings = lazy(() => import('../pages/Standings/DriverStandings'));
 const AnalyticsStandings = lazy(() => import('../pages/Standings/AnalyticsStandings'));
 
+// Error Boundary Component
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('App Error Boundary Caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="bg-primary" color="text-primary">
+          <VStack spacing={4} p={8} maxW="500px" textAlign="center">
+            <Text fontSize="3xl" fontWeight="bold" color="red.500">Oops! Something went wrong</Text>
+            <Text color="text-secondary" fontSize="md">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </Text>
+            <HStack spacing={4}>
+              <Button
+                colorScheme="blue"
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.href = '/dashboard';
+                }}
+              >
+                Go to Dashboard
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Reload Page
+              </Button>
+            </HStack>
+          </VStack>
+        </Box>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function Navbar() {
   const { isAuthenticated } = useAuth0();
@@ -369,17 +421,19 @@ function AppContent() {
 
 function App() {
   return (
-    <RoleProvider>
-      <ProfileUpdateProvider>
-        <ThemeColorProvider>
-          <DynamicThemeProvider>
-            <UserRegistrationHandler>
-              <AppContent />
-            </UserRegistrationHandler>
-          </DynamicThemeProvider>
-        </ThemeColorProvider>
-      </ProfileUpdateProvider>
-    </RoleProvider>
+    <ErrorBoundary>
+      <RoleProvider>
+        <ProfileUpdateProvider>
+          <ThemeColorProvider>
+            <DynamicThemeProvider>
+              <UserRegistrationHandler>
+                <AppContent />
+              </UserRegistrationHandler>
+            </DynamicThemeProvider>
+          </ThemeColorProvider>
+        </ProfileUpdateProvider>
+      </RoleProvider>
+    </ErrorBoundary>
   );
 }
 
