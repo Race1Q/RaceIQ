@@ -113,14 +113,14 @@ describe('DriverStatsAdapter', () => {
       await expect(adapter.getDriverData(999)).rejects.toThrow('Driver with ID 999 not found');
     });
 
-    it('should include bio and fun fact when available', async () => {
+    it('should handle bio and fun fact (not stored in database)', async () => {
       driversService.findOne.mockResolvedValue(mockDriver as any);
       driversService.getDriverCareerStats.mockResolvedValue(mockCareerStats as any);
 
       const result = await adapter.getDriverData(1);
 
-      expect(result.bio).toBe('Seven-time world champion');
-      expect(result.funFact).toBe('First British driver with multiple championships');
+      // bio removed from database - always returns null
+      expect(result.funFact).toBeNull();
     });
 
     it('should handle null date of birth', async () => {

@@ -205,8 +205,7 @@ describe('DriversService', () => {
         country_code: 'GB',
         driver_number: 44,
         date_of_birth: new Date('1985-01-07'),
-        bio: 'Seven-time World Champion',
-        fun_fact: 'Started racing at age 8',
+        // bio and fun_fact removed - not stored in database
       });
 
       // Service now uses standings view to get driver IDs first, then queries drivers
@@ -260,8 +259,7 @@ describe('DriversService', () => {
       expect(result[0].current_team_name).toBeNull();
       expect(result[0].image_url).toBeNull();
       expect(result[0].team_color).toBeNull();
-      expect(result[0].bio).toBeNull();
-      expect(result[0].fun_fact).toBeNull();
+      // bio and fun_fact removed - not stored in database
     });
 
     it('should handle empty drivers list', async () => {
@@ -1153,8 +1151,7 @@ describe('DriversService', () => {
         country_code: 'GB',
         driver_number: 44,
         date_of_birth: new Date('1985-01-07'),
-        bio: 'Seven-time World Champion',
-        fun_fact: 'Started racing at age 8',
+        // bio and fun_fact removed - not stored in database
       });
     });
 
@@ -1202,8 +1199,7 @@ describe('DriversService', () => {
       expect(result[0].country_code).toBeNull();
       expect(result[0].driver_number).toBeNull();
       expect(result[0].date_of_birth).toBeNull();
-      expect(result[0].bio).toBeNull();
-      expect(result[0].fun_fact).toBeNull();
+      // bio and fun_fact removed - not stored in database
     });
   });
 

@@ -21,14 +21,11 @@ import {
     @PrimaryGeneratedColumn()
     id: number;
   
-    @Column({ type: 'text', unique: true, nullable: true })
-    ergast_driver_ref: string;
-  
-    @Column({ type: 'int', unique: true, nullable: true })
-    openf1_driver_ref: number;
-  
-    @Column({ type: 'int', nullable: true })
-    driver_number: number;
+  @Column({ type: 'text', unique: true, nullable: true })
+  ergast_driver_ref: string;
+
+  @Column({ type: 'int', nullable: true })
+  driver_number: number;
   
     @Column({ type: 'text', nullable: true })
     first_name: string;
@@ -45,16 +42,10 @@ import {
     @Column({ type: 'date', nullable: true })
     date_of_birth: Date;
   
-    @Column({ type: 'text', nullable: true })
-    profile_image_url: string;
-  
-    @Column({ type: 'text', nullable: true })
-    bio: string; // Will be NULL until Gemini enrichment
-  
-    @Column({ type: 'text', nullable: true })
-    fun_fact: string; // Will be NULL until Gemini enrichment
-  
-    // Define the relationship to the Country table
+  @Column({ type: 'text', nullable: true })
+  profile_image_url: string;
+
+  // Define the relationship to the Country table
     // We haven't created the Country entity yet, but we define the relation
     @ManyToOne(() => Country)
     @JoinColumn({ name: 'country_code', referencedColumnName: 'country_code' })

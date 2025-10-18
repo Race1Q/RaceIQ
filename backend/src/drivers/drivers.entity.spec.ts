@@ -48,7 +48,7 @@ describe('Driver Entity', () => {
       // Primary properties
       expect(driver).toHaveProperty('id');
       expect(driver).toHaveProperty('ergast_driver_ref');
-      expect(driver).toHaveProperty('openf1_driver_ref');
+      // openf1_driver_ref removed - not in database
       expect(driver).toHaveProperty('driver_number');
       expect(driver).toHaveProperty('first_name');
       expect(driver).toHaveProperty('last_name');
@@ -56,8 +56,7 @@ describe('Driver Entity', () => {
       expect(driver).toHaveProperty('country_code');
       expect(driver).toHaveProperty('date_of_birth');
       expect(driver).toHaveProperty('profile_image_url');
-      expect(driver).toHaveProperty('bio');
-      expect(driver).toHaveProperty('fun_fact');
+      // bio and fun_fact removed - not in database
       
       // Relationship properties
       expect(driver).toHaveProperty('country');
@@ -75,7 +74,7 @@ describe('Driver Entity', () => {
       
       driver.id = 1;
       driver.ergast_driver_ref = 'hamilton';
-      driver.openf1_driver_ref = 1001;
+      // openf1_driver_ref removed - not in database
       driver.driver_number = 44;
       driver.first_name = 'Lewis';
       driver.last_name = 'Hamilton';
@@ -83,12 +82,11 @@ describe('Driver Entity', () => {
       driver.country_code = 'GB';
       driver.date_of_birth = new Date('1985-01-07');
       driver.profile_image_url = 'https://example.com/lewis.jpg';
-      driver.bio = 'Seven-time World Champion';
-      driver.fun_fact = 'Started racing at age 8';
+      // bio and fun_fact removed - not in database
       
       expect(driver.id).toBe(1);
       expect(driver.ergast_driver_ref).toBe('hamilton');
-      expect(driver.openf1_driver_ref).toBe(1001);
+      // openf1_driver_ref removed - not in database
       expect(driver.driver_number).toBe(44);
       expect(driver.first_name).toBe('Lewis');
       expect(driver.last_name).toBe('Hamilton');
@@ -96,8 +94,7 @@ describe('Driver Entity', () => {
       expect(driver.country_code).toBe('GB');
       expect(driver.date_of_birth).toEqual(new Date('1985-01-07'));
       expect(driver.profile_image_url).toBe('https://example.com/lewis.jpg');
-      expect(driver.bio).toBe('Seven-time World Champion');
-      expect(driver.fun_fact).toBe('Started racing at age 8');
+      // bio and fun_fact removed - not in database
     });
 
     it('should allow setting relationship properties', () => {
@@ -214,7 +211,7 @@ describe('Driver Entity', () => {
       const driver = new Driver();
       driver.id = 1;
       driver.ergast_driver_ref = 'hamilton';
-      driver.openf1_driver_ref = 1001;
+      // openf1_driver_ref removed - not in database
       driver.driver_number = 44;
       driver.first_name = 'Lewis';
       driver.last_name = 'Hamilton';
@@ -222,8 +219,7 @@ describe('Driver Entity', () => {
       driver.country_code = 'GB';
       driver.date_of_birth = new Date('1985-01-07');
       driver.profile_image_url = 'https://example.com/lewis.jpg';
-      driver.bio = 'Seven-time World Champion';
-      driver.fun_fact = 'Started racing at age 8';
+      // bio and fun_fact removed - not in database
       
       expect(driver.full_name).toBe('Lewis Hamilton');
       expect(driver.given_name).toBe('Lewis');
@@ -236,7 +232,7 @@ describe('Driver Entity', () => {
       const driver = new Driver();
       driver.id = 2;
       driver.ergast_driver_ref = 'verstappen';
-      driver.openf1_driver_ref = 1002;
+      // openf1_driver_ref removed - not in database
       driver.driver_number = 1;
       driver.first_name = 'Max';
       driver.last_name = 'Verstappen';
@@ -244,8 +240,7 @@ describe('Driver Entity', () => {
       driver.country_code = 'NL';
       driver.date_of_birth = new Date('1997-09-30');
       driver.profile_image_url = 'https://example.com/max.jpg';
-      driver.bio = 'Three-time World Champion';
-      driver.fun_fact = 'Youngest F1 driver ever';
+      // bio and fun_fact removed - not in database
       
       expect(driver.full_name).toBe('Max Verstappen');
       expect(driver.given_name).toBe('Max');
@@ -258,7 +253,7 @@ describe('Driver Entity', () => {
       const driver = new Driver();
       driver.id = 3;
       driver.ergast_driver_ref = 'norris';
-      driver.openf1_driver_ref = 1003;
+      // openf1_driver_ref removed - not in database
       driver.driver_number = 4;
       driver.first_name = 'Lando';
       driver.last_name = 'Norris';
@@ -266,8 +261,7 @@ describe('Driver Entity', () => {
       driver.country_code = 'GB';
       driver.date_of_birth = new Date('1999-11-13');
       driver.profile_image_url = 'https://example.com/lando.jpg';
-      driver.bio = 'McLaren driver and sim racing enthusiast';
-      driver.fun_fact = 'Popular Twitch streamer';
+      // bio and fun_fact removed - not in database
       
       expect(driver.full_name).toBe('Lando Norris');
       expect(driver.given_name).toBe('Lando');
@@ -282,7 +276,7 @@ describe('Driver Entity', () => {
       const driver = new Driver();
       driver.id = 1;
       driver.ergast_driver_ref = null;
-      driver.openf1_driver_ref = null;
+      // openf1_driver_ref removed - not in database
       driver.driver_number = null;
       driver.first_name = null;
       driver.last_name = null;
@@ -290,11 +284,10 @@ describe('Driver Entity', () => {
       driver.country_code = null;
       driver.date_of_birth = null;
       driver.profile_image_url = null;
-      driver.bio = null;
-      driver.fun_fact = null;
+      // bio and fun_fact removed - not in database
       
       expect(driver.ergast_driver_ref).toBeNull();
-      expect(driver.openf1_driver_ref).toBeNull();
+      // openf1_driver_ref removed - not in database
       expect(driver.driver_number).toBeNull();
       expect(driver.first_name).toBeNull();
       expect(driver.last_name).toBeNull();
@@ -302,15 +295,14 @@ describe('Driver Entity', () => {
       expect(driver.country_code).toBeNull();
       expect(driver.date_of_birth).toBeNull();
       expect(driver.profile_image_url).toBeNull();
-      expect(driver.bio).toBeNull();
-      expect(driver.fun_fact).toBeNull();
+      // bio and fun_fact removed - not in database
     });
 
     it('should handle undefined values', () => {
       const driver = new Driver();
       driver.id = 1;
       driver.ergast_driver_ref = undefined;
-      driver.openf1_driver_ref = undefined;
+      // openf1_driver_ref removed - not in database
       driver.driver_number = undefined;
       driver.first_name = undefined;
       driver.last_name = undefined;
@@ -318,11 +310,10 @@ describe('Driver Entity', () => {
       driver.country_code = undefined;
       driver.date_of_birth = undefined;
       driver.profile_image_url = undefined;
-      driver.bio = undefined;
-      driver.fun_fact = undefined;
+      // bio and fun_fact removed - not in database
       
       expect(driver.ergast_driver_ref).toBeUndefined();
-      expect(driver.openf1_driver_ref).toBeUndefined();
+      // openf1_driver_ref removed - not in database
       expect(driver.driver_number).toBeUndefined();
       expect(driver.first_name).toBeUndefined();
       expect(driver.last_name).toBeUndefined();
@@ -330,8 +321,7 @@ describe('Driver Entity', () => {
       expect(driver.country_code).toBeUndefined();
       expect(driver.date_of_birth).toBeUndefined();
       expect(driver.profile_image_url).toBeUndefined();
-      expect(driver.bio).toBeUndefined();
-      expect(driver.fun_fact).toBeUndefined();
+      // bio and fun_fact removed - not in database
     });
 
     it('should handle empty strings', () => {
@@ -343,8 +333,7 @@ describe('Driver Entity', () => {
       driver.name_acronym = '';
       driver.country_code = '';
       driver.profile_image_url = '';
-      driver.bio = '';
-      driver.fun_fact = '';
+      // bio and fun_fact removed - not in database
       
       expect(driver.ergast_driver_ref).toBe('');
       expect(driver.first_name).toBe('');
@@ -352,8 +341,7 @@ describe('Driver Entity', () => {
       expect(driver.name_acronym).toBe('');
       expect(driver.country_code).toBe('');
       expect(driver.profile_image_url).toBe('');
-      expect(driver.bio).toBe('');
-      expect(driver.fun_fact).toBe('');
+      // bio and fun_fact removed - not in database
     });
   });
 
@@ -367,8 +355,7 @@ describe('Driver Entity', () => {
         'name_acronym',
         'country_code',
         'profile_image_url',
-        'bio',
-        'fun_fact'
+        // bio and fun_fact removed - not in database
       ];
       
       textFields.forEach(field => {
@@ -380,7 +367,7 @@ describe('Driver Entity', () => {
 
     it('should accept number for numeric fields', () => {
       const driver = new Driver();
-      const numericFields = ['id', 'openf1_driver_ref', 'driver_number'];
+      const numericFields = ['id', 'driver_number']; // openf1_driver_ref removed - not in database
       
       numericFields.forEach(field => {
         driver[field] = 123;
@@ -436,7 +423,7 @@ describe('Driver Entity', () => {
       // Test that the entity has the expected structure
       expect(driver).toHaveProperty('id');
       expect(driver).toHaveProperty('ergast_driver_ref');
-      expect(driver).toHaveProperty('openf1_driver_ref');
+      // openf1_driver_ref removed - not in database
       expect(driver).toHaveProperty('driver_number');
       expect(driver).toHaveProperty('first_name');
       expect(driver).toHaveProperty('last_name');
@@ -444,8 +431,7 @@ describe('Driver Entity', () => {
       expect(driver).toHaveProperty('country_code');
       expect(driver).toHaveProperty('date_of_birth');
       expect(driver).toHaveProperty('profile_image_url');
-      expect(driver).toHaveProperty('bio');
-      expect(driver).toHaveProperty('fun_fact');
+      // bio and fun_fact removed - not in database
     });
 
     it('should support relationship mapping', () => {

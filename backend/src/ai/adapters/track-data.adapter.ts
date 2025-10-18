@@ -117,8 +117,8 @@ export class TrackDataAdapter {
         circuitName: circuit.name,
         location: circuit.location,
         country: circuit.country_code,
-        lengthKm: circuit.length_km,
-        raceDistanceKm: circuit.race_distance_km,
+        lengthKm: undefined, // Not stored in database
+        raceDistanceKm: undefined, // Not stored in database
         historicalRaces,
         eventInfo,
       };
