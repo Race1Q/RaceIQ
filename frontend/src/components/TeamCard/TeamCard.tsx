@@ -93,6 +93,10 @@ export function TeamCard({
         boxShadow: `0 20px 50px rgba(0,0,0,0.7), 0 0 30px ${colors.hex}40`,
       }}
       transition="transform 0.3s ease, box-shadow 0.3s ease"
+      sx={{
+        willChange: isHovered ? 'transform, box-shadow' : 'auto',
+        contentVisibility: 'auto',
+      }}
     >
       {/* subtle broadcast scanlines */}
       <Box
@@ -120,6 +124,8 @@ export function TeamCard({
             mixBlendMode: 'multiply',
           }}
           objectFit="contain"
+          loading="lazy"
+          decoding="async"
           onError={(e) => {
             // Hide if logo fails to load
             (e.target as HTMLImageElement).style.display = 'none';
@@ -213,9 +219,14 @@ export function TeamCard({
             right="0"
             bottom="-6"
             maxH="120px"
+            width="auto"
+            height="120px"
             objectFit="contain"
             filter="drop-shadow(0 20px 18px rgba(0,0,0,0.45))"
             draggable={false}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
         </Box>
       </Flex>

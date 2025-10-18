@@ -1,5 +1,5 @@
 // src/pages/Standings/AnalyticsStandings.tsx
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Box, Flex, Text, useColorModeValue } from '@chakra-ui/react';
 import {
   LineChart,
@@ -242,8 +242,8 @@ const AnalyticsStandings: React.FC = () => {
     [constructorsProgression]
   );
 
-  // Memoized tooltip content for better performance
-  const driversTooltipContent = useMemo(() => 
+  // Optimized tooltip content with useCallback for better performance
+  const driversTooltipContent = useCallback(
     ({ active, payload, label }: any) => {
       if (!active || !payload || !payload.length) return null;
 
@@ -266,7 +266,7 @@ const AnalyticsStandings: React.FC = () => {
     }, [driversChartData, tooltipBg, tooltipBorder, tooltipTextColor]
   );
 
-  const constructorsTooltipContent = useMemo(() => 
+  const constructorsTooltipContent = useCallback(
     ({ active, payload, label }: any) => {
       if (!active || !payload || !payload.length) return null;
 
@@ -299,6 +299,8 @@ const AnalyticsStandings: React.FC = () => {
         `,
         backgroundSize: '20px 20px, 20px 20px, 20px 20px',
         backgroundColor: '#0a0a0a',
+        willChange: 'auto',
+        contain: 'layout style paint',
         _light: {
           background: `
             radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
@@ -321,9 +323,10 @@ const AnalyticsStandings: React.FC = () => {
           justifyContent="space-between" 
           flexDirection={{ base: 'column', md: 'row' }} 
           gap={4}
+          minH="80px"
         >
           <StandingsTabs active="analytics" />
-          <Box maxW={{ base: 'full', md: '220px' }} w="full">
+          <Box maxW={{ base: 'full', md: '220px' }} w="full" minH="60px">
             <SearchableSelect
               label="Select Season"
               options={seasonOptions}
@@ -339,88 +342,112 @@ const AnalyticsStandings: React.FC = () => {
           <AnalyticsStandingsSkeleton />
         ) : (
           <Flex gap={6} flexDirection="column" mt={8}>
-            {/* Drivers Chart */}
-            {driversProgression.length > 0 && (
-              <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
-                <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
-                  {selectedSeason} Drivers Points Progression
-                </Text>
-                <ResponsiveContainer width="100%" height="90%">
-                  <LineChart data={driversChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                    <XAxis dataKey="round" stroke={axisColor} />
-                    <YAxis stroke={axisColor} />
-                    <Tooltip content={driversTooltipContent} />
-                    {uniqueDriverNames.map((name) => {
-                      const isLeading = name === leadingDriver;
-                      const teamColor = `#${driverColorsMap[name]}` || '#ff0000';
-                      
-                      return (
-                        <Line
-                          key={name}
-                          type="monotone"
-                          dataKey={name}
-                          stroke={teamColor}
-                          strokeWidth={isLeading ? 4 : 2}
-                          dot={false}
-                          isAnimationActive={false}
-                          name={name}
-                          connectNulls
-                          style={isLeading ? {
-                            filter: `drop-shadow(0 0 8px ${teamColor}80) drop-shadow(0 0 16px ${teamColor}40) drop-shadow(0 0 24px ${teamColor}20)`,
-                            strokeLinecap: 'round',
-                            strokeLinejoin: 'round'
-                          } : {}}
-                        />
-                      );
-                    })}
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
+            {/* Drivers Chart - Fixed height prevents CLS */}
+            <Box 
+              h="400px" 
+              minH="400px"
+              bg={chartBgColor} 
+              p={4} 
+              borderRadius="md"
+              sx={{
+                contain: 'layout size',
+              }}
+            >
+              {driversProgression.length > 0 ? (
+                <>
+                  <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
+                    {selectedSeason} Drivers Points Progression
+                  </Text>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <LineChart data={driversChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                      <XAxis dataKey="round" stroke={axisColor} />
+                      <YAxis stroke={axisColor} />
+                      <Tooltip content={driversTooltipContent} />
+                      {uniqueDriverNames.map((name) => {
+                        const isLeading = name === leadingDriver;
+                        const teamColor = `#${driverColorsMap[name]}` || '#ff0000';
+                        
+                        return (
+                          <Line
+                            key={name}
+                            type="monotone"
+                            dataKey={name}
+                            stroke={teamColor}
+                            strokeWidth={isLeading ? 4 : 2}
+                            dot={false}
+                            isAnimationActive={false}
+                            name={name}
+                            connectNulls
+                            style={isLeading ? {
+                              filter: `drop-shadow(0 0 8px ${teamColor}80) drop-shadow(0 0 16px ${teamColor}40) drop-shadow(0 0 24px ${teamColor}20)`,
+                              strokeLinecap: 'round',
+                              strokeLinejoin: 'round'
+                            } : {}}
+                          />
+                        );
+                      })}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </>
+              ) : null}
+            </Box>
 
-            {/* Constructors Chart */}
-            {constructorsProgression.length > 0 && (
-              <Box h="400px" bg={chartBgColor} p={4} borderRadius="md">
-                <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
-                  {selectedSeason} Constructors Points Progression
-                </Text>
-                <ResponsiveContainer width="100%" height="90%">
-                  <LineChart data={constructorsChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                    <XAxis dataKey="round" stroke={axisColor} />
-                    <YAxis stroke={axisColor} />
-                    <Tooltip content={constructorsTooltipContent} />
-                    {uniqueConstructorNames.map((name) => {
-                      const isLeading = name === leadingConstructor;
-                      const teamColor = `#${constructorColors[name]}` || '#ff0000';
-                      
-                      return (
-                        <Line
-                          key={name}
-                          type="monotone"
-                          dataKey={name}
-                          stroke={teamColor}
-                          strokeWidth={isLeading ? 4 : 2}
-                          dot={false}
-                          isAnimationActive={false}
-                          name={name}
-                          connectNulls
-                          style={isLeading ? {
-                            filter: `drop-shadow(0 0 8px ${teamColor}80) drop-shadow(0 0 16px ${teamColor}40) drop-shadow(0 0 24px ${teamColor}20)`,
-                            strokeLinecap: 'round',
-                            strokeLinejoin: 'round'
-                          } : {}}
-                        />
-                      );
-                    })}
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
+            {/* Constructors Chart - Fixed height prevents CLS */}
+            <Box 
+              h="400px"
+              minH="400px"
+              bg={chartBgColor} 
+              p={4} 
+              borderRadius="md"
+              sx={{
+                contain: 'layout size',
+              }}
+            >
+              {constructorsProgression.length > 0 ? (
+                <>
+                  <Text fontSize="lg" fontWeight="bold" mb={4} color={chartTextColor}>
+                    {selectedSeason} Constructors Points Progression
+                  </Text>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <LineChart data={constructorsChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                      <XAxis dataKey="round" stroke={axisColor} />
+                      <YAxis stroke={axisColor} />
+                      <Tooltip content={constructorsTooltipContent} />
+                      {uniqueConstructorNames.map((name) => {
+                        const isLeading = name === leadingConstructor;
+                        const teamColor = `#${constructorColors[name]}` || '#ff0000';
+                        
+                        return (
+                          <Line
+                            key={name}
+                            type="monotone"
+                            dataKey={name}
+                            stroke={teamColor}
+                            strokeWidth={isLeading ? 4 : 2}
+                            dot={false}
+                            isAnimationActive={false}
+                            name={name}
+                            connectNulls
+                            style={isLeading ? {
+                              filter: `drop-shadow(0 0 8px ${teamColor}80) drop-shadow(0 0 16px ${teamColor}40) drop-shadow(0 0 24px ${teamColor}20)`,
+                              strokeLinecap: 'round',
+                              strokeLinejoin: 'round'
+                            } : {}}
+                          />
+                        );
+                      })}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </>
+              ) : null}
+            </Box>
 
             {/* AI Championship Analysis */}
-            <StandingsAnalysisCard season={selectedSeason} />
+            <Box minH="300px">
+              <StandingsAnalysisCard season={selectedSeason} />
+            </Box>
           </Flex>
         )}
       </LayoutContainer>

@@ -1,5 +1,5 @@
 // src/pages/Constructors/Constructors.tsx
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
   useToast,
   Box,
@@ -13,19 +13,24 @@ import {
   IconButton,
   HStack,
   VStack,
+  Spinner,
 } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
-import ConstructorsSkeleton from './ConstructorsSkeleton';
-import LayoutContainer from '../../components/layout/LayoutContainer';
 import { buildApiUrl } from '../../lib/api';
 import { teamCarImages } from '../../lib/teamCars';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
+import { TEAM_META } from '../../theme/teamTokens';
+
+// Import critical layout components normally (don't lazy load)
+import ConstructorsSkeleton from './ConstructorsSkeleton';
+import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
 import FilterTabs from '../../components/FilterTabs/FilterTabs';
-import { TeamCard } from '../../components/TeamCard/TeamCard';
-import { TEAM_META } from '../../theme/teamTokens';
+
+// Lazy load ONLY TeamCard for better code splitting
+const TeamCard = lazy(() => import('../../components/TeamCard/TeamCard').then(module => ({ default: module.TeamCard })));
 
 // Interfaces
 interface ApiConstructor {
@@ -129,6 +134,38 @@ const Constructors = () => {
   const [selectedSeason] = useState<number>(new Date().getFullYear());
   const [careerStatsMap, setCareerStatsMap] = useState<Map<number, { points: number; wins: number; podiums: number }>>(new Map());
 
+  // Preload critical car images for better LCP - only first 2 for faster initial load
+  useEffect(() => {
+    const criticalImages = [
+      '/assets/2025redbullcarright-D1HxcSsM.png',
+      '/assets/2025mclarencarright-DV8w4W6I.png',
+    ];
+    
+    // Preload first 2 images immediately
+    criticalImages.forEach(src => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = src;
+      link.fetchPriority = 'high';
+      document.head.appendChild(link);
+    });
+
+    // Preload remaining images after a short delay
+    const timer = setTimeout(() => {
+      const secondaryImages = [
+        '/assets/2025ferraricarright-8vGLdqkm.png',
+        '/assets/2025mercedescarright-DR3X3xFa.png',
+      ];
+      secondaryImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const {
     standings: constructorStandings,
     loading: standingsLoading,
@@ -173,49 +210,54 @@ const Constructors = () => {
     fetchConstructors();
   }, [publicFetch, toast]);
 
-  // Fetch career stats for historical constructors
+  // Fetch career stats for historical constructors - ONLY when viewing historical/all
+  const fetchCareerStats = useCallback(async () => {
+    // Only fetch if user is viewing historical or all teams
+    if (statusFilter === 'active') return;
+    if (!constructors.length) return;
+    
+    const historicalConstructors = constructors.filter(c => !c.is_active);
+    if (historicalConstructors.length === 0) return;
+
+    try {
+      const statsPromises = historicalConstructors.map(async (constructor) => {
+        try {
+          const statsData = await publicFetch(
+            buildApiUrl(`/api/constructors/${constructor.id}/stats`)
+          );
+          return {
+            id: constructor.id,
+            stats: {
+              points: statsData.career.points || 0,
+              wins: statsData.career.wins || 0,
+              podiums: statsData.career.podiums || 0,
+            },
+          };
+        } catch (error) {
+          console.error(`Error fetching career stats for constructor ${constructor.id}:`, error);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(statsPromises);
+      const newStatsMap = new Map();
+      results.forEach(result => {
+        if (result) {
+          newStatsMap.set(result.id, result.stats);
+        }
+      });
+      setCareerStatsMap(newStatsMap);
+    } catch (error) {
+      console.error('Error fetching career stats:', error);
+    }
+  }, [constructors, publicFetch, statusFilter]);
+
   useEffect(() => {
-    const fetchCareerStats = async () => {
-      if (!constructors.length) return;
-      
-      const historicalConstructors = constructors.filter(c => !c.is_active);
-      if (historicalConstructors.length === 0) return;
-
-      try {
-        const statsPromises = historicalConstructors.map(async (constructor) => {
-          try {
-            const statsData = await publicFetch(
-              buildApiUrl(`/api/constructors/${constructor.id}/stats`)
-            );
-            return {
-              id: constructor.id,
-              stats: {
-                points: statsData.career.points || 0,
-                wins: statsData.career.wins || 0,
-                podiums: statsData.career.podiums || 0,
-              },
-            };
-          } catch (error) {
-            console.error(`Error fetching career stats for constructor ${constructor.id}:`, error);
-            return null;
-          }
-        });
-
-        const results = await Promise.all(statsPromises);
-        const newStatsMap = new Map();
-        results.forEach(result => {
-          if (result) {
-            newStatsMap.set(result.id, result.stats);
-          }
-        });
-        setCareerStatsMap(newStatsMap);
-      } catch (error) {
-        console.error('Error fetching career stats:', error);
-      }
-    };
-
-    fetchCareerStats();
-  }, [constructors, publicFetch]);
+    // Only fetch historical stats when needed
+    if (statusFilter !== 'active') {
+      fetchCareerStats();
+    }
+  }, [fetchCareerStats, statusFilter]);
 
   const filteredConstructors = useMemo(() => {
     if (!isAuthenticated) {
@@ -254,6 +296,28 @@ const Constructors = () => {
     });
     return arr;
   }, [filteredConstructors, standingsMap]);
+
+  // Card click handler with useCallback for better performance
+  const handleCardClick = useCallback((constructorId: number) => {
+    navigate(`/constructors/${constructorId}`);
+  }, [navigate]);
+
+  // Team card loading fallback
+  const TeamCardLoadingFallback = () => (
+    <Box 
+      display="flex" 
+      alignItems="center" 
+      justifyContent="center" 
+      h="100%" 
+      minH="200px"
+      bg="bg-surface"
+      borderRadius="2xl"
+      border="1px solid"
+      borderColor="border-primary"
+    >
+      <Spinner size="sm" color="brand.red" />
+    </Box>
+  );
 
   return (
     <Box>
@@ -331,6 +395,8 @@ const Constructors = () => {
           `,
           backgroundSize: '20px 20px, 20px 20px, 20px 20px',
           backgroundColor: '#0a0a0a',
+          willChange: 'auto',
+          contain: 'layout style paint',
           _light: {
             background: `
               radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
@@ -372,20 +438,21 @@ const Constructors = () => {
                 const displayPodiums = isHistorical && careerStats ? careerStats.podiums : (standing?.seasonPodiums ?? 0);
 
                 return (
-                  <TeamCard
-                    key={constructor.id}
-                    teamKey={teamKey}
-                    teamName={constructor.name}
-                    countryName={constructor.nationality}
-                    countryFlagEmoji={flagEmoji}
-                    points={displayPoints}
-                    maxPoints={isHistorical ? Math.max(1000, displayPoints) : 500} // Higher max for career stats
-                    wins={displayWins}
-                    podiums={displayPodiums}
-                    carImage={carImage}
-                    isHistorical={isHistorical}
-                    onClick={() => navigate(`/constructors/${constructor.id}`)}
-                  />
+                  <Suspense key={constructor.id} fallback={<TeamCardLoadingFallback />}>
+                    <TeamCard
+                      teamKey={teamKey}
+                      teamName={constructor.name}
+                      countryName={constructor.nationality}
+                      countryFlagEmoji={flagEmoji}
+                      points={displayPoints}
+                      maxPoints={isHistorical ? Math.max(1000, displayPoints) : 500}
+                      wins={displayWins}
+                      podiums={displayPodiums}
+                      carImage={carImage}
+                      isHistorical={isHistorical}
+                      onClick={() => handleCardClick(constructor.id)}
+                    />
+                  </Suspense>
                 );
               })}
             </SimpleGrid>
