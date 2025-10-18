@@ -46,7 +46,7 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
   // Deprecated: inline stat cards now include icons; keeping for reference
 
   return (
-    <Box bg="bg-surface-raised" w="100%">
+    <Box bg="bg-surface-raised" w="100%" pb={{ base: 8, md: 12 }}>
       <Container maxW="1400px" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }} w="100%">
         <Heading
           as="h4"

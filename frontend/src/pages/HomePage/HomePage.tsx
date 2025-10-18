@@ -62,6 +62,7 @@ function HomePage() {
           
           <ScrollAnimationWrapper delay={0.2}>
             <ComparePreviewSection />
+            <SectionConnector mt={{ base: -18, md: -12 }} />
           </ScrollAnimationWrapper>
         </>
       )}
@@ -76,19 +77,28 @@ function HomePage() {
               </VStack>
             )}
             <VStack spacing={{ base: 8, md: 12 }} width="100%" overflow="hidden">
-              <Heading
-                as="h4"
-                size="sm"
-                color="brand.red"
-                textTransform="uppercase"
-                letterSpacing="wider"
-                fontWeight="bold"
-                mb={{ base: 4, md: 8 }}
-                textAlign="center"
-                fontSize={{ base: 'xs', md: 'sm' }}
-              >
-                Recent Races
-              </Heading>
+              <VStack spacing={{ base: 2, md: 4 }} align="center">
+                <Heading
+                  as="h4"
+                  size="sm"
+                  color="border-accent"
+                  textTransform="uppercase"
+                  letterSpacing="wider"
+                  fontWeight="bold"
+                >
+                  RECENT RACES
+                </Heading>
+                <Heading 
+                  as="h2" 
+                  size={{ base: 'xl', md: '2xl' }}
+                  color="text-primary"
+                  fontFamily="heading"
+                  lineHeight="shorter"
+                  textAlign="center"
+                >
+                  Track Every Race.
+                </Heading>
+              </VStack>
               {/* Render skeleton while loading; slider when data is ready */}
               {dataLoading ? (
                 <RecentRacesSkeleton />

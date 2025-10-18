@@ -319,7 +319,7 @@ const ComparePreviewSection: React.FC = () => {
           zIndex: 0,
         }}
       >
-        <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1}>
+        <Container maxW="1400px" py={{ base: '2xl', md: '3xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1} minH="80vh">
           <Flex justify="center" p="xl">
             <Spinner size="lg" color={accentColorWithHash} />
           </Flex>
@@ -351,8 +351,8 @@ const ComparePreviewSection: React.FC = () => {
         zIndex: 0,
       }}
     >
-      <Container maxW="1400px" py={{ base: 'lg', md: 'xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1} w="100%">
-        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 6, md: 'xl' }} alignItems="center">
+      <Container maxW="1400px" py={{ base: '2xl', md: '3xl' }} px={{ base: 'md', lg: 'lg' }} position="relative" zIndex={1} w="100%" minH="80vh">
+        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 6, md: 'xl' }} alignItems="center" h="full" minH="60vh">
           {/* Left Column - Information & CTA */}
           <GridItem>
             <VStack align="flex-start" justify="center" spacing="lg" h="full">
