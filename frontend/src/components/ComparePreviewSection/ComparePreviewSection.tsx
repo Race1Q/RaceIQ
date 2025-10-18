@@ -45,6 +45,11 @@ const ComparePreviewSection: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [randomizeLoading, setRandomizeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Cache for career stats to improve performance
+  const [careerStatsCache] = useState<Map<number, any>>(new Map());
+  // Cache for filtered champions list for even better performance
+  const [championsCache, setChampionsCache] = useState<any[] | null>(null);
 
 
   // Helper: team color from shared map
@@ -96,7 +101,7 @@ const ComparePreviewSection: React.FC = () => {
       fastestLap = 'driver2';
     }
 
-    // Championships: higher wins; tie -> null
+    // Championships: higher championship count; tie -> null
     let championships: null | 'driver1' | 'driver2' = null;
     if (driver1.stats.championships > driver2.stats.championships) championships = 'driver1';
     else if (driver2.stats.championships > driver1.stats.championships) championships = 'driver2';
@@ -107,99 +112,116 @@ const ComparePreviewSection: React.FC = () => {
   const winners = getWinners();
 
   // Randomize: fetch from backend endpoints (no direct Supabase)
+  // Helper function to get cached or fetch driver stats
+  const getCachedOrFetchDriverStats = async (driverId: number): Promise<any | null> => {
+    if (careerStatsCache.has(driverId)) {
+      return careerStatsCache.get(driverId);
+    }
+    try {
+      const stats = await apiFetch<any>(`/api/drivers/${driverId}/career-stats`);
+      careerStatsCache.set(driverId, stats);
+      return stats;
+    } catch (error) {
+      console.error(`Failed to fetch stats for driver ${driverId}:`, error);
+      return null;
+    }
+  };
+
+
   const handleRandomize = async () => {
     try {
       setRandomizeLoading(true);
       setError(null);
 
-      // Step 1: Get a season/round standings snapshot from backend
-      const season = new Date().getFullYear();
-      const round = 1; // could be changed to last known round if available
-      const standings = await apiFetch<any>(`/api/standings/${season}/${round}`);
+      // Step 1: Use cached champions or fetch from new endpoint
+      let champions: any[] = [];
+      
+      if (championsCache) {
+        // Use cached champions for instant response
+        champions = championsCache;
+        console.log('🔍 Using cached champions:', champions.length);
+      } else {
+        // Fetch all drivers with championships from new endpoint
+        console.log('🔍 Fetching champions from /api/drivers/champions...');
+        const championsResponse = await apiFetch<any[]>('/api/drivers/champions');
+        
+        if (!Array.isArray(championsResponse) || championsResponse.length === 0) {
+          throw new Error('No champions returned from backend');
+        }
 
-      const standingsDrivers = Array.isArray(standings?.driverStandings)
-        ? standings.driverStandings
-        : [];
-
-      if (standingsDrivers.length === 0) {
-        throw new Error('No standings returned from backend');
+        // Cache the champions for future use
+        setChampionsCache(championsResponse);
+        champions = championsResponse;
+        console.log('🔍 Cached champions for future use:', champions.length);
       }
 
-      // Step 2: Fetch career stats for these drivers, then filter champions only
-      const enriched = await Promise.all(
-        standingsDrivers.map(async (row: any) => {
-          const driverId = Number(row.driverId);
-          try {
-            const stats = await apiFetch<any>(`/api/drivers/${driverId}/career-stats`);
-            const worldChamps = Number(stats?.careerStats?.worldChampionships) || 0;
-            // Prefer backend career-stats image first (API source of truth),
-            // then fall back to standings-provided image
-            const imageUrl =
-              stats?.driver?.image_url ||
-              stats?.driver?.profile_image_url ||
-              row.driverProfileImageUrl ||
-              '';
-            const teamName =
-              row.constructorName ||
-              stats?.driver?.current_team_name ||
-              stats?.driver?.teamName ||
-              'Unknown Team';
-            return {
-              driverId,
-              fullName: row.driverFullName || stats?.driver?.full_name || '',
-              teamName,
-              imageUrl,
-              championships: worldChamps,
-              // If backend exposes it later, wire it here; for now null
-              allTimeFastestLapMs: null as number | null,
-            };
-          } catch (e) {
-            return null;
-          }
-        })
-      );
-
-      const champions = enriched.filter(
-        (d): d is NonNullable<typeof d> => !!d && d.championships > 0
-      );
-
+      // Step 2: Check if we have enough champions
       if (champions.length < 2) {
-        throw new Error('Not enough championship drivers found');
+        throw new Error(`Only ${champions.length} champions found. Need at least 2.`);
       }
 
-      // Step 3: Pick two random champions
-      const firstIndex = Math.floor(Math.random() * champions.length);
-      let secondIndex = Math.floor(Math.random() * champions.length);
-      if (secondIndex === firstIndex) {
-        secondIndex = (secondIndex + 1) % champions.length;
+      // Step 3: Randomly select TWO distinct champions
+      const shuffledChampions = [...champions].sort(() => Math.random() - 0.5);
+      const selectedChampion1 = shuffledChampions[0];
+      const selectedChampion2 = shuffledChampions[1];
+
+      // Step 4: Fetch detailed stats for only the two selected champions
+      console.log('🔍 Fetching detailed stats for selected champions...');
+      const [d1Stats, d2Stats] = await Promise.all([
+        getCachedOrFetchDriverStats(selectedChampion1.driverId),
+        getCachedOrFetchDriverStats(selectedChampion2.driverId)
+      ]);
+
+      if (!d1Stats || !d2Stats) {
+        throw new Error('Failed to fetch detailed stats for selected champions');
       }
 
-      const d1 = champions[firstIndex];
-      const d2 = champions[secondIndex];
+      // Step 5: Build driver data using the champions data and detailed stats
+      const d1 = {
+        driverId: selectedChampion1.driverId,
+        fullName: selectedChampion1.driverFullName,
+        teamName: d1Stats?.driver?.teamName || 'Unknown Team',
+        imageUrl: selectedChampion1.profileImageUrl || d1Stats?.driver?.image_url || d1Stats?.driver?.profile_image_url || '',
+        championships: selectedChampion1.championships || 0, // Use championship count from champions endpoint
+        wins: d1Stats?.careerStats?.wins || 0, // Use career wins for comparison
+        allTimeFastestLapMs: d1Stats?.bestLapMs ?? null,
+      };
+
+      const d2 = {
+        driverId: selectedChampion2.driverId,
+        fullName: selectedChampion2.driverFullName,
+        teamName: d2Stats?.driver?.teamName || 'Unknown Team',
+        imageUrl: selectedChampion2.profileImageUrl || d2Stats?.driver?.image_url || d2Stats?.driver?.profile_image_url || '',
+        championships: selectedChampion2.championships || 0, // Use championship count from champions endpoint
+        wins: d2Stats?.careerStats?.wins || 0, // Use career wins for comparison
+        allTimeFastestLapMs: d2Stats?.bestLapMs ?? null,
+      };
 
       // DEBUG: Sample of champions pool
       console.log('🔍 ComparePreview (backend) champions pool:', {
         size: champions.length,
-        sample: champions.slice(0, 3)
+        sample: champions.slice(0, 3).map(d => ({
+          name: d.driverFullName,
+          championships: d.championships
+        }))
       });
 
       const d1FullName: string = d1.fullName || 'Unknown Driver 1';
       const d2FullName: string = d2.fullName || 'Unknown Driver 2';
       const d1Team: string = d1.teamName || 'Unknown Team';
       const d2Team: string = d2.teamName || 'Unknown Team';
-      const d1Championships: number = d1.championships || 0;
-      const d2Championships: number = d2.championships || 0;
       const d1LapMs: number | null = d1.allTimeFastestLapMs;
       const d2LapMs: number | null = d2.allTimeFastestLapMs;
       
-      // DEBUG: Show resolved values
+      // DEBUG: Show resolved values with real bestLapMs
       console.log('🔍 ComparePreview (backend) resolved:', {
         driver1: {
           fullName: d1FullName,
           hasImageUrl: !!d1.imageUrl,
           imageUrl: d1.imageUrl || 'No image URL from API',
           championships: d1.championships,
-          lapTimeMs: d1LapMs,
+          bestLapMs: d1.allTimeFastestLapMs,
+          hasBestLap: !!d1.allTimeFastestLapMs,
           teamName: d1Team
         },
         driver2: {
@@ -207,7 +229,8 @@ const ComparePreviewSection: React.FC = () => {
           hasImageUrl: !!d2.imageUrl,
           imageUrl: d2.imageUrl || 'No image URL from API',
           championships: d2.championships,
-          lapTimeMs: d2LapMs,
+          bestLapMs: d2.allTimeFastestLapMs,
+          hasBestLap: !!d2.allTimeFastestLapMs,
           teamName: d2Team
         }
       });
@@ -218,20 +241,20 @@ const ComparePreviewSection: React.FC = () => {
           teamName: d1Team,
           imageUrl: d1.imageUrl || '',
           teamColorToken: getTeamColor(d1Team),
-          stats: {
-            championships: d1Championships,
-            allTimeFastestLapMs: d1LapMs,
-          },
+        stats: {
+          championships: d1.championships, // Use actual championship count for comparison
+          allTimeFastestLapMs: d1LapMs,
+        },
         },
         driver2: {
           fullName: d2FullName,
           teamName: d2Team,
           imageUrl: d2.imageUrl || '',
           teamColorToken: getTeamColor(d2Team),
-          stats: {
-            championships: d2Championships,
-            allTimeFastestLapMs: d2LapMs,
-          },
+        stats: {
+          championships: d2.championships, // Use actual championship count for comparison
+          allTimeFastestLapMs: d2LapMs,
+        },
         },
       };
 
