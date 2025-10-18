@@ -138,15 +138,20 @@ export class DriversService {
     const currentYear = new Date().getFullYear();
     console.log(`[getDriverCareerStats] Fetching career stats for driver ${driverId}`);
 
-    // Add queries for poles data (career and current season)
-    const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings, worldChampionships, careerPolesResult, seasonPolesResult, bestLapRow] = await Promise.all([
+    try {
+      // Add queries for poles data (career and current season)
+      const [driver, careerStats, currentSeason, winsPerSeason, firstRace, seasonFastestLaps, allCurrentSeasonStandings, worldChampionships, careerPolesResult, seasonPolesResult, bestLapRow] = await Promise.all([
       this.findOne(driverId),
       this.careerStatsViewRepo.findOne({ where: { driverId } }),
       this.standingsViewRepo.findOne({ where: { driverId, seasonYear: currentYear } }),
+      // Handle missing wins_per_season_materialized table gracefully
       this.winsPerSeasonViewRepo.find({ 
         where: { driverId }, 
         order: { seasonYear: 'DESC' }, 
         take: 5 
+      }).catch((error) => {
+        console.warn(`[getDriverCareerStats] wins_per_season_materialized table not found, using empty array:`, error.message);
+        return [];
       }),
       this.raceResultRepository.findOne({ 
         where: { driver: { id: driverId } }, 
@@ -154,7 +159,10 @@ export class DriversService {
         order: { session: { race: { date: 'ASC' } } } 
       }),
       // NEW QUERY: Count fastest laps for the current season from our reliable view
-      this.fastestLapViewRepo.count({ where: { driverId } }),
+      this.fastestLapViewRepo.count({ where: { driverId } }).catch((error) => {
+        console.warn(`[getDriverCareerStats] race_fastest_laps_materialized table not found, using 0:`, error.message);
+        return 0;
+      }),
       // NEW QUERY: Get all standings for current season to calculate position
       this.standingsViewRepo.find({ 
         where: { seasonYear: currentYear }, 
@@ -184,12 +192,16 @@ export class DriversService {
         .andWhere('season.year = :year', { year: currentYear })
         .getRawOne<{ poles: string }>(),
       // NEW QUERY: Driver's all-time best lap from race_fastest_laps_materialized
-      this.dataSource
-        .query(
-          'SELECT MIN("lapTimeMs") AS "bestLapMs" FROM race_fastest_laps_materialized WHERE "driverId" = $1',
-          [driverId]
-        )
-        .then((rows: Array<{ bestLapMs: number | null }>) => rows?.[0] ?? { bestLapMs: null }),
+      this.fastestLapViewRepo
+        .createQueryBuilder('fl')
+        .select('MIN(fl.lapTimeMs)', 'bestLapMs')
+        .where('fl.driverId = :driverId', { driverId })
+        .getRawOne<{ bestLapMs: number | null }>()
+        .then((result) => result ?? { bestLapMs: null })
+        .catch((error) => {
+          console.warn(`[getDriverCareerStats] Error getting best lap, using null:`, error.message);
+          return { bestLapMs: null };
+        }),
     ]);
 
     if (!driver || !careerStats) {
@@ -266,6 +278,10 @@ export class DriversService {
       },
       bestLapMs,
     );
+    } catch (error) {
+      console.error(`[getDriverCareerStats] Error fetching career stats for driver ${driverId}:`, error);
+      throw new Error(`Failed to fetch career stats for driver ${driverId}: ${error.message}`);
+    }
   }
 
   /**
