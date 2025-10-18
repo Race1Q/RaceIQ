@@ -91,7 +91,7 @@ function NextRaceWidget({ data }: NextRaceWidgetProps) {
             </Text>
           )}
         </VStack>
-        <PodiumPredictionWidget />
+        <PodiumPredictionWidget raceId={data.raceId} />
       </VStack>
     </WidgetCard>
   );

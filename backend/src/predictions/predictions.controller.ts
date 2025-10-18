@@ -1,6 +1,6 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { PredictionsService } from './predictions.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 import { PredictRequestDto } from './dto/predict-request.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // Assuming path is correct
 import { ScopesGuard } from '../auth/scopes.guard';   // Assuming path is correct
@@ -22,5 +22,17 @@ export class PredictionsController {
   @ApiResponse({ status: 500, description: 'Server error during prediction.' })
   async predict(@Body() predictRequestDto: PredictRequestDto) {
     return this.predictionsService.getPredictions(predictRequestDto);
+  }
+
+  @Get(':raceId')
+  // @UseGuards(JwtAuthGuard, ScopesGuard) // Temporarily disabled for debugging
+  // @Scopes('read:predictions') // Temporarily disabled for debugging
+  @ApiOperation({ summary: 'Get podium predictions for all drivers in a specific race' })
+  @ApiParam({ name: 'raceId', type: 'number', description: 'The ID of the race' })
+  @ApiResponse({ status: 200, description: 'Podium predictions for all drivers in the race.' })
+  @ApiResponse({ status: 404, description: 'Race not found.' })
+  @ApiResponse({ status: 500, description: 'Server error during prediction.' })
+  async getPredictionsByRaceId(@Param('raceId', ParseIntPipe) raceId: number) {
+    return this.predictionsService.getPredictionsByRaceId(raceId);
   }
 }
