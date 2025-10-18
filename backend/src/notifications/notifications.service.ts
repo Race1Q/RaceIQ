@@ -51,47 +51,47 @@ export class NotificationsService {
         try {
           const url = `${baseUrl.replace(/\/$/, '')}/api/email/send`;
 
-          // Compose LockedIn email payload
-          // Their EmailJS template has fixed sections, so we keep the message minimal to avoid duplication
-          const subject = this.config.get<string>('NOTIFICATIONS_SUBJECT') || 'RaceIQ Upcoming Races';
-          
-          // Prefer deployed URL; if FRONTEND_URL points to localhost, override with production
-          let actionUrl = this.config.get<string>('NOTIFICATIONS_ACTION_URL')
-            || this.config.get<string>('FRONTEND_URL')
-            || 'https://race-iq.vercel.app';
-          if (typeof actionUrl === 'string' && /localhost|127\.0\.0\.1/i.test(actionUrl)) {
-            actionUrl = 'https://race-iq.vercel.app';
-          }
-          const recipientName = (to && typeof to === 'string' && to.includes('@')) ? to.split('@')[0] : 'RaceIQ User';
-
-          // Build a clean message that includes all race info inline
-          // Their template shows various sections, so we put everything in the main message
-          let externalMessage = '';
+          // Parse race data to extract username and races
+          let races: any[] = [];
+          let username = 'RaceIQ User';
           try {
             const parsed = JSON.parse(raceDetails);
-            const races = Array.isArray(parsed?.races) ? parsed.races : [];
-            if (races.length > 0) {
-              const top = races.slice(0, 3);
-              const raceList = top.map((r: any, i: number) => 
-                `${i + 1}. ${r.grandPrix} (${r.date})`
-              ).join('\n');
-              externalMessage = `\nHere are your next Formula 1 races:\n\n${raceList}\n\nVisit RaceIQ for live timing, lap analysis, and more!`;
-            }
+            races = Array.isArray(parsed?.races) ? parsed.races : [];
+            username = parsed?.username || (to && typeof to === 'string' && to.includes('@') ? to.split('@')[0] : 'RaceIQ User');
           } catch {
-            // leave externalMessage as provided text if parsing fails
-            externalMessage = raceDetails || 'Check out the latest F1 race updates on RaceIQ!';
+            // If parse fails, use fallback
           }
 
-          // Build minimal payload - only required fields to avoid triggering extra template sections
-          // Their template may have defaults for venue/duration/organizer, so we only send what we control
+          // Build race list for content_goal field
+          const raceList = races.length > 0 
+            ? races.slice(0, 3).map((r: any, i: number) => 
+                `${i + 1}. ${r.grandPrix} (${r.date})`
+              ).join('\n')
+            : 'Check out the latest F1 race updates on RaceIQ!';
+
+          // Build payload using their new template parameter mapping
+          // Required fields: to, subject, message (these are mandatory)
+          // Optional template fields: recipient_name, topic, session_time, venue, time_goal, content_goal, organizer
           const payload: Record<string, string> = {
             to,
-            subject,
-            message: externalMessage,
-            recipient_name: recipientName,
+            subject: this.config.get<string>('NOTIFICATIONS_SUBJECT') || 'RaceIQ Upcoming Races',
+            message: raceList, // Required field - use race list as main message
+            recipient_name: username,
+            topic: 'Formula 1 Race Updates',
+            session_time: new Date().toLocaleString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }),
+            venue: 'RaceIQ Platform',
+            time_goal: 'Stay updated with live race data',
+            content_goal: raceList, // Also populate content_goal for template
+            organizer: 'RaceIQ Team',
           };
 
-          // Remove undefined or empty optional fields to avoid extra template sections
+          // Remove undefined or empty optional fields
           Object.keys(payload).forEach((k) => {
             if (payload[k] === undefined || payload[k] === null || payload[k] === '') {
               delete payload[k];
@@ -100,6 +100,8 @@ export class NotificationsService {
 
           const headers: Record<string, string> = { 'Content-Type': 'application/json' };
           if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+          this.logger.debug(`[EMAIL EXT] Sending to ${url} with payload: ${JSON.stringify(payload, null, 2)}`);
 
           const resp = await axios.post(url, payload, {
             headers,
@@ -114,7 +116,8 @@ export class NotificationsService {
           this.logger.warn(`[EMAIL EXT] Non-200 (${resp.status}) for ${to}; falling back to SMTP/mock`);
         } catch (err: any) {
           const detail = err?.message ?? String(err);
-          this.logger.error(`[EMAIL EXT] Failed for ${to}: ${detail}; falling back to SMTP/mock`);
+          const responseData = err?.response?.data ? JSON.stringify(err.response.data) : 'no response data';
+          this.logger.error(`[EMAIL EXT] Failed for ${to}: ${detail}; Response: ${responseData}; falling back to SMTP/mock`);
         }
       }
     }

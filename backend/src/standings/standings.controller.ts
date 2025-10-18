@@ -15,6 +15,7 @@ export class StandingsController {
     return this.standingsService.getFeaturedDriver();
   }
 
+  @ApiExcludeEndpoint()
   @Get('featured-driver-debug')
   async getFeaturedDriverDebug(): Promise<any> {
     return this.standingsService.getFeaturedDriverDebug();

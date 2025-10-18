@@ -1,6 +1,7 @@
 // backend/src/races/race-summary.controller.ts
 
 import { Controller, Get, Query, NotFoundException } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { RaceResult } from '../race-results/race-results.entity';
@@ -24,6 +25,7 @@ export class RaceSummaryController {
     private readonly raceRepo: Repository<Race>,
   ) {}
 
+  @ApiExcludeEndpoint()
   @Get()
   async getSummary(@Query('race_id') raceId: number) {
     if (!raceId || isNaN(Number(raceId))) {
