@@ -73,6 +73,7 @@ describe('FeaturedDriverSection Component', () => {
     driverNumber: 44,
     countryCode: 'GB',
     teamName: 'Mercedes',
+    imageUrl: 'https://example.com/hamilton.jpg',
     seasonPoints: 250,
     seasonWins: 8,
     position: 2,

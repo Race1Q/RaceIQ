@@ -18,6 +18,11 @@ interface CircuitKeyStatsProps {
 }
 
 const CircuitKeyStats: React.FC<CircuitKeyStatsProps> = ({ stats, color = 'white' }) => {
+  // Handle null stats
+  if (!stats) {
+    return null;
+  }
+
   const statItems = [
     {
       icon: MapPin,

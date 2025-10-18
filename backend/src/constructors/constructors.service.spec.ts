@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { NotFoundException } from '@nestjs/common';
@@ -60,6 +60,10 @@ describe('ConstructorsService', () => {
       createQueryBuilder: jest.fn(),
     };
 
+    const mockDataSource = {
+      query: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConstructorsService,
@@ -78,6 +82,10 @@ describe('ConstructorsService', () => {
         {
           provide: getRepositoryToken(DriverStandingMaterialized),
           useValue: mockStandingsViewRepo,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
         },
       ],
     }).compile();

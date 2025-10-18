@@ -21,6 +21,14 @@ vi.mock('./context/ThemeColorContext', () => ({
   }),
 }));
 
+// Mock the ProfileUpdateContext module
+vi.mock('./context/ProfileUpdateContext', () => ({
+  ProfileUpdateProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useProfileUpdate: () => ({
+    triggerUpdate: vi.fn(),
+  }),
+}));
+
 // Test theme with all required colors
 const testTheme = extendTheme({
   colors: {

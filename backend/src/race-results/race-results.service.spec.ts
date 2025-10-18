@@ -641,7 +641,8 @@ describe('RaceResultsService', () => {
         { id: 2, name: 'Ferrari' },
       ];
       const mockRaceResults = [
-        { session_id: 1, points: 25 },
+        { constructor_id: 1, session_id: 1, points: 25 },
+        { constructor_id: 2, session_id: 1, points: 18 },
       ];
       const mockSessions = [{ id: 1, race_id: 1 }];
       const mockRaces = [
@@ -649,16 +650,10 @@ describe('RaceResultsService', () => {
       ];
 
       (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
-        if (table === 'constructors') {
+        if (table === 'races') {
           return {
             select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockResolvedValue({ data: mockConstructors, error: null }),
-            }),
-          };
-        } else if (table === 'race_results') {
-          return {
-            select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockResolvedValue({ data: mockRaceResults, error: null }),
+              eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
             }),
           };
         } else if (table === 'sessions') {
@@ -667,16 +662,25 @@ describe('RaceResultsService', () => {
               in: jest.fn().mockResolvedValue({ data: mockSessions, error: null }),
             }),
           };
-        } else if (table === 'races') {
+        } else if (table === 'race_results') {
           return {
             select: jest.fn().mockReturnValue({
-              in: jest.fn().mockReturnValue({
-                eq: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
-              }),
+              in: jest.fn().mockResolvedValue({ data: mockRaceResults, error: null }),
+            }),
+          };
+        } else if (table === 'constructors') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({ data: mockConstructors, error: null }),
             }),
           };
         }
       });
+
+      // Mock getConstructorPointsProgression which is called for each constructor
+      jest.spyOn(service, 'getConstructorPointsProgression').mockResolvedValue([
+        { round: 1, raceName: 'Bahrain GP', racePoints: 25, cumulativePoints: 25 }
+      ]);
 
       const result = await service.getAllConstructorsProgression(seasonId);
 
