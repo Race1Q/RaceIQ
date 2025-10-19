@@ -2,6 +2,7 @@ import { Controller, Post, Logger, Get, Param, ParseIntPipe } from '@nestjs/comm
 import { ApiBadRequestResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
+import { IngestionService } from './ingestion.service';
 import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @Controller('ingestion')
@@ -11,6 +12,7 @@ export class IngestionController {
   constructor(
     private readonly ergastService: ErgastService,
     private readonly openf1Service: OpenF1Service,
+    private readonly ingestionService: IngestionService,
   ) {}
 
   // ERGAST INGESTION
@@ -130,5 +132,41 @@ export class IngestionController {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Track Layouts ---');
     this.openf1Service.ingestTrackLayouts(); // Run without await
     return { message: 'Track layout ingestion started. This is a one-time script and will take a while. Check logs.' };
+  }
+
+  /**
+   * ⭐ USE THIS ENDPOINT FOR 2025 UPDATES
+   * Runs the 3 OpenF1 scripts + materialized view refresh
+   */
+  @ApiExcludeEndpoint()
+  @Post('run-2025-pipeline/:year')
+  async run2025Pipeline(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Running 2025 Pipeline for ${year} ---`);
+    const result = await this.ingestionService.ingest2025Pipeline(year);
+    return result;
+  }
+
+  /**
+   * Manually refresh materialized views
+   * Useful if you just want to refresh views without re-ingesting data
+   */
+  @ApiExcludeEndpoint()
+  @Post('refresh-views')
+  async refreshMaterializedViews() {
+    this.logger.log('--- MANUAL TRIGGER: Refreshing Materialized Views ---');
+    await this.ingestionService.refreshMaterializedViews();
+    return { message: 'Materialized views refreshed successfully' };
+  }
+
+  /**
+   * OPTIONAL: Full pipeline from scratch (Ergast + OpenF1 + Refresh)
+   * Only use this if you need to rebuild the entire database
+   */
+  @ApiExcludeEndpoint()
+  @Post('run-full-pipeline')
+  async runFullPipeline() {
+    this.logger.log('--- MANUAL TRIGGER: Running FULL Pipeline (This will take hours!) ---');
+    const result = await this.ingestionService.runFullPipeline();
+    return result;
   }
 }
