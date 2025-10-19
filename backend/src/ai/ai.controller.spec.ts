@@ -86,6 +86,7 @@ describe('AiController', () => {
           provide: QuotaService,
           useValue: {
             getRemaining: jest.fn(),
+            getStats: jest.fn(),
           },
         },
         {
@@ -264,27 +265,67 @@ describe('AiController', () => {
 
   describe('getQuota', () => {
     it('should return quota information', async () => {
-      quotaService.getRemaining.mockReturnValue(1200);
+      quotaService.getStats.mockReturnValue({
+        daily: {
+          remaining: 1200,
+          limit: 1500,
+          used: 300,
+          resetDate: 'Sun Oct 19 2025',
+        },
+        minute: {
+          remaining: 12,
+          limit: 15,
+          used: 3,
+        },
+      });
 
       const result = await controller.getQuota();
 
       expect(result).toEqual({
-        remaining: 1200,
-        limit: 1500,
-        used: 300,
+        daily: {
+          remaining: 1200,
+          limit: 1500,
+          used: 300,
+          resetDate: 'Sun Oct 19 2025',
+        },
+        minute: {
+          remaining: 12,
+          limit: 15,
+          used: 3,
+        },
       });
-      expect(quotaService.getRemaining).toHaveBeenCalled();
+      expect(quotaService.getStats).toHaveBeenCalled();
     });
 
     it('should return zero remaining when quota exhausted', async () => {
-      quotaService.getRemaining.mockReturnValue(0);
+      quotaService.getStats.mockReturnValue({
+        daily: {
+          remaining: 0,
+          limit: 1500,
+          used: 1500,
+          resetDate: 'Sun Oct 19 2025',
+        },
+        minute: {
+          remaining: 0,
+          limit: 15,
+          used: 15,
+        },
+      });
 
       const result = await controller.getQuota();
 
       expect(result).toEqual({
-        remaining: 0,
-        limit: 1500,
-        used: 1500,
+        daily: {
+          remaining: 0,
+          limit: 1500,
+          used: 1500,
+          resetDate: 'Sun Oct 19 2025',
+        },
+        minute: {
+          remaining: 0,
+          limit: 15,
+          used: 15,
+        },
       });
     });
   });

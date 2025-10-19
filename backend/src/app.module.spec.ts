@@ -103,10 +103,6 @@ jest.mock('./ai/ai.module', () => ({
   AiModule: 'mock-ai-module'
 }));
 
-jest.mock('./predictions/predictions.module', () => ({
-  PredictionsModule: 'mock-predictions-module'
-}));
-
 // Mock all the entities
 jest.mock('./standings/driver-standings-materialized.entity', () => ({
   DriverStandingMaterialized: class MockDriverStandingMaterialized {}

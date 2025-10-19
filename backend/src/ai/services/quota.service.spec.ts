@@ -41,7 +41,7 @@ describe('QuotaService', () => {
       const stats = service.getStats();
       const remaining = service.getRemaining();
       
-      expect(remaining).toBe(stats.limit - stats.used);
+      expect(remaining).toBe(stats.daily.limit - stats.daily.used);
     });
 
     it('should decrease remaining quota after increment', () => {
@@ -78,12 +78,24 @@ describe('QuotaService', () => {
     });
 
     it('should return true for one call before limit', () => {
-      // Increment to just before the limit
+      // We need to mock time to avoid hitting minute limit
+      const originalNow = Date.now;
+      let mockTime = Date.now();
+      Date.now = jest.fn(() => mockTime);
+      
+      // Increment to just before the limit, advancing time every minute
       for (let i = 0; i < 1499; i++) {
+        // Every 14 calls, advance time by 1 minute to reset minute quota
+        if (i > 0 && i % 14 === 0) {
+          mockTime += 60000; // Add 1 minute
+        }
         service.increment();
       }
       
       expect(service.hasQuota()).toBe(true);
+      
+      // Restore original Date.now
+      Date.now = originalNow;
     });
   });
 
@@ -91,11 +103,17 @@ describe('QuotaService', () => {
     it('should return correct initial stats', () => {
       const stats = service.getStats();
       
-      expect(stats).toHaveProperty('used');
-      expect(stats).toHaveProperty('remaining');
-      expect(stats).toHaveProperty('limit');
-      expect(stats).toHaveProperty('resetDate');
-      expect(stats.limit).toBe(1500);
+      expect(stats).toHaveProperty('daily');
+      expect(stats).toHaveProperty('minute');
+      expect(stats.daily).toHaveProperty('used');
+      expect(stats.daily).toHaveProperty('remaining');
+      expect(stats.daily).toHaveProperty('limit');
+      expect(stats.daily).toHaveProperty('resetDate');
+      expect(stats.daily.limit).toBe(1500);
+      expect(stats.minute).toHaveProperty('used');
+      expect(stats.minute).toHaveProperty('remaining');
+      expect(stats.minute).toHaveProperty('limit');
+      expect(stats.minute.limit).toBe(15);
     });
 
     it('should update used count after increment', () => {
@@ -105,8 +123,10 @@ describe('QuotaService', () => {
       service.increment();
       
       const updatedStats = service.getStats();
-      expect(updatedStats.used).toBe(initialStats.used + 2);
-      expect(updatedStats.remaining).toBe(initialStats.remaining - 2);
+      expect(updatedStats.daily.used).toBe(initialStats.daily.used + 2);
+      expect(updatedStats.daily.remaining).toBe(initialStats.daily.remaining - 2);
+      expect(updatedStats.minute.used).toBe(initialStats.minute.used + 2);
+      expect(updatedStats.minute.remaining).toBe(initialStats.minute.remaining - 2);
     });
 
     it('should have correct relationship between used, remaining, and limit', () => {
@@ -115,14 +135,15 @@ describe('QuotaService', () => {
       service.increment();
       
       const stats = service.getStats();
-      expect(stats.used + stats.remaining).toBe(stats.limit);
+      expect(stats.daily.used + stats.daily.remaining).toBe(stats.daily.limit);
+      expect(stats.minute.used + stats.minute.remaining).toBe(stats.minute.limit);
     });
 
     it('should include resetDate as a string', () => {
       const stats = service.getStats();
       
-      expect(typeof stats.resetDate).toBe('string');
-      expect(stats.resetDate).toBeTruthy();
+      expect(typeof stats.daily.resetDate).toBe('string');
+      expect(stats.daily.resetDate).toBeTruthy();
     });
   });
 
@@ -134,7 +155,7 @@ describe('QuotaService', () => {
       service.increment();
       
       const statsBeforeReset = service.getStats();
-      expect(statsBeforeReset.used).toBe(3);
+      expect(statsBeforeReset.daily.used).toBe(3);
       
       // Mock the date to be tomorrow
       const originalToDateString = Date.prototype.toDateString;
@@ -145,8 +166,8 @@ describe('QuotaService', () => {
       // Restore original method
       Date.prototype.toDateString = originalToDateString;
       
-      expect(statsAfterReset.used).toBe(0);
-      expect(statsAfterReset.remaining).toBe(statsAfterReset.limit);
+      expect(statsAfterReset.daily.used).toBe(0);
+      expect(statsAfterReset.daily.remaining).toBe(statsAfterReset.daily.limit);
     });
   });
 
