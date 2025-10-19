@@ -308,7 +308,7 @@ describe('RaceDetailsModal', () => {
     // Check for circuit name and date
     await waitFor(() => {
       expect(screen.getByText('Jeddah Corniche Circuit')).toBeInTheDocument();
-      expect(screen.getByText('2025/03/09')).toBeInTheDocument();
+      expect(screen.getByText('09/03/2025')).toBeInTheDocument();
     });
   });
 
@@ -381,7 +381,7 @@ describe('RaceDetailsModal', () => {
     // Check for circuit name and date
     await waitFor(() => {
       expect(screen.getByText('Albert Park Circuit')).toBeInTheDocument();
-      expect(screen.getByText('2025/03/24')).toBeInTheDocument();
+      expect(screen.getByText('24/03/2025')).toBeInTheDocument();
     });
   });
 
