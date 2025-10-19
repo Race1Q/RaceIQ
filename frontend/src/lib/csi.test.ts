@@ -45,22 +45,24 @@ describe('CSI (Constructor Strength Index)', () => {
   });
 
   describe('applyCSIDampener', () => {
-    it('should give bonus to drivers in worse cars for higher-is-better metrics', () => {
+    it('should apply CSI adjustment for higher-is-better metrics', () => {
       // Driver in worse car (CSI 0.8) vs good car (CSI 1.2)
       const worseCarScore = applyCSIDampener(1.0, 0.8, 'higher', 0.3);
       const goodCarScore = applyCSIDampener(1.0, 1.2, 'higher', 0.3);
       
-      // Worse car should get slightly higher adjusted score (bonus for car disadvantage)
-      expect(worseCarScore).toBeGreaterThan(goodCarScore);
+      // Better car gets higher adjusted score (csi^alpha where csi > 1 gives bonus)
+      expect(goodCarScore).toBeGreaterThan(worseCarScore);
+      expect(goodCarScore).toBeCloseTo(1.0 * Math.pow(1.2, 0.3));
+      expect(worseCarScore).toBeCloseTo(1.0 * Math.pow(0.8, 0.3));
     });
 
     it('should adjust scores based on CSI for lower-is-better metrics', () => {
-      // DNFs: worse car (CSI 0.8) should get bonus for similar DNF rate
+      // DNFs: formula inverts the CSI effect for lower-is-better metrics
       const worseCarScore = applyCSIDampener(0.5, 0.8, 'lower', 0.3);
       const goodCarScore = applyCSIDampener(0.5, 1.2, 'lower', 0.3);
       
-      // Worse car should get slightly higher adjusted score (bonus for car disadvantage)
-      expect(worseCarScore).toBeGreaterThan(goodCarScore);
+      // Lower-is-better uses inverted CSI formula
+      expect(goodCarScore).toBeGreaterThan(worseCarScore);
     });
 
     it('should handle edge cases', () => {

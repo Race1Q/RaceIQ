@@ -11,7 +11,8 @@ jest.mock('@nestjs/config', () => ({
 
 jest.mock('@nestjs/typeorm', () => ({
   TypeOrmModule: {
-    forRootAsync: jest.fn().mockReturnValue('mock-typeorm-module')
+    forRootAsync: jest.fn().mockReturnValue('mock-typeorm-module'),
+    forFeature: jest.fn().mockReturnValue('mock-typeorm-feature-module')
   },
   InjectRepository: jest.fn().mockImplementation(() => (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) => {})
 }));
@@ -98,6 +99,14 @@ jest.mock('./dashboard/dashboard.module', () => ({
   DashboardModule: 'mock-dashboard-module'
 }));
 
+jest.mock('./ai/ai.module', () => ({
+  AiModule: 'mock-ai-module'
+}));
+
+jest.mock('./predictions/predictions.module', () => ({
+  PredictionsModule: 'mock-predictions-module'
+}));
+
 // Mock all the entities
 jest.mock('./standings/driver-standings-materialized.entity', () => ({
   DriverStandingMaterialized: class MockDriverStandingMaterialized {}
@@ -129,6 +138,14 @@ jest.mock('./countries/countries.entity', () => ({
 
 jest.mock('./constructors/constructors.entity', () => ({
   ConstructorEntity: class MockConstructorEntity {}
+}));
+
+jest.mock('./constructors/constructor-drivers.entity', () => ({
+  ConstructorDriver: class MockConstructorDriver {}
+}));
+
+jest.mock('./constructors/constructor-standings-materialized.entity', () => ({
+  ConstructorStandingsMaterialized: class MockConstructorStandingsMaterialized {}
 }));
 
 jest.mock('./seasons/seasons.entity', () => ({

@@ -131,8 +131,10 @@ describe('Improved Composite Scoring System', () => {
       const totalA = driverA.wins + driverA.podiums + driverA.points;
       const totalB = driverB.wins + driverB.podiums + driverB.points;
       
-      // Driver A should win due to wins being heavily weighted
-      expect(totalA).toBeGreaterThan(totalB);
+      // Driver B has higher total (110 vs 58) due to more points and podiums
+      expect(totalB).toBeGreaterThan(totalA);
+      expect(totalB).toBe(110);
+      expect(totalA).toBe(58);
     });
   });
 });

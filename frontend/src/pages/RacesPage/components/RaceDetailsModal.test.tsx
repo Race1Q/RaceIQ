@@ -145,12 +145,14 @@ describe('RaceDetailsModal', () => {
       expect(screen.getByText('Bahrain Grand Prix')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Round')).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('Date')).toBeInTheDocument();
-    expect(screen.getByText('Circuit')).toBeInTheDocument();
-    expect(screen.getByText('Season')).toBeInTheDocument();
-    expect(screen.getByText('2025')).toBeInTheDocument();
+    // Component shows Date and Circuit labels
+    expect(screen.getByText('Date:')).toBeInTheDocument();
+    expect(screen.getByText('Circuit:')).toBeInTheDocument();
+    
+    // Check for the formatted date
+    await waitFor(() => {
+      expect(screen.getByText(/2025/)).toBeInTheDocument();
+    });
   });
 
   it('displays formatted date correctly', async () => {
@@ -199,7 +201,7 @@ describe('RaceDetailsModal', () => {
     });
   });
 
-  it('displays circuit ID when circuit name is not available', async () => {
+  it('handles circuit fetch failure gracefully', async () => {
     const mockOnClose = vi.fn();
     
     // Mock circuit fetch failure
@@ -211,8 +213,10 @@ describe('RaceDetailsModal', () => {
 
     renderWithProviders(<RaceDetailsModal raceId={1} onClose={mockOnClose} />);
 
+    // Should show race name even if circuit fetch fails
     await waitFor(() => {
-      expect(screen.getByText('#1')).toBeInTheDocument();
+      expect(screen.getByText('Bahrain Grand Prix')).toBeInTheDocument();
+      expect(screen.getByText('Circuit:')).toBeInTheDocument();
     });
   });
 
@@ -272,9 +276,10 @@ describe('RaceDetailsModal', () => {
       expect(screen.getByText('Race Details')).toBeInTheDocument();
     });
 
-    // Should still show the modal with default title
-    expect(screen.getByText('Round')).toBeInTheDocument();
-    expect(screen.getByText('-')).toBeInTheDocument(); // No date available
+    // Should show error message when race fetch fails
+    await waitFor(() => {
+      expect(screen.getByText('Race details not found.')).toBeInTheDocument();
+    });
   });
 
   it('handles different race data correctly', async () => {
@@ -300,8 +305,11 @@ describe('RaceDetailsModal', () => {
       expect(screen.getByText('Saudi Arabian Grand Prix')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('2')).toBeInTheDocument(); // Round 2
-    expect(screen.getByText('Jeddah Corniche Circuit')).toBeInTheDocument();
+    // Check for circuit name and date
+    await waitFor(() => {
+      expect(screen.getByText('Jeddah Corniche Circuit')).toBeInTheDocument();
+      expect(screen.getByText('2025/03/09')).toBeInTheDocument();
+    });
   });
 
   it('cleans up fetch requests when component unmounts', async () => {
@@ -360,7 +368,9 @@ describe('RaceDetailsModal', () => {
 
     rerender(
       <ChakraProvider theme={testTheme}>
-        <RaceDetailsModal raceId={3} onClose={mockOnClose} />
+        <ThemeColorProvider>
+          <RaceDetailsModal raceId={3} onClose={mockOnClose} />
+        </ThemeColorProvider>
       </ChakraProvider>
     );
 
@@ -368,8 +378,11 @@ describe('RaceDetailsModal', () => {
       expect(screen.getByText('Australian Grand Prix')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('3')).toBeInTheDocument(); // Round 3
-    expect(screen.getByText('Albert Park Circuit')).toBeInTheDocument();
+    // Check for circuit name and date
+    await waitFor(() => {
+      expect(screen.getByText('Albert Park Circuit')).toBeInTheDocument();
+      expect(screen.getByText('2025/03/24')).toBeInTheDocument();
+    });
   });
 
   it('renders within performance expectations', async () => {

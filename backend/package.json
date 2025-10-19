@@ -22,6 +22,7 @@
     "ingest:countries": "node -r ts-node/register scripts/ingest-countries.ts",
     "migrate:auth0-users": "node -r ts-node/register scripts/migrate-auth0-users.ts",
     "test": "cross-env DOTENV_CONFIG_PATH=./.env.test NODE_ENV=test jest --runInBand",
+    "test:ci": "cross-env DOTENV_CONFIG_PATH=./.env.test NODE_ENV=test jest --coverage --runInBand",
     "test:cov": "cross-env DOTENV_CONFIG_PATH=./.env.test NODE_ENV=test jest --coverage --runInBand"
   },
   "dependencies": {

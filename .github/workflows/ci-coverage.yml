@@ -9,9 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        project: [ frontend, backend ]
 
     steps:
       - uses: actions/checkout@v4
@@ -21,26 +18,42 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # The env block has been removed from this step
 
-      - name: Install dependencies
-        run: cd ${{ matrix.project }} && npm install
+      # --- FRONTEND TESTS ---
+      - name: Install frontend dependencies
+        if: hashFiles('frontend/package.json') != ''
+        working-directory: frontend
+        run: npm ci
 
-      # Let tests fail without aborting the job so we can still upload coverage
-      - name: Run tests with coverage
-        run: cd ${{ matrix.project }} && npm run test:cov
-        # THIS IS THE CORRECT PLACEMENT for the env block
+      - name: Run frontend tests with coverage
+        if: hashFiles('frontend/package.json') != ''
+        working-directory: frontend
+        run: npm run test:ci
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         continue-on-error: true
 
-      # Always try to upload coverage, even if tests failed
-      - name: Upload coverage to Codecov
+      # --- BACKEND TESTS ---
+      - name: Install backend dependencies
+        if: hashFiles('backend/package.json') != ''
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend tests with coverage
+        if: hashFiles('backend/package.json') != ''
+        working-directory: backend
+        run: npm run test:ci
+        continue-on-error: true
+
+      # --- Upload combined coverage to Codecov ---
+      - name: Upload coverage reports to Codecov
         if: always()
         uses: codecov/codecov-action@v4
         with:
-          files: ${{ matrix.project }}/coverage/lcov.info
-          flags: ${{ matrix.project }}
+          files: |
+            frontend/coverage/lcov.info
+            backend/coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+          verbose: true

@@ -16,6 +16,8 @@ describe('ConstructorsService', () => {
   let raceResultRepository: jest.Mocked<Repository<any>>;
   let raceRepository: jest.Mocked<Repository<any>>;
   let standingsViewRepository: jest.Mocked<Repository<DriverStandingMaterialized>>;
+  let constructorStandingsRepository: jest.Mocked<Repository<ConstructorStandingsMaterialized>>;
+  let dataSource: jest.Mocked<DataSource>;
 
   const mockConstructor: ConstructorEntity = {
     id: 1,
@@ -106,6 +108,8 @@ describe('ConstructorsService', () => {
     raceResultRepository = module.get(getRepositoryToken(RaceResult));
     raceRepository = module.get(getRepositoryToken(Race));
     standingsViewRepository = module.get(getRepositoryToken(DriverStandingMaterialized));
+    constructorStandingsRepository = module.get(getRepositoryToken(ConstructorStandingsMaterialized));
+    dataSource = module.get(DataSource);
   });
 
   afterEach(() => {
@@ -472,6 +476,286 @@ describe('ConstructorsService', () => {
 
     it('should have findAllActive method with correct signature', () => {
       expect(service.findAllActive.length).toBe(0);
+    });
+  });
+
+  describe('findAllConstructors', () => {
+    it('should return all constructors ordered by name', async () => {
+      constructorRepository.find.mockResolvedValue(mockConstructors);
+
+      const result = await service.findAllConstructors();
+
+      expect(result).toEqual(mockConstructors);
+      expect(constructorRepository.find).toHaveBeenCalledWith({ 
+        order: { name: 'ASC' } 
+      });
+    });
+
+    it('should return empty array when no constructors exist', async () => {
+      constructorRepository.find.mockResolvedValue([]);
+
+      const result = await service.findAllConstructors();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should handle repository errors', async () => {
+      const error = new Error('Database error');
+      constructorRepository.find.mockRejectedValue(error);
+
+      await expect(service.findAllConstructors()).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getConstructorStatsAllYears', () => {
+    it('should return mock data for valid constructor', async () => {
+      constructorRepository.findOne.mockResolvedValue(mockConstructor);
+
+      const result = await service.getConstructorStatsAllYears(1);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toHaveProperty('year');
+      expect(result[0]).toHaveProperty('stats');
+      expect(result[0].year).toBe(2024);
+      expect(constructorRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+
+    it('should throw NotFoundException when constructor not found', async () => {
+      constructorRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getConstructorStatsAllYears(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getConstructorStats', () => {
+    it('should return career stats when no year provided', async () => {
+      constructorRepository.findOne.mockResolvedValue(mockConstructor);
+
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: (jest.fn() as any).mockResolvedValue({
+          wins: '10',
+          podiums: '25',
+          poles: '8',
+          fastestLaps: '12',
+          points: '500',
+          dnfs: '5',
+          races: '100',
+        }),
+      } as any;
+
+      raceResultRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const result = await service.getConstructorStats(1);
+
+      expect(result).toHaveProperty('constructorId', 1);
+      expect(result).toHaveProperty('year', null);
+      expect(result).toHaveProperty('career');
+      expect(result.career.wins).toBe(10);
+      expect(result.career.podiums).toBe(25);
+    });
+
+    it('should return career and year stats when year provided', async () => {
+      constructorRepository.findOne.mockResolvedValue(mockConstructor);
+
+      const mockCareerQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: (jest.fn() as any).mockResolvedValue({
+          wins: '10',
+          podiums: '25',
+          poles: '8',
+          fastestLaps: '12',
+          points: '500',
+          dnfs: '5',
+          races: '100',
+        }),
+      } as any;
+
+      const mockYearQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: (jest.fn() as any).mockResolvedValue({
+          wins: '2',
+          podiums: '5',
+          poles: '1',
+          fastestLaps: '3',
+          points: '100',
+          dnfs: '1',
+          races: '20',
+        }),
+      } as any;
+
+      raceResultRepository.createQueryBuilder
+        .mockReturnValueOnce(mockCareerQueryBuilder)
+        .mockReturnValueOnce(mockYearQueryBuilder);
+
+      const result = await service.getConstructorStats(1, 2024);
+
+      expect(result).toHaveProperty('year', 2024);
+      expect(result).toHaveProperty('yearStats');
+      expect(result.yearStats?.wins).toBe(2);
+    });
+
+    it('should throw NotFoundException when constructor not found', async () => {
+      constructorRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getConstructorStats(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getConstructorWorldChampionships', () => {
+    it('should return number of championships', async () => {
+      dataSource.query.mockResolvedValue([{ championships: '5' }]);
+
+      const result = await service.getConstructorWorldChampionships(1);
+
+      expect(result).toEqual({ championships: 5 });
+      expect(dataSource.query).toHaveBeenCalledWith(expect.any(String), [1]);
+    });
+
+    it('should return 0 championships when constructor has none', async () => {
+      dataSource.query.mockResolvedValue([{ championships: '0' }]);
+
+      const result = await service.getConstructorWorldChampionships(999);
+
+      expect(result).toEqual({ championships: 0 });
+    });
+
+    it('should return 0 when query fails', async () => {
+      dataSource.query.mockRejectedValue(new Error('Query failed'));
+
+      const result = await service.getConstructorWorldChampionships(1);
+
+      expect(result).toEqual({ championships: 0 });
+    });
+
+    it('should handle empty result set', async () => {
+      dataSource.query.mockResolvedValue([]);
+
+      const result = await service.getConstructorWorldChampionships(1);
+
+      expect(result).toEqual({ championships: 0 });
+    });
+  });
+
+  describe('getConstructorBestTrack', () => {
+    it('should return best track with stats', async () => {
+      dataSource.query.mockResolvedValue([{
+        circuit_name: 'Monaco',
+        total_points: '150.5',
+        races: '25',
+        wins: '8',
+      }]);
+
+      const result = await service.getConstructorBestTrack(1);
+
+      expect(result).toEqual({
+        circuitName: 'Monaco',
+        totalPoints: 150.5,
+        races: 25,
+        wins: 8,
+      });
+    });
+
+    it('should return N/A when no data exists', async () => {
+      dataSource.query.mockResolvedValue([]);
+
+      const result = await service.getConstructorBestTrack(1);
+
+      expect(result).toEqual({
+        circuitName: 'N/A',
+        totalPoints: 0,
+        races: 0,
+        wins: 0,
+      });
+    });
+
+    it('should return N/A when query fails', async () => {
+      dataSource.query.mockRejectedValue(new Error('Query failed'));
+
+      const result = await service.getConstructorBestTrack(1);
+
+      expect(result).toEqual({
+        circuitName: 'N/A',
+        totalPoints: 0,
+        races: 0,
+        wins: 0,
+      });
+    });
+  });
+
+  describe('getBulkConstructorStats', () => {
+    it('should return bulk stats for current year with active constructors', async () => {
+      const mockStandings = [
+        {
+          constructorId: 1,
+          seasonYear: 2024,
+          position: 1,
+          seasonPoints: 500,
+          seasonWins: 10,
+          seasonPodiums: 25,
+        },
+      ];
+
+      constructorStandingsRepository.find.mockResolvedValue(mockStandings as any);
+      constructorRepository.find.mockResolvedValue([mockConstructor]);
+
+      const result = await service.getBulkConstructorStats(2024, false);
+
+      expect(result).toHaveProperty('seasonYear', 2024);
+      expect(result).toHaveProperty('constructors');
+      expect(result.constructors).toHaveLength(1);
+      expect(result.constructors[0].constructorId).toBe(1);
+      expect(result.constructors[0].stats.points).toBe(500);
+    });
+
+    it('should include historical constructors when requested', async () => {
+      const mockStandings = [
+        {
+          constructorId: 1,
+          seasonYear: 2020,
+          position: 1,
+          seasonPoints: 400,
+          seasonWins: 8,
+          seasonPodiums: 20,
+        },
+      ];
+
+      constructorStandingsRepository.find.mockResolvedValue(mockStandings as any);
+      constructorRepository.find.mockResolvedValue(mockConstructors);
+
+      const result = await service.getBulkConstructorStats(2020, true);
+
+      expect(result.seasonYear).toBe(2020);
+      expect(constructorRepository.find).toHaveBeenCalledWith({ 
+        order: { name: 'ASC' } 
+      });
+    });
+
+    it('should return zero stats for constructors without standings', async () => {
+      const mockStandings = [];
+
+      constructorStandingsRepository.find.mockResolvedValue(mockStandings);
+      constructorRepository.find.mockResolvedValue([mockConstructor]);
+
+      const result = await service.getBulkConstructorStats(2024, false);
+
+      expect(result.constructors[0].stats).toEqual({
+        points: 0,
+        wins: 0,
+        podiums: 0,
+        position: 0,
+      });
+    });
+
+    it('should throw NotFoundException when query fails', async () => {
+      constructorStandingsRepository.find.mockRejectedValue(new Error('DB Error'));
+
+      await expect(service.getBulkConstructorStats(2024)).rejects.toThrow(NotFoundException);
     });
   });
 

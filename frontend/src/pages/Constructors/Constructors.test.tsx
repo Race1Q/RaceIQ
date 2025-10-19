@@ -23,6 +23,12 @@ vi.mock('../../hooks/useConstructorStandings', () => ({
   useConstructorStandings: () => mockUseConstructorStandings(),
 }));
 
+// Mock useConstructorStatsBulk
+const mockUseConstructorStatsBulk = vi.fn();
+vi.mock('../../hooks/useConstructorStatsBulk', () => ({
+  useConstructorStatsBulk: () => mockUseConstructorStatsBulk(),
+}));
+
 // Auth0 mock - will be overridden in individual tests
 const mockUseAuth0 = vi.fn();
 vi.mock('@auth0/auth0-react', () => ({
@@ -129,6 +135,23 @@ describe('Constructors Page', () => {
         { constructorName: 'McLaren', seasonPoints: 350, seasonWins: 8, seasonPodiums: 18 },
         { constructorName: 'Mercedes', seasonPoints: 300, seasonWins: 5, seasonPodiums: 15 },
       ],
+      loading: false,
+      error: null,
+    });
+
+    // Mock constructor stats bulk
+    mockUseConstructorStatsBulk.mockReturnValue({
+      data: {
+        seasonYear: new Date().getFullYear(),
+        constructors: [
+          { constructorId: 1, constructorName: 'Red Bull Racing', stats: { points: 500, wins: 15, podiums: 25, position: 1 } },
+          { constructorId: 2, constructorName: 'Ferrari', stats: { points: 400, wins: 10, podiums: 20, position: 2 } },
+          { constructorId: 3, constructorName: 'McLaren', stats: { points: 350, wins: 8, podiums: 18, position: 3 } },
+          { constructorId: 4, constructorName: 'Mercedes', stats: { points: 300, wins: 5, podiums: 15, position: 4 } },
+          { constructorId: 5, constructorName: 'Aston Martin', stats: { points: 250, wins: 3, podiums: 10, position: 5 } },
+          { constructorId: 6, constructorName: 'Haas F1 Team', stats: { points: 50, wins: 0, podiums: 2, position: 9 } },
+        ],
+      },
       loading: false,
       error: null,
     });
