@@ -66,8 +66,13 @@ These GET endpoints are publicly accessible:
 - `GET /api/races` – list races (supports `season`, `season_id`, `year`)
 - `GET /api/races/years` – list available seasons/years
 - `GET /api/drivers` – list drivers
+- `GET /api/standings/2025/drivers` – **NEW!** Get current 2025 driver standings (suitable for embedding on external sites)
+- `GET /api/standings/featured-driver` – Get featured driver information
+- `GET /api/tire-stints` – Get tire stint data
 
 All other endpoints require a valid `Authorization: Bearer <token>` header.
+
+For detailed documentation on public endpoints, see [PUBLIC_API.md](PUBLIC_API.md) and [PUBLIC_API_TESTING.md](PUBLIC_API_TESTING.md).
 
 ### Standard Error Response
 
