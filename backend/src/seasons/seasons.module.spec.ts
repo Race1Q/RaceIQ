@@ -6,6 +6,7 @@ jest.mock('@nestjs/typeorm', () => ({
   TypeOrmModule: {
     forFeature: jest.fn(() => ({})),
   },
+  InjectRepository: jest.fn(() => jest.fn()),
 }));
 
 // Mock entities

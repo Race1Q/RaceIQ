@@ -1,5 +1,11 @@
 import { Controller, Get, Param, Post, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { 
+  ApiBadRequestResponse, 
+  ApiExcludeEndpoint, 
+  ApiForbiddenResponse, 
+  ApiNotFoundResponse, 
+  ApiUnauthorizedResponse 
+} from '@nestjs/swagger';
 import { RaceResultsService } from './race-results.service';
 import { Scopes } from '../auth/scopes.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';

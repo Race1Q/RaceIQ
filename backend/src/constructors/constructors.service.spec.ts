@@ -6,6 +6,7 @@ import { ConstructorsService } from './constructors.service';
 import { ConstructorEntity } from './constructors.entity';
 import { NotFoundException } from '@nestjs/common';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
+import { ConstructorStandingsMaterialized } from './constructor-standings-materialized.entity';
 import { RaceResult } from '../race-results/race-results.entity';
 import { Race } from '../races/races.entity';
 
@@ -60,6 +61,12 @@ describe('ConstructorsService', () => {
       createQueryBuilder: jest.fn(),
     };
 
+    const mockConstructorStandingsRepo = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      createQueryBuilder: jest.fn(),
+    };
+
     const mockDataSource = {
       query: jest.fn(),
     };
@@ -82,6 +89,10 @@ describe('ConstructorsService', () => {
         {
           provide: getRepositoryToken(DriverStandingMaterialized),
           useValue: mockStandingsViewRepo,
+        },
+        {
+          provide: getRepositoryToken(ConstructorStandingsMaterialized),
+          useValue: mockConstructorStandingsRepo,
         },
         {
           provide: DataSource,
