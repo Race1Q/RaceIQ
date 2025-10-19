@@ -19,7 +19,7 @@ import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @ApiTags('AI')
 @Controller('ai')
-@Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute per user
+@Throttle({ default: { limit: 15, ttl: 60000 } }) // 15 requests per minute per user (Gemini 2.0 Flash free tier limit)
 export class AiController {
   constructor(
     private readonly newsService: NewsService,
@@ -157,24 +157,35 @@ export class AiController {
 
   @Get('quota')
   @Public()
-  @ApiOperation({ summary: 'Get remaining API quota for today' })
+  @ApiOperation({ summary: 'Get remaining API quota for today and current minute' })
   @ApiOkResponse({ 
     schema: { 
       properties: { 
-        remaining: { type: 'number' }, 
-        limit: { type: 'number' },
-        used: { type: 'number' }
+        daily: {
+          type: 'object',
+          properties: {
+            remaining: { type: 'number' },
+            limit: { type: 'number' },
+            used: { type: 'number' },
+            resetDate: { type: 'string' }
+          }
+        },
+        minute: {
+          type: 'object',
+          properties: {
+            remaining: { type: 'number' },
+            limit: { type: 'number' },
+            used: { type: 'number' }
+          }
+        }
       } 
     } 
   })
-  async getQuota(): Promise<{ remaining: number; limit: number; used: number }> {
-    const remaining = this.quotaService.getRemaining();
-    const limit = 1500; // Free tier limit for Gemini Flash
-    return {
-      remaining,
-      limit,
-      used: limit - remaining,
-    };
+  async getQuota(): Promise<{ 
+    daily: { remaining: number; limit: number; used: number; resetDate: string };
+    minute: { remaining: number; limit: number; used: number };
+  }> {
+    return this.quotaService.getStats();
   }
 }
 
