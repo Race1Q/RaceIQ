@@ -412,26 +412,37 @@ describe('Constructors Page', () => {
     mockFetch.mockResolvedValue({ ok: true, json: async () => data });
     renderPage(<Constructors />);
     
-    // Switch to all filter
+    // Wait for initial load
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /active/i })).toBeInTheDocument();
     }, { timeout: 5000 });
     
-    const allTab = screen.getByRole('tab', { name: /all/i });
-    fireEvent.click(allTab);
+    // Switch to historical filter (which shows search)
+    const historicalTab = screen.getByRole('tab', { name: /historical/i });
+    fireEvent.click(historicalTab);
 
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText(/search by name/i);
-      fireEvent.change(searchInput, { target: { value: 'test' } });
+      expect(historicalTab).toHaveAttribute('aria-selected', 'true');
     }, { timeout: 5000 });
 
-    // Switch back to active
+    // Add search text
+    const searchInput = screen.getByPlaceholderText(/search by name/i);
+    fireEvent.change(searchInput, { target: { value: 'test' } });
+    expect(searchInput).toHaveValue('test');
+
+    // Switch back to active - search should clear
     const activeTab = screen.getByRole('tab', { name: /active/i });
     fireEvent.click(activeTab);
 
     await waitFor(() => {
       expect(activeTab).toHaveAttribute('aria-selected', 'true');
-    });
+    }, { timeout: 5000 });
+    
+    // Search input should not be visible in active tab (or cleared if visible)
+    const searchInputs = screen.queryAllByPlaceholderText(/search by name/i);
+    if (searchInputs.length > 0) {
+      expect(searchInputs[0]).toHaveValue('');
+    }
   });
 
   it('handles standings error', async () => {
