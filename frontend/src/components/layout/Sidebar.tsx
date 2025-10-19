@@ -186,7 +186,26 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
 
               {/* User Controls */}
               <VStack spacing="sm" align="stretch">
-                <Button as={Link} to="/profile" variant="ghost" color="text-primary" fontFamily="heading" justifyContent="flex-start" h="48px" _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }} onClick={onClose}>
+                <Button 
+                  as={Link} 
+                  to="/profile" 
+                  variant="ghost" 
+                  color={useActiveRoute('/profile') ? accentColorWithHash : 'text-primary'} 
+                  fontFamily="heading" 
+                  justifyContent="flex-start" 
+                  h="48px" 
+                  _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }} 
+                  onClick={onClose}
+                  isActive={useActiveRoute('/profile')}
+                  _active={{ bg: 'bg-surface-raised', color: accentColorWithHash }}
+                  position="relative"
+                  _after={{
+                    content: '""', position: 'absolute',
+                    width: useActiveRoute('/profile') ? '3px' : '0',
+                    height: '100%', left: 0, bgColor: accentColorWithHash,
+                    transition: 'width 0.3s ease',
+                  }}
+                >
                   <HStack spacing="sm">
                     <Icon as={UserCircle} boxSize={5} />
                     <Text>My Profile</Text>
@@ -253,7 +272,25 @@ function Sidebar({ onWidthChange, isMobile = false, isOpen = false, onClose }: S
 
         {/* User Controls */}
         <VStack spacing="sm" align="stretch">
-          <Button as={Link} to="/profile" variant="ghost" color="text-primary" fontFamily="heading" justifyContent={isExpanded ? "flex-start" : "center"} h="48px" _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}>
+          <Button 
+            as={Link} 
+            to="/profile" 
+            variant="ghost" 
+            color={useActiveRoute('/profile') ? accentColorWithHash : 'text-primary'} 
+            fontFamily="heading" 
+            justifyContent={isExpanded ? "flex-start" : "center"} 
+            h="48px" 
+            _hover={{ color: accentColorWithHash, bg: 'bg-surface-raised' }}
+            isActive={useActiveRoute('/profile')}
+            _active={{ bg: 'bg-surface-raised', color: accentColorWithHash }}
+            position="relative"
+            _after={{
+              content: '""', position: 'absolute',
+              width: useActiveRoute('/profile') ? '3px' : '0',
+              height: '100%', left: 0, bgColor: accentColorWithHash,
+              transition: 'width 0.3s ease',
+            }}
+          >
             <HStack spacing="sm">
               <Icon as={UserCircle} boxSize={5} />
               {isExpanded && <Text>My Profile</Text>}
