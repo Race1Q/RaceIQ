@@ -42,6 +42,16 @@ const getDriverTeam = (driver: any): string => {
   return 'Default';
 };
 
+// Format numbers to remove trailing zeros
+const formatNumber = (value: number | string): string | number => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (typeof num !== 'number' || isNaN(num)) return value;
+  // If it's an integer, return as is
+  if (Number.isInteger(num)) return num;
+  // Otherwise, format to remove trailing zeros
+  return parseFloat(num.toFixed(10));
+};
+
 // Step types for progressive disclosure
 type ComparisonStep = 'parameters' | 'results';
 type ParameterPhase = 'drivers' | 'time' | 'stats';
@@ -110,7 +120,7 @@ const StatCard = ({
           textShadow={isWinner ? `0 0 8px ${teamColor}40` : "none"}
           transition="all 0.3s ease"
         >
-          {value}
+          {formatNumber(value)}
         </Heading>
         {isWinner && (
           <Box as={Trophy} color={`${teamColor}`} w="16px" h="16px" />
@@ -487,9 +497,10 @@ const CompareDriversPage = () => {
         poles: 'poles',
         fastest_laps: 'fastestLaps',
         points: 'points',
-        races: 'races', // not used in PDF driver stats but kept for future
+        races: 'races',
         dnf: 'dnfs',
-        avg_finish: 'avgFinish', // not used in current PDF driver stats
+        recent_form: 'recentForm',
+        avg_finish: 'avgFinish',
       };
 
       // Build an enabled metrics object from what the user selected (start all false)
@@ -502,6 +513,8 @@ const CompareDriversPage = () => {
         sprintPodiums: false,
         dnfs: false,
         poles: false,
+        races: false,
+        recentForm: false,
       };
       enabledMetricsArray.forEach((uiKey) => {
         const internal = uiToInternal[uiKey];
@@ -510,11 +523,8 @@ const CompareDriversPage = () => {
         }
       });
 
-      console.log('📄 Generating PDF comparison...', {
-        driver1: { name: driver1.fullName, imageUrl: driver1.imageUrl },
-        driver2: { name: driver2.fullName, imageUrl: driver2.imageUrl },
-        metrics: Object.keys(enabledFromSelection).filter(k => enabledFromSelection[k])
-      });
+      const pdfStats1 = stats1.yearStats || stats1.career;
+      const pdfStats2 = stats2.yearStats || stats2.career;
 
       // Use driver headshots - pdfUtils.ts will handle format conversion
       await DriverPdfComparisonCard({
@@ -528,8 +538,8 @@ const CompareDriversPage = () => {
           teamColorHex: teamColor2,
           imageUrl: driver2.imageUrl || '', // Use driver headshot
         },
-        stats1: stats1.yearStats || stats1.career,
-        stats2: stats2.yearStats || stats2.career,
+        stats1: pdfStats1,
+        stats2: pdfStats2,
         enabledMetrics: enabledFromSelection,
         score,
       });
