@@ -30,7 +30,8 @@ import { ConstructorStandingMaterialized } from './dashboard/constructor-standin
 import { ConstructorStandingsMaterialized } from './constructors/constructor-standings-materialized.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AiModule } from './ai/ai.module';
-import { PredictionsModule } from './predictions/predictions.module';
+// --- ML FEATURE DISABLED ---
+// import { PredictionsModule } from './predictions/predictions.module';
 
 // The entities we need to load at the root
 import { Driver } from './drivers/drivers.entity';
@@ -125,7 +126,8 @@ import { User } from './users/entities/user.entity';
     DashboardModule,
     NotificationsModule,
     AiModule,
-    PredictionsModule,
+    // --- ML FEATURE DISABLED ---
+    // PredictionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

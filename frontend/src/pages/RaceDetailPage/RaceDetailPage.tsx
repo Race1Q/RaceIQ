@@ -23,7 +23,8 @@ import FastestLapWidget from '../../components/RaceDetails/FastestLapWidget';
 import RaceEventsWidget from '../../components/RaceDetails/RaceEventsWidget';
 import RaceDetailSkeleton from './RaceDetailSkeleton';
 import AIPreviewTab from '../../components/AIPreviewTab/AIPreviewTab';
-import PredictionsTab from '../RacesPage/components/PredictionsTab';
+// --- ML FEATURE DISABLED ---
+// import PredictionsTab from '../RacesPage/components/PredictionsTab';
 
 const MotionBox = motion.create(Box);
 
@@ -754,7 +755,8 @@ const RaceDetailPage: React.FC = () => {
             >
               Track Info
             </Tab>
-            <Tab
+            {/* --- ML FEATURE DISABLED --- */}
+            {/* <Tab
               px={{ base: 3, md: 6 }}
               h={{ base: "32px", md: "44px" }}
               fontWeight={600}
@@ -772,7 +774,7 @@ const RaceDetailPage: React.FC = () => {
               whiteSpace="nowrap"
             >
               Predictions
-            </Tab>
+            </Tab> */}
             {/* <Tab
               px={6}
               h="44px"
@@ -1461,9 +1463,10 @@ const RaceDetailPage: React.FC = () => {
               />
             </TabPanel>
             
-            <TabPanel>
+            {/* --- ML FEATURE DISABLED --- */}
+            {/* <TabPanel>
               {raceId && <PredictionsTab raceId={parseInt(raceId, 10)} />}
-            </TabPanel>
+            </TabPanel> */}
 
           </TabPanels>
         </Tabs>
