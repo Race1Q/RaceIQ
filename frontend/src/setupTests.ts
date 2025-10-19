@@ -35,6 +35,19 @@ if (!(global as any).fetch) {
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({}) })));
 }
 
+// Mock environment variables for tests
+Object.defineProperty(import.meta, 'env', {
+  value: {
+    VITE_SUPABASE_URL: 'https://test.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+    VITE_AUTH0_DOMAIN: 'test.auth0.com',
+    VITE_AUTH0_CLIENT_ID: 'test-client-id',
+    VITE_AUTH0_AUDIENCE: 'test-audience',
+    VITE_API_BASE_URL: 'https://test-api.com',
+  },
+  writable: true,
+});
+
 // Global theme for all tests to prevent theme.colors.brand.red errors
 const globalTestTheme = extendTheme({
   colors: {

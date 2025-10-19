@@ -351,9 +351,9 @@ describe('RaceList', () => {
     expect(screen.getByText('Belgium')).toBeInTheDocument();
     
     // Check dates (formatted) - format can vary by locale
-    expect(screen.getByText(/14\/07\/2024/)).toBeInTheDocument();
-    expect(screen.getByText(/26\/05\/2024/)).toBeInTheDocument();
-    expect(screen.getByText(/25\/08\/2024/)).toBeInTheDocument();
+    expect(screen.getByText(/2024\/07\/14/)).toBeInTheDocument();
+    expect(screen.getByText(/2024\/05\/26/)).toBeInTheDocument();
+    expect(screen.getByText(/2024\/08\/25/)).toBeInTheDocument();
   });
 
   it('handles empty races array', () => {
@@ -383,7 +383,7 @@ describe('RaceList', () => {
     expect(screen.getByText('Silverstone Circuit')).toBeInTheDocument();
     expect(screen.getByText('United Kingdom')).toBeInTheDocument();
     // Date format can vary by locale (7/14/2024 or 2024/07/14)
-    expect(screen.getByText(/14\/07\/2024/)).toBeInTheDocument();
+    expect(screen.getByText(/2024\/07\/14/)).toBeInTheDocument();
   });
 
   it('handles race with missing standings', () => {
