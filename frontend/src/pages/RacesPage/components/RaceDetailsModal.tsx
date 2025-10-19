@@ -8,7 +8,8 @@ import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
 import CircuitTrack3D from './CircuitTrack3D';
 import { apiFetch } from '../../../lib/api';
-import PredictionsTab from './PredictionsTab';
+// --- ML FEATURE DISABLED ---
+// import PredictionsTab from './PredictionsTab';
 
 interface Props {
   raceId: number;
@@ -87,7 +88,8 @@ const RaceDetailsModal: React.FC<Props> = ({ raceId, onClose }) => {
         <Tabs isFitted variant="enclosed">
           <TabList>
             <Tab>Details</Tab>
-            <Tab>Predictions</Tab>
+            {/* --- ML FEATURE DISABLED --- */}
+            {/* <Tab>Predictions</Tab> */}
           </TabList>
           <TabPanels>
             <TabPanel p={0}>
@@ -128,9 +130,10 @@ const RaceDetailsModal: React.FC<Props> = ({ raceId, onClose }) => {
                 )}
               </VStack>
             </TabPanel>
-            <TabPanel>
+            {/* --- ML FEATURE DISABLED --- */}
+            {/* <TabPanel>
               {raceId && <PredictionsTab raceId={raceId} />}
-            </TabPanel>
+            </TabPanel> */}
           </TabPanels>
         </Tabs>
       </MotionBox>

@@ -32,42 +32,36 @@ const AboutUsPage: React.FC = () => {
   const teamMembers = [
     { 
       name: 'Abdullah Ali', 
-      role: 'Frontend Developer',
       avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Dullz.jpeg',
       github: 'https://github.com/AbdullahAliCodes',
       linkedin: 'https://www.linkedin.com/in/abdullah-ali-31463783/'
     },
     { 
       name: 'Kovendan Raman', 
-      role: 'Backend Developer',
       avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Kovis.jpeg',
       github: 'https://github.com/KovendanRaman',
       linkedin: 'https://www.linkedin.com/in/kovendan-raman-2976a422a/'
     },
     { 
       name: 'Jaishil Patel', 
-      role: 'Full Stack Developer',
       avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Jay.jpeg',
       github: 'https://github.com/Jaishil-Patel',
       linkedin: 'https://www.linkedin.com/in/jaishil-patel-07766a320/'
     },
     { 
       name: 'Shervaan Govinder', 
-      role: 'UI/UX Designer',
-      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Shives.jpeg',
+      avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Shives.png',
       github: 'https://github.com/shives-govinder',
       linkedin: 'https://www.linkedin.com/in/shervaan-govinder-3a9766277/'
     },
     { 
       name: 'Muhammed Umair Gadatia', 
-      role: 'Quality Assurance',
       avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/Umair.jpeg',
       github: 'https://github.com/umigadat',
       linkedin: 'https://www.linkedin.com/in/muhammed-umair-gadatia-685921268/'
     },
     { 
       name: 'Muhammad Ahmed', 
-      role: 'Project Lead',
       avatar: 'https://karttcundlhahnlwlqfw.supabase.co/storage/v1/object/public/assets/devTeam/MA.jpeg',
       github: 'https://github.com/muhammadonthemoon',
       linkedin: 'https://www.linkedin.com/in/muhammad-ahmed-813624231/'
@@ -405,49 +399,47 @@ const AboutUsPage: React.FC = () => {
                   borderColor: accentColorWithHash,
                 }}
               >
-                <VStack spacing={4}>
-                  <Circle
-                    size="80px"
-                    bg="bg-surface-raised"
-                    border="3px solid"
-                    borderColor={accentColorWithHash}
-                    overflow="hidden"
-                    position="relative"
-                    _before={{
-                      content: '""',
-                      position: 'absolute',
-                      inset: 0,
-                      background: `linear-gradient(135deg, ${accentColorWithHash}20, transparent)`,
-                    }}
-                  >
-                    <Image
-                      src={member.avatar}
-                      alt={member.name}
-                      width="100%"
-                      height="100%"
-                      objectFit="cover"
-                    />
-                  </Circle>
-                  
-                  <VStack spacing={2}>
+                <VStack spacing={4} height="100%" justify="space-between">
+                  <VStack spacing={4}>
+                    <Circle
+                      size="80px"
+                      bg="bg-surface-raised"
+                      border="3px solid"
+                      borderColor={accentColorWithHash}
+                      overflow="hidden"
+                      position="relative"
+                      _before={{
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        background: `linear-gradient(135deg, ${accentColorWithHash}20, transparent)`,
+                      }}
+                    >
+                      <Image
+                        src={member.avatar}
+                        alt={member.name}
+                        width="100%"
+                        height="100%"
+                        objectFit="cover"
+                      />
+                    </Circle>
+                    
                     <Text 
                       fontFamily="heading" 
                       fontSize="lg" 
                       fontWeight="700" 
                       color="text-primary"
+                      textAlign="center"
+                      minHeight="48px"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
                     >
                       {member.name}
                     </Text>
-                    <Text 
-                      color="text-secondary" 
-                      fontSize="sm" 
-                      fontWeight="500"
-                    >
-                      {member.role}
-                    </Text>
                   </VStack>
 
-                  <HStack spacing={3}>
+                  <HStack spacing={3} justify="center">
                     <Circle
                       size="32px"
                       bg="bg-surface-raised"
