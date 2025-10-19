@@ -5,6 +5,19 @@ import ProtectedRoute from './ProtectedRoute';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useRole } from '../../context/RoleContext';
 
+// Mock supabase to prevent initialization errors
+vi.mock('../../lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null }))
+        }))
+      }))
+    }))
+  }
+}));
+
 // Mock dependencies
 vi.mock('@auth0/auth0-react');
 vi.mock('../../context/RoleContext');
