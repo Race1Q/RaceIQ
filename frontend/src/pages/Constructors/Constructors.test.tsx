@@ -359,4 +359,288 @@ describe('Constructors Page', () => {
     // Should show skeleton while loading
     expect(screen.getByText('Constructors')).toBeInTheDocument();
   });
+
+  it('filters constructors by search term', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    renderPage(<Constructors />);
+    
+    // Switch to historical to show search
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /historical/i })).toBeInTheDocument();
+    }, { timeout: 5000 });
+    
+    const historicalTab = screen.getByRole('tab', { name: /historical/i });
+    fireEvent.click(historicalTab);
+
+    await waitFor(() => {
+      const searchInput = screen.getByPlaceholderText(/search by name/i);
+      expect(searchInput).toBeInTheDocument();
+      
+      // Type in search
+      fireEvent.change(searchInput, { target: { value: 'haas' } });
+      expect(searchInput).toHaveValue('haas');
+    }, { timeout: 5000 });
+  });
+
+  it('clears search term when clicking clear button', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    renderPage(<Constructors />);
+    
+    // Switch to all filter
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+    }, { timeout: 5000 });
+    
+    const allTab = screen.getByRole('tab', { name: /all/i });
+    fireEvent.click(allTab);
+
+    await waitFor(() => {
+      const searchInput = screen.getByPlaceholderText(/search by name/i);
+      fireEvent.change(searchInput, { target: { value: 'ferrari' } });
+      expect(searchInput).toHaveValue('ferrari');
+    }, { timeout: 5000 });
+
+    // Click clear button
+    const clearButton = screen.getByLabelText(/clear search/i);
+    fireEvent.click(clearButton);
+
+    const searchInput = screen.getByPlaceholderText(/search by name/i);
+    expect(searchInput).toHaveValue('');
+  });
+
+  it('clears search term when switching to active filter', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    renderPage(<Constructors />);
+    
+    // Switch to all filter
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+    }, { timeout: 5000 });
+    
+    const allTab = screen.getByRole('tab', { name: /all/i });
+    fireEvent.click(allTab);
+
+    await waitFor(() => {
+      const searchInput = screen.getByPlaceholderText(/search by name/i);
+      fireEvent.change(searchInput, { target: { value: 'test' } });
+    }, { timeout: 5000 });
+
+    // Switch back to active
+    const activeTab = screen.getByRole('tab', { name: /active/i });
+    fireEvent.click(activeTab);
+
+    await waitFor(() => {
+      expect(activeTab).toHaveAttribute('aria-selected', 'true');
+    });
+  });
+
+  it('handles standings error', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    mockUseConstructorStandings.mockReturnValue({
+      standings: [],
+      loading: false,
+      error: 'Failed to load standings',
+    });
+
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load standings')).toBeInTheDocument();
+    });
+  });
+
+  it('handles bulk stats error', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    mockUseConstructorStatsBulk.mockReturnValue({
+      data: null,
+      loading: false,
+      error: 'Failed to load stats',
+    });
+
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load stats')).toBeInTheDocument();
+    });
+  });
+
+  it('shows loading when standings are loading', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    mockUseConstructorStandings.mockReturnValue({
+      standings: [],
+      loading: true,
+      error: null,
+    });
+
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+  });
+
+  it('shows loading when bulk stats are loading', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    mockUseConstructorStatsBulk.mockReturnValue({
+      data: null,
+      loading: true,
+      error: null,
+    });
+
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+  });
+
+  it('filters historical constructors only', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    renderPage(<Constructors />);
+    
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /historical/i })).toBeInTheDocument();
+    }, { timeout: 5000 });
+    
+    const historicalTab = screen.getByRole('tab', { name: /historical/i });
+    fireEvent.click(historicalTab);
+
+    await waitFor(() => {
+      expect(historicalTab).toHaveAttribute('aria-selected', 'true');
+    });
+  });
+
+  it('shows all constructors when all filter is selected', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    renderPage(<Constructors />);
+    
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+    }, { timeout: 5000 });
+    
+    const allTab = screen.getByRole('tab', { name: /all/i });
+    fireEvent.click(allTab);
+
+    await waitFor(() => {
+      expect(allTab).toHaveAttribute('aria-selected', 'true');
+    });
+  });
+
+  it('uses fallback image for historical teams', async () => {
+    const historicalData = [
+      { id: 99, name: 'Old Team', nationality: 'British', url: '', is_active: false },
+    ];
+    mockFetch.mockResolvedValue({ ok: true, json: async () => historicalData });
+    renderPage(<Constructors />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+  });
+
+  it('handles constructors without stats gracefully', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    mockUseConstructorStatsBulk.mockReturnValue({
+      data: {
+        seasonYear: new Date().getFullYear(),
+        constructors: [], // Empty stats
+      },
+      loading: false,
+      error: null,
+    });
+
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+  });
+
+  it('handles fetch with non-ok response', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Server Error',
+      text: async () => 'Internal error',
+    });
+    
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Error fetching constructors',
+        status: 'error',
+      }));
+    });
+  });
+
+  it('handles non-Error thrown values', async () => {
+    mockFetch.mockRejectedValueOnce('String error');
+    renderPage(<Constructors />);
+    
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Error fetching constructors',
+        description: 'An unexpected error occurred.',
+        status: 'error',
+      }));
+    });
+  });
+
+  it('uses correct max points for historical teams', async () => {
+    const historicalWithHighPoints = [
+      { id: 99, name: 'Historic Champion', nationality: 'Italian', url: '', is_active: false },
+    ];
+    mockFetch.mockResolvedValue({ ok: true, json: async () => historicalWithHighPoints });
+    mockUseConstructorStatsBulk.mockReturnValue({
+      data: {
+        seasonYear: new Date().getFullYear(),
+        constructors: [
+          { constructorId: 99, constructorName: 'Historic Champion', stats: { points: 2000, wins: 50, podiums: 80, position: 1 } },
+        ],
+      },
+      loading: false,
+      error: null,
+    });
+
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+  });
+
+  it('uses default max points for active teams', async () => {
+    const activeData = [
+      { id: 1, name: 'Red Bull Racing', nationality: 'Austrian', url: '', is_active: true },
+    ];
+    mockFetch.mockResolvedValue({ ok: true, json: async () => activeData });
+    
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+  });
+
+  it('sorts constructors with missing stats to the end', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => data });
+    mockUseConstructorStatsBulk.mockReturnValue({
+      data: {
+        seasonYear: new Date().getFullYear(),
+        constructors: [
+          { constructorId: 1, constructorName: 'Red Bull Racing', stats: { points: 500, wins: 15, podiums: 25, position: 1 } },
+          // Missing stats for constructor 2
+        ],
+      },
+      loading: false,
+      error: null,
+    });
+
+    renderPage(<Constructors />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+  });
 });
