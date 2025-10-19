@@ -28,6 +28,8 @@ vi.mock('../../../hooks/useUserProfile', () => ({
 vi.mock('lucide-react', () => ({
   MapPin: () => <div data-testid="map-pin-icon">📍</div>,
   Clock: () => <div data-testid="clock-icon">🕐</div>,
+  Trophy: () => <div data-testid="trophy-icon">🏆</div>,
+  TrendingUp: () => <div data-testid="trending-up-icon">📈</div>,
 }));
 
 const testTheme = extendTheme({

@@ -25,7 +25,7 @@ const config: Config = {
   // Coverage settings
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'json-summary', 'lcov'],
   collectCoverageFrom: [
     'src/**/*.{ts,js}',
 
