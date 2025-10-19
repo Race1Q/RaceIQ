@@ -16,7 +16,6 @@ interface ConstructorStats {
   wins: number;
   podiums: number;
   poles: number;
-  fastestLaps: number;
   points: number;
   dnfs: number;
   races: number;
@@ -92,21 +91,46 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   const cardW = (pageWidth - marginX * 2 - 20) / 2;
   const gap = 20;
 
-  // Load team logos (PNG data URLs)
+  // Helper to detect image format from data URL
+  const getImageFormat = (dataUrl: string): string => {
+    if (!dataUrl) return 'PNG';
+    if (dataUrl.includes('data:image/jpeg') || dataUrl.includes('data:image/jpg')) return 'JPEG';
+    if (dataUrl.includes('data:image/png')) return 'PNG';
+    if (dataUrl.includes('data:image/webp')) return 'WEBP';
+    return 'PNG'; // Default fallback
+  };
+
+  // Load team logos with format detection
   const c1LogoUrl = getTeamLogo(constructor1.name);
   const c2LogoUrl = getTeamLogo(constructor2.name);
   
   let c1Logo = null;
+  let c1LogoFormat = 'PNG';
   let c2Logo = null;
+  let c2LogoFormat = 'PNG';
   
   if (c1LogoUrl) {
-    const logoData = await loadImageAsDataURL(c1LogoUrl);
-    c1Logo = logoData || null;
+    try {
+      const logoData = await loadImageAsDataURL(c1LogoUrl);
+      if (logoData && logoData.startsWith('data:image/') && logoData.length > 100) {
+        c1Logo = logoData;
+        c1LogoFormat = getImageFormat(logoData);
+      }
+    } catch (error) {
+      console.warn('Failed to load constructor1 logo:', error);
+    }
   }
   
   if (c2LogoUrl) {
-    const logoData = await loadImageAsDataURL(c2LogoUrl);
-    c2Logo = logoData || null;
+    try {
+      const logoData = await loadImageAsDataURL(c2LogoUrl);
+      if (logoData && logoData.startsWith('data:image/') && logoData.length > 100) {
+        c2Logo = logoData;
+        c2LogoFormat = getImageFormat(logoData);
+      }
+    } catch (error) {
+      console.warn('Failed to load constructor2 logo:', error);
+    }
   }
 
   // Team cards: headers
@@ -140,7 +164,16 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   doc.rect(leftX, topY, cardW, headerH); // border
   
   if (c1Logo) {
-    doc.addImage(c1Logo, "PNG", leftX + 8, topY + 6, 22, 22);
+    try {
+      doc.addImage(c1Logo, c1LogoFormat, leftX + 8, topY + 6, 22, 22);
+    } catch (imgErr) {
+      console.warn('Failed to add constructor1 logo to PDF, using fallback:', imgErr);
+      // Fallback: colored circle with initials
+      doc.setFillColor(c1Color);
+      doc.circle(leftX + 19, topY + 17, 11, "F");
+      const initials = constructor1.name.split(' ').map(word => word[0]).join('').substring(0, 2);
+      TXT(initials, leftX + 19, topY + 20, { size: 8, color: "#ffffff", bold: true, align: "center" });
+    }
   } else {
     // Fallback: colored circle with initials
     doc.setFillColor(c1Color);
@@ -159,7 +192,16 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   doc.rect(rightX, topY, cardW, headerH);
   
   if (c2Logo) {
-    doc.addImage(c2Logo, "PNG", rightX + 8, topY + 6, 22, 22);
+    try {
+      doc.addImage(c2Logo, c2LogoFormat, rightX + 8, topY + 6, 22, 22);
+    } catch (imgErr) {
+      console.warn('Failed to add constructor2 logo to PDF, using fallback:', imgErr);
+      // Fallback: colored circle with initials
+      doc.setFillColor(c2Color);
+      doc.circle(rightX + 19, topY + 17, 11, "F");
+      const initials = constructor2.name.split(' ').map(word => word[0]).join('').substring(0, 2);
+      TXT(initials, rightX + 19, topY + 20, { size: 8, color: "#ffffff", bold: true, align: "center" });
+    }
   } else {
     // Fallback: colored circle with initials
     doc.setFillColor(c2Color);
@@ -175,7 +217,6 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
   // Metrics block rendered manually (centered bars like reference image)
   const normalizeKey = (k: string) => {
     if (k === "dnf") return "dnfs";
-    if (k === "fastest_laps") return "fastestLaps";
     return k;
   };
 
@@ -186,7 +227,6 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
     wins: "WINS",
     podiums: "PODIUMS",
     poles: "POLE POSITIONS",
-    fastestLaps: "FASTEST LAPS",
     points: "POINTS",
     races: "RACES",
     dnfs: "DNF",
@@ -196,7 +236,6 @@ export const ConstructorPdfComparisonCard = async (data: ConstructorComparisonDa
     wins: "wins",
     podiums: "podiums",
     poles: "poles",
-    fastestLaps: "fastestLaps",
     points: "points",
     races: "races",
     dnfs: "dnfs",

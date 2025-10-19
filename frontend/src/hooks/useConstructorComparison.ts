@@ -1,6 +1,7 @@
 // frontend/src/hooks/useConstructorComparison.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../lib/api';
+import { getCSIForConstructor, applyCSIDampener } from '../lib/csi';
 
 // Types for the constructor comparison feature
 export type ConstructorSelection = {
@@ -11,11 +12,11 @@ export type ConstructorSelection = {
 export type ConstructorComparisonStats = {
   constructorId: number;
   year: number | null;
+  constructorName?: string; // Added for CSI integration
   career: {
     wins: number;
     podiums: number;
     poles: number;
-    fastestLaps: number;
     points: number;
     dnfs: number;
     races: number;
@@ -24,14 +25,13 @@ export type ConstructorComparisonStats = {
     wins: number;
     podiums: number;
     poles: number;
-    fastestLaps: number;
     points: number;
     dnfs: number;
     races: number;
   };
 };
 
-export type ConstructorMetricKey = 'wins' | 'podiums' | 'poles' | 'fastestLaps' | 'points' | 'dnfs' | 'races';
+export type ConstructorMetricKey = 'wins' | 'podiums' | 'poles' | 'points' | 'dnfs' | 'races';
 
 export type EnabledMetrics = Record<ConstructorMetricKey, boolean>;
 
@@ -105,7 +105,29 @@ async function fetchYears(): Promise<number[]> {
 
 async function fetchConstructorStats(constructorId: string, year?: number | 'career'): Promise<ConstructorComparisonStats> {
   const yearParam = year && year !== 'career' ? `?year=${String(year)}` : '';
-  return getJSON<ConstructorComparisonStats>(`/constructors/${constructorId}/stats${yearParam}`);
+  const response = await getJSON<any>(`/constructors/${constructorId}/stats${yearParam}`);
+  
+  return {
+    constructorId: parseInt(constructorId, 10),
+    year: response.year || null,
+    constructorName: response.constructor?.name || response.name || 'Unknown',
+    career: {
+      wins: response.career?.wins || 0,
+      podiums: response.career?.podiums || 0,
+      poles: response.career?.poles || 0,
+      points: response.career?.points || 0,
+      dnfs: response.career?.dnfs || 0,
+      races: response.career?.races || 0,
+    },
+    yearStats: response.yearStats ? {
+      wins: response.yearStats.wins || 0,
+      podiums: response.yearStats.podiums || 0,
+      poles: response.yearStats.poles || 0,
+      points: response.yearStats.points || 0,
+      dnfs: response.yearStats.dnfs || 0,
+      races: response.yearStats.races || 0,
+    } : null,
+  };
 }
 
 
@@ -130,7 +152,6 @@ async function fetchConstructorStatsForYears(constructorId: string, years: numbe
       acc.wins += stats.yearStats.wins;
       acc.podiums += stats.yearStats.podiums;
       acc.poles += stats.yearStats.poles;
-      acc.fastestLaps += stats.yearStats.fastestLaps;
       acc.points += stats.yearStats.points;
       acc.dnfs += stats.yearStats.dnfs;
       acc.races += stats.yearStats.races;
@@ -140,7 +161,6 @@ async function fetchConstructorStatsForYears(constructorId: string, years: numbe
     wins: 0,
     podiums: 0,
     poles: 0,
-    fastestLaps: 0,
     points: 0,
     dnfs: 0,
     races: 0,
@@ -150,6 +170,7 @@ async function fetchConstructorStatsForYears(constructorId: string, years: numbe
   return {
     constructorId: yearStats[0].constructorId,
     year: null, // Multiple years aggregated
+    constructorName: yearStats[0].constructorName, // Pass through constructor name
     career: yearStats[0].career, // Keep career stats as reference
     yearStats: aggregatedYearStats,
   };
@@ -164,7 +185,17 @@ async function fetchConstructorLegacyStats(constructorId: string): Promise<any> 
   }
 }
 
-// Scoring functions
+// Metric weights for constructor comparison
+const CONSTRUCTOR_METRIC_WEIGHTS: Record<ConstructorMetricKey, number> = {
+  wins: 3.0,           // Most important - wins define champions
+  podiums: 2.0,        // Very important - consistent performance
+  points: 1.0,         // Standard baseline
+  poles: 1.5,          // Important - qualifying performance
+  dnfs: 0.5,          // Negative metric - reliability
+  races: 0.3,         // Context metric - participation
+};
+
+// Improved scoring functions with weighted metrics and logarithmic scaling
 function normalizeMetric(metric: ConstructorMetricKey, value1: number, value2: number): [number, number] {
   if (metric === 'dnfs') {
     if (value1 === 0 && value2 === 0) return [1.0, 1.0];
@@ -173,10 +204,61 @@ function normalizeMetric(metric: ConstructorMetricKey, value1: number, value2: n
     return [1 - value1 / max, 1 - value2 / max];
   }
   
+  // Handle zero values better
   if (value1 === 0 && value2 === 0) return [0.5, 0.5];
-  const max = Math.max(value1, value2);
-  if (max === 0) return [0.5, 0.5];
-  return [value1 / max, value2 / max];
+  
+  // Use logarithmic scaling for large differences
+  const log1 = value1 > 0 ? Math.log(value1 + 1) : 0;
+  const log2 = value2 > 0 ? Math.log(value2 + 1) : 0;
+  const maxLog = Math.max(log1, log2);
+  
+  if (maxLog === 0) return [0.5, 0.5];
+  
+  return [log1 / maxLog, log2 / maxLog];
+}
+
+// Enhanced normalization with CSI (Constructor Strength Index) adjustments
+function normalizeMetricWithCSI(
+  metric: ConstructorMetricKey, 
+  value1: number, 
+  value2: number, 
+  season: number,
+  constructor1: string,
+  constructor2: string
+): [number, number] {
+  // First, get the base normalized scores
+  const [base1, base2] = normalizeMetric(metric, value1, value2);
+  
+  // Determine if this is a "higher is better" or "lower is better" metric
+  const kind = metric === 'dnfs' ? 'lower' : 'higher';
+  
+  // Get CSI values for both constructors
+  const csi1 = getCSIForConstructor(season, constructor1);
+  const csi2 = getCSIForConstructor(season, constructor2);
+  
+  // Apply CSI dampening with moderate alpha for balanced adjustments
+  const adjusted1 = applyCSIDampener(base1, csi1, kind, 0.3);
+  const adjusted2 = applyCSIDampener(base2, csi2, kind, 0.3);
+  
+  // Moderate bonuses for small teams (CSI < 0.9) - only for truly small teams
+  let smallTeamBonus1 = 1.0;
+  let smallTeamBonus2 = 1.0;
+  
+  if (csi1 < 0.9) {
+    // Small team bonuses - more conservative
+    if (metric === 'points') smallTeamBonus1 = 1.15;      // 15% bonus for points
+    else if (metric === 'podiums') smallTeamBonus1 = 1.1; // 10% bonus for podiums
+    else if (metric === 'wins') smallTeamBonus1 = 1.2;    // 20% bonus for wins
+  }
+  
+  if (csi2 < 0.9) {
+    // Small team bonuses - more conservative
+    if (metric === 'points') smallTeamBonus2 = 1.15;      // 15% bonus for points
+    else if (metric === 'podiums') smallTeamBonus2 = 1.1; // 10% bonus for podiums
+    else if (metric === 'wins') smallTeamBonus2 = 1.2;    // 20% bonus for wins
+  }
+  
+  return [adjusted1 * smallTeamBonus1, adjusted2 * smallTeamBonus2];
 }
 
 function computeCompositeScore(
@@ -197,19 +279,32 @@ function computeCompositeScore(
   const s1 = useYearStats ? stats1.yearStats! : stats1.career;
   const s2 = useYearStats ? stats2.yearStats! : stats2.career;
   
-  const metrics: ConstructorMetricKey[] = ['wins', 'podiums', 'poles', 'fastestLaps', 'points', 'dnfs', 'races'];
+  const metrics: ConstructorMetricKey[] = ['wins', 'podiums', 'poles', 'points', 'dnfs', 'races'];
   
   metrics.forEach(metric => {
     if (!enabledMetrics[metric]) return;
     
     const value1 = (s1 as any)[metric] || 0;
     const value2 = (s2 as any)[metric] || 0;
-    const normalized = normalizeMetric(metric, value1, value2);
     
-    perMetric[metric] = normalized;
-    totalScore1 += normalized[0];
-    totalScore2 += normalized[1];
-    enabledCount++;
+    // Use CSI-adjusted normalization if constructor info is available
+    let normalized: [number, number];
+    if (stats1.constructorName && stats2.constructorName) {
+      const season = stats1.year || new Date().getFullYear();
+      normalized = normalizeMetricWithCSI(metric, value1, value2, season, stats1.constructorName, stats2.constructorName);
+    } else {
+      normalized = normalizeMetric(metric, value1, value2);
+    }
+    
+    // Apply metric weights for more realistic scoring
+    const weight = CONSTRUCTOR_METRIC_WEIGHTS[metric] || 1.0;
+    const weighted1 = normalized[0] * weight;
+    const weighted2 = normalized[1] * weight;
+    
+    perMetric[metric] = [weighted1, weighted2];
+    totalScore1 += weighted1;
+    totalScore2 += weighted2;
+    enabledCount += weight; // Use weighted count for proper averaging
   });
   
   return {
@@ -282,7 +377,6 @@ export function useConstructorComparison(): HookState {
     wins: true,
     podiums: true,
     poles: true,
-    fastestLaps: false,  // Disabled by default
     points: true,
     dnfs: false,         // Disabled by default
     races: true,

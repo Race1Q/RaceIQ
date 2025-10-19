@@ -259,6 +259,7 @@ export class DriversService {
         dnfs: careerStats.dnfs,
         highestRaceFinish: careerStats.highestRaceFinish,
         worldChampionships: worldChampionships,
+        recentForm: currentSeason?.recentForm || null,
         firstRace: {
           year: firstRace ? new Date(firstRace.session.race.date).getFullYear() : 0,
           event: firstRace ? firstRace.session.race.name : 'N/A',

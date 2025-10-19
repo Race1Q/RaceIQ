@@ -122,8 +122,8 @@ const StatCard = ({
 
 // Helper function to determine winner for each metric
 const determineWinner = (value1: number, value2: number, metric: string): boolean => {
-  // For DNFs, lower is better (fewer DNFs)
-  if (metric === 'dnf' || metric === 'dnfs') {
+  // For DNFs and recent form, lower is better (fewer DNFs, better average position)
+  if (metric === 'dnf' || metric === 'dnfs' || metric === 'recent_form') {
     return value1 < value2;
   }
   
@@ -160,6 +160,7 @@ const DriverStatsColumn = ({
     'points': Target,
     'races': Clock,
     'dnf': Award,
+    'recent_form': Target,
     'avg_finish': Target,
   };
 
@@ -235,6 +236,7 @@ const DriverStatsColumn = ({
               'points': 'points',
               'races': 'races',
               'dnf': 'dnfs',
+              'recent_form': 'recentForm',
               'avg_finish': 'avgFinish'
             };
             
@@ -293,6 +295,35 @@ const CompareDriversPage = () => {
     selectDriverForYears,
     toggleMetric,
   } = useDriverComparison();
+  
+  // UI key to internal key mapping (for metric toggle)
+  const uiToInternal: Record<string, string> = {
+    'wins': 'wins',
+    'podiums': 'podiums',
+    'poles': 'poles',
+    'fastest_laps': 'fastestLaps',
+    'points': 'points',
+    'sprint_wins': 'sprintWins',
+    'sprint_podiums': 'sprintPodiums',
+    'dnf': 'dnfs',
+    'dnfs': 'dnfs',
+    'races': 'races',
+    'recent_form': 'recentForm',
+  };
+  
+  // Internal key to UI key mapping (for display)
+  const internalToUi: Record<string, string> = {
+    'wins': 'wins',
+    'podiums': 'podiums',
+    'poles': 'poles',
+    'fastestLaps': 'fastest_laps',
+    'points': 'points',
+    'sprintWins': 'sprint_wins',
+    'sprintPodiums': 'sprint_podiums',
+    'dnfs': 'dnf',
+    'races': 'races',
+    'recentForm': 'recent_form',
+  };
   
   // Year selection state - allow multiple years per driver
   const [selectedYears1, setSelectedYears1] = useState<string[]>([]);
@@ -368,7 +399,10 @@ const CompareDriversPage = () => {
 
   // Step navigation helpers
   const canProceedToTime = driver1 && driver2;
-  const enabledMetricsArray = Object.keys(enabledMetrics).filter(key => enabledMetrics[key as keyof typeof enabledMetrics]);
+  // Convert internal keys to UI keys for display
+  const enabledMetricsArray = Object.keys(enabledMetrics)
+    .filter(key => enabledMetrics[key as keyof typeof enabledMetrics])
+    .map(internalKey => internalToUi[internalKey] || internalKey);
   const canProceedToStats = canProceedToTime && selectedYears1.length > 0 && selectedYears2.length > 0;
   const canProceedToResults = canProceedToStats && enabledMetricsArray.length > 0;
 
@@ -476,37 +510,35 @@ const CompareDriversPage = () => {
         }
       });
 
-      // Helper function to simplify F1 image URLs for PDF compatibility
-      const simplifyImageUrl = (url: string) => {
-        if (!url) return '';
-        // Remove the complex transformation part and use a simpler URL structure
-        const match = url.match(/https:\/\/media\.formula1\.com\/([^\/]+)\/content\/dam\/fom-website\/drivers\/([^\/]+)\/([^\/]+)\/([^\/]+)\.png/);
-        if (match) {
-          // Try to construct a simpler URL
-          return `https://media.formula1.com/content/dam/fom-website/drivers/${match[2]}/${match[3]}/${match[4]}.png`;
-        }
-        return url;
-      };
+      console.log('📄 Generating PDF comparison...', {
+        driver1: { name: driver1.fullName, imageUrl: driver1.imageUrl },
+        driver2: { name: driver2.fullName, imageUrl: driver2.imageUrl },
+        metrics: Object.keys(enabledFromSelection).filter(k => enabledFromSelection[k])
+      });
 
+      // Use driver headshots - pdfUtils.ts will handle format conversion
       await DriverPdfComparisonCard({
         driver1: {
           ...driver1,
           teamColorHex: teamColor1,
-          imageUrl: simplifyImageUrl(driver1.imageUrl || ''),
+          imageUrl: driver1.imageUrl || '', // Use driver headshot
         },
         driver2: {
           ...driver2,
           teamColorHex: teamColor2,
-          imageUrl: simplifyImageUrl(driver2.imageUrl || ''),
+          imageUrl: driver2.imageUrl || '', // Use driver headshot
         },
         stats1: stats1.yearStats || stats1.career,
         stats2: stats2.yearStats || stats2.career,
         enabledMetrics: enabledFromSelection,
         score,
       });
+      
+      console.log('✅ PDF generated successfully with driver headshots');
     } catch (error) {
-      console.error('Failed to export PDF:', error);
-      alert('Failed to export PDF. Check console for details or try using different drivers.');
+      console.error('❌ Failed to export PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to export PDF: ${errorMessage}\n\nNote: Driver photos are not included in the PDF due to image format restrictions. The PDF uses team colors and driver initials instead.`);
     }
   };
 
@@ -767,15 +799,24 @@ const CompareDriversPage = () => {
 
   // Phase 3: Statistics Selection
   const Phase3StatisticsSelection = () => {
+    // Check if this is a career comparison (ALL available years selected for BOTH drivers)
+    const driver1FilteredYears = getFilteredYears(driver1CareerInfo);
+    const driver2FilteredYears = getFilteredYears(driver2CareerInfo);
+    const isCareerComparison = 
+      selectedYears1.length === driver1FilteredYears.length && 
+      selectedYears2.length === driver2FilteredYears.length &&
+      selectedYears1.length > 0 && 
+      selectedYears2.length > 0;
+    
     const availableMetrics = {
       wins: 'Wins',
       podiums: 'Podiums',
       poles: 'Pole Positions',
-      fastest_laps: 'Fastest Laps',
+      ...(isCareerComparison && { fastest_laps: 'Fastest Laps' }), // Only show for career
+      ...(isCareerComparison && { races: 'Races' }), // Only show for career
       points: 'Points',
-      races: 'Races',
       dnf: 'DNFs',
-      avg_finish: 'Average Finish',
+      recent_form: 'Recent Form',
     };
 
     return (
@@ -802,11 +843,15 @@ const CompareDriversPage = () => {
                   const allSelected = allMetricKeys.every(key => enabledMetricsArray.includes(key));
                   
                   if (allSelected) {
-                    allMetricKeys.forEach(key => toggleMetric(key as any));
+                    allMetricKeys.forEach(key => {
+                      const internalKey = uiToInternal[key] || key;
+                      toggleMetric(internalKey as any);
+                    });
                   } else {
                     allMetricKeys.forEach(key => {
                       if (!enabledMetricsArray.includes(key)) {
-                        toggleMetric(key as any);
+                        const internalKey = uiToInternal[key] || key;
+                        toggleMetric(internalKey as any);
                       }
                     });
                   }
@@ -839,7 +884,10 @@ const CompareDriversPage = () => {
                     boxShadow: enabledMetricsArray.includes(key) ? "0 0 15px rgba(225, 6, 0, 0.5)" : "0 4px 15px rgba(0,0,0,0.1)"
                   }}
                   _active={{ transform: 'scale(0.95)' }}
-                  onClick={() => toggleMetric(key as any)}
+                  onClick={() => {
+                    const internalKey = uiToInternal[key] || key;
+                    toggleMetric(internalKey as any);
+                  }}
                   fontFamily="heading"
                   transition="all 0.2s ease"
                   position="relative"
@@ -948,16 +996,25 @@ const CompareDriversPage = () => {
     const driver1TeamColor = getTeamColor(getDriverTeam(driver1), { hash: true });
     const driver2TeamColor = getTeamColor(getDriverTeam(driver2), { hash: true });
 
+    // Check if this is a career comparison (ALL available years selected for BOTH drivers)
+    const driver1FilteredYears = getFilteredYears(driver1CareerInfo);
+    const driver2FilteredYears = getFilteredYears(driver2CareerInfo);
+    const isCareerComparison = 
+      selectedYears1.length === driver1FilteredYears.length && 
+      selectedYears2.length === driver2FilteredYears.length &&
+      selectedYears1.length > 0 && 
+      selectedYears2.length > 0;
+    
     // Available metrics for comparison
     const availableMetrics = {
       wins: 'Wins',
       podiums: 'Podiums',
       poles: 'Pole Positions',
-      fastest_laps: 'Fastest Laps',
+      ...(isCareerComparison && { fastest_laps: 'Fastest Laps' }), // Only show for career
+      ...(isCareerComparison && { races: 'Races' }), // Only show for career
       points: 'Points',
-      races: 'Races',
       dnf: 'DNFs',
-      avg_finish: 'Average Finish',
+      recent_form: 'Recent Form',
     };
 
     // Calculate composite score percentage for visualization
@@ -1066,7 +1123,7 @@ const CompareDriversPage = () => {
                     {(score.d1 ?? 0) > (score.d2 ?? 0) ? driver1?.fullName : driver2?.fullName}
                   </Text>
                   <Text fontSize="xs" color={mutedTextColor}>
-                    {Math.abs((score.d1 ?? 0) - (score.d2 ?? 0)).toFixed(1)} point difference
+                    {Math.round(Math.abs((score.d1 ?? 0) - (score.d2 ?? 0)))} point difference
                   </Text>
                 </Box>
 
@@ -1075,20 +1132,37 @@ const CompareDriversPage = () => {
                   <Text fontSize="sm" color={mutedTextColor} mb="xs">Most Dominant</Text>
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={primaryTextColor}>
                     {(() => {
-                      const driver1Wins = enabledMetricsArray.filter(metric => {
-                        const val1 = (stats1 as any)?.[metric] || 0;
-                        const val2 = (stats2 as any)?.[metric] || 0;
-                        return val1 > val2;
+                      if (!stats1 || !stats2) return "No data available";
+                      
+                      // Determine which stats to use (same logic as DriverStatsColumn)
+                      const useYearStats1 = stats1.yearStats !== null;
+                      const useYearStats2 = stats2.yearStats !== null;
+                      const statData1 = useYearStats1 ? stats1.yearStats : stats1.career;
+                      const statData2 = useYearStats2 ? stats2.yearStats : stats2.career;
+                      
+                      // Only count metrics that are actually displayed in the UI
+                      const displayedMetrics = Object.keys(availableMetrics);
+                      
+                      const driver1Wins = displayedMetrics.filter(metric => {
+                        const internalKey = uiToInternal[metric] || metric;
+                        const val1 = (statData1 as any)?.[internalKey] || 0;
+                        const val2 = (statData2 as any)?.[internalKey] || 0;
+                        const winner = determineWinner(val1, val2, metric);
+                        console.log(`[DEBUG] ${metric}: ${val1} vs ${val2}, driver1 wins: ${winner}`);
+                        return winner;
                       }).length;
                       
-                      const driver2Wins = enabledMetricsArray.filter(metric => {
-                        const val1 = (stats1 as any)?.[metric] || 0;
-                        const val2 = (stats2 as any)?.[metric] || 0;
-                        return val2 > val1;
+                      const driver2Wins = displayedMetrics.filter(metric => {
+                        const internalKey = uiToInternal[metric] || metric;
+                        const val1 = (statData1 as any)?.[internalKey] || 0;
+                        const val2 = (statData2 as any)?.[internalKey] || 0;
+                        const winner = !determineWinner(val1, val2, metric);
+                        console.log(`[DEBUG] ${metric}: ${val1} vs ${val2}, driver2 wins: ${winner}`);
+                        return winner;
                       }).length;
 
-                      if (driver1Wins > driver2Wins) return `${driver1?.fullName} (${driver1Wins}/${enabledMetricsArray.length})`;
-                      if (driver2Wins > driver1Wins) return `${driver2?.fullName} (${driver2Wins}/${enabledMetricsArray.length})`;
+                      if (driver1Wins > driver2Wins) return `${driver1?.fullName} (${driver1Wins}/${displayedMetrics.length})`;
+                      if (driver2Wins > driver1Wins) return `${driver2?.fullName} (${driver2Wins}/${displayedMetrics.length})`;
                       return "Evenly Matched";
                     })()}
                   </Text>
@@ -1103,34 +1177,46 @@ const CompareDriversPage = () => {
                 <Text fontSize="sm" color={mutedTextColor} mb="sm" fontFamily="heading">Key Insights</Text>
                 <VStack spacing="xs" align="stretch">
                   {(() => {
+                    if (!stats1 || !stats2) return <Text fontSize="sm" color={mutedTextColor}>No data available</Text>;
+                    
                     const insights = [];
+                    
+                    // Determine which stats to use (same logic as DriverStatsColumn)
+                    const useYearStats1 = stats1.yearStats !== null;
+                    const useYearStats2 = stats2.yearStats !== null;
+                    const statData1 = useYearStats1 ? stats1.yearStats : stats1.career;
+                    const statData2 = useYearStats2 ? stats2.yearStats : stats2.career;
                     
                     // Find biggest difference
                     let biggestDiff = 0;
                     let biggestDiffMetric = '';
                     enabledMetricsArray.forEach(metric => {
-                      const val1 = (stats1 as any)?.[metric] || 0;
-                      const val2 = (stats2 as any)?.[metric] || 0;
+                      const internalKey = uiToInternal[metric] || metric;
+                      const val1 = (statData1 as any)?.[internalKey] || 0;
+                      const val2 = (statData2 as any)?.[internalKey] || 0;
                       const diff = Math.abs(val1 - val2);
                       if (diff > biggestDiff) {
                         biggestDiff = diff;
-                        biggestDiffMetric = availableMetrics[metric as keyof typeof availableMetrics];
+                        biggestDiffMetric = availableMetrics[metric as keyof typeof availableMetrics] || '';
                       }
                     });
 
                     if (biggestDiffMetric) {
                       const metricKey = enabledMetricsArray.find(m => availableMetrics[m as keyof typeof availableMetrics] === biggestDiffMetric);
-                      const val1 = metricKey ? (stats1 as any)?.[metricKey] || 0 : 0;
-                      const val2 = metricKey ? (stats2 as any)?.[metricKey] || 0 : 0;
+                      const internalKey = metricKey ? uiToInternal[metricKey] || metricKey : '';
+                      const val1 = (statData1 as any)?.[internalKey] || 0;
+                      const val2 = (statData2 as any)?.[internalKey] || 0;
                       const winner = val1 > val2 ? driver1?.fullName : driver2?.fullName;
                       insights.push(`🏆 ${winner} dominates in ${biggestDiffMetric} with ${Math.max(val1, val2)} vs ${Math.min(val1, val2)}`);
                     }
 
                     // Check for ties
+                    
                     const ties = enabledMetricsArray
                       .filter(metric => {
-                        const v1 = (stats1 as any)?.[metric] || 0;
-                        const v2 = (stats2 as any)?.[metric] || 0;
+                        const internalKey = uiToInternal[metric] || metric;
+                        const v1 = (statData1 as any)?.[internalKey] || 0;
+                        const v2 = (statData2 as any)?.[internalKey] || 0;
                         return v1 === v2;
                       })
                       .map(t => availableMetrics[t as keyof typeof availableMetrics])
@@ -1188,10 +1274,10 @@ const CompareDriversPage = () => {
                 
                 <Flex align="center" justify="space-between" mt="sm">
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={driver1TeamColor}>
-                    {score.d1?.toFixed(1) || '0.0'}
+                    {Math.round(score.d1 || 0)}
                   </Text>
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={driver2TeamColor}>
-                    {score.d2?.toFixed(1) || '0.0'}
+                    {Math.round(score.d2 || 0)}
                   </Text>
                 </Flex>
               </Box>

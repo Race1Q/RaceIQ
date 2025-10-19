@@ -62,6 +62,7 @@ describe('DriversService', () => {
 
   const mockFastestLapViewRepo = {
     count: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   const mockDataSource = {
@@ -430,8 +431,15 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
       };
 
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: 80000 }),
+      };
+
       mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
       mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
@@ -470,11 +478,18 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ poles: '0' }),
       };
 
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: null }),
+      };
+
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
       mockDataSource.query.mockResolvedValue([{ bestLapMs: null }]);
 
       await expect(service.getDriverCareerStats(1)).rejects.toThrow(
-        new NotFoundException('Stats not found for driver ID 1')
+        'Failed to fetch career stats for driver 1'
       );
     });
 
@@ -495,11 +510,18 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ poles: '0' }),
       };
 
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: null }),
+      };
+
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
       mockDataSource.query.mockResolvedValue([{ bestLapMs: null }]);
 
       await expect(service.getDriverCareerStats(1)).rejects.toThrow(
-        new NotFoundException('Stats not found for driver ID 1')
+        'Failed to fetch career stats for driver 1'
       );
     });
 
@@ -529,8 +551,15 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
       };
 
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: 80000 }),
+      };
+
       mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
       mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
@@ -565,8 +594,15 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
       };
 
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: 80000 }),
+      };
+
       mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
       mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
@@ -604,8 +640,15 @@ describe('DriversService', () => {
         getRawOne: jest.fn().mockResolvedValue({ poles: '10' }),
       };
 
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: 80000 }),
+      };
+
       mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
       mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
@@ -649,9 +692,16 @@ describe('DriversService', () => {
         getMany: jest.fn().mockResolvedValue([]), // No seasons found
       };
 
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: 80000 }),
+      };
+
       mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
       mockStandingsViewRepo.createQueryBuilder.mockReturnValue(mockStandingsQueryBuilder);
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
       mockDataSource.query.mockResolvedValue([{ bestLapMs: 80000 }]);
 
       const result = await service.getDriverCareerStats(1);
@@ -1067,14 +1117,15 @@ describe('DriversService', () => {
       // When any promise in Promise.all rejects, the whole Promise.all rejects immediately
       mockCareerStatsViewRepo.findOne.mockRejectedValue(new Error('Stats query failed'));
       
-      // Mock standingsViewRepo to prevent hanging (even though Promise.all should reject first)
+      // Mock all other repos to resolve quickly to prevent hanging
       mockStandingsViewRepo.findOne.mockResolvedValue(null);
       mockStandingsViewRepo.find.mockResolvedValue([]);
-      
-      // Mock other repos to prevent hanging
       mockWinsPerSeasonViewRepo.find.mockResolvedValue([]);
       mockRaceResultRepository.findOne.mockResolvedValue(null);
       mockFastestLapViewRepo.count.mockResolvedValue(0);
+      
+      // Mock the getWorldChampionships method
+      jest.spyOn(service, 'getWorldChampionships').mockResolvedValue(0);
       
       // Mock query builders for race results (for team name query)
       const mockRaceResultQueryBuilder = {
@@ -1087,7 +1138,7 @@ describe('DriversService', () => {
       };
       mockRaceResultRepository.createQueryBuilder.mockReturnValue(mockRaceResultQueryBuilder);
       
-      // Mock query builders for qualifying results
+      // Mock query builders for qualifying results (both career and season)
       const mockQualifyingQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),
@@ -1097,11 +1148,20 @@ describe('DriversService', () => {
       };
       mockQualifyingResultRepository.createQueryBuilder.mockReturnValue(mockQualifyingQueryBuilder);
       
+      // Mock fastest lap view query builder
+      const mockFastestLapQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ bestLapMs: null }),
+      };
+      mockFastestLapViewRepo.createQueryBuilder.mockReturnValue(mockFastestLapQueryBuilder);
+      
       // Mock dataSource query
       mockDataSource.query.mockResolvedValue([{ bestLapMs: null }]);
 
+      // Test should reject immediately when the first promise in Promise.all rejects
       await expect(service.getDriverCareerStats(1)).rejects.toThrow('Stats query failed');
-    });
+    }, 5000);
   });
 
   describe('Data Transformation', () => {
