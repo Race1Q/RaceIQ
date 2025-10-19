@@ -1,33 +1,36 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Driver } from '../drivers/drivers.entity';
-import { ConstructorEntity } from './constructors.entity';
+import {
+  Entity,
+  PrimaryColumn,
+  ManyToOne,
+  JoinColumn,
+  Column,
+} from 'typeorm';
 import { Season } from '../seasons/seasons.entity';
+import { ConstructorEntity } from './constructors.entity';
+import { Driver } from '../drivers/drivers.entity';
 
-@Entity({ name: 'constructor_drivers' })
+@Entity('constructor_drivers')
 export class ConstructorDriver {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'int' })
-  driver_id: number;
-
-  @Column({ type: 'int' })
-  constructor_id: number;
-
-  @Column({ type: 'int' })
+  // --- Composite primary key ---
+  @PrimaryColumn({ type: 'int' })
   season_id: number;
 
-  @ManyToOne(() => Driver, (driver) => driver.teamEntries)
-  @JoinColumn({ name: 'driver_id' })
-  driver: Driver;
+  @PrimaryColumn({ type: 'bigint' })
+  constructor_id: number;
 
-  @ManyToOne(() => ConstructorEntity, (team) => team.constructorDriverEntries)
-  @JoinColumn({ name: 'constructor_id' })
-  team: ConstructorEntity;
+  @PrimaryColumn({ type: 'bigint' })
+  driver_id: number;
 
+  // --- Relations ---
   @ManyToOne(() => Season)
   @JoinColumn({ name: 'season_id' })
   season: Season;
+
+  @ManyToOne(() => ConstructorEntity)
+  @JoinColumn({ name: 'constructor_id' })
+  team: ConstructorEntity;
+
+  @ManyToOne(() => Driver)
+  @JoinColumn({ name: 'driver_id' })
+  driver: Driver;
 }
-
-

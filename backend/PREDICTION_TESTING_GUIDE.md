@@ -3,6 +3,7 @@
 ## Quick Start
 
 ### 1. Verify Python Environment
+
 ```bash
 cd backend/src/ml-scripts
 
@@ -20,6 +21,7 @@ python check_model_features.py
 ```
 
 **Expected Output:**
+
 ```
 --- F1 Model Diagnostic ---
 Attempting to load model from: /path/to/f1_podium_model.pkl
@@ -35,6 +37,7 @@ Attempting to load model from: /path/to/f1_podium_model.pkl
 ```
 
 ### 2. Test Python Script Directly
+
 ```bash
 cd backend/src/ml-scripts
 
@@ -71,6 +74,7 @@ python run_prediction.py "$(cat test_input.json)"
 ```
 
 **Expected Output:**
+
 ```json
 {
   "success": true,
@@ -88,6 +92,7 @@ python run_prediction.py "$(cat test_input.json)"
 ```
 
 ### 3. Start Backend Server
+
 ```bash
 cd backend
 npm install
@@ -97,8 +102,9 @@ npm run start:dev
 ### 4. Find a Test Race ID
 
 #### Option A: Use Database Query
+
 ```sql
-SELECT 
+SELECT
   r.id as race_id,
   r.name as race_name,
   r.round,
@@ -116,6 +122,7 @@ LIMIT 10;
 ```
 
 #### Option B: Use API
+
 ```bash
 # Get recent races
 curl http://localhost:3000/api/races?year=2024 | jq '.[] | {id, name, round}'
@@ -124,6 +131,7 @@ curl http://localhost:3000/api/races?year=2024 | jq '.[] | {id, name, round}'
 ### 5. Test the Endpoint
 
 #### Using cURL
+
 ```bash
 # Replace 1234 with actual race ID from step 4
 RACE_ID=1234
@@ -135,19 +143,24 @@ curl -X GET "http://localhost:3000/api/predictions/${RACE_ID}" \
 ```
 
 #### Using HTTPie
+
 ```bash
 http GET "http://localhost:3000/api/predictions/${RACE_ID}"
 ```
 
 #### Using Postman
+
 1. Create new GET request
 2. URL: `http://localhost:3000/api/predictions/1234`
 3. Click Send
 
 #### Using JavaScript/Fetch
+
 ```javascript
 async function testPredictions(raceId) {
-  const response = await fetch(`http://localhost:3000/api/predictions/${raceId}`);
+  const response = await fetch(
+    `http://localhost:3000/api/predictions/${raceId}`,
+  );
   const data = await response.json();
   console.log('Predictions:', data);
   return data;
@@ -158,6 +171,7 @@ testPredictions(1234);
 ```
 
 ### 6. Expected Response Format
+
 ```json
 {
   "raceId": 1234,
@@ -180,7 +194,7 @@ testPredictions(1234);
       "driverName": "Charles Leclerc",
       "constructorName": "Ferrari",
       "podiumProbability": 0.6845
-    },
+    }
     // ... more drivers
   ]
 }
@@ -191,9 +205,11 @@ testPredictions(1234);
 ## Debugging Common Issues
 
 ### Issue 1: Model File Not Found
+
 **Error:** `Model file not found. Please train the model first.`
 
 **Solution:**
+
 ```bash
 cd backend/src/ml-scripts
 python train_model.py
@@ -203,9 +219,11 @@ ls -lh f1_podium_model.pkl
 ```
 
 ### Issue 2: Python Virtual Environment Not Found
+
 **Error:** `ENOENT: no such file or directory, stat '/path/to/venv/bin/python3'`
 
 **Solution:**
+
 ```bash
 cd backend/src/ml-scripts
 python3 -m venv venv
@@ -214,11 +232,13 @@ pip install pandas scikit-learn joblib python-dotenv supabase
 ```
 
 ### Issue 3: Missing Features Error
+
 **Error:** `Missing feature in input data: avg_constructor_points_last_5_races`
 
 **Cause:** Database query not returning all required features
 
 **Debug:**
+
 ```bash
 # Check server logs for the data being sent to Python
 # Look for: 📊 Data being sent to Python script:
@@ -235,9 +255,11 @@ pip install pandas scikit-learn joblib python-dotenv supabase
 ```
 
 ### Issue 4: Race Not Found (404)
+
 **Error:** `Race with ID X not found`
 
 **Solution:**
+
 ```sql
 -- Verify race exists
 SELECT * FROM races WHERE id = X;
@@ -252,19 +274,23 @@ WHERE s.race_id = X AND s.type = 'Race';
 ```
 
 ### Issue 5: No Previous Sessions
+
 **Error:** Empty predictions or all zeros
 
 **Cause:** Race is the first race of the season
 
-**Expected Behavior:** 
+**Expected Behavior:**
+
 - All "before_race" features will be 0
 - avg_points_last_5_races will be 0
 - Model will still make predictions based on other features
 
 ### Issue 6: Slow Response Time
+
 **Symptoms:** Request takes >10 seconds
 
 **Debug:**
+
 ```bash
 # Check logs for timing information
 # Enable query logging in TypeORM (app.module.ts):
@@ -275,6 +301,7 @@ WHERE s.race_id = X AND s.type = 'Race';
 ```
 
 **Optimization:**
+
 ```sql
 -- Add indexes (if not already present)
 CREATE INDEX IF NOT EXISTS idx_race_results_driver ON race_results(driver_id);
@@ -289,6 +316,7 @@ CREATE INDEX IF NOT EXISTS idx_races_season_round ON races(season_id, round);
 ## Verification Checklist
 
 ### Pre-Flight Checks
+
 - [ ] Python virtual environment exists
 - [ ] Model file exists (f1_podium_model.pkl)
 - [ ] Required Python packages installed
@@ -299,6 +327,7 @@ CREATE INDEX IF NOT EXISTS idx_races_season_round ON races(season_id, round);
 ### Test Cases
 
 #### Test Case 1: Valid Race with Full Season Data
+
 ```bash
 # Test with a mid-season race (round 10-15)
 RACE_ID=<mid-season-race-id>
@@ -307,6 +336,7 @@ curl "http://localhost:3000/api/predictions/${RACE_ID}" | jq '.predictions | len
 ```
 
 #### Test Case 2: First Race of Season
+
 ```bash
 # Test with first race (round 1)
 RACE_ID=<first-race-id>
@@ -315,6 +345,7 @@ curl "http://localhost:3000/api/predictions/${RACE_ID}" | jq '.predictions[0:3]'
 ```
 
 #### Test Case 3: Recent Race
+
 ```bash
 # Test with 2024 or 2025 race
 RACE_ID=<recent-race-id>
@@ -323,12 +354,14 @@ curl "http://localhost:3000/api/predictions/${RACE_ID}" | jq '.raceName'
 ```
 
 #### Test Case 4: Invalid Race ID
+
 ```bash
 curl "http://localhost:3000/api/predictions/999999" -w "\n%{http_code}\n"
 # Expected: 404 status code
 ```
 
 #### Test Case 5: Probability Range Check
+
 ```bash
 curl "http://localhost:3000/api/predictions/${RACE_ID}" | \
   jq '.predictions[].podiumProbability' | \
@@ -353,17 +386,18 @@ Look for these log messages in order:
 
 ### Performance Benchmarks
 
-| Metric | Target | Acceptable |
-|--------|--------|------------|
-| First race of season | < 1s | < 2s |
-| Mid-season race | < 3s | < 5s |
-| Full season race | < 5s | < 8s |
+| Metric               | Target | Acceptable |
+| -------------------- | ------ | ---------- |
+| First race of season | < 1s   | < 2s       |
+| Mid-season race      | < 3s   | < 5s       |
+| Full season race     | < 5s   | < 8s       |
 
 ---
 
 ## Integration Testing
 
 ### Frontend Integration Test
+
 ```typescript
 // Example React component test
 import { render, waitFor } from '@testing-library/react';
@@ -371,7 +405,7 @@ import PredictionsView from './PredictionsView';
 
 test('loads and displays predictions', async () => {
   const { getByText } = render(<PredictionsView raceId={1234} />);
-  
+
   await waitFor(() => {
     expect(getByText(/podium probability/i)).toBeInTheDocument();
   }, { timeout: 10000 });
@@ -379,6 +413,7 @@ test('loads and displays predictions', async () => {
 ```
 
 ### E2E Test
+
 ```bash
 cd backend
 npm run test:e2e
@@ -403,7 +438,7 @@ RETURNING id;
 
 -- Insert test race results (use session_id from above)
 INSERT INTO race_results (session_id, driver_id, constructor_id, position, points, grid)
-VALUES 
+VALUES
   (<session_id>, 1, 1, 1, 25, 1),
   (<session_id>, 44, 2, 2, 18, 3),
   (<session_id>, 16, 3, 3, 15, 2);
@@ -414,18 +449,21 @@ VALUES
 ## Monitoring in Production
 
 ### Health Check
+
 ```bash
 # Simple health check
 curl http://localhost:3000/api/predictions/health || echo "Service down"
 ```
 
 ### Log Monitoring
+
 ```bash
 # Watch logs in real-time
 tail -f logs/predictions.log | grep -E "(✅|❌|📊|🐍)"
 ```
 
 ### Alert Thresholds
+
 - Response time > 10s: Warning
 - Error rate > 5%: Critical
 - Model file missing: Critical
@@ -436,6 +474,7 @@ tail -f logs/predictions.log | grep -E "(✅|❌|📊|🐍)"
 ## Success Criteria
 
 ### Functional Requirements
+
 - [x] Endpoint returns predictions for valid race ID
 - [x] All 8 features calculated correctly
 - [x] Python script receives correct JSON format
@@ -444,6 +483,7 @@ tail -f logs/predictions.log | grep -E "(✅|❌|📊|🐍)"
 - [x] Error handling for invalid race IDs
 
 ### Non-Functional Requirements
+
 - [x] Response time < 5s for typical race
 - [x] Comprehensive logging for debugging
 - [x] Proper HTTP status codes

@@ -104,41 +104,47 @@
 ## Database Queries Summary
 
 ### Query 1: Find Race
+
 ```sql
-SELECT * FROM races 
+SELECT * FROM races
 WHERE id = :raceId
 ```
 
 ### Query 2: Find Race Session
+
 ```sql
-SELECT * FROM sessions 
+SELECT * FROM sessions
 WHERE race_id = :raceId AND type = 'Race'
 ```
 
 ### Query 3: Get Race Results
+
 ```sql
-SELECT * FROM race_results 
+SELECT * FROM race_results
 WHERE session_id = :sessionId
 ```
 
 ### Query 4: Get Previous Sessions
+
 ```sql
 SELECT s.id FROM sessions s
 INNER JOIN races r ON s.race_id = r.id
-WHERE r.season_id = :seasonId 
+WHERE r.season_id = :seasonId
   AND r.round < :currentRound
   AND s.type = 'Race'
 ```
 
 ### Query 5a: Driver Standings Points
+
 ```sql
 SELECT SUM(points) as total_points
 FROM race_results
-WHERE driver_id = :driverId 
+WHERE driver_id = :driverId
   AND session_id IN (:...previousSessionIds)
 ```
 
 ### Query 5b: All Driver Standings (for ranking)
+
 ```sql
 SELECT driver_id, SUM(points) as total_points
 FROM race_results
@@ -148,14 +154,16 @@ ORDER BY total_points DESC
 ```
 
 ### Query 6a: Constructor Standings Points
+
 ```sql
 SELECT SUM(points) as total_points
 FROM race_results
-WHERE constructor_id = :constructorId 
+WHERE constructor_id = :constructorId
   AND session_id IN (:...previousSessionIds)
 ```
 
 ### Query 6b: All Constructor Standings (for ranking)
+
 ```sql
 SELECT constructor_id, SUM(points) as total_points
 FROM race_results
@@ -165,6 +173,7 @@ ORDER BY total_points DESC
 ```
 
 ### Query 7: Driver Last 5 Races
+
 ```sql
 SELECT rr.points
 FROM race_results rr
@@ -179,6 +188,7 @@ LIMIT 5
 ```
 
 ### Query 8: Driver Circuit History
+
 ```sql
 SELECT rr.position
 FROM race_results rr
@@ -192,6 +202,7 @@ WHERE rr.driver_id = :driverId
 ```
 
 ### Query 9: Constructor Last 5 Races
+
 ```sql
 SELECT r.round, SUM(rr.points) as total_points
 FROM race_results rr
@@ -209,6 +220,7 @@ LIMIT 5
 ## Performance Considerations
 
 ### Database Queries
+
 - **Total queries per request**: ~15 + (9 × number_of_drivers)
 - **For 20 drivers**: ~195 queries
 - **Optimization opportunities**:
@@ -218,11 +230,13 @@ LIMIT 5
   4. 🔄 Cache predictions for completed races
 
 ### Python Script
+
 - **Execution time**: ~200-500ms for 20 drivers
 - **Bottleneck**: Model loading (done once per request)
 - **Optimization**: Keep Python process running and use IPC
 
 ### Total Response Time
+
 - Expected: 2-5 seconds for 20 drivers
 - Dominated by: Database feature calculation
 - Cacheable: Yes (predictions for past races never change)

@@ -1,13 +1,18 @@
-import { Injectable, InternalServerErrorException, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { PythonShell } from 'python-shell';
 import * as path from 'path';
 import { PredictRequestDto } from './dto/predict-request.dto';
 import { Race } from '../races/races.entity';
-import { Session } from '../sessions/sessions.entity';
 import { RaceResult } from '../race-results/race-results.entity';
-import { Driver } from '../drivers/drivers.entity';
+import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { ConstructorEntity } from '../constructors/constructors.entity';
 
 @Injectable()
@@ -17,255 +22,261 @@ export class PredictionsService {
   constructor(
     @InjectRepository(Race)
     private readonly raceRepository: Repository<Race>,
-    @InjectRepository(Session)
-    private readonly sessionRepository: Repository<Session>,
     @InjectRepository(RaceResult)
     private readonly raceResultRepository: Repository<RaceResult>,
-    @InjectRepository(Driver)
-    private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(DriverStandingMaterialized)
+    private readonly driverStandingsRepository: Repository<DriverStandingMaterialized>,
     @InjectRepository(ConstructorEntity)
     private readonly constructorRepository: Repository<ConstructorEntity>,
   ) {}
 
-  // Legacy POST endpoint support
+  /**
+   * @deprecated Legacy POST endpoint. Use GET /predictions/:raceId.
+   */
   async getPredictions(predictRequestDto: PredictRequestDto) {
     const { drivers } = predictRequestDto;
+    if (drivers.length === 0) return [];
+
+    // FIX: Map to the list structure the Python script expects
+    const featuresList = drivers.map((d) => ({
+      driver_id: parseInt(d.driverId), // Ensure driverId is a number
+      ...d.features,
+    }));
+
     const options = {
       mode: 'text' as const,
-      scriptPath: path.join(__dirname, '../../src/ml-scripts'),
-      pythonPath: path.join(__dirname, '../../src/ml-scripts/venv/bin/python3'),
+      scriptPath: path.join(__dirname, '../../ml-scripts'),
+      pythonPath: path.join(__dirname, '../../ml-scripts/venv/bin/python3'),
     };
+
     try {
-      const predictionPromises = drivers.map((driver) => {
-        const scriptArgs = [JSON.stringify(driver.features)];
-        return PythonShell.run('run_prediction.py', { ...options, args: scriptArgs });
+      const scriptArgs = [JSON.stringify(featuresList)];
+      const results = await PythonShell.run('run_prediction.py', {
+        ...options,
+        args: scriptArgs,
       });
-      const results = await Promise.all(predictionPromises);
-      const parsed = results.map((r) => JSON.parse(r[0]));
-      return drivers.map((driver, index) => ({
-        driverId: driver.driverId,
-        prediction: parsed[index],
-      }));
+      const parsed = JSON.parse(results[0]);
+
+      if (!parsed.success) {
+        throw new Error(parsed.error);
+      }
+      return parsed.predictions;
     } catch (err: any) {
-      this.logger.error(`Error executing Python script (legacy): ${err.message}`, err.stack);
-      throw new InternalServerErrorException(`Failed to make predictions: ${err.message}`);
+      this.logger.error(
+        `Error executing Python script (legacy): ${err.message}`,
+        err.stack,
+      );
+      throw new InternalServerErrorException(
+        `Failed to make predictions: ${err.message}`,
+      );
     }
   }
 
-  // New GET /predictions/:raceId endpoint
+  // --- PRIMARY METHOD ---
   async getPredictionsByRaceId(raceId: number) {
-    this.logger.log(`[PIPELINE] Starting predictions for race ID: ${raceId}`);
-    try {
-      // 1. Fetch race
-      this.logger.log('[STEP 1] Fetching race...');
-      const race = await this.raceRepository.findOne({ where: { id: raceId }, relations: ['season', 'circuit'] });
-      if (!race) {
-        this.logger.error('[STEP 1] Race not found');
-        throw new NotFoundException(`Race with ID ${raceId} not found`);
-      }
-      this.logger.log(`[STEP 1] Found race: ${race.name}, Season: ${race.season_id}, Circuit: ${race.circuit_id}`);
+    const startTime = Date.now();
+    this.logger.log(`[PIPELINE] Prediction requested for race ID: ${raceId}`);
 
-      // 2. Fetch Race session
-      this.logger.log('[STEP 2] Fetching race session...');
-      const raceSession = await this.sessionRepository.findOne({ where: { race_id: raceId, type: 'Race' } });
-      if (!raceSession) {
-        this.logger.error('[STEP 2] Race session not found');
-        throw new NotFoundException(`Race session not found for race ID ${raceId}`);
-      }
-      this.logger.log(`[STEP 2] Found race session ID: ${raceSession.id}`);
+    // --- STEP 1: Find the *actual* next race ---
+    const step1Start = Date.now();
+    const nextRace = await this.raceRepository.findOne({
+      where: { date: MoreThan(new Date()) },
+      order: { date: 'ASC' },
+      relations: ['season', 'circuit'],
+    });
+    this.logger.log(`⏱️ [STEP 1] Completed in ${Date.now() - step1Start}ms`);
 
-      // 3. Fetch race results (drivers)
-      this.logger.log('[STEP 3] Fetching race results...');
-      const raceResults = await this.raceResultRepository.find({ where: { session_id: raceSession.id }, relations: ['driver', 'team'] });
-      if (!raceResults || raceResults.length === 0) {
-        this.logger.error('[STEP 3] No race results found');
-        throw new NotFoundException(`No race results found for race ID ${raceId}`);
-      }
-      this.logger.log(`[STEP 3] Found ${raceResults.length} drivers participating in this race`);
+    if (!nextRace) {
+      this.logger.error('[STEP 1] No upcoming races found on the calendar.');
+      throw new NotFoundException('No upcoming races found on the calendar.');
+    }
 
-      // 4. Previous sessions in same season prior to this round
-      this.logger.log('[STEP 4] Fetching previous sessions...');
-      const previousSessions = await this.sessionRepository
-        .createQueryBuilder('session')
-        .innerJoin('session.race', 'race')
-        .where('race.season_id = :seasonId', { seasonId: race.season_id })
-        .andWhere('race.round < :round', { round: race.round })
-        .andWhere('session.type = :type', { type: 'Race' })
-        .select('session.id')
-        .getMany();
-      const previousSessionIds = previousSessions.map((s) => s.id);
-      this.logger.log(`[STEP 4] Previous session IDs: ${JSON.stringify(previousSessionIds)}`);
+    // Check if season was loaded
+    if (!nextRace.season) {
+      throw new InternalServerErrorException(`Race ${nextRace.id} is missing its season relation.`);
+    }
 
-      // 5. Feature calculation per driver
-      this.logger.log('[STEP 5] Calculating features for each driver...');
-      const driversFeatureData = await Promise.all(
-        raceResults.map(async (result) => {
-          const driverId = result.driver_id;
-          const constructorId = result.constructor_id;
-          const driver = result.driver;
-
-          // Driver standings and points before race
-          let driverStandingsPosition = 0;
-          let driverPoints = 0;
-          if (previousSessionIds.length > 0) {
-            const driverStandings = await this.raceResultRepository
-              .createQueryBuilder('rr')
-              .select('SUM(rr.points)', 'total_points')
-              .where('rr.driver_id = :driverId', { driverId })
-              .andWhere('rr.session_id IN (:...sessionIds)', { sessionIds: previousSessionIds })
-              .getRawOne();
-            driverPoints = parseFloat(driverStandings?.total_points || '0');
-
-            const allDriverPoints = await this.raceResultRepository
-              .createQueryBuilder('rr')
-              .select('rr.driver_id', 'driver_id')
-              .addSelect('SUM(rr.points)', 'total_points')
-              .where('rr.session_id IN (:...sessionIds)', { sessionIds: previousSessionIds })
-              .groupBy('rr.driver_id')
-              .getRawMany();
-            const sortedDrivers = allDriverPoints
-              .map((d) => ({ driver_id: d.driver_id, points: parseFloat(d.total_points || '0') }))
-              .sort((a, b) => b.points - a.points);
-            const driverIndex = sortedDrivers.findIndex((d) => d.driver_id === driverId);
-            driverStandingsPosition = driverIndex >= 0 ? driverIndex + 1 : sortedDrivers.length + 1;
-          }
-
-          // Constructor standings and points before race
-          let constructorStandingsPosition = 0;
-          let constructorPoints = 0;
-          if (previousSessionIds.length > 0) {
-            const constructorStandings = await this.raceResultRepository
-              .createQueryBuilder('rr')
-              .select('SUM(rr.points)', 'total_points')
-              .where('rr.constructor_id = :constructorId', { constructorId })
-              .andWhere('rr.session_id IN (:...sessionIds)', { sessionIds: previousSessionIds })
-              .getRawOne();
-            constructorPoints = parseFloat(constructorStandings?.total_points || '0');
-
-            const allConstructorPoints = await this.raceResultRepository
-              .createQueryBuilder('rr')
-              .select('rr.constructor_id', 'constructor_id')
-              .addSelect('SUM(rr.points)', 'total_points')
-              .where('rr.session_id IN (:...sessionIds)', { sessionIds: previousSessionIds })
-              .groupBy('rr.constructor_id')
-              .getRawMany();
-            const sortedConstructors = allConstructorPoints
-              .map((c) => ({ constructor_id: c.constructor_id, points: parseFloat(c.total_points || '0') }))
-              .sort((a, b) => b.points - a.points);
-            const constructorIndex = sortedConstructors.findIndex((c) => c.constructor_id === constructorId);
-            constructorStandingsPosition = constructorIndex >= 0 ? constructorIndex + 1 : sortedConstructors.length + 1;
-          }
-
-          // Driver age at race date
-          const driverAge = driver?.date_of_birth && race?.date
-            ? (new Date(race.date).getTime() - new Date(driver.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-            : 0;
-
-          // Avg points last 5 races for driver
-          const driverLast5Races = await this.raceResultRepository
-            .createQueryBuilder('rr')
-            .innerJoin('rr.session', 'session')
-            .innerJoin('session.race', 'race')
-            .where('rr.driver_id = :driverId', { driverId })
-            .andWhere('race.season_id = :seasonId', { seasonId: race.season_id })
-            .andWhere('race.round < :round', { round: race.round })
-            .andWhere('session.type = :type', { type: 'Race' })
-            .orderBy('race.round', 'DESC')
-            .limit(5)
-            .select('rr.points')
-            .getRawMany();
-          const avgPointsLast5 = driverLast5Races.length
-            ? driverLast5Races.reduce((sum, r) => sum + parseFloat(r.rr_points || '0'), 0) / driverLast5Races.length
-            : 0;
-
-          // Avg finish pos at this circuit
-          const driverCircuitHistory = await this.raceResultRepository
-            .createQueryBuilder('rr')
-            .innerJoin('rr.session', 'session')
-            .innerJoin('session.race', 'race')
-            .where('rr.driver_id = :driverId', { driverId })
-            .andWhere('race.circuit_id = :circuitId', { circuitId: race.circuit_id })
-            .andWhere('race.id < :raceId', { raceId })
-            .andWhere('session.type = :type', { type: 'Race' })
-            .andWhere('rr.position IS NOT NULL')
-            .select('rr.position')
-            .getRawMany();
-          const avgFinishAtCircuit = driverCircuitHistory.length
-            ? driverCircuitHistory.reduce((sum, r) => sum + (r.rr_position || 20), 0) / driverCircuitHistory.length
-            : 0;
-
-          // Avg constructor points last 5 races
-          const constructorLast5Races = await this.raceResultRepository
-            .createQueryBuilder('rr')
-            .innerJoin('rr.session', 'session')
-            .innerJoin('session.race', 'race')
-            .where('rr.constructor_id = :constructorId', { constructorId })
-            .andWhere('race.season_id = :seasonId', { seasonId: race.season_id })
-            .andWhere('race.round < :round', { round: race.round })
-            .andWhere('session.type = :type', { type: 'Race' })
-            .orderBy('race.round', 'DESC')
-            .select('race.round', 'round')
-            .addSelect('SUM(rr.points)', 'total_points')
-            .groupBy('race.round')
-            .limit(5)
-            .getRawMany();
-          const avgConstructorPointsLast5 = constructorLast5Races.length
-            ? constructorLast5Races.reduce((sum, r) => sum + parseFloat(r.total_points || '0'), 0) / constructorLast5Races.length
-            : 0;
-
-          return {
-            driver_id: driverId,
-            driver_standings_position_before_race: driverStandingsPosition || 0,
-            driver_points_before_race: driverPoints || 0,
-            constructor_standings_position_before_race: constructorStandingsPosition || 0,
-            constructor_points_before_race: constructorPoints || 0,
-            driver_age: parseFloat(driverAge.toFixed(2)) || 0,
-            avg_points_last_5_races: parseFloat(avgPointsLast5.toFixed(2)) || 0,
-            avg_finish_pos_at_circuit: parseFloat(avgFinishAtCircuit.toFixed(2)) || 0,
-            avg_constructor_points_last_5_races: parseFloat(avgConstructorPointsLast5.toFixed(2)) || 0,
-          };
-        })
+    // --- STEP 2: Validate the user's request ---
+    if (nextRace.id !== raceId) {
+      this.logger.warn(
+        `[STEP 2] Bad request. Requested ID ${raceId} is not the next race (ID: ${nextRace.id})`,
       );
-      this.logger.log('✅ Feature calculation complete for all drivers');
-      this.logger.log(`📊 Data being sent to Python script: ${JSON.stringify(driversFeatureData, null, 2)}`);
+      throw new BadRequestException(
+        `Predictions are only available for the next upcoming race: ${nextRace.name} (ID: ${nextRace.id}).`,
+      );
+    }
 
-      // 6. Call Python script
+    const race = nextRace;
+    this.logger.log(
+      `[STEP 2] Request validated. Generating predictions for: ${race.name}, Season Year: ${race.season.year}`,
+    );
+
+    try {
+      // --- STEP 3: Get driver list from 'driver_standings_materialized' ---
+      const step3Start = Date.now();
+      this.logger.log(
+        `[STEP 3] Fetching driver lineup from driver_standings_materialized for season year ${race.season.year}...`,
+      );
+      const participatingDrivers = await this.driverStandingsRepository.find({
+        where: { seasonYear: race.season.year },
+      });
+      this.logger.log(`⏱️ [STEP 3] Query completed in ${Date.now() - step3Start}ms`);
+
+      if (!participatingDrivers || participatingDrivers.length === 0) {
+        throw new NotFoundException(
+          `No drivers found in driver_standings_materialized for season year ${race.season.year}.`,
+        );
+      }
+      this.logger.log(
+        `[STEP 3] Found ${participatingDrivers.length} drivers for the season.`,
+      );
+
+      // --- STEP 3.5: Fetch Constructors for ID matching ---
+      const step3_5Start = Date.now();
+      const constructors = await this.constructorRepository.find();
+      this.logger.log(
+        `[STEP 3.5] Fetched ${constructors.length} constructors for name matching.`,
+      );
+      this.logger.log(`⏱️ [STEP 3.5] Completed in ${Date.now() - step3_5Start}ms`);
+
+      // --- STEP 4: Calculate features using the DB function (BATCHED) ---
+      const step4Start = Date.now();
+      this.logger.log(
+        `[STEP 4] Calculating features for ${participatingDrivers.length} drivers using get_driver_ml_features()...`,
+      );
+      const driversFeatureData: any[] = [];
+      const batchSize = 5; // Process 5 drivers at a time to avoid connection pool exhaustion
+
+      for (let i = 0; i < participatingDrivers.length; i += batchSize) {
+        const batch = participatingDrivers.slice(i, i + batchSize);
+        this.logger.log(
+          `[STEP 4] Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(participatingDrivers.length / batchSize)} (${batch.length} drivers)`,
+        );
+
+        const batchResults = await Promise.all(
+          batch.map(async (driverInfo, batchIndex) => {
+            const globalIndex = i + batchIndex;
+            const driverStart = Date.now();
+            this.logger.log(`⏱️ [STEP 4.${globalIndex + 1}] Processing driver ${driverInfo.driverId}...`);
+
+            // Find the constructor ID from the name
+            const constructor = constructors.find(
+              (c) => c.name === driverInfo.constructorName,
+            );
+            if (!constructor) {
+              this.logger.warn(
+                `Could not find constructor ID for name: ${driverInfo.constructorName}`,
+              );
+            }
+            const constructorId = constructor ? constructor.id : null;
+
+            // Pass driverId, raceId, AND constructorId
+            const queryResult = await this.raceResultRepository.query(
+              'SELECT get_driver_ml_features($1, $2, $3) as features',
+              [driverInfo.driverId, race.id, constructorId], // Pass 3 args
+            );
+
+            const features = queryResult[0].features;
+
+            // --- MODIFIED ERROR CHECK ---
+            if (features.error) {
+              // Log the full error object from SQL
+              this.logger.error(
+                `SQL Function Error for driver ${driverInfo.driverId}: ${JSON.stringify(features)}`, // Log stringified object
+              );
+              // Throw using the main error message
+              throw new InternalServerErrorException(
+                `Failed to calculate features: ${features.error} (Details in logs)`,
+              );
+            }
+            // ---------------------------
+
+            this.logger.log(`⏱️ [STEP 4.${globalIndex + 1}] Driver ${driverInfo.driverId} completed in ${Date.now() - driverStart}ms`);
+
+            return {
+              driver_id: driverInfo.driverId,
+              ...features,
+            };
+          }),
+        );
+
+        driversFeatureData.push(...batchResults);
+      }
+      this.logger.log(`✅ [STEP 4] Feature calculation complete. Total time: ${Date.now() - step4Start}ms`);
+      this.logger.log(
+        `📊 Data being sent to Python script: ${JSON.stringify(
+          driversFeatureData,
+          null,
+          2,
+        )}`,
+      );
+
+      // --- STEP 5: Call Python script ---
       const options = {
         mode: 'text' as const,
-        scriptPath: path.join(__dirname, '../../src/ml-scripts'),
-        pythonPath: path.join(__dirname, '../../src/ml-scripts/venv/bin/python3'),
+        scriptPath: path.join(__dirname, '../../ml-scripts'),
+        pythonPath: path.join(__dirname, '../../ml-scripts/venv/bin/python3'),
       };
       const scriptArgs = [JSON.stringify(driversFeatureData)];
-      this.logger.log('🐍 Executing Python prediction script...');
-      this.logger.log(`Script path: ${options.scriptPath}`);
-      this.logger.log(`Python path: ${options.pythonPath}`);
-      const results = await PythonShell.run('run_prediction.py', { ...options, args: scriptArgs });
+      const step5Start = Date.now();
+      this.logger.log('🐍 [STEP 5] Executing Python prediction script...');
+      
+      try {
+        const results = await PythonShell.run('run_prediction.py', {
+          ...options,
+          args: scriptArgs,
+        });
+        
       this.logger.log(`📥 Raw result from Python script: ${JSON.stringify(results)}`);
+        this.logger.log(`⏱️ [STEP 5] Python script completed in ${Date.now() - step5Start}ms`);
 
       const resultJson = JSON.parse(results[0]);
       if (!resultJson.success) {
-        throw new InternalServerErrorException(`Python script execution failed: ${resultJson.error || 'Unknown error'}`);
-      }
-      this.logger.log(`✅ Predictions generated successfully for ${resultJson.predictions.length} drivers`);
+          throw new InternalServerErrorException(
+            `Python script execution failed: ${
+              resultJson.error || 'Unknown error'
+            }`,
+          );
+        }
+        this.logger.log(`✅ [STEP 5] Predictions generated successfully.`);
 
-      // Enrich with names
-      const enrichedResults = await Promise.all(
-        resultJson.predictions.map(async (pred: any) => {
-          const raceResult = raceResults.find((r) => r.driver_id === pred.driver_id);
+        // --- STEP 6: Enrich with names and return ---
+        const enrichedResults = resultJson.predictions.map((pred: any) => {
+          const driverInfo = participatingDrivers.find(
+            (r) => r.driverId === pred.driver_id,
+          );
           return {
             driverId: pred.driver_id,
-            driverName: raceResult?.driver ? `${raceResult.driver.first_name} ${raceResult.driver.last_name}` : 'Unknown',
-            constructorName: raceResult?.team?.name || 'Unknown',
+            driverName: driverInfo?.driverFullName || 'Unknown',
+            constructorName: driverInfo?.constructorName || 'Unknown',
             podiumProbability: pred.podium_probability,
           };
-        })
-      );
+        });
 
+        this.logger.log(`🎉 [COMPLETE] Total pipeline execution time: ${Date.now() - startTime}ms`);
       return { raceId, raceName: race.name, predictions: enrichedResults };
+
+      } catch (err: any) {
+        // --- THIS IS THE NEW LOGGING ---
+        this.logger.error(`❌ PythonShell failed. Error: ${err.message}`);
+        if (err.stderr) {
+          this.logger.error(`🐍 Python stderr: ${err.stderr}`);
+        }
+        throw new InternalServerErrorException(
+          `Failed to run prediction script: ${err.message}`,
+        );
+      }
     } catch (err: any) {
-      this.logger.error(`❌ Error in getPredictionsByRaceId: ${err.message}`, err.stack);
-      if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(`Failed to generate predictions for race ${raceId}: ${err.message}`);
+      this.logger.error(
+        `❌ Error in getPredictionsByRaceId: ${err.message}`,
+        err.stack,
+      );
+      if (err instanceof NotFoundException || err instanceof BadRequestException) {
+        throw err;
+      }
+      throw new InternalServerErrorException(
+        `Failed to generate predictions for race ${raceId}: ${err.message}`,
+      );
     }
   }
 }
