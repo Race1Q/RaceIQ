@@ -28,6 +28,16 @@ const legacyStats: { key: keyof DriverDetails; label: string }[] = [
   { key: 'points', label: 'Career Points' },
 ];
 
+// Format numbers to remove trailing zeros
+const formatNumber = (value: number | string): string | number => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (typeof num !== 'number' || isNaN(num)) return value;
+  // If it's an integer, return as is
+  if (Number.isInteger(num)) return num;
+  // Otherwise, format to remove trailing zeros
+  return parseFloat(num.toFixed(10));
+};
+
 // Metric labels for UI (matching the main page)
 const metricLabels: Record<MetricKey, string> = {
   wins: 'Wins',
@@ -38,6 +48,7 @@ const metricLabels: Record<MetricKey, string> = {
   sprintPodiums: 'Sprint Podiums',
   dnfs: 'DNFs',
   poles: 'Pole Positions',
+  races: 'Races',
 };
 
 export const ComparisonTable: React.FC<Props> = ({ 
@@ -357,14 +368,14 @@ export const ComparisonTable: React.FC<Props> = ({
                         color={better1 ? 'border-accent' : 'text-primary'}
                         textAlign="center"
                       >
-                        {value1}
+                        {formatNumber(value1)}
                       </Td>
                       <Td 
                         fontWeight={better2 ? 'bold' : 'normal'}
                         color={better2 ? 'border-accent' : 'text-primary'}
                         textAlign="center"
                       >
-                        {value2}
+                        {formatNumber(value2)}
                       </Td>
                     </Tr>
                   );

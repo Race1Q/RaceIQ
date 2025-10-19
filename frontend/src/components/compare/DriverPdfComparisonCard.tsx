@@ -20,11 +20,14 @@ interface DriverPdfData {
 interface DriverStats {
   wins: number;
   podiums: number;
+  poles: number;
   fastestLaps: number;
   points: number;
   dnfs: number;
   sprintWins: number;
   sprintPodiums: number;
+  races: number;
+  recentForm: number;
 }
 
 interface DriverComparisonData {
@@ -57,6 +60,16 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
 
   const d1Color = driver1.teamColorHex || getTeamColor(driver1.teamName) || "#0ea5e9";
   const d2Color = driver2.teamColorHex || getTeamColor(driver2.teamName) || "#ef4444";
+
+  // Format numbers to remove trailing zeros
+  const formatNumber = (value: number | string): string => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (typeof num !== 'number' || isNaN(num)) return String(value);
+    // If it's an integer, return as is
+    if (Number.isInteger(num)) return String(num);
+    // Otherwise, format to remove trailing zeros
+    return String(parseFloat(num.toFixed(10)));
+  };
 
   // Safe text helper (no unsupported glyphs)
   const TXT = (t: string, x: number, y: number, opts: { size?: number; color?: string; align?: "left" | "center" | "right"; bold?: boolean } = {}) => {
@@ -259,6 +272,9 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   const normalizeKey = (k: string) => {
     if (k === "dnf") return "dnfs";
     if (k === "fastest_laps") return "fastestLaps";
+    if (k === "recent_form") return "recentForm";
+    if (k === "sprint_wins") return "sprintWins";
+    if (k === "sprint_podiums") return "sprintPodiums";
     return k;
   };
 
@@ -274,6 +290,8 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
     sprintWins: "SPRINT WINS",
     sprintPodiums: "SPRINT PODIUMS",
     dnfs: "DNF",
+    races: "RACES",
+    recentForm: "RECENT FORM",
   };
 
   const keyMap: Record<string, keyof DriverStats> = {
@@ -285,6 +303,8 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
     sprintWins: "sprintWins",
     sprintPodiums: "sprintPodiums",
     dnfs: "dnfs",
+    races: "races",
+    recentForm: "recentForm",
   };
 
   const contentMarginX = 22;
@@ -305,9 +325,28 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
 
   enabled.forEach((metric) => {
     const k = keyMap[metric];
+    // Skip if metric key is not found in keyMap
+    if (!k) {
+      console.warn(`PDF export: Unknown metric '${metric}' - skipping`);
+      return;
+    }
+    
     const label = (labelMap[metric] || metric).toUpperCase();
-    const v1 = (stats1 as any)[k] ?? 0;
-    const v2 = (stats2 as any)[k] ?? 0;
+    // Ensure values are valid numbers
+    let v1 = (stats1 as any)[k] ?? 0;
+    let v2 = (stats2 as any)[k] ?? 0;
+    
+    // Convert strings to numbers if needed
+    if (typeof v1 === 'string') {
+      v1 = parseFloat(v1);
+    }
+    if (typeof v2 === 'string') {
+      v2 = parseFloat(v2);
+    }
+    
+    // Convert to numbers and handle NaN/Infinity
+    v1 = typeof v1 === 'number' && isFinite(v1) ? v1 : 0;
+    v2 = typeof v2 === 'number' && isFinite(v2) ? v2 : 0;
 
     ensureSpace(28);
     // label centered above bar
@@ -321,26 +360,57 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
     const barY = currentY;
 
     // values
-    doc.text(String(v1), barX - 6, barY + barH - 1, { align: "right" });
-    doc.text(String(v2), barX + barW + 6, barY + barH - 1, { align: "left" });
+    doc.text(formatNumber(v1), barX - 6, barY + barH - 1, { align: "right" });
+    doc.text(formatNumber(v2), barX + barW + 6, barY + barH - 1, { align: "left" });
 
     // background strip
     doc.setFillColor(24, 24, 27);
     doc.rect(barX, barY, barW, barH, "F");
 
-    const total = Math.max(v1 + v2, 1);
-    const leftW = (v1 / total) * barW;
+    // For metrics where lower is better (DNFs, recent form), invert the proportions
+    const isLowerBetter = metric === 'dnfs' || metric === 'recentForm';
+    
+    let leftW: number;
+    let rightW: number;
+    
+    if (isLowerBetter && v1 > 0 && v2 > 0) {
+      // Invert: the driver with the lower value should have the larger bar
+      // Convert values to inverted proportions (higher value = smaller bar)
+      const inv1 = 1 / v1;
+      const inv2 = 1 / v2;
+      const totalInv = inv1 + inv2;
+      leftW = (inv1 / totalInv) * barW;
+      rightW = barW - leftW;
+    } else {
+      // Normal calculation: higher value = larger bar
+      const total = Math.max(v1 + v2, 1);
+      leftW = (v1 / total) * barW;
+      rightW = barW - leftW;
+    }
+    
+    // Ensure widths are valid and non-negative
+    leftW = Math.max(0, Math.min(leftW, barW));
+    rightW = Math.max(0, Math.min(rightW, barW));
+    
     const [r1, g1, b1] = hexToRgb(d1Color);
     const [r2, g2, b2] = hexToRgb(d2Color);
-    doc.setFillColor(r1, g1, b1);
-    doc.rect(barX, barY, leftW, barH, "F");
-    doc.setFillColor(r2, g2, b2);
-    doc.rect(barX + leftW, barY, barW - leftW, barH, "F");
+    
+    // Only draw rectangles if they have valid dimensions
+    if (leftW > 0) {
+      doc.setFillColor(r1, g1, b1);
+      doc.rect(barX, barY, leftW, barH, "F");
+    }
+    if (rightW > 0) {
+      doc.setFillColor(r2, g2, b2);
+      doc.rect(barX + leftW, barY, rightW, barH, "F");
+    }
 
-    // divider
-    doc.setDrawColor(60, 60, 70);
-    doc.setLineWidth(0.3);
-    doc.line(barX + leftW, barY, barX + leftW, barY + barH);
+    // divider - only draw if we have both sections
+    if (leftW > 0 && leftW < barW) {
+      doc.setDrawColor(60, 60, 70);
+      doc.setLineWidth(0.3);
+      doc.line(barX + leftW, barY, barX + leftW, barY + barH);
+    }
 
     // separator line under row
     const sepY = barY + barH + 6;
