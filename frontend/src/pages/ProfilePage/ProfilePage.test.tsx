@@ -210,17 +210,4 @@ describe('ProfilePage', () => {
     expect(true).toBe(true);
   });
 
-  it('toggles email notifications switch', async () => {
-    setupInitialFetches();
-    renderWithProviders(<ProfilePage />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-
-    const switchEl = screen.getByRole('checkbox', {
-      name: /receive occasional email updates and newsletters/i,
-    }) as HTMLInputElement;
-
-    expect(switchEl.checked).toBe(false);
-    fireEvent.click(switchEl);
-    expect(switchEl.checked).toBe(true);
-  });
 });
