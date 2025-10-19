@@ -23,7 +23,15 @@ export class GeminiService {
     }
     this.model = modelName;
     
+    // Log model configuration with optimization recommendations
     this.logger.log(`Gemini service initialized with model: ${this.model}`);
+    if (this.model === 'gemini-2.0-flash' || this.model === 'gemini-2.0-flash-exp') {
+      this.logger.log('Using Gemini 2.0 Flash - optimal for free tier (1500 req/day, 15 req/min) with enhanced performance');
+    } else if (this.model === 'gemini-1.5-flash') {
+      this.logger.log('Using Gemini 1.5 Flash - good for free tier (1500 req/day, 15 req/min). Consider upgrading to gemini-2.0-flash for better performance.');
+    } else if (this.model === 'gemini-1.5-pro') {
+      this.logger.warn('Using Gemini 1.5 Pro - limited free tier (50 req/day, 2 req/min). Consider switching to gemini-2.0-flash for better limits and performance.');
+    }
   }
 
   /**
