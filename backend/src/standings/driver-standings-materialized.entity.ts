@@ -1,13 +1,13 @@
 // backend/src/standings/driver-standings-materialized.entity.ts
 
-import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { ViewEntity, PrimaryColumn, Column } from 'typeorm';
 
-@Entity({ name: 'driver_standings_materialized' })
+@ViewEntity({ name: 'driver_standings_materialized' })
 export class DriverStandingMaterialized {
-  @PrimaryColumn({ type: 'int', name: 'seasonYear' })
+  @PrimaryColumn({ name: 'seasonYear' })
   seasonYear: number;
 
-  @PrimaryColumn({ type: 'int', name: 'driverId' })
+  @PrimaryColumn({ name: 'driverId' })
   driverId: number;
 
   @Column({ type: 'text', name: 'driverFullName' })

@@ -37,6 +37,7 @@ export interface Driver {
 // --- Dashboard Types ---
 
 export interface NextRace {
+  raceId?: number; // Optional race ID for predictions
   raceName: string;
   circuitName: string;
   raceDate: string; // ISO 8601 Date string
