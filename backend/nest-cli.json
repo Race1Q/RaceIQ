@@ -5,7 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      { "include": "ml-scripts/**", "outDir": "dist" }
+      { "include": "ml-scripts/**", "outDir": "dist" },
+      { "include": "src/ml-scripts/requirements.txt", "outDir": "dist/ml-scripts" }
     ]
   }
 }
