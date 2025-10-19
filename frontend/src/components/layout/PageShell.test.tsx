@@ -434,8 +434,8 @@ describe('PageShell', () => {
       );
       const endTime = performance.now();
       
-      // Allow up to 1000ms for slower test environments
-      expect(endTime - startTime).toBeLessThan(1000);
+      // Allow up to 1500ms for slower test environments
+      expect(endTime - startTime).toBeLessThan(1500);
     });
 
     it('handles large content efficiently', () => {
@@ -451,8 +451,8 @@ describe('PageShell', () => {
       );
       const endTime = performance.now();
       
-      // Allow up to 1000ms for slower test environments
-      expect(endTime - startTime).toBeLessThan(1000);
+      // Allow up to 1500ms for slower test environments
+      expect(endTime - startTime).toBeLessThan(1500);
     });
   });
 

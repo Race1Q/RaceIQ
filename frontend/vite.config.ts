@@ -136,6 +136,8 @@ export default defineConfig({
         'src/services/f1Api.ts',
         'src/hooks/useApi.ts',
         'src/context/ThemeContext.tsx',
+        // Exclude XR/VR files (experimental, difficult to test in JSDOM)
+        'src/experiences/xr/**',
       ],
     },
   },
