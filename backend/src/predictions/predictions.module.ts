@@ -1,3 +1,6 @@
+// --- ML FEATURE DISABLED --- Entire module deactivated.
+
+/*
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PredictionsController } from './predictions.controller';
@@ -21,3 +24,4 @@ import { ConstructorEntity } from '../constructors/constructors.entity';
   exports: [PredictionsService],
 })
 export class PredictionsModule {}
+*/

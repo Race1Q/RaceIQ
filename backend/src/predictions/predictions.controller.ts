@@ -1,3 +1,6 @@
+// --- ML FEATURE DISABLED --- Entire controller deactivated.
+
+/*
 import { Controller, Post, Get, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { PredictionsService } from './predictions.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
@@ -36,3 +39,4 @@ export class PredictionsController {
     return this.predictionsService.getPredictionsByRaceId(raceId);
   }
 }
+*/

@@ -1,3 +1,6 @@
+// --- ML FEATURE DISABLED --- Entire DTO file deactivated.
+
+/*
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PredictionFeaturesDto {
@@ -38,3 +41,4 @@ export class PredictRequestDto {
   @ApiProperty({ type: [DriverPredictionRequestDto] })
   drivers: DriverPredictionRequestDto[];
 }
+*/

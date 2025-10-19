@@ -1,3 +1,6 @@
+// --- ML FEATURE DISABLED --- Entire service deactivated.
+
+/*
 import {
   Injectable,
   InternalServerErrorException,
@@ -280,3 +283,4 @@ export class PredictionsService {
     }
   }
 }
+*/
