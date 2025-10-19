@@ -105,7 +105,7 @@ async function fetchYears(): Promise<number[]> {
 
 async function fetchConstructorStats(constructorId: string, year?: number | 'career'): Promise<ConstructorComparisonStats> {
   const yearParam = year && year !== 'career' ? `?year=${String(year)}` : '';
-  const response = await getJSON<any>(`/api/constructors/${constructorId}/stats${yearParam}`);
+  const response = await getJSON<any>(`/constructors/${constructorId}/stats${yearParam}`);
   
   return {
     constructorId: parseInt(constructorId, 10),

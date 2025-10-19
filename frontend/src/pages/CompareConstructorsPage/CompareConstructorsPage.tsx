@@ -731,6 +731,132 @@ const CompareConstructorsPage = () => {
           </VStack>
         </Box>
 
+        {/* Comparison Summary */}
+        {stats1 && stats2 && enabledMetricsArray.length > 0 && (() => {
+          // Determine which stats to use (same logic as ConstructorComparisonTable)
+          const useYearStats1 = stats1.yearStats !== null;
+          const useYearStats2 = stats2.yearStats !== null;
+          const statData1 = useYearStats1 ? stats1.yearStats : stats1.career;
+          const statData2 = useYearStats2 ? stats2.yearStats : stats2.career;
+
+          // Map UI metric keys to internal hook keys
+          const uiToInternal: Record<string, keyof typeof enabledMetrics> = {
+            wins: 'wins',
+            podiums: 'podiums',
+            poles: 'poles',
+            points: 'points',
+            dnf: 'dnfs',
+            races: 'races',
+          } as any;
+
+          // Determine winner for each metric
+          const determineWinner = (val1: number, val2: number, metric: string): boolean => {
+            if (metric === 'dnf') return val1 < val2; // Lower is better for DNFs
+            return val1 > val2; // Higher is better for others
+          };
+
+          // Calculate wins for each constructor
+          const constructor1Wins = enabledMetricsArray.filter(metric => {
+            const internalKey = uiToInternal[metric] || metric;
+            const val1 = (statData1 as any)?.[internalKey] || 0;
+            const val2 = (statData2 as any)?.[internalKey] || 0;
+            return determineWinner(val1, val2, metric);
+          }).length;
+
+          const constructor2Wins = enabledMetricsArray.filter(metric => {
+            const internalKey = uiToInternal[metric] || metric;
+            const val1 = (statData1 as any)?.[internalKey] || 0;
+            const val2 = (statData2 as any)?.[internalKey] || 0;
+            return !determineWinner(val1, val2, metric);
+          }).length;
+
+          // Find biggest difference
+          let biggestDiff = 0;
+          let biggestDiffMetric = '';
+          enabledMetricsArray.forEach(metric => {
+            const internalKey = uiToInternal[metric] || metric;
+            const val1 = (statData1 as any)?.[internalKey] || 0;
+            const val2 = (statData2 as any)?.[internalKey] || 0;
+            const diff = Math.abs(val1 - val2);
+            if (diff > biggestDiff) {
+              biggestDiff = diff;
+              biggestDiffMetric = availableMetrics[metric as keyof typeof availableMetrics] || '';
+            }
+          });
+
+          // Count ties
+          const ties = enabledMetricsArray.length - constructor1Wins - constructor2Wins;
+
+          return (
+            <Box p="lg" bg="bg-surface" borderRadius="lg" border="1px solid" borderColor="border-primary">
+              <VStack spacing="md">
+                <Heading size="md" fontFamily="heading" color={primaryTextColor}>Comparison Summary</Heading>
+                
+                <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap="md" w="full">
+                  {/* Overall Winner */}
+                  <Box p="md" bg={glassmorphismBg} borderRadius="md" textAlign="center">
+                    <Text fontSize="sm" color={mutedTextColor} mb="xs">Overall Winner</Text>
+                    <Text 
+                      fontSize="lg" 
+                      fontFamily="heading" 
+                      fontWeight="bold" 
+                      color={constructor1Wins > constructor2Wins ? constructor1TeamColor : constructor2TeamColor}
+                    >
+                      {constructor1Wins > constructor2Wins ? constructor1?.name : 
+                       constructor2Wins > constructor1Wins ? constructor2?.name : 
+                       "Evenly Matched"}
+                    </Text>
+                    <Text fontSize="xs" color={mutedTextColor}>
+                      {constructor1Wins !== constructor2Wins ? 
+                        `${Math.abs(constructor1Wins - constructor2Wins)} category difference` :
+                        "Perfectly matched"
+                      }
+                    </Text>
+                  </Box>
+
+                  {/* Most Dominant */}
+                  <Box p="md" bg={glassmorphismBg} borderRadius="md" textAlign="center">
+                    <Text fontSize="sm" color={mutedTextColor} mb="xs">Most Dominant</Text>
+                    <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={primaryTextColor}>
+                      {constructor1Wins > constructor2Wins ? 
+                        `${constructor1?.name} (${constructor1Wins}/${enabledMetricsArray.length})` :
+                        constructor2Wins > constructor1Wins ?
+                        `${constructor2?.name} (${constructor2Wins}/${enabledMetricsArray.length})` :
+                        "Evenly Matched"
+                      }
+                    </Text>
+                    <Text fontSize="xs" color={mutedTextColor}>
+                      categories won
+                    </Text>
+                  </Box>
+                </Grid>
+
+                {/* Key Insights */}
+                <Box w="full" p="md" bg={glassmorphismBg} borderRadius="md">
+                  <Text fontSize="sm" color={mutedTextColor} mb="sm" fontFamily="heading">Key Insights</Text>
+                  <VStack spacing="xs" align="stretch">
+                    {biggestDiffMetric && (
+                      <Text fontSize="sm" color={primaryTextColor}>
+                        🏆 Biggest difference in {biggestDiffMetric} ({biggestDiff.toFixed(1)} point gap)
+                      </Text>
+                    )}
+                    {ties > 0 && (
+                      <Text fontSize="sm" color={primaryTextColor}>
+                        ⚖️ Tied in {ties} categories
+                      </Text>
+                    )}
+                    {ties === 0 && constructor1Wins === constructor2Wins && (
+                      <Text fontSize="sm" color={primaryTextColor}>
+                        ⚖️ Perfectly matched across all categories
+                      </Text>
+                    )}
+                  </VStack>
+                </Box>
+              </VStack>
+            </Box>
+          );
+        })()}
+
         {/* Composite Score Visualization */}
         {score && enabledMetricsArray.length > 0 && (() => {
           const totalScore = score ? (score.c1 || 0) + (score.c2 || 0) : 0;
@@ -772,10 +898,10 @@ const CompareConstructorsPage = () => {
                 
                 <Flex align="center" justify="space-between" mt="sm">
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={constructor1TeamColor}>
-                    {score.c1?.toFixed(1) || '0.0'}
+                    {Math.round(score.c1 || 0)}
                   </Text>
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={constructor2TeamColor}>
-                    {score.c2?.toFixed(1) || '0.0'}
+                    {Math.round(score.c2 || 0)}
                   </Text>
                 </Flex>
               </Box>

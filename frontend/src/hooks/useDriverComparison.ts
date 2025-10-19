@@ -11,7 +11,7 @@ function calculateRecentFormAverage(recentForm: RecentFormResult[]): number {
     return 0;
   }
   const total = recentForm.reduce((sum, race) => sum + race.position, 0);
-  return total / recentForm.length;
+  return Math.round((total / recentForm.length) * 100) / 100; // Round to 2 decimal places
 }
 
 // NEW: Types for the comparison feature

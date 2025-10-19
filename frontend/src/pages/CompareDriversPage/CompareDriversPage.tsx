@@ -1123,7 +1123,7 @@ const CompareDriversPage = () => {
                     {(score.d1 ?? 0) > (score.d2 ?? 0) ? driver1?.fullName : driver2?.fullName}
                   </Text>
                   <Text fontSize="xs" color={mutedTextColor}>
-                    {Math.abs((score.d1 ?? 0) - (score.d2 ?? 0)).toFixed(1)} point difference
+                    {Math.round(Math.abs((score.d1 ?? 0) - (score.d2 ?? 0)))} point difference
                   </Text>
                 </Box>
 
@@ -1132,6 +1132,8 @@ const CompareDriversPage = () => {
                   <Text fontSize="sm" color={mutedTextColor} mb="xs">Most Dominant</Text>
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={primaryTextColor}>
                     {(() => {
+                      if (!stats1 || !stats2) return "No data available";
+                      
                       // Determine which stats to use (same logic as DriverStatsColumn)
                       const useYearStats1 = stats1.yearStats !== null;
                       const useYearStats2 = stats2.yearStats !== null;
@@ -1175,6 +1177,8 @@ const CompareDriversPage = () => {
                 <Text fontSize="sm" color={mutedTextColor} mb="sm" fontFamily="heading">Key Insights</Text>
                 <VStack spacing="xs" align="stretch">
                   {(() => {
+                    if (!stats1 || !stats2) return <Text fontSize="sm" color={mutedTextColor}>No data available</Text>;
+                    
                     const insights = [];
                     
                     // Determine which stats to use (same logic as DriverStatsColumn)
@@ -1270,10 +1274,10 @@ const CompareDriversPage = () => {
                 
                 <Flex align="center" justify="space-between" mt="sm">
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={driver1TeamColor}>
-                    {score.d1?.toFixed(1) || '0.0'}
+                    {Math.round(score.d1 || 0)}
                   </Text>
                   <Text fontSize="lg" fontFamily="heading" fontWeight="bold" color={driver2TeamColor}>
-                    {score.d2?.toFixed(1) || '0.0'}
+                    {Math.round(score.d2 || 0)}
                   </Text>
                 </Flex>
               </Box>
