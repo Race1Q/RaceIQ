@@ -82,7 +82,6 @@ const CompareConstructorsPage = () => {
     wins: 'wins',
     podiums: 'podiums',
     poles: 'poles',
-    fastest_laps: 'fastestLaps',
     points: 'points',
     dnf: 'dnfs',
     races: 'races',
@@ -91,7 +90,6 @@ const CompareConstructorsPage = () => {
     wins: 'wins',
     podiums: 'podiums',
     poles: 'poles',
-    fastestLaps: 'fastest_laps',
     points: 'points',
     dnfs: 'dnf',
     races: 'races',
@@ -158,6 +156,12 @@ const CompareConstructorsPage = () => {
         }
       });
 
+      console.log('📄 Generating PDF comparison...', {
+        constructor1: constructor1.name,
+        constructor2: constructor2.name,
+        metrics: Object.keys(enabledFromSelection).filter(k => enabledFromSelection[k])
+      });
+
       await ConstructorPdfComparisonCard({
         constructor1: {
           ...constructor1,
@@ -172,9 +176,12 @@ const CompareConstructorsPage = () => {
         enabledMetrics: enabledFromSelection,
         score,
       });
+      
+      console.log('✅ PDF generated successfully');
     } catch (error) {
-      console.error('Failed to export PDF:', error);
-      alert('Failed to export PDF. Check console for details or try using different constructors.');
+      console.error('❌ Failed to export PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to export PDF: ${errorMessage}\n\nPlease try again or check the browser console for more details.`);
     }
   };
   
@@ -498,7 +505,6 @@ const CompareConstructorsPage = () => {
       wins: 'Wins',
       podiums: 'Podiums',
       poles: 'Pole Positions',
-      fastest_laps: 'Fastest Laps',
       points: 'Points',
       races: 'Races',
       dnf: 'DNFs',
@@ -672,7 +678,6 @@ const CompareConstructorsPage = () => {
       wins: 'Wins',
       podiums: 'Podiums',
       poles: 'Pole Positions',
-      fastest_laps: 'Fastest Laps',
       points: 'Points',
       races: 'Races',
       dnf: 'DNFs',

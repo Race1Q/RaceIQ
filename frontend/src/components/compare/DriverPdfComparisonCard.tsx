@@ -101,16 +101,28 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   const cardW = (pageWidth - marginX * 2 - 20) / 2;
   const gap = 20;
 
-  // Load driver images (PNG data URLs) with fallback to team logos
+  // Helper to detect image format from data URL
+  const getImageFormat = (dataUrl: string): string => {
+    if (!dataUrl) return 'PNG';
+    if (dataUrl.includes('data:image/jpeg') || dataUrl.includes('data:image/jpg')) return 'JPEG';
+    if (dataUrl.includes('data:image/png')) return 'PNG';
+    if (dataUrl.includes('data:image/webp')) return 'WEBP';
+    return 'PNG'; // Default fallback
+  };
+
+  // Load driver images with fallback to team logos
   let d1Image = null;
+  let d1ImageFormat = 'PNG';
   let d2Image = null;
+  let d2ImageFormat = 'PNG';
   
   // Try driver image first
   if (driver1.imageUrl) {
     try {
       const imageData = await loadImageAsDataURL(driver1.imageUrl);
-      if (imageData && imageData.startsWith('data:image/')) {
+      if (imageData && imageData.startsWith('data:image/') && imageData.length > 100) {
         d1Image = imageData;
+        d1ImageFormat = getImageFormat(imageData);
       }
     } catch (error) {
       console.warn('Failed to load driver1 image, trying team logo:', error);
@@ -123,8 +135,9 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
       const teamLogoUrl = getTeamLogo(driver1.teamName);
       if (teamLogoUrl) {
         const logoData = await loadImageAsDataURL(teamLogoUrl);
-        if (logoData && logoData.startsWith('data:image/')) {
+        if (logoData && logoData.startsWith('data:image/') && logoData.length > 100) {
           d1Image = logoData;
+          d1ImageFormat = getImageFormat(logoData);
         }
       }
     } catch (error) {
@@ -136,8 +149,9 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   if (driver2.imageUrl) {
     try {
       const imageData = await loadImageAsDataURL(driver2.imageUrl);
-      if (imageData && imageData.startsWith('data:image/')) {
+      if (imageData && imageData.startsWith('data:image/') && imageData.length > 100) {
         d2Image = imageData;
+        d2ImageFormat = getImageFormat(imageData);
       }
     } catch (error) {
       console.warn('Failed to load driver2 image, trying team logo:', error);
@@ -150,8 +164,9 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
       const teamLogoUrl = getTeamLogo(driver2.teamName);
       if (teamLogoUrl) {
         const logoData = await loadImageAsDataURL(teamLogoUrl);
-        if (logoData && logoData.startsWith('data:image/')) {
+        if (logoData && logoData.startsWith('data:image/') && logoData.length > 100) {
           d2Image = logoData;
+          d2ImageFormat = getImageFormat(logoData);
         }
       }
     } catch (error) {
@@ -190,7 +205,16 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   doc.rect(leftX, topY, cardW, headerH); // border
   
   if (d1Image) {
-    doc.addImage(d1Image, "PNG", leftX + 8, topY + 6, 22, 22);
+    try {
+      doc.addImage(d1Image, d1ImageFormat, leftX + 8, topY + 6, 22, 22);
+    } catch (imgErr) {
+      console.warn('Failed to add driver1 image to PDF, using fallback:', imgErr);
+      // Fallback: colored circle with initials
+      doc.setFillColor(d1Color);
+      doc.circle(leftX + 19, topY + 17, 11, "F");
+      const initials = driver1.fullName.split(' ').map(word => word[0]).join('').substring(0, 2);
+      TXT(initials, leftX + 19, topY + 20, { size: 8, color: "#ffffff", bold: true, align: "center" });
+    }
   } else {
     // Fallback: colored circle with initials
     doc.setFillColor(d1Color);
@@ -209,7 +233,16 @@ export const DriverPdfComparisonCard = async (data: DriverComparisonData) => {
   doc.rect(rightX, topY, cardW, headerH);
   
   if (d2Image) {
-    doc.addImage(d2Image, "PNG", rightX + 8, topY + 6, 22, 22);
+    try {
+      doc.addImage(d2Image, d2ImageFormat, rightX + 8, topY + 6, 22, 22);
+    } catch (imgErr) {
+      console.warn('Failed to add driver2 image to PDF, using fallback:', imgErr);
+      // Fallback: colored circle with initials
+      doc.setFillColor(d2Color);
+      doc.circle(rightX + 19, topY + 17, 11, "F");
+      const initials = driver2.fullName.split(' ').map(word => word[0]).join('').substring(0, 2);
+      TXT(initials, rightX + 19, topY + 20, { size: 8, color: "#ffffff", bold: true, align: "center" });
+    }
   } else {
     // Fallback: colored circle with initials
     doc.setFillColor(d2Color);

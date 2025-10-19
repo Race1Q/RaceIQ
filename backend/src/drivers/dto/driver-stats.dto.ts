@@ -28,6 +28,7 @@ class CareerStatsDto {
   dnfs: number;
   highestRaceFinish: number;
   worldChampionships: number;
+  recentForm: number | null;
   firstRace: FirstRaceDto;
   winsPerSeason: WinsPerSeasonDto[];
 }

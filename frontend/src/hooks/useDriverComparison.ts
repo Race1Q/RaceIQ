@@ -1,6 +1,17 @@
 // frontend/src/hooks/useDriverComparison.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch, buildApiUrl } from '../lib/api';
+import { useAuth0 } from '@auth0/auth0-react';
+import type { RecentFormResult } from './useRecentForm';
+
+// Helper function to calculate recent form average
+function calculateRecentFormAverage(recentForm: RecentFormResult[]): number {
+  if (!recentForm || recentForm.length === 0) {
+    return 0;
+  }
+  const total = recentForm.reduce((sum, race) => sum + race.position, 0);
+  return total / recentForm.length;
+}
 
 // NEW: Types for the comparison feature
 export type DriverSelection = {
@@ -19,6 +30,9 @@ export type DriverComparisonStats = {
     dnfs: number;
     sprintWins: number;
     sprintPodiums: number;
+    poles: number;
+    races: number;
+    recentForm: number; // Average position in recent races
   };
   yearStats: null | {
     wins: number;
@@ -29,10 +43,12 @@ export type DriverComparisonStats = {
     sprintWins: number;
     sprintPodiums: number;
     poles: number;
+    races: number;
+    recentForm: number; // Average position in recent races
   };
 };
 
-export type MetricKey = 'wins' | 'podiums' | 'fastestLaps' | 'points' | 'sprintWins' | 'sprintPodiums' | 'dnfs' | 'poles';
+export type MetricKey = 'wins' | 'podiums' | 'fastestLaps' | 'points' | 'sprintWins' | 'sprintPodiums' | 'dnfs' | 'poles' | 'races' | 'recentForm';
 
 export type EnabledMetrics = Record<MetricKey, boolean>;
 
@@ -135,57 +151,107 @@ async function fetchYears(): Promise<number[]> {
   }
 }
 
-async function fetchDriverStats(driverId: string, year?: number | 'career'): Promise<DriverComparisonStats> {
-  const yearParam = year && year !== 'career' ? `?year=${year}` : '';
-  return getJSON<DriverComparisonStats>(`/drivers/${driverId}/stats${yearParam}`);
+async function fetchDriverStats(driverId: string, year?: number | 'career', token?: string): Promise<DriverComparisonStats> {
+  if (year === 'career' || !year) {
+    // Use career-stats endpoint for career/all-time data (includes fastest laps)
+    const response = await apiFetch<any>(`/api/drivers/${driverId}/career-stats`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    
+    // Use recent form data from career stats (precomputed in materialized view)
+    let recentFormAverage = response.careerStats?.recentForm || 0;
+    
+    // Fallback: if career stats doesn't have recent form, fetch it separately
+    if (!recentFormAverage || recentFormAverage === 0) {
+      try {
+        const recentFormResponse = await apiFetch<RecentFormResult[]>(`/api/drivers/${driverId}/recent-form`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        recentFormAverage = calculateRecentFormAverage(recentFormResponse);
+      } catch (error) {
+        console.warn(`Failed to fetch recent form for driver ${driverId}:`, error);
+        recentFormAverage = 0;
+      }
+    }
+    
+    return {
+      driverId: parseInt(driverId, 10),
+      year: null, // Career data
+      career: {
+        wins: response.careerStats?.wins || 0,
+        podiums: response.careerStats?.podiums || 0,
+        fastestLaps: response.careerStats?.fastestLaps || 0,
+        points: response.careerStats?.points || 0,
+        dnfs: response.careerStats?.dnfs || 0,
+        sprintWins: response.careerStats?.sprintWins || 0,
+        sprintPodiums: response.careerStats?.sprintPodiums || 0,
+        poles: response.careerStats?.poles || 0,
+        races: response.careerStats?.grandsPrixEntered || 0,
+        recentForm: recentFormAverage,
+      },
+      yearStats: null, // Career data only
+    };
+  } else {
+    // Use stats endpoint for year-specific data (no fastest laps for years)
+    const response = await apiFetch<any>(`/api/drivers/${driverId}/stats?year=${year}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    
+    // Fetch recent form data for year-specific comparison (still need separate API call)
+    let recentFormAverage = 0;
+    try {
+      const recentFormResponse = await apiFetch<RecentFormResult[]>(`/api/drivers/${driverId}/recent-form`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      recentFormAverage = calculateRecentFormAverage(recentFormResponse);
+    } catch (error) {
+      console.warn(`Failed to fetch recent form for driver ${driverId} (year ${year}):`, error);
+      recentFormAverage = 0;
+    }
+    
+    return {
+      driverId: response.driverId || parseInt(driverId, 10),
+      year: response.year,
+      career: {
+        wins: response.career?.wins || 0,
+        podiums: response.career?.podiums || 0,
+        fastestLaps: 0, // No fastest laps for year-specific data
+        points: response.career?.points || 0,
+        dnfs: response.career?.dnfs || 0,
+        sprintWins: response.career?.sprintWins || 0,
+        sprintPodiums: response.career?.sprintPodiums || 0,
+        poles: response.career?.poles || 0,
+        races: response.career?.races || 0,
+        recentForm: recentFormAverage,
+      },
+      yearStats: response.yearStats ? {
+        wins: response.yearStats.wins || 0,
+        podiums: response.yearStats.podiums || 0,
+        fastestLaps: 0, // No fastest laps for year-specific data
+        points: response.yearStats.points || 0,
+        dnfs: response.yearStats.dnfs || 0,
+        sprintWins: response.yearStats.sprintWins || 0,
+        sprintPodiums: response.yearStats.sprintPodiums || 0,
+        poles: response.yearStats.poles || 0,
+        races: response.yearStats.races || 0,
+        recentForm: recentFormAverage,
+      } : null,
+    };
+  }
 }
 
 // NEW: Aggregate multiple years of stats
-async function fetchDriverStatsForYears(driverId: string, years: number[]): Promise<DriverComparisonStats> {
+async function fetchDriverStatsForYears(driverId: string, years: number[], token?: string): Promise<DriverComparisonStats> {
   if (years.length === 0) {
-    return fetchDriverStats(driverId, 'career');
+    return fetchDriverStats(driverId, 'career', token);
   }
   
   if (years.length === 1) {
-    return fetchDriverStats(driverId, years[0]);
+    return fetchDriverStats(driverId, years[0], token);
   }
   
-  // Fetch stats for each year and aggregate
-  const yearStats = await Promise.all(
-    years.map(year => fetchDriverStats(driverId, year))
-  );
-  
-  // Aggregate the yearStats from each year
-  const aggregatedYearStats = yearStats.reduce((acc, stats) => {
-    if (stats.yearStats) {
-      acc.wins += stats.yearStats.wins;
-      acc.podiums += stats.yearStats.podiums;
-      acc.fastestLaps += stats.yearStats.fastestLaps;
-      acc.points += stats.yearStats.points;
-      acc.dnfs += stats.yearStats.dnfs;
-      acc.sprintWins += stats.yearStats.sprintWins;
-      acc.sprintPodiums += stats.yearStats.sprintPodiums;
-      acc.poles += stats.yearStats.poles || 0;
-    }
-    return acc;
-  }, {
-    wins: 0,
-    podiums: 0,
-    fastestLaps: 0,
-    points: 0,
-    dnfs: 0,
-    sprintWins: 0,
-    sprintPodiums: 0,
-    poles: 0,
-  });
-  
-  // Return the aggregated stats in the same format
-  return {
-    driverId: yearStats[0].driverId,
-    year: null, // Multiple years aggregated
-    career: yearStats[0].career, // Keep career stats as reference
-    yearStats: aggregatedYearStats,
-  };
+  // Multiple years selected = career comparison (use career-stats endpoint for fastest laps)
+  return fetchDriverStats(driverId, 'career', token);
 }
 
 // Legacy stats fetch
@@ -199,7 +265,8 @@ async function fetchDriverLegacyStats(driverId: string): Promise<any> {
 
 // Scoring functions
 function normalizeMetric(metric: MetricKey, value1: number, value2: number): [number, number] {
-  if (metric === 'dnfs') {
+  if (metric === 'dnfs' || metric === 'recentForm') {
+    // For DNFs and recent form, lower values are better
     if (value1 === 0 && value2 === 0) return [1.0, 1.0];
     const max = Math.max(value1, value2);
     if (max === 0) return [0.5, 0.5];
@@ -230,7 +297,7 @@ function computeCompositeScore(
   const s1 = useYearStats ? stats1.yearStats! : stats1.career;
   const s2 = useYearStats ? stats2.yearStats! : stats2.career;
   
-  const metrics: MetricKey[] = ['wins', 'podiums', 'fastestLaps', 'points', 'sprintWins', 'sprintPodiums', 'dnfs'];
+  const metrics: MetricKey[] = ['wins', 'podiums', 'fastestLaps', 'points', 'sprintWins', 'sprintPodiums', 'dnfs', 'races', 'recentForm'];
   
   if (useYearStats && (s1 as any).poles !== undefined && (s2 as any).poles !== undefined) {
     metrics.push('poles');
@@ -279,6 +346,8 @@ function mapStatsToDetails(id: string, base: Partial<DriverListItem> | undefined
 }
 
 export function useDriverComparison(): HookState {
+  const { getAccessTokenSilently } = useAuth0();
+  
   // State
   const [allDrivers, setAllDrivers] = useState<DriverListItem[]>([]);
   const [years, setYears] = useState<number[]>([]);
@@ -291,16 +360,18 @@ export function useDriverComparison(): HookState {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Default all metrics enabled
+  // Default all metrics enabled (fastestLaps will be conditionally available)
   const [enabledMetrics, setEnabledMetrics] = useState<EnabledMetrics>({
     wins: true,
     podiums: true,
-    fastestLaps: true,
+    fastestLaps: false, // Disabled by default, only enabled for career comparisons
     points: true,
     sprintWins: true,
     sprintPodiums: true,
     dnfs: true,
     poles: true,
+    races: true,
+    recentForm: true,
   });
   
   // Load initial data
@@ -349,10 +420,10 @@ export function useDriverComparison(): HookState {
   }, [getListItem]);
   
   // NEW: Enhanced driver select with year support
-  const selectDriver = useCallback((slot: 1 | 2, driverId: string, year: number | 'career') => {
+  const selectDriver = useCallback(async (slot: 1 | 2, driverId: string, year: number | 'career') => {
     if (!driverId) return;
     
-  const selection = { driverId, year };
+    const selection = { driverId, year };
     
     setLoading(true);
     setError(null);
@@ -374,39 +445,51 @@ export function useDriverComparison(): HookState {
       }
     }
     
-    // Fetch comparison stats
-    const yearParam = year === 'career' ? undefined : year;
-    fetchDriverStats(driverId, yearParam)
-      .then((stats) => {
-        if (slot === 1) {
-          setStats1(stats);
-        } else {
-          setStats2(stats);
-        }
-      })
-      .catch((e) => setError(e.message || 'Failed to load driver stats'))
-      .finally(() => setLoading(false));
-  }, [getListItem]);
+    try {
+      // Get authentication token
+      const token = await getAccessTokenSilently();
+      
+      // Fetch comparison stats
+      const yearParam = year === 'career' ? undefined : year;
+      const stats = await fetchDriverStats(driverId, yearParam, token);
+      
+      if (slot === 1) {
+        setStats1(stats);
+      } else {
+        setStats2(stats);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load driver stats');
+    } finally {
+      setLoading(false);
+    }
+  }, [getListItem, getAccessTokenSilently]);
 
   // NEW: Enhanced driver select with multiple years support
-  const selectDriverForYears = useCallback((slot: 1 | 2, driverId: string, years: number[]) => {
+  const selectDriverForYears = useCallback(async (slot: 1 | 2, driverId: string, years: number[]) => {
     if (!driverId) return;
     
     setLoading(true);
     setError(null);
     
-    // Fetch aggregated stats for multiple years
-    fetchDriverStatsForYears(driverId, years)
-      .then((stats) => {
-        if (slot === 1) {
-          setStats1(stats);
-        } else {
-          setStats2(stats);
-        }
-      })
-      .catch((e) => setError(e.message || 'Failed to load driver stats'))
-      .finally(() => setLoading(false));
-  }, []);
+    try {
+      // Get authentication token
+      const token = await getAccessTokenSilently();
+      
+      // Fetch aggregated stats for multiple years
+      const stats = await fetchDriverStatsForYears(driverId, years, token);
+      
+      if (slot === 1) {
+        setStats1(stats);
+      } else {
+        setStats2(stats);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load driver stats');
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessTokenSilently]);
   
   // Toggle metric function
   const toggleMetric = useCallback((metric: MetricKey) => {

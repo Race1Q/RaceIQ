@@ -15,7 +15,6 @@ export type ConstructorComparisonStats = {
     wins: number;
     podiums: number;
     poles: number;
-    fastestLaps: number;
     points: number;
     dnfs: number;
     races: number;
@@ -24,14 +23,13 @@ export type ConstructorComparisonStats = {
     wins: number;
     podiums: number;
     poles: number;
-    fastestLaps: number;
     points: number;
     dnfs: number;
     races: number;
   };
 };
 
-export type ConstructorMetricKey = 'wins' | 'podiums' | 'poles' | 'fastestLaps' | 'points' | 'dnfs' | 'races';
+export type ConstructorMetricKey = 'wins' | 'podiums' | 'poles' | 'points' | 'dnfs' | 'races';
 
 export type EnabledMetrics = Record<ConstructorMetricKey, boolean>;
 
@@ -130,7 +128,6 @@ async function fetchConstructorStatsForYears(constructorId: string, years: numbe
       acc.wins += stats.yearStats.wins;
       acc.podiums += stats.yearStats.podiums;
       acc.poles += stats.yearStats.poles;
-      acc.fastestLaps += stats.yearStats.fastestLaps;
       acc.points += stats.yearStats.points;
       acc.dnfs += stats.yearStats.dnfs;
       acc.races += stats.yearStats.races;
@@ -140,7 +137,6 @@ async function fetchConstructorStatsForYears(constructorId: string, years: numbe
     wins: 0,
     podiums: 0,
     poles: 0,
-    fastestLaps: 0,
     points: 0,
     dnfs: 0,
     races: 0,
@@ -197,7 +193,7 @@ function computeCompositeScore(
   const s1 = useYearStats ? stats1.yearStats! : stats1.career;
   const s2 = useYearStats ? stats2.yearStats! : stats2.career;
   
-  const metrics: ConstructorMetricKey[] = ['wins', 'podiums', 'poles', 'fastestLaps', 'points', 'dnfs', 'races'];
+  const metrics: ConstructorMetricKey[] = ['wins', 'podiums', 'poles', 'points', 'dnfs', 'races'];
   
   metrics.forEach(metric => {
     if (!enabledMetrics[metric]) return;
@@ -282,7 +278,6 @@ export function useConstructorComparison(): HookState {
     wins: true,
     podiums: true,
     poles: true,
-    fastestLaps: false,  // Disabled by default
     points: true,
     dnfs: false,         // Disabled by default
     races: true,

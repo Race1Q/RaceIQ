@@ -26,9 +26,36 @@ export async function loadImageAsDataURL(url: string): Promise<string> {
 }
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () => {
+      const result = reader.result as string;
+      
+      // If it's a JPEG, WEBP, or other format, convert to PNG for jsPDF compatibility
+      const isNonPng = !blob.type.includes('image/png');
+      
+      if (isNonPng && result) {
+        // Convert to PNG using canvas
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width || 256;
+          canvas.height = img.height || 256;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          const pngDataUrl = canvas.toDataURL('image/png');
+          resolve(pngDataUrl);
+        };
+        img.onerror = () => {
+          console.warn('Failed to convert image to PNG, returning original');
+          resolve(result); // Fallback to original
+        };
+        img.src = result;
+      } else {
+        resolve(result);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read blob'));
     reader.readAsDataURL(blob);
   });
 }
