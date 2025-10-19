@@ -45,8 +45,8 @@ export class PredictionsService {
 
     const options = {
       mode: 'text' as const,
-      scriptPath: path.join(__dirname, '../../ml-scripts'),
-      pythonPath: path.join(__dirname, '../../ml-scripts/venv/bin/python3'),
+      scriptPath: path.join(__dirname, '../ml-scripts'),
+      pythonPath: path.join(__dirname, '../ml-scripts/venv/bin/python3'),
     };
 
     try {
@@ -214,8 +214,8 @@ export class PredictionsService {
       // --- STEP 5: Call Python script ---
       const options = {
         mode: 'text' as const,
-        scriptPath: path.join(__dirname, '../../ml-scripts'),
-        pythonPath: path.join(__dirname, '../../ml-scripts/venv/bin/python3'),
+        scriptPath: path.join(__dirname, '../ml-scripts'),
+        pythonPath: path.join(__dirname, '../ml-scripts/venv/bin/python3'),
       };
       const scriptArgs = [JSON.stringify(driversFeatureData)];
       const step5Start = Date.now();
