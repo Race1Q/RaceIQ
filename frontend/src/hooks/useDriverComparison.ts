@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch, buildApiUrl } from '../lib/api';
 import { useAuth0 } from '@auth0/auth0-react';
 import type { RecentFormResult } from './useRecentForm';
+import { getCSIForDriver, applyCSIDampener } from '../lib/csi';
 
 // Helper function to calculate recent form average
 function calculateRecentFormAverage(recentForm: RecentFormResult[]): number {
@@ -22,6 +23,7 @@ export type DriverSelection = {
 export type DriverComparisonStats = {
   driverId: number;
   year: number | null;
+  constructorName?: string; // Added for CSI integration
   career: {
     wins: number;
     podiums: number;
@@ -48,7 +50,7 @@ export type DriverComparisonStats = {
   };
 };
 
-export type MetricKey = 'wins' | 'podiums' | 'fastestLaps' | 'points' | 'sprintWins' | 'sprintPodiums' | 'dnfs' | 'poles' | 'races' | 'recentForm';
+export type MetricKey = 'wins' | 'podiums' | 'fastestLaps' | 'points' | 'sprintWins' | 'sprintPodiums' | 'dnfs' | 'poles' | 'races';
 
 export type EnabledMetrics = Record<MetricKey, boolean>;
 
@@ -177,6 +179,7 @@ async function fetchDriverStats(driverId: string, year?: number | 'career', toke
     return {
       driverId: parseInt(driverId, 10),
       year: null, // Career data
+      constructorName: response.driver?.currentTeamName || response.driver?.teamName || 'Unknown',
       career: {
         wins: response.careerStats?.wins || 0,
         podiums: response.careerStats?.podiums || 0,
@@ -212,6 +215,7 @@ async function fetchDriverStats(driverId: string, year?: number | 'career', toke
     return {
       driverId: response.driverId || parseInt(driverId, 10),
       year: response.year,
+      constructorName: response.driver?.currentTeamName || response.driver?.teamName || 'Unknown',
       career: {
         wins: response.career?.wins || 0,
         podiums: response.career?.podiums || 0,
@@ -263,20 +267,84 @@ async function fetchDriverLegacyStats(driverId: string): Promise<any> {
   }
 }
 
-// Scoring functions
+// Metric weights for more realistic scoring
+const METRIC_WEIGHTS: Record<MetricKey, number> = {
+  wins: 3.0,           // Most important - wins define champions
+  podiums: 2.0,        // Very important - consistent performance
+  points: 1.0,         // Standard baseline
+  poles: 1.5,          // Important - qualifying performance
+  fastestLaps: 0.8,    // Less important - can be luck-based
+  sprintWins: 2.5,     // Important - new format wins
+  sprintPodiums: 1.8,  // Important - sprint performance
+  dnfs: 0.5,          // Negative metric - reliability
+  races: 0.3,         // Context metric - participation
+};
+
+// Improved scoring functions with weighted metrics and logarithmic scaling
 function normalizeMetric(metric: MetricKey, value1: number, value2: number): [number, number] {
-  if (metric === 'dnfs' || metric === 'recentForm') {
-    // For DNFs and recent form, lower values are better
+  if (metric === 'dnfs') {
+    // For DNFs, lower values are better
     if (value1 === 0 && value2 === 0) return [1.0, 1.0];
     const max = Math.max(value1, value2);
     if (max === 0) return [0.5, 0.5];
     return [1 - value1 / max, 1 - value2 / max];
   }
   
+  // Handle zero values better
   if (value1 === 0 && value2 === 0) return [0.5, 0.5];
-  const max = Math.max(value1, value2);
-  if (max === 0) return [0.5, 0.5];
-  return [value1 / max, value2 / max];
+  
+  // Use logarithmic scaling for large differences (e.g., 1000 vs 100 points)
+  const log1 = value1 > 0 ? Math.log(value1 + 1) : 0;
+  const log2 = value2 > 0 ? Math.log(value2 + 1) : 0;
+  const maxLog = Math.max(log1, log2);
+  
+  if (maxLog === 0) return [0.5, 0.5];
+  
+  return [log1 / maxLog, log2 / maxLog];
+}
+
+// Enhanced normalization with CSI (Constructor Strength Index) adjustments
+function normalizeMetricWithCSI(
+  metric: MetricKey, 
+  value1: number, 
+  value2: number, 
+  season: number,
+  constructor1: string,
+  constructor2: string
+): [number, number] {
+  // First, get the base normalized scores
+  const [base1, base2] = normalizeMetric(metric, value1, value2);
+  
+  // Determine if this is a "higher is better" or "lower is better" metric
+  const kind = metric === 'dnfs' ? 'lower' : 'higher';
+  
+  // Get CSI values for both constructors
+  const csi1 = getCSIForDriver(season, constructor1);
+  const csi2 = getCSIForDriver(season, constructor2);
+  
+  // Apply CSI dampening with moderate alpha for balanced adjustments
+  const adjusted1 = applyCSIDampener(base1, csi1, kind, 0.3);
+  const adjusted2 = applyCSIDampener(base2, csi2, kind, 0.3);
+  
+  // Moderate bonuses for small teams (CSI < 0.9) - only for truly small teams
+  let smallTeamBonus1 = 1.0;
+  let smallTeamBonus2 = 1.0;
+  
+  if (csi1 < 0.9) {
+    // Small team bonuses - more conservative
+    if (metric === 'points') smallTeamBonus1 = 1.15;      // 15% bonus for points
+    else if (metric === 'podiums') smallTeamBonus1 = 1.1; // 10% bonus for podiums
+    else if (metric === 'wins') smallTeamBonus1 = 1.2;    // 20% bonus for wins
+  }
+  
+  if (csi2 < 0.9) {
+    // Small team bonuses - more conservative
+    if (metric === 'points') smallTeamBonus2 = 1.15;      // 15% bonus for points
+    else if (metric === 'podiums') smallTeamBonus2 = 1.1; // 10% bonus for podiums
+    else if (metric === 'wins') smallTeamBonus2 = 1.2;    // 20% bonus for wins
+  }
+  
+  return [adjusted1 * smallTeamBonus1, adjusted2 * smallTeamBonus2];
 }
 
 function computeCompositeScore(
@@ -297,7 +365,7 @@ function computeCompositeScore(
   const s1 = useYearStats ? stats1.yearStats! : stats1.career;
   const s2 = useYearStats ? stats2.yearStats! : stats2.career;
   
-  const metrics: MetricKey[] = ['wins', 'podiums', 'fastestLaps', 'points', 'sprintWins', 'sprintPodiums', 'dnfs', 'races', 'recentForm'];
+  const metrics: MetricKey[] = ['wins', 'podiums', 'fastestLaps', 'points', 'sprintWins', 'sprintPodiums', 'dnfs', 'races'];
   
   if (useYearStats && (s1 as any).poles !== undefined && (s2 as any).poles !== undefined) {
     metrics.push('poles');
@@ -308,12 +376,25 @@ function computeCompositeScore(
     
     const value1 = (s1 as any)[metric] || 0;
     const value2 = (s2 as any)[metric] || 0;
-    const normalized = normalizeMetric(metric, value1, value2);
     
-    perMetric[metric] = normalized;
-    totalScore1 += normalized[0];
-    totalScore2 += normalized[1];
-    enabledCount++;
+    // Use CSI-adjusted normalization if constructor info is available
+    let normalized: [number, number];
+    if (stats1.constructorName && stats2.constructorName) {
+      const season = stats1.year || new Date().getFullYear();
+      normalized = normalizeMetricWithCSI(metric, value1, value2, season, stats1.constructorName, stats2.constructorName);
+    } else {
+      normalized = normalizeMetric(metric, value1, value2);
+    }
+    
+    // Apply metric weights for more realistic scoring
+    const weight = METRIC_WEIGHTS[metric] || 1.0;
+    const weighted1 = normalized[0] * weight;
+    const weighted2 = normalized[1] * weight;
+    
+    perMetric[metric] = [weighted1, weighted2];
+    totalScore1 += weighted1;
+    totalScore2 += weighted2;
+    enabledCount += weight; // Use weighted count for proper averaging
   });
   
   return {
@@ -371,7 +452,6 @@ export function useDriverComparison(): HookState {
     dnfs: true,
     poles: true,
     races: true,
-    recentForm: true,
   });
   
   // Load initial data

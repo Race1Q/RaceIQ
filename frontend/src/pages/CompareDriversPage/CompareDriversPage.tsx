@@ -1140,8 +1140,6 @@ const CompareDriversPage = () => {
                       
                       // Only count metrics that are actually displayed in the UI
                       const displayedMetrics = Object.keys(availableMetrics);
-                      console.log(`[DEBUG] enabledMetricsArray:`, enabledMetricsArray);
-                      console.log(`[DEBUG] displayedMetrics:`, displayedMetrics);
                       
                       const driver1Wins = displayedMetrics.filter(metric => {
                         const internalKey = uiToInternal[metric] || metric;
