@@ -62,7 +62,6 @@ const ProfilePage: React.FC = () => {
     username: user?.name || '',
     favoriteTeam: '' as number | '',
     favoriteDriver: '' as number | '',
-    emailNotifications: false,
   });
 
   interface DriverOpt { id: number; name?: string; full_name?: string; first_name?: string; last_name?: string }
@@ -424,17 +423,6 @@ const ProfilePage: React.FC = () => {
               />
             </SimpleGrid>
             
-            <FormControl display="flex" alignItems="center">
-              <FormLabel htmlFor="email-notifications" mb="0" color="var(--color-text-light)">
-                Receive occasional email updates and newsletters
-              </FormLabel>
-              <Switch
-                id="email-notifications"
-                isChecked={formData.emailNotifications}
-                onChange={(e) => handleInputChange('emailNotifications', e.target.checked)}
-                colorScheme="red"
-              />
-            </FormControl>
             <Divider borderColor="var(--color-border-gray)" />
             <Box>
               <Text fontSize="xl" fontWeight="bold" mb={4} color="var(--color-text-light)">
@@ -483,7 +471,7 @@ const ProfilePage: React.FC = () => {
                   transform: 'translateY(-2px)'
                 }}
               >
-                {sending ? 'Sending…' : 'Get race info'}
+                {sending ? 'Sending…' : 'Get  next 3 races info'}
               </Button>
               <Button
                 onClick={handleDeleteAccount}

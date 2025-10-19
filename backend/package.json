@@ -41,6 +41,7 @@
     "@supabase/supabase-js": "^2.56.0",
     "auth0": "^4.2.0",
     "axios": "^1.11.0",
+    "backend": "^0.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dotenv": "^16.6.1",
