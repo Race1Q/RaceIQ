@@ -7,11 +7,12 @@ import { IngestionController } from './ingestion.controller';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
 import { IngestionService } from './ingestion.service';
+import { ScheduledIngestionService } from './scheduled-ingestion.service';
 
 @Module({
   imports: [HttpModule, SupabaseModule],
   controllers: [IngestionController],
-  providers: [ErgastService, OpenF1Service, IngestionService],
+  providers: [ErgastService, OpenF1Service, IngestionService, ScheduledIngestionService],
   
 })
 export class IngestionModule {}

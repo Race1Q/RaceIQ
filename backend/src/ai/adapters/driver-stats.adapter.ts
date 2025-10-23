@@ -10,7 +10,6 @@ export interface DriverDataForBio {
   driverNumber: number | null;
   countryCode: string | null;
   dateOfBirth: string | null;
-  // bio removed - not stored in database
   funFact: string | null;
   careerStats?: {
     wins: number;

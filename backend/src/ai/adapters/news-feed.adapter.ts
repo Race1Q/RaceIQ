@@ -47,9 +47,7 @@ export class NewsFeedAdapter {
     }
   }
 
-  /**
-   * Fetch news from F1's RSS feed
-   */
+  // Fetch news from F1's RSS feed
   private async fetchFromRSS(limit: number): Promise<NewsArticle[]> {
     try {
       const response = await firstValueFrom(
@@ -94,18 +92,14 @@ export class NewsFeedAdapter {
     }
   }
 
-  /**
-   * Extract content from XML tag
-   */
+  // Extract content from XML tag
   private extractXmlTag(xml: string, tagName: string): string | null {
     const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\/${tagName}>`, 'i');
     const match = xml.match(regex);
     return match ? match[1].trim() : null;
   }
 
-  /**
-   * Clean HTML tags and entities from text
-   */
+  // Clean HTML tags and entities from text
   private cleanHtml(text: string): string {
     return text
       .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
@@ -119,9 +113,7 @@ export class NewsFeedAdapter {
       .trim();
   }
 
-  /**
-   * Fallback news for when RSS fails (development/testing)
-   */
+  // Fallback news for when RSS fails (development/testing)
   private getFallbackNews(limit: number): NewsArticle[] {
     const fallbackArticles: NewsArticle[] = [
       {

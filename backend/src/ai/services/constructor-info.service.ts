@@ -42,7 +42,7 @@ export class ConstructorInfoService {
       const drivers = await this.driversService.findAll({ year: season || new Date().getFullYear() });
       const constructorDrivers = drivers.filter(driver => driver.constructorId === constructorId);
       
-      // Fetch recent race results for context (simplified approach)
+      // Fetch recent race results for context (simple approach)
       const recentResults: Array<{
         raceName: string;
         position: number;

@@ -49,13 +49,17 @@ import { QualifyingResult } from './qualifying-results/qualifying-results.entity
 import { TireStint } from './tire-stints/tire-stints.entity';
 import { RaceEvent } from './race-events/race-events.entity';
 import { User } from './users/entities/user.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     // 1. Load the .env file
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
 
-    // 2. Setup the TypeORM database connection (NOW USING DATABASE_URL)
+    // 2. Enable scheduling for cron jobs
+    ScheduleModule.forRoot(),
+
+    // 3. Setup the TypeORM database connection (NOW USING DATABASE_URL)
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -106,7 +110,7 @@ import { User } from './users/entities/user.entity';
       },
     }),
 
-    // 3. Load ONLY our new modules
+    // 4. Load ONLY our new modules
     IngestionModule,
     DriversModule,
     CountriesModule,
