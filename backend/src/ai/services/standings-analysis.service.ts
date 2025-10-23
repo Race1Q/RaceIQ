@@ -1,34 +1,41 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GeminiService } from './gemini.service';
 import { PersistentCacheService } from '../cache/persistent-cache.service';
+import { AiResponseService } from './ai-response.service';
 import { StandingsService } from '../../standings/standings.service';
 import { AiStandingsAnalysisDto } from '../dto/ai-standings-analysis.dto';
 
 @Injectable()
 export class StandingsAnalysisService {
   private readonly logger = new Logger(StandingsAnalysisService.name);
-  private readonly CACHE_TTL_HOURS = 12; // 12 hours cache for standings analysis
+  private readonly CACHE_TTL_HOURS = 168; // 168 hours (1 week) cache for standings analysis
 
   constructor(
     private readonly geminiService: GeminiService,
     private readonly cacheService: PersistentCacheService,
+    private readonly aiResponseService: AiResponseService,
     private readonly standingsService: StandingsService,
   ) {}
 
   async getStandingsAnalysis(season?: number): Promise<AiStandingsAnalysisDto> {
     const currentSeason = season || new Date().getFullYear();
-    const cacheKey = `standings-analysis-${currentSeason}`;
     
-    // Check cache first
-    const cached = this.cacheService.get<AiStandingsAnalysisDto>(cacheKey);
-    if (cached) {
-      this.logger.debug(`Cache HIT for standings analysis: ${cacheKey}`);
-      return cached;
-    }
-
-    this.logger.log(`Generating AI standings analysis for season: ${currentSeason}`);
-
     try {
+      // Check database for latest response first
+      const latestResponse = await this.aiResponseService.getLatestResponse<AiStandingsAnalysisDto>(
+        'standings_analysis',
+        'season',
+        currentSeason,
+        currentSeason,
+      );
+
+      if (latestResponse) {
+        this.logger.log(`Returning latest database response for standings analysis, season ${currentSeason}`);
+        return latestResponse;
+      }
+
+      this.logger.log(`Generating AI standings analysis for season: ${currentSeason}`);
+
       // Fetch current standings data
       const standingsData = await this.standingsService.getStandingsByYear(currentSeason);
       const driverStandings = standingsData.driverStandings;
@@ -104,11 +111,19 @@ Make it engaging and informative for F1 fans, with specific insights about the c
         isFallback: false,
       };
 
-      // Cache the result
-      await this.cacheService.set(cacheKey, result, this.CACHE_TTL_HOURS * 3600);
+      // Store the response in database
+      await this.aiResponseService.storeResponse(
+        'standings_analysis',
+        'season',
+        currentSeason,
+        result,
+        currentSeason,
+        undefined,
+        false,
+        'Powered by Gemini AI'
+      );
 
       return result;
-
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating standings analysis: ${error.message}`, error.stack);

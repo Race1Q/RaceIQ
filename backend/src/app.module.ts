@@ -49,6 +49,7 @@ import { QualifyingResult } from './qualifying-results/qualifying-results.entity
 import { TireStint } from './tire-stints/tire-stints.entity';
 import { RaceEvent } from './race-events/race-events.entity';
 import { User } from './users/entities/user.entity';
+import { AiResponse } from './ai/entities/ai-response.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -90,7 +91,8 @@ import { ScheduleModule } from '@nestjs/schedule';
           WinsPerSeasonMaterialized,
           DriverCareerStatsMaterialized,
           ConstructorStandingMaterialized,
-          ConstructorStandingsMaterialized, // ✅ NEW entity for bulk constructor stats
+          ConstructorStandingsMaterialized,
+          AiResponse,
           ],
           synchronize: false, // trust the db schema
           ssl: isLocal ? false : { rejectUnauthorized: false },

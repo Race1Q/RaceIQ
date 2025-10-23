@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
 import { QuotaService } from './quota.service';
-import { PersistentCacheService } from '../cache/persistent-cache.service';
+import { AiResponseService } from './ai-response.service';
 import { DriverStatsAdapter } from '../adapters/driver-stats.adapter';
 import { AiDriverBioDto } from '../dto/ai-bio.dto';
 import { BIO_SYSTEM_PROMPT, BIO_USER_TEMPLATE } from '../prompts/bio.prompt';
@@ -15,12 +15,12 @@ export class BioService {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly quotaService: QuotaService,
-    private readonly cache: PersistentCacheService,
+    private readonly aiResponseService: AiResponseService,
     private readonly driverStatsAdapter: DriverStatsAdapter,
     private readonly config: ConfigService,
   ) {
-    // Get TTL from config, default to 48 hours
-    const ttlHours = this.config.get<number>('AI_BIO_TTL_H') || 48;
+    // Get TTL from config, default to 4380 hours (6 months)
+    const ttlHours = this.config.get<number>('AI_BIO_TTL_H') || 4380; // 6 months
     this.bioTTL = ttlHours * 3600; // Convert hours to seconds
   }
 
@@ -30,14 +30,18 @@ export class BioService {
    * @param season Optional season year for season-specific bio
    */
   async getDriverBio(driverId: number, season?: number): Promise<AiDriverBioDto> {
-    const cacheKey = `bio:${driverId}:${season || 'career'}`;
-
     try {
-      // Check cache first
-      const cached = this.cache.get<AiDriverBioDto>(cacheKey);
-      if (cached) {
-        this.logger.log(`Returning cached bio for driver ${driverId}${season ? `, season ${season}` : ''}`);
-        return cached;
+      // Check database for latest response first
+      const latestResponse = await this.aiResponseService.getLatestResponse<AiDriverBioDto>(
+        'bio',
+        'driver',
+        driverId,
+        season,
+      );
+
+      if (latestResponse) {
+        this.logger.log(`Returning latest database response for driver ${driverId}${season ? `, season ${season}` : ''}`);
+        return latestResponse;
       }
 
       // Check if AI features are enabled
@@ -49,11 +53,7 @@ export class BioService {
 
       // Check quota
       if (!this.quotaService.hasQuota()) {
-        this.logger.warn('Daily quota exceeded, trying stale cache or fallback');
-        const stale = this.cache.get<AiDriverBioDto>(cacheKey, true);
-        if (stale) {
-          return { ...stale, isFallback: true };
-        }
+        this.logger.warn('Daily quota exceeded, using fallback');
         return this.getFallbackBio(driverId, season);
       }
 
@@ -92,21 +92,20 @@ export class BioService {
         isFallback: false,
       };
 
-      // Cache the response
-      await this.cache.set(cacheKey, response, this.bioTTL);
-      this.logger.log(`Successfully generated and cached bio for driver ${driverId}`);
+      // Store the response in database
+      await this.aiResponseService.storeResponse(
+        'bio',
+        'driver',
+        driverId,
+        response,
+        season,
+      );
+      this.logger.log(`Successfully generated and stored bio for driver ${driverId}`);
 
       return response;
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating driver bio: ${error.message}`, error.stack);
-
-      // Try to return stale cache on error
-      const stale = this.cache.get<AiDriverBioDto>(cacheKey, true);
-      if (stale) {
-        this.logger.log('Returning stale cache due to error');
-        return { ...stale, isFallback: true };
-      }
 
       // Final fallback
       return this.getFallbackBio(driverId, season);
