@@ -1,4 +1,4 @@
-import { Controller, Post, Logger, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Logger, Get, Param, ParseIntPipe, HttpCode } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
@@ -126,6 +126,59 @@ export class IngestionController {
     // CORRECT: Call the new function for results, laps, and pits
     this.openf1Service.ingestModernResultsAndLaps(year);
     return { message: `OpenF1 modern results, laps, and pit stops ingestion for ${year} started. Check server logs.` };
+  }
+
+  @ApiExcludeEndpoint()
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., year is not a number).',
+    type: ApiErrorDto,
+  })
+  @Post('openf1/sprint-qualifying/:year')
+  async ingestSprintQualifying(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Ingesting Sprint Qualifying for ${year} ---`);
+    await this.openf1Service.ingestSprintQualifyingResults(year);
+    return { message: `Sprint Qualifying ingestion for ${year} started. Check server logs.` };
+  }
+
+  @ApiExcludeEndpoint()
+  @Post('openf1/sprint-race/:year')
+  @HttpCode(202)
+  async ingestSprintRaceResults(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Ingesting Sprint Race for ${year} ---`);
+    this.openf1Service.ingestSprintRaceResults(year);
+    return { message: `Ingestion for ${year} Sprint Race results triggered.` };
+  }
+
+  @ApiExcludeEndpoint()
+  @Post('openf1/backfill-constructor-drivers/:start/:end')
+  async backfillConstructorDrivers(
+    @Param('start', ParseIntPipe) start: number,
+    @Param('end', ParseIntPipe) end: number,
+  ) {
+    this.logger.log(`--- MANUAL TRIGGER: Backfilling constructor_drivers ${start}-${end} ---`);
+    await this.openf1Service.backfillConstructorDrivers(start, end);
+    return { message: `Backfill triggered for ${start}-${end}. Check server logs.` };
+  }
+
+  @ApiExcludeEndpoint()
+  @Post('backfill-driver-acronyms/:startYear/:endYear')
+  async backfillDriverAcronyms(
+    @Param('startYear', ParseIntPipe) startYear: number,
+    @Param('endYear', ParseIntPipe) endYear: number,
+  ) {
+    this.logger.log(`--- MANUAL TRIGGER: Backfilling driver acronyms ${startYear}-${endYear} ---`);
+    // run without awaiting to avoid request timeout for long ranges
+    this.openf1Service.backfillDriverAcronyms(startYear, endYear);
+    return { message: `Driver acronym backfill triggered for ${startYear}-${endYear}.` };
+  }
+
+  @ApiExcludeEndpoint()
+  @Post('backfill-driver-details/:year')
+  async backfillDriverDetails(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Backfilling driver details for ${year} ---`);
+    // fire-and-forget
+    this.openf1Service.backfillDriverRefsAndAcronyms(year);
+    return { message: `Driver details backfill triggered for ${year}.` };
   }
 
   @ApiExcludeEndpoint()
