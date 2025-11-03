@@ -4,6 +4,7 @@ import { GeminiService } from './gemini.service';
 import { QuotaService } from './quota.service';
 import { PersistentCacheService } from '../cache/persistent-cache.service';
 import { NewsFeedAdapter } from '../adapters/news-feed.adapter';
+import { AiResponseService } from './ai-response.service';
 import { AiNewsDto } from '../dto/ai-news.dto';
 import { NEWS_SYSTEM_PROMPT, NEWS_USER_TEMPLATE } from '../prompts/news.prompt';
 
@@ -17,10 +18,11 @@ export class NewsService {
     private readonly quotaService: QuotaService,
     private readonly cache: PersistentCacheService,
     private readonly newsFeedAdapter: NewsFeedAdapter,
+    private readonly aiResponseService: AiResponseService,
     private readonly config: ConfigService,
   ) {
-    // Get TTL from config, default to 60 minutes
-    this.newsTTL = (this.config.get<number>('AI_NEWS_TTL_MIN') || 60) * 60;
+    // Get TTL from config, default to 720 minutes (12 hours)
+    this.newsTTL = (this.config.get<number>('AI_NEWS_TTL_MIN') || 720) * 60;
   }
 
   /**
@@ -28,14 +30,19 @@ export class NewsService {
    * @param topic News topic filter
    */
   async getNews(topic: string = 'f1'): Promise<AiNewsDto> {
-    const cacheKey = `news:${topic}`;
-
     try {
-      // Check cache first
-      const cached = this.cache.get<AiNewsDto>(cacheKey);
-      if (cached) {
-        this.logger.log(`Returning cached news for topic: ${topic}`);
-        return cached;
+      // Check database for latest response first
+      const latestResponse = await this.aiResponseService.getLatestResponse<AiNewsDto>(
+        'news',
+        'general',
+        0, // Use 0 for general news (no specific entity)
+        undefined, // No season
+        undefined, // No event
+      );
+
+      if (latestResponse) {
+        this.logger.log(`Returning latest database response for news topic: ${topic}`);
+        return latestResponse;
       }
 
       // Check if AI features are enabled
@@ -47,11 +54,7 @@ export class NewsService {
 
       // Check quota
       if (!this.quotaService.hasQuota()) {
-        this.logger.warn('Daily quota exceeded, trying stale cache or fallback');
-        const stale = this.cache.get<AiNewsDto>(cacheKey, true); // Get even if expired
-        if (stale) {
-          return { ...stale, isFallback: true };
-        }
+        this.logger.warn('Daily quota exceeded, using fallback');
         return this.getFallbackNews(topic);
       }
 
@@ -92,21 +95,23 @@ export class NewsService {
         isFallback: false,
       };
 
-      // Cache the response
-      await this.cache.set(cacheKey, response, this.newsTTL);
-      this.logger.log(`Successfully generated and cached news for topic: ${topic}`);
+      // Store the response in database
+      await this.aiResponseService.storeResponse(
+        'news',
+        'general',
+        0, // Use 0 for general news (no specific entity)
+        response,
+        undefined,
+        undefined,
+        false,
+        'Powered by Gemini AI'
+      );
+      this.logger.log(`Successfully generated and stored news for topic: ${topic}`);
 
       return response;
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating news summary: ${error.message}`, error.stack);
-
-      // Try to return stale cache on error
-      const stale = this.cache.get<AiNewsDto>(cacheKey, true);
-      if (stale) {
-        this.logger.log('Returning stale cache due to error');
-        return { ...stale, isFallback: true };
-      }
 
       // Final fallback
       return this.getFallbackNews(topic);

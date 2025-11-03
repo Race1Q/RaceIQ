@@ -100,8 +100,7 @@ export class GeminiService {
       this.logger.debug('JSON parse failed, attempting to fix common issues...');
       
       // Simple approach: Replace double quotes that appear within string values
-      // by converting them to single quotes
-      // This is safer than trying to escape them
+      // by converting them to single quotes - bcos it is safer than trying to escape them
       let fixed = jsonStr;
       
       // Strategy: Find patterns like "text with "quotes" inside" and convert inner quotes to single quotes

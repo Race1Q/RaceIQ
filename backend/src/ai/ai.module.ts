@@ -2,10 +2,14 @@ import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiController } from './ai.controller';
 import { GeminiService } from './services/gemini.service';
 import { QuotaService } from './services/quota.service';
 import { PersistentCacheService } from './cache/persistent-cache.service';
+import { AiResponseService } from './services/ai-response.service';
+import { AiResponseRepository } from './repositories/ai-response.repository';
+import { AiResponse } from './entities/ai-response.entity';
 import { NewsService } from './services/news.service';
 import { BioService } from './services/bio.service';
 import { PreviewService } from './services/preview.service';
@@ -26,6 +30,7 @@ import { StandingsModule } from '../standings/standings.module';
     ConfigModule,
     HttpModule,
     ThrottlerModule,
+    TypeOrmModule.forFeature([AiResponse]),
     DriversModule,
     RacesModule,
     CircuitsModule,
@@ -37,6 +42,8 @@ import { StandingsModule } from '../standings/standings.module';
     GeminiService,
     QuotaService,
     PersistentCacheService,
+    AiResponseService,
+    AiResponseRepository,
     NewsService,
     BioService,
     PreviewService,
@@ -47,7 +54,7 @@ import { StandingsModule } from '../standings/standings.module';
     DriverStatsAdapter,
     TrackDataAdapter,
   ],
-  exports: [NewsService, BioService, PreviewService, FunFactsService],
+  exports: [NewsService, BioService, PreviewService, FunFactsService, AiResponseService],
 })
 export class AiModule {}
 

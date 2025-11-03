@@ -12,15 +12,12 @@ interface CacheEntry<T> {
 export class PersistentCacheService implements OnModuleInit {
   private readonly cache = new Map<string, CacheEntry<any>>();
   private readonly logger = new Logger(PersistentCacheService.name);
-  // Use /home/.cache on Azure (persistent), fall back to .cache locally
   private readonly cacheDir = process.env.NODE_ENV === 'production' 
     ? join('/home', '.cache')
     : join(process.cwd(), '.cache');
   private readonly cacheFile = join(this.cacheDir, 'ai-cache.json');
 
-  /**
-   * Load cache from disk when the module initializes
-   */
+  // Load cache from disk when the module initializes
   async onModuleInit() {
     if (existsSync(this.cacheFile)) {
       try {
@@ -96,33 +93,25 @@ export class PersistentCacheService implements OnModuleInit {
     return entry.data as T;
   }
 
-  /**
-   * Check if a key exists and is valid
-   */
+  // Check if a key exists and is valid
   has(key: string): boolean {
     return this.get(key) !== null;
   }
 
-  /**
-   * Delete a specific key
-   */
+  // Delete a specific key
   delete(key: string): void {
     this.cache.delete(key);
     this.logger.debug(`Deleted cache key: ${key}`);
   }
 
-  /**
-   * Clear all cache entries
-   */
+  // Clear all cache entries
   async clear(): Promise<void> {
     this.cache.clear();
     await this.persistToDisk();
     this.logger.log('Cache cleared');
   }
 
-  /**
-   * Get cache statistics
-   */
+  // Get cache statistics
   getStats(): { size: number; keys: string[] } {
     return {
       size: this.cache.size,
@@ -130,9 +119,7 @@ export class PersistentCacheService implements OnModuleInit {
     };
   }
 
-  /**
-   * Persist cache to disk
-   */
+  // Persist cache to disk
   private async persistToDisk(): Promise<void> {
     try {
       // Create cache directory if it doesn't exist

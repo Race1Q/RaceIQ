@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
 import { QuotaService } from './quota.service';
-import { PersistentCacheService } from '../cache/persistent-cache.service';
+import { AiResponseService } from './ai-response.service';
 import { DriverStatsAdapter } from '../adapters/driver-stats.adapter';
 import { AiDriverFunFactsDto } from '../dto/ai-fun-facts.dto';
 import { FUN_FACTS_SYSTEM_PROMPT, FUN_FACTS_USER_TEMPLATE } from '../prompts/fun-facts.prompt';
@@ -15,13 +15,12 @@ export class FunFactsService {
   constructor(
     private readonly geminiService: GeminiService,
     private readonly quotaService: QuotaService,
-    private readonly cache: PersistentCacheService,
+    private readonly aiResponseService: AiResponseService,
     private readonly driverStatsAdapter: DriverStatsAdapter,
     private readonly config: ConfigService,
   ) {
-    // Get TTL from config, default to 24 hours (shorter than bio since fun facts are more dynamic)
-    // TEMPORARY: Set to 1 minute for testing
-    const ttlHours = this.config.get<number>('AI_FUN_FACTS_TTL_H') || 24; // 24 hours default
+    // Get TTL from config, default to 720 hours (1 month)
+    const ttlHours = this.config.get<number>('AI_FUN_FACTS_TTL_H') || 720; // 1 month
     this.funFactsTTL = ttlHours * 3600; // Convert hours to seconds
   }
 
@@ -31,14 +30,18 @@ export class FunFactsService {
    * @param season Optional season year for season-specific facts
    */
   async getDriverFunFacts(driverId: number, season?: number): Promise<AiDriverFunFactsDto> {
-    const cacheKey = `fun-facts:${driverId}:${season || 'career'}`;
-
     try {
-      // Check cache first
-      const cached = this.cache.get<AiDriverFunFactsDto>(cacheKey);
-      if (cached) {
-        this.logger.log(`Returning cached fun facts for driver ${driverId}${season ? `, season ${season}` : ''}`);
-        return cached;
+      // Check database for latest response first
+      const latestResponse = await this.aiResponseService.getLatestResponse<AiDriverFunFactsDto>(
+        'fun_facts',
+        'driver',
+        driverId,
+        season,
+      );
+
+      if (latestResponse) {
+        this.logger.log(`Returning latest database response for driver ${driverId}${season ? `, season ${season}` : ''}`);
+        return latestResponse;
       }
 
       // Check if AI features are enabled
@@ -50,11 +53,7 @@ export class FunFactsService {
 
       // Check quota
       if (!this.quotaService.hasQuota()) {
-        this.logger.warn('Daily quota exceeded, trying stale cache or fallback');
-        const stale = this.cache.get<AiDriverFunFactsDto>(cacheKey, true);
-        if (stale) {
-          return { ...stale, isFallback: true };
-        }
+        this.logger.warn('Daily quota exceeded, using fallback');
         return this.getFallbackFunFacts(driverId, season);
       }
 
@@ -90,21 +89,20 @@ export class FunFactsService {
         aiAttribution: 'Powered by Gemini AI',
       };
 
-      // Cache the response
-      await this.cache.set(cacheKey, response, this.funFactsTTL);
-      this.logger.log(`Successfully generated and cached fun facts for driver ${driverId}`);
+      // Store the response in database
+      await this.aiResponseService.storeResponse(
+        'fun_facts',
+        'driver',
+        driverId,
+        response,
+        season,
+      );
+      this.logger.log(`Successfully generated and stored fun facts for driver ${driverId}`);
 
       return response;
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating driver fun facts: ${error.message}`, error.stack);
-
-      // Try to return stale cache on error
-      const stale = this.cache.get<AiDriverFunFactsDto>(cacheKey, true);
-      if (stale) {
-        this.logger.log('Returning stale cache due to error');
-        return { ...stale, isFallback: true };
-      }
 
       // Final fallback
       return this.getFallbackFunFacts(driverId, season);

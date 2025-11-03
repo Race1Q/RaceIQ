@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
 import { QuotaService } from './quota.service';
 import { PersistentCacheService } from '../cache/persistent-cache.service';
+import { AiResponseService } from './ai-response.service';
 import { TrackDataAdapter } from '../adapters/track-data.adapter';
 import { AiTrackPreviewDto } from '../dto/ai-preview.dto';
 import { TRACK_SYSTEM_PROMPT, TRACK_USER_TEMPLATE } from '../prompts/track.prompt';
@@ -16,11 +17,12 @@ export class PreviewService {
     private readonly geminiService: GeminiService,
     private readonly quotaService: QuotaService,
     private readonly cache: PersistentCacheService,
+    private readonly aiResponseService: AiResponseService,
     private readonly trackDataAdapter: TrackDataAdapter,
     private readonly config: ConfigService,
   ) {
-    // Get TTL from config, default to 24 hours
-    const ttlHours = this.config.get<number>('AI_TRACK_TTL_H') || 24;
+    // Get TTL from config, default to 4380 hours (6 months)
+    const ttlHours = this.config.get<number>('AI_TRACK_TTL_H') || 4380; // 6 months
     this.previewTTL = ttlHours * 3600; // Convert hours to seconds
   }
 
@@ -30,14 +32,23 @@ export class PreviewService {
    * @param eventId Optional event ID for event-specific preview
    */
   async getTrackPreview(slug: string, eventId?: number): Promise<AiTrackPreviewDto> {
-    const cacheKey = `preview:${slug}:${eventId || 'general'}`;
-
     try {
-      // Check cache first
-      const cached = this.cache.get<AiTrackPreviewDto>(cacheKey);
-      if (cached) {
-        this.logger.log(`Returning cached preview for track ${slug}${eventId ? `, event ${eventId}` : ''}`);
-        return cached;
+      // First, get track data to extract circuit ID
+      const trackData = await this.trackDataAdapter.getTrackData(slug, eventId);
+      const circuitId = trackData.circuitId;
+
+      // Check database for latest response first
+      const latestResponse = await this.aiResponseService.getLatestResponse<AiTrackPreviewDto>(
+        'track_preview',
+        'circuit',
+        circuitId || 0, // Use 0 as fallback if circuitId is undefined
+        undefined,
+        eventId,
+      );
+
+      if (latestResponse) {
+        this.logger.log(`Returning latest database response for track preview: ${slug}${eventId ? `, event ${eventId}` : ''}`);
+        return latestResponse;
       }
 
       // Check if AI features are enabled
@@ -49,17 +60,9 @@ export class PreviewService {
 
       // Check quota
       if (!this.quotaService.hasQuota()) {
-        this.logger.warn('Daily quota exceeded, trying stale cache or fallback');
-        const stale = this.cache.get<AiTrackPreviewDto>(cacheKey, true);
-        if (stale) {
-          return { ...stale, isFallback: true };
-        }
+        this.logger.warn('Daily quota exceeded, using fallback');
         return this.getFallbackPreview(slug, eventId);
       }
-
-      // Fetch track data
-      this.logger.log(`Fetching track data for preview generation: ${slug}`);
-      const trackData = await this.trackDataAdapter.getTrackData(slug, eventId);
 
       // Generate AI preview
       this.logger.log(`Generating AI preview for track ${slug}${eventId ? `, event ${eventId}` : ''}`);
@@ -92,21 +95,23 @@ export class PreviewService {
         isFallback: false,
       };
 
-      // Cache the response
-      await this.cache.set(cacheKey, response, this.previewTTL);
-      this.logger.log(`Successfully generated and cached preview for track ${slug}`);
+      // Store the response in database
+      await this.aiResponseService.storeResponse(
+        'track_preview',
+        'circuit',
+        circuitId || 0, // Use 0 as fallback if circuitId is undefined
+        response,
+        undefined,
+        eventId,
+        false,
+        'Powered by Gemini AI'
+      );
+      this.logger.log(`Successfully generated and stored preview for track ${slug}`);
 
       return response;
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating track preview: ${error.message}`, error.stack);
-
-      // Try to return stale cache on error
-      const stale = this.cache.get<AiTrackPreviewDto>(cacheKey, true);
-      if (stale) {
-        this.logger.log('Returning stale cache due to error');
-        return { ...stale, isFallback: true };
-      }
 
       // Final fallback
       return this.getFallbackPreview(slug, eventId);

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GeminiService } from './gemini.service';
 import { PersistentCacheService } from '../cache/persistent-cache.service';
+import { AiResponseService } from './ai-response.service';
 import { ConstructorsService } from '../../constructors/constructors.service';
 import { DriversService } from '../../drivers/drivers.service';
 import { RacesService } from '../../races/races.service';
@@ -9,29 +10,34 @@ import { AiConstructorInfoDto } from '../dto/ai-constructor-info.dto';
 @Injectable()
 export class ConstructorInfoService {
   private readonly logger = new Logger(ConstructorInfoService.name);
-  private readonly CACHE_TTL_HOURS = 72; // 3 days cache for constructor info
+  private readonly CACHE_TTL_HOURS = 4380; // 4380 hours (6 months)
 
   constructor(
     private readonly geminiService: GeminiService,
     private readonly cacheService: PersistentCacheService,
+    private readonly aiResponseService: AiResponseService,
     private readonly constructorsService: ConstructorsService,
     private readonly driversService: DriversService,
     private readonly racesService: RacesService,
   ) {}
 
   async getConstructorInfo(constructorId: number, season?: number): Promise<AiConstructorInfoDto> {
-    const cacheKey = `constructor-info-${constructorId}-${season || 'all'}`;
-    
-    // Check cache first
-    const cached = this.cacheService.get<AiConstructorInfoDto>(cacheKey);
-    if (cached) {
-      this.logger.debug(`Cache HIT for constructor info: ${cacheKey}`);
-      return cached;
-    }
-
-    this.logger.log(`Generating AI constructor info for constructorId: ${constructorId}, season: ${season || 'all'}`);
-
     try {
+      // Check database for latest response first
+      const latestResponse = await this.aiResponseService.getLatestResponse<AiConstructorInfoDto>(
+        'constructor_info',
+        'constructor',
+        constructorId,
+        season,
+      );
+
+      if (latestResponse) {
+        this.logger.log(`Returning latest database response for constructor ${constructorId}${season ? `, season ${season}` : ''}`);
+        return latestResponse;
+      }
+
+      this.logger.log(`Generating AI constructor info for constructorId: ${constructorId}, season: ${season || 'all'}`);
+
       // Fetch constructor data
       const constructor = await this.constructorsService.findOne(constructorId);
       if (!constructor) {
@@ -42,7 +48,7 @@ export class ConstructorInfoService {
       const drivers = await this.driversService.findAll({ year: season || new Date().getFullYear() });
       const constructorDrivers = drivers.filter(driver => driver.constructorId === constructorId);
       
-      // Fetch recent race results for context (simplified approach)
+      // Fetch recent race results for context (simple approach)
       const recentResults: Array<{
         raceName: string;
         position: number;
@@ -108,11 +114,19 @@ Make it engaging and informative for F1 fans.`;
         isFallback: false,
       };
 
-      // Cache the result
-      await this.cacheService.set(cacheKey, result, this.CACHE_TTL_HOURS * 3600);
+      // Store the response in database
+      await this.aiResponseService.storeResponse(
+        'constructor_info',
+        'constructor',
+        constructorId,
+        result,
+        season,
+        undefined,
+        false,
+        'Powered by Gemini AI'
+      );
 
       return result;
-
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating constructor info: ${error.message}`, error.stack);

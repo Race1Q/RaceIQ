@@ -39,8 +39,6 @@ export function useUserProfile() {
   const [error, setError] = useState<string | null>(null);
 
   const authedFetch = useCallback(async (url: string) => {
-    console.log('🔐 [useUserProfile] Making authenticated request to:', url);
-
     let token: string | undefined;
     try {
       // Use provider defaults (audience/scope) to avoid scope mismatch
@@ -72,16 +70,10 @@ export function useUserProfile() {
       throw err;
     }
 
-    console.log('🔐 [useUserProfile] Got token:', token ? '✅ Present' : '❌ Missing');
-
     const headers = new Headers();
     headers.set('Authorization', `Bearer ${token}`);
 
-    console.log('🔐 [useUserProfile] Making fetch request...');
     const response = await fetch(url, { headers });
-
-    console.log('🔐 [useUserProfile] Response status:', response.status, response.statusText);
-    console.log('🔐 [useUserProfile] Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -90,7 +82,6 @@ export function useUserProfile() {
     }
 
     const data = await response.json();
-    console.log('🔐 [useUserProfile] Response data:', data);
     return data;
   }, [getAccessTokenSilently, loginWithRedirect]);
 
@@ -105,27 +96,14 @@ export function useUserProfile() {
         setLoading(true);
         setError(null);
 
-        console.log('🔍 [useUserProfile] Starting profile fetch...');
-        console.log('🔍 [useUserProfile] User sub:', user?.sub);
-        console.log('🔍 [useUserProfile] API URL:', buildApiUrl('/api/profile'));
-
         // Fetch user profile
         const profileData = await authedFetch(buildApiUrl('/api/profile'));
-        console.log('🔍 [useUserProfile] Raw profile data:', profileData);
         
         setProfile(profileData);
 
         // Set favorite driver and constructor from the relations returned by the API
-        console.log('🔍 [useUserProfile] favoriteDriver relation:', profileData.favoriteDriver);
-        console.log('🔍 [useUserProfile] favoriteConstructor relation:', profileData.favoriteConstructor);
-        console.log('🔍 [useUserProfile] favorite_driver_id:', profileData.favorite_driver_id);
-        console.log('🔍 [useUserProfile] favorite_constructor_id:', profileData.favorite_constructor_id);
-        
         setFavoriteDriver(profileData.favoriteDriver || null);
         setFavoriteConstructor(profileData.favoriteConstructor || null);
-        
-        console.log('🔍 [useUserProfile] Set favoriteDriver to:', profileData.favoriteDriver || null);
-        console.log('🔍 [useUserProfile] Set favoriteConstructor to:', profileData.favoriteConstructor || null);
       } catch (err) {
         console.error('❌ [useUserProfile] Error fetching profile:', err);
         setError(err instanceof Error ? err.message : 'Failed to load user profile');
@@ -143,23 +121,15 @@ export function useUserProfile() {
     try {
       setLoading(true);
       setError(null);
-
-      console.log('🔄 [useUserProfile] Refetching profile...');
       
       // Fetch user profile (includes favoriteDriver and favoriteConstructor relations)
       const profileData = await authedFetch(buildApiUrl('/api/profile'));
-      console.log('🔄 [useUserProfile] Refetch profile data:', profileData);
       
       setProfile(profileData);
 
       // Set favorite driver and constructor from the relations returned by the API
       setFavoriteDriver(profileData.favoriteDriver || null);
       setFavoriteConstructor(profileData.favoriteConstructor || null);
-      
-      console.log('🔄 [useUserProfile] Refetch - Set favorites:', {
-        driver: profileData.favoriteDriver || null,
-        constructor: profileData.favoriteConstructor || null
-      });
     } catch (err) {
       console.error('❌ [useUserProfile] Refetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load user profile');

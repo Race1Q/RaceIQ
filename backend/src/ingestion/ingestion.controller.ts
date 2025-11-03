@@ -3,6 +3,7 @@ import { ApiBadRequestResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
 import { IngestionService } from './ingestion.service';
+import { ScheduledIngestionService } from './scheduled-ingestion.service';
 import { ApiErrorDto } from '../common/dto/api-error.dto';
 
 @Controller('ingestion')
@@ -13,6 +14,7 @@ export class IngestionController {
     private readonly ergastService: ErgastService,
     private readonly openf1Service: OpenF1Service,
     private readonly ingestionService: IngestionService,
+    private readonly scheduledIngestionService: ScheduledIngestionService,
   ) {}
 
   // ERGAST INGESTION
@@ -135,14 +137,14 @@ export class IngestionController {
   }
 
   /**
-   * ⭐ USE THIS ENDPOINT FOR 2025 UPDATES
+   * ⭐ USE THIS ENDPOINT FOR CURRENT YEAR UPDATES
    * Runs the 3 OpenF1 scripts + materialized view refresh
    */
   @ApiExcludeEndpoint()
-  @Post('run-2025-pipeline/:year')
-  async run2025Pipeline(@Param('year', ParseIntPipe) year: number) {
-    this.logger.log(`--- MANUAL TRIGGER: Running 2025 Pipeline for ${year} ---`);
-    const result = await this.ingestionService.ingest2025Pipeline(year);
+  @Post('run-current-year-pipeline/:year')
+  async runCurrentYearPipeline(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Running Current Year Pipeline for ${year} ---`);
+    const result = await this.ingestionService.ingestCurrentYearPipeline(year);
     return result;
   }
 
@@ -167,6 +169,17 @@ export class IngestionController {
   async runFullPipeline() {
     this.logger.log('--- MANUAL TRIGGER: Running FULL Pipeline (This will take hours!) ---');
     const result = await this.ingestionService.runFullPipeline();
+    return result;
+  }
+
+  /**
+   * Manual trigger for the scheduled pipeline (useful for testing)
+   */
+  @ApiExcludeEndpoint()
+  @Post('trigger-scheduled-pipeline/:year')
+  async triggerScheduledPipeline(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Running scheduled pipeline for ${year} ---`);
+    const result = await this.scheduledIngestionService.triggerManualPipeline(year);
     return result;
   }
 }

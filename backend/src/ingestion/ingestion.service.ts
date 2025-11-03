@@ -46,15 +46,15 @@ export class IngestionService {
   }
 
   /**
-   * Run the complete 2025 data ingestion pipeline
+   * Run the complete current year data ingestion pipeline
    * This is what you'll use going forward for ongoing season updates
    */
-  async ingest2025Pipeline(year: number = 2025): Promise<{ 
+  async ingestCurrentYearPipeline(year: number = new Date().getFullYear()): Promise<{ 
     success: boolean; 
     message: string;
     steps: { step: string; status: string; duration: number }[];
   }> {
-    this.logger.log(`🚀 Starting 2025 Pipeline Ingestion for year ${year}...`);
+    this.logger.log(`🚀 Starting Current Year Pipeline Ingestion for year ${year}...`);
     const steps: { step: string; status: string; duration: number }[] = [];
     
     try {
@@ -98,7 +98,7 @@ export class IngestionService {
         duration: Date.now() - startTime 
       });
 
-      this.logger.log(`✅ 2025 Pipeline completed successfully!`);
+      this.logger.log(`✅ Current Year Pipeline completed successfully!`);
       
       return {
         success: true,
@@ -107,7 +107,7 @@ export class IngestionService {
       };
 
     } catch (error) {
-      this.logger.error('❌ 2025 Pipeline failed:', error.message);
+      this.logger.error('❌ Current Year Pipeline failed:', error.message);
       return {
         success: false,
         message: `Pipeline failed: ${error.message}`,

@@ -142,7 +142,7 @@ export class AiController {
   ): Promise<AiDriverFunFactsDto> {
     const seasonNumber = season ? parseInt(season, 10) : undefined;
     
-    // Add validation for season parameter
+    // Validation for season parameter
     if (season && (isNaN(seasonNumber!) || seasonNumber === undefined)) {
       throw new BadRequestException('Invalid season parameter. Must be a number.');
     }

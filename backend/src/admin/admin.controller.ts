@@ -29,7 +29,6 @@ export class AdminController {
     };
   }
 
-  // Handy debug to see token claims (keep admin-only)
   @ApiExcludeEndpoint()
   @ApiUnauthorizedResponse({
     description: 'Authentication token is missing or invalid.',
