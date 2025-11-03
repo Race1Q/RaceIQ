@@ -155,12 +155,16 @@ export class OpenF1Service {
 
 
   private mapSessionType(sessionName: string): string {
-    const upperName = sessionName.toUpperCase();
-    if (upperName.includes('PRACTICE')) return 'PRACTICE';
-    if (upperName.includes('QUALIFYING')) return 'QUALIFYING';
-    if (upperName.includes('SPRINT')) return 'SPRINT';
-    if (upperName.includes('RACE')) return 'RACE';
-    return 'UNKNOWN'; // Fallback for any other type
+    const upper = (sessionName || '').toUpperCase();
+    // Detect Sprint Qualifying/Shootout first
+    if ((upper.includes('SPRINT') && upper.includes('QUALIFY')) || upper.includes('SHOOTOUT')) {
+      return 'SPRINT_QUALIFYING';
+    }
+    if (upper.includes('PRACTICE')) return 'PRACTICE';
+    if (upper.includes('QUALIFY')) return 'QUALIFYING';
+    if (upper.includes('SPRINT')) return 'SPRINT';
+    if (upper.includes('RACE')) return 'RACE';
+    return 'UNKNOWN';
   }
 
 
@@ -481,6 +485,238 @@ export class OpenF1Service {
     this.logger.log(`Finished ROBUST modern ingestion for ${year}.`);
   }
 
+  ///// ----- ***** INGEST SPRINT QUALIFYING (SHOOTOUT) RESULTS ***** ----- /////
+
+  public async ingestSprintQualifyingResults(year: number) {
+    this.logger.log(`Starting Sprint Qualifying (Shootout) ingestion for ${year}...`);
+
+    // Find season
+    const { data: season } = await this.supabaseService.client
+      .from('seasons').select('id').eq('year', year).single();
+    if (!season) { this.logger.error(`Season ${year} not found.`); return; }
+
+    // Races in season
+    const { data: dbRacesForYear } = await this.supabaseService.client
+      .from('races').select('id, name, round').eq('season_id', season.id);
+
+    // Sessions in DB
+    const { data: dbSessions } = await this.supabaseService.client
+      .from('sessions')
+      .select('id, type, race_id, openf1_session_key, races(name, season_id)')
+      .in('race_id', (dbRacesForYear ?? []).map(r => r.id));
+
+    // Build driver map support and load constructor-driver links for this season
+    const { data: dbDrivers } = await this.supabaseService.client
+      .from('drivers').select('id, name_acronym');
+    // Diagnostics for dbDrivers
+    this.logger.warn(`[DIAGNOSTIC] Loaded ${dbDrivers?.length ?? 0} total drivers from DB.`);
+    if (dbDrivers && dbDrivers.length > 0) {
+      this.logger.debug(`[DIAGNOSTIC] Sample driver from DB: ${JSON.stringify(dbDrivers[0])}`);
+    }
+    const { data: driverTeamLinks } = await this.supabaseService.client
+      .from('constructor_drivers')
+      .select('driver_id, constructor_id')
+      .eq('season_id', season.id);
+
+    // Prefetch OpenF1 meetings and sessions ONCE, then only consider SPRINT_QUALIFYING
+    const meetings = await this.fetchOpenF1Data<OpenF1Meeting>(`/meetings?year=${year}`);
+    const openf1Sessions = await this.fetchOpenF1Data<OpenF1Session>(`/sessions?year=${year}`);
+    const sprintQualiSessions = openf1Sessions.filter(s => this.mapSessionType(s.session_name) === 'SPRINT_QUALIFYING');
+
+    // Map race name -> race.id for quick lookup (normalize names like in other ingesters)
+    const raceNameToId = new Map<string, number>();
+    (dbRacesForYear ?? []).forEach(r => {
+      const simplified = r.name.replace('Grand Prix', '').trim().toLowerCase();
+      raceNameToId.set(simplified, r.id);
+    });
+
+    // Build meeting_key -> race_id map
+    const meetingKeyToRaceId = new Map<number, number>();
+    meetings.forEach(m => {
+      const simplifiedMeeting = m.meeting_name.replace('Grand Prix', '').trim().toLowerCase();
+      const raceId = raceNameToId.get(simplifiedMeeting === 'sao paulo' ? 'são paulo' : simplifiedMeeting) || raceNameToId.get(simplifiedMeeting);
+      if (raceId) meetingKeyToRaceId.set(m.meeting_key, raceId);
+    });
+
+    // Build driver_id -> constructor_id map from constructor_drivers for this season
+    const driverIdToConstructorId = new Map<number, number>();
+    (driverTeamLinks ?? []).forEach(link => {
+      if (link.driver_id && link.constructor_id) {
+        driverIdToConstructorId.set(Number(link.driver_id), Number(link.constructor_id));
+      }
+    });
+
+    // Work only with SPRINT_QUALIFYING OpenF1 sessions
+    for (const oSq of sprintQualiSessions) {
+      const raceId = meetingKeyToRaceId.get(oSq.meeting_key);
+      if (!raceId) continue; // Not a race we have (or naming mismatch)
+
+      // Find or create DB SPRINT_QUALIFYING session for this race
+      let sqSession = (dbSessions ?? []).find(s => s.race_id === raceId && s.type === 'SPRINT_QUALIFYING');
+
+      // If missing, create minimal session row
+      if (!sqSession) {
+        const { data: inserted, error } = await this.supabaseService.client
+          .from('sessions')
+          .insert({ race_id: raceId, type: 'SPRINT_QUALIFYING' })
+          .select('id, type, race_id, openf1_session_key')
+          .single();
+        if (error) { this.logger.warn(`Could not create SPRINT_QUALIFYING session for race_id=${raceId}: ${error.message}`); continue; }
+        sqSession = inserted as any;
+      }
+
+      // Ensure the openf1_session_key is set from the pre-fetched OpenF1 session
+      if (!sqSession || !sqSession.openf1_session_key) {
+        await this.supabaseService.client
+          .from('sessions')
+          .update({ openf1_session_key: oSq.session_key })
+          .eq('id', sqSession!.id);
+        sqSession!.openf1_session_key = oSq.session_key as any;
+      }
+
+      if (!sqSession || !sqSession.openf1_session_key) {
+        this.logger.warn(`No OpenF1 session key for SPRINT_QUALIFYING at race_id=${raceId}. Skipping.`);
+        continue;
+      }
+
+      // ==== Resolve correct season_id for this race and load constructor mapping ====
+      // Prefer nested relation from dbSessions if present, else fetch race row
+      let currentSeasonId: number | undefined = undefined;
+      const sessionFromList = (dbSessions ?? []).find(s => s.race_id === raceId && s.type === 'SPRINT_QUALIFYING');
+      // @ts-ignore - access nested relation if present
+      currentSeasonId = sessionFromList?.races?.season_id as number | undefined;
+      if (!currentSeasonId) {
+        const { data: raceRow } = await this.supabaseService.client
+          .from('races')
+          .select('season_id')
+          .eq('id', raceId)
+          .single();
+        currentSeasonId = raceRow?.season_id as number | undefined;
+      }
+
+      // DIAGNOSTIC: log resolved season_id for this session
+      this.logger.warn(`[race_id=${raceId}] DIAGNOSTIC: Found season_id: ${currentSeasonId} (Type: ${typeof currentSeasonId})`);
+      if (!currentSeasonId) {
+        this.logger.error(`(race_id=${raceId}) 'season_id' is null or undefined. Skipping.`);
+        continue;
+      }
+
+      const { data: constructorDrivers } = await this.supabaseService.client
+        .from('constructor_drivers')
+        .select('driver_id, constructor_id')
+        .eq('season_id', currentSeasonId);
+      const driverConstructorMap = new Map<number, number>();
+      (constructorDrivers ?? []).forEach((cd: any) => {
+        if (cd.driver_id && cd.constructor_id) {
+          driverConstructorMap.set(Number(cd.driver_id), Number(cd.constructor_id));
+        }
+      });
+      if (driverConstructorMap.size === 0) {
+        this.logger.error(`(race_id=${raceId}) No constructor_drivers for season_id=${currentSeasonId}.`);
+      }
+
+      // Diagnostic: show map size and sample key check (e.g., driverId 809 – adjust if needed)
+      this.logger.warn(`[race_id=${raceId}] Map Created. Size: ${driverConstructorMap.size}. Has '809'? ${driverConstructorMap.has(809)}. Value: ${driverConstructorMap.get(809)}`);
+
+      // Build driver_number -> driver_id FROM THIS SPRINT_QUALIFYING SESSION (normalized mapping)
+      const driverNumberToId = new Map<number, number>();
+      const oDriversSq = await this.fetchOpenF1Data<OpenF1Driver>(`/drivers?session_key=${sqSession.openf1_session_key}`);
+      this.logger.debug(`[SQ race_id=${raceId}] RAW DRIVER DATA: ${JSON.stringify((oDriversSq || []).slice(0, 3))}`);
+
+      const norm = (s?: string) => (s || '').toUpperCase().trim();
+
+      for (const od of (oDriversSq ?? [])) {
+        const acr = norm(od.name_acronym);
+        let dbd = (dbDrivers ?? []).find(d => norm(d.name_acronym) === acr);
+        if (dbd) {
+          driverNumberToId.set(od.driver_number, dbd.id);
+        } else {
+          if (od.driver_number === 1) {
+            this.logger.error(`[race_id=${raceId}] FAILED TO MAP VERSTAPPEN. API Acronym: "${acr}". Could not find match in ${dbDrivers?.length ?? 0} dbDrivers.`);
+          }
+        }
+      }
+
+      // Diagnostics: log a sample of unmapped drivers to fix acronym mismatches in DB if any
+      const unmapped = (oDriversSq ?? [])
+        .filter(od => !driverNumberToId.has(od.driver_number))
+        .map(od => ({ driver_number: od.driver_number, acronym: od.name_acronym, team: od.team_name }))
+        .slice(0, 5);
+      if (unmapped.length) {
+        this.logger.warn(`SQ unmapped drivers (acronym mismatch?): ${JSON.stringify(unmapped)} (showing up to 5)`);
+      }
+
+      // Fetch Sprint Qualifying classification from OpenF1
+      let results = await this.fetchOpenF1Data<OpenF1RaceResult>(`/results?session_key=${sqSession.openf1_session_key}`);
+      this.logger.warn(`[race_id=${raceId}] Fetched results. Count: ${results.length}`);
+      if (results.length > 0) {
+        this.logger.debug(`[race_id=${raceId}] Sample result: ${JSON.stringify(results[0])}`);
+      }
+
+      // Fallback: derive classification from latest positions if results are empty
+      if (results.length === 0) {
+        const positions = await this.fetchOpenF1Data<OpenF1Position>(`/position?session_key=${sqSession.openf1_session_key}`);
+        this.logger.warn(`[race_id=${raceId}] Results empty. Fallback to /position. Count: ${positions.length}`);
+        if (positions.length > 0) {
+          const latestByDriver = new Map<number, OpenF1Position>();
+          for (const p of positions) {
+            latestByDriver.set(p.driver_number, p); // assume API order is chronological; last wins
+          }
+          const derived = Array.from(latestByDriver.values())
+            .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+            .map((p) => ({
+              session_key: p.session_key,
+              driver_number: p.driver_number,
+              position: p.position,
+              points: 0,
+              grid_position: 0,
+              laps: 0,
+              time: null as any,
+              status: 'DerivedFromPosition',
+            } as OpenF1RaceResult));
+          results = derived;
+          this.logger.warn(`[race_id=${raceId}] Derived classification from positions. Drivers: ${results.length}`);
+        }
+      }
+
+      // Clear and insert into qualifying_results under the SPRINT_QUALIFYING session
+      await this.supabaseService.client.from('qualifying_results').delete().eq('session_id', sqSession.id);
+
+      const toInsert = results.map(res => {
+        const driverId = driverNumberToId.get(res.driver_number);
+        const constructorId = driverId ? driverConstructorMap.get(driverId) : undefined;
+        if (driverId && !constructorId) {
+          this.logger.warn(`(race_id=${raceId}) Mapped driver ${driverId} but found NO constructor_id for season_id=${currentSeasonId}.`);
+        }
+        // Diagnostic: log mapping for Verstappen (driver_number=1) to verify keys
+        if (res.driver_number === 1) {
+          this.logger.debug(`[race_id=${raceId}] Mapping VER: driver_number=${res.driver_number}, mapped_driverId=${driverId} (Type: ${typeof driverId}), mapped_constructorId=${constructorId} (Type: ${typeof constructorId})`);
+        }
+        return {
+          session_id: sqSession!.id,
+          driver_id: driverId,
+          constructor_id: constructorId,
+          position: res.position,
+          // Sprint Shootout has effectively one final classification time; store in Q3 for consistency
+          q1_time_ms: null,
+          q2_time_ms: null,
+          q3_time_ms: this.timeStringToMs(res.time || null),
+        };
+      }).filter(r => r.driver_id && r.constructor_id);
+
+      if (toInsert.length > 0) {
+        const { error } = await this.supabaseService.client.from('qualifying_results').insert(toInsert);
+        if (error) this.logger.error(`Failed to insert sprint qualifying for race_id=${raceId}.`, error);
+        else this.logger.log(`Inserted ${toInsert.length} sprint qualifying rows for race_id=${raceId}.`);
+      } else {
+        this.logger.warn(`No mappable sprint qualifying rows for race_id=${raceId}.`);
+      }
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    this.logger.log(`Finished Sprint Qualifying (Shootout) ingestion for ${year}.`);
+  } 
+
   ///// ----- ***** INGEST TRACK LAYOUTS ***** ----- /////
 
   public async ingestTrackLayouts() {
@@ -571,4 +807,319 @@ export class OpenF1Service {
     this.logger.log('--- Finished Track Layout Ingestion Test ---');
   }
 
+  ///// ----- ***** BACKFILL CONSTRUCTOR-DRIVERS (ERGAST) ***** ----- /////
+
+  /**
+   * Backfills the constructor_drivers table for a range of seasons using Ergast standings.
+   * Prerequisites:
+   *  - drivers.ergast_driver_ref populated
+   *  - constructors.name matches Ergast constructor names for the years (e.g., RB, Sauber)
+   */
+  public async backfillConstructorDrivers(startYear: number, endYear: number) {
+    this.logger.log(`Backfilling constructor_drivers ${startYear}-${endYear}...`);
+
+    // Load driver refs
+    const { data: allDrivers, error: driverErr } = await this.supabaseService.client
+      .from('drivers')
+      .select('id, ergast_driver_ref')
+      .not('ergast_driver_ref', 'is', null);
+    if (driverErr) throw new Error(`Failed to fetch drivers: ${driverErr.message}`);
+    const driverRefToId = new Map((allDrivers ?? []).map((d: any) => [d.ergast_driver_ref, d.id]));
+
+    // Load constructors (by name)
+    const { data: allConstructors, error: consErr } = await this.supabaseService.client
+      .from('constructors')
+      .select('id, name');
+    if (consErr) throw new Error(`Failed to fetch constructors: ${consErr.message}`);
+    const consNameToId = new Map((allConstructors ?? []).map((c: any) => [c.name, c.id]));
+
+    // Load seasons (year -> id)
+    const { data: allSeasons, error: seaErr } = await this.supabaseService.client
+      .from('seasons')
+      .select('id, year');
+    if (seaErr) throw new Error(`Failed to fetch seasons: ${seaErr.message}`);
+    const yearToSeasonId = new Map((allSeasons ?? []).map((s: any) => [s.year, s.id]));
+
+    for (let year = startYear; year <= endYear; year++) {
+      const seasonId = yearToSeasonId.get(year);
+      if (!seasonId) { this.logger.warn(`Skip ${year}: no season row.`); continue; }
+
+      try {
+        const url = `https://api.jolpi.ca/ergast/f1/${year}/driverStandings.json`;
+        const resp = await firstValueFrom(this.httpService.get(url));
+        const lists = resp.data?.MRData?.StandingsTable?.StandingsLists;
+        const standings = (Array.isArray(lists) && lists[0]?.DriverStandings) || [];
+
+        const toUpsert: { season_id: number; driver_id: number; constructor_id: number }[] = [];
+        for (const s of standings) {
+          const driverRef = s?.Driver?.driverId;
+          const constructorName = s?.Constructors?.[0]?.name;
+          const driverId = driverRefToId.get(driverRef);
+          const constructorId = consNameToId.get(constructorName);
+          if (driverId && constructorId) {
+            toUpsert.push({ season_id: seasonId, driver_id: driverId, constructor_id: constructorId });
+          } else {
+            if (!driverId) this.logger.warn(`(${year}) driver map miss: ${driverRef}`);
+            if (!constructorId) this.logger.warn(`(${year}) constructor map miss: '${constructorName}'`);
+          }
+        }
+
+        if (toUpsert.length) {
+          const { error } = await this.supabaseService.client
+            .from('constructor_drivers')
+            .upsert(toUpsert, { onConflict: 'season_id,constructor_id,driver_id' });
+          if (error) this.logger.error(`Upsert failed ${year}: ${error.message}`);
+          else this.logger.log(`Upserted ${toUpsert.length} constructor_drivers for ${year}.`);
+        } else {
+          this.logger.warn(`No mappings to upsert for ${year}.`);
+        }
+      } catch (e: any) {
+        this.logger.error(`Ergast fetch failed for ${year}: ${e?.message || e}`);
+      }
+    }
+
+    this.logger.log('constructor_drivers backfill complete.');
+  }
+
+  ///// ----- ***** BACKFILL DRIVER ACRONYMS (ERGAST) ***** ----- /////
+
+  /**
+   * Backfills drivers.name_acronym using Ergast driver standings (Driver.code) as source.
+   * Requires drivers.ergast_driver_ref to be populated.
+   */
+  public async backfillDriverAcronyms(startYear: number, endYear: number) {
+    this.logger.log(`Backfilling drivers.name_acronym ${startYear}-${endYear}...`);
+
+    const { data: allDrivers, error: driverErr } = await this.supabaseService.client
+      .from('drivers')
+      .select('id, ergast_driver_ref, name_acronym')
+      .not('ergast_driver_ref', 'is', null);
+    if (driverErr) throw new Error(`Failed to fetch drivers: ${driverErr.message}`);
+
+    const driverRefMap = new Map((allDrivers ?? []).map((d: any) => [d.ergast_driver_ref, d]));
+    const updates: { id: number; name_acronym: string }[] = [];
+
+    for (let year = startYear; year <= endYear; year++) {
+      try {
+        const url = `https://api.jolpi.ca/ergast/f1/${year}/driverStandings.json`;
+        const resp = await firstValueFrom(this.httpService.get(url));
+        const lists = resp.data?.MRData?.StandingsTable?.StandingsLists;
+        const standings = (Array.isArray(lists) && lists[0]?.DriverStandings) || [];
+
+        for (const s of standings) {
+          const ref = s?.Driver?.driverId;
+          const code = s?.Driver?.code; // e.g., "VER"
+          if (!ref || !code) continue;
+          const dbd = driverRefMap.get(ref);
+          if (dbd && dbd.name_acronym !== code) {
+            updates.push({ id: dbd.id, name_acronym: code });
+            driverRefMap.set(ref, { ...dbd, name_acronym: code });
+          }
+        }
+      } catch (e: any) {
+        this.logger.error(`Ergast fetch failed for ${year}: ${e?.message || e}`);
+      }
+    }
+
+    if (updates.length) {
+      this.logger.log(`Updating name_acronym for ${updates.length} drivers...`);
+      const chunk = 200;
+      for (let i = 0; i < updates.length; i += chunk) {
+        const slice = updates.slice(i, i + chunk);
+        const { error } = await this.supabaseService.client
+          .from('drivers')
+          .upsert(slice, { onConflict: 'id' });
+        if (error) {
+          this.logger.error(`Driver acronym upsert failed (batch ${i}-${i + slice.length}): ${error.message}`);
+          break;
+        }
+      }
+      this.logger.log('Driver acronym backfill complete.');
+    } else {
+      this.logger.log('Driver acronyms already up-to-date.');
+    }
+  }
+
+  ///// ----- ***** BACKFILL DRIVER REFS + ACRONYMS (ERGAST, BY YEAR) ***** ----- /////
+
+  /**
+   * Backfills drivers.ergast_driver_ref and drivers.name_acronym by matching on first/last name
+   * against Ergast standings for a given season.
+   */
+  public async backfillDriverRefsAndAcronyms(year: number) {
+    this.logger.log(`Backfilling drivers table (refs+acronyms) for ${year} using Ergast...`);
+
+    // Load our current drivers
+    const { data: allDbDrivers, error: driverErr } = await this.supabaseService.client
+      .from('drivers')
+      .select('id, first_name, last_name, name_acronym, ergast_driver_ref');
+    if (driverErr) throw new Error(`Failed to fetch drivers: ${driverErr.message}`);
+
+    // Fetch Ergast standings for the season
+    let standings: any[] = [];
+    try {
+      const url = `https://api.jolpi.ca/ergast/f1/${year}/driverStandings.json`;
+      const response = await firstValueFrom(this.httpService.get(url));
+      const lists = response.data?.MRData?.StandingsTable?.StandingsLists;
+      standings = (Array.isArray(lists) && lists[0]?.DriverStandings) || [];
+    } catch (e: any) {
+      this.logger.error(`Failed to fetch Ergast standings for ${year}: ${e?.message || e}`);
+      return;
+    }
+    if (!standings.length) {
+      this.logger.warn(`No Ergast standings data found for ${year}.`);
+      return;
+    }
+
+    // Build updates by name match
+    const updates: { id: number; name_acronym?: string; ergast_driver_ref?: string }[] = [];
+    let updatedCount = 0;
+    for (const s of standings) {
+      const d = s?.Driver;
+      if (!d) continue;
+      const ergastRef: string | undefined = d.driverId;
+      const ergastCode: string | undefined = d.code; // e.g., "VER"
+      const given: string | undefined = d.givenName;
+      const family: string | undefined = d.familyName;
+      if (!given || !family) continue;
+
+      const dbDriver = (allDbDrivers ?? []).find((x: any) => x.first_name === given && x.last_name === family);
+      if (dbDriver && (ergastRef || ergastCode)) {
+        const needsRef = ergastRef && dbDriver.ergast_driver_ref !== ergastRef;
+        const needsCode = ergastCode && dbDriver.name_acronym !== ergastCode;
+        if (needsRef || needsCode) {
+          updates.push({ id: dbDriver.id, name_acronym: ergastCode, ergast_driver_ref: ergastRef });
+          updatedCount++;
+        }
+      } else if (!dbDriver) {
+        this.logger.warn(`(${year}) No driver found in DB matching: ${given} ${family}`);
+      }
+    }
+
+    if (!updates.length) {
+      this.logger.log('All drivers are already up-to-date.');
+      return;
+    }
+
+    this.logger.log(`Updating ${updatedCount} drivers with correct refs and acronyms...`);
+    const { error: updateError } = await this.supabaseService.client
+      .from('drivers')
+      .upsert(updates, { onConflict: 'id' });
+    if (updateError) this.logger.error(`Failed to update drivers: ${updateError.message}`);
+    else this.logger.log('Successfully updated drivers table.');
+  }
+
+  ///// ----- ***** INGEST SPRINT RACE RESULTS (ERGAST) ***** ----- /////
+
+  public async ingestSprintRaceResults(year: number) {
+    this.logger.log(`Starting Sprint Race results ingestion for ${year}...`);
+
+    // 1) Resolve season
+    const { data: season } = await this.supabaseService.client
+      .from('seasons')
+      .select('id')
+      .eq('year', year)
+      .single();
+    if (!season) { this.logger.error(`Season ${year} not found.`); return; }
+
+    // 2) Driver map by Ergast ref
+    const { data: allDrivers } = await this.supabaseService.client
+      .from('drivers')
+      .select('id, ergast_driver_ref')
+      .not('ergast_driver_ref', 'is', null);
+    const driverRefMap = new Map((allDrivers ?? []).map((d: any) => [d.ergast_driver_ref, d.id]));
+
+    // 3) CORRECT mapping: driver_id -> constructor_id for this season
+    const { data: constructorDrivers } = await this.supabaseService.client
+      .from('constructor_drivers')
+      .select('driver_id, constructor_id')
+      .eq('season_id', season.id);
+    if (!constructorDrivers || constructorDrivers.length === 0) {
+      this.logger.error(`No 'constructor_drivers' data found for season ${season.id}.`);
+      return;
+    }
+    const driverConstructorMap = new Map<number, number>(
+      (constructorDrivers ?? []).map((cd: any) => [Number(cd.driver_id), Number(cd.constructor_id)])
+    );
+
+    // 4) All SPRINT sessions for the season
+    const { data: sprintSessions } = await this.supabaseService.client
+      .from('sessions')
+      .select('id, race_id, races(round, name)')
+      .eq('races.season_id', season.id)
+      .eq('type', 'SPRINT');
+
+    if (!sprintSessions || sprintSessions.length === 0) {
+      this.logger.warn(`No SPRINT sessions found in DB for ${year}.`);
+      return;
+    }
+
+    // 5) Loop sessions and fetch Ergast sprint.json
+    for (const session of sprintSessions) {
+      const race = session.races as any;
+      const raceName = race?.name ?? `race_id=${session.race_id}`;
+      const round = race?.round;
+      if (!round) { this.logger.warn(`(${raceName}) Missing round; skipping.`); continue; }
+
+      let sprintResults: any[] = [];
+      try {
+        const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/sprint.json`;
+        const response = await firstValueFrom(this.httpService.get(url));
+        sprintResults = response.data?.MRData?.RaceTable?.Races?.[0]?.SprintResults ?? [];
+      } catch (e: any) {
+        this.logger.warn(`(${raceName}) Ergast mirror (Jolpi) failed: ${e?.message || e}. Retrying with primary Ergast API...`);
+      }
+
+      if (!sprintResults.length) {
+        try {
+          const fallbackUrl = `https://ergast.com/api/f1/${year}/${round}/sprint.json`;
+          const response = await firstValueFrom(this.httpService.get(fallbackUrl));
+          sprintResults = response.data?.MRData?.RaceTable?.Races?.[0]?.SprintResults ?? [];
+        } catch (e2: any) {
+          this.logger.error(`(${raceName}) Primary Ergast API also failed: ${e2?.message || e2}. Skipping this race.`);
+          continue;
+        }
+      }
+
+      if (!sprintResults.length) { this.logger.warn(`(${raceName}) Ergast returned empty sprint results.`); continue; }
+
+      // 6) Clear and build insert payload
+      await this.supabaseService.client.from('race_results').delete().eq('session_id', session.id);
+
+      const toInsert = sprintResults
+        .map((res: any) => {
+          const driverId = driverRefMap.get(res?.Driver?.driverId);
+          const constructorId = driverId ? driverConstructorMap.get(driverId) : undefined;
+          if (!driverId) this.logger.warn(`(${raceName}) Could not map driver: ${res?.Driver?.driverId}`);
+          if (driverId && !constructorId) this.logger.warn(`(${raceName}) Could not map constructor for driver_id: ${driverId}`);
+          return {
+            session_id: session.id,
+            driver_id: driverId,
+            constructor_id: constructorId,
+            position: res?.position ? parseInt(res.position, 10) : null,
+            points: res?.points ? parseFloat(res.points) : 0,
+            grid: res?.grid ? parseInt(res.grid, 10) : 0,
+            laps: res?.laps ? parseInt(res.laps, 10) : 0,
+            status: res?.status ?? null,
+            time_ms: res?.Time?.millis
+              ? parseInt(res.Time.millis, 10)
+              : this.timeStringToMs(res?.Time?.time ?? null),
+            fastest_lap_rank: null,
+            points_for_fastest_lap: 0,
+          };
+        })
+        .filter((r: any) => r.driver_id && r.constructor_id);
+
+      // 7) Insert
+      if (toInsert.length > 0) {
+        const { error } = await this.supabaseService.client.from('race_results').insert(toInsert);
+        if (error) this.logger.error(`(${raceName}) Failed to insert sprint results: ${error.message}`);
+        else this.logger.log(`(${raceName}) Successfully inserted ${toInsert.length} sprint race results.`);
+      } else {
+        this.logger.warn(`(${raceName}) No mappable sprint race results.`);
+      }
+    }
+
+    this.logger.log(`Finished Sprint Race results ingestion for ${year}.`);
+  }
 }
