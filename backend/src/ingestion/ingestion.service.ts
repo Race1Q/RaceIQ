@@ -80,7 +80,7 @@ export class IngestionService {
 
       // Step 3: Modern Results & Laps (Hybrid: Ergast + OpenF1)
       startTime = Date.now();
-      this.logger.log('📡 [3/4] Ingesting modern results and laps...');
+      this.logger.log('📡 [3/6] Ingesting modern results and laps...');
       await this.openf1Service.ingestModernResultsAndLaps(year);
       steps.push({ 
         step: 'Modern Results & Laps', 
@@ -88,9 +88,47 @@ export class IngestionService {
         duration: Date.now() - startTime 
       });
 
-      // Step 4: Refresh Materialized Views (5 views)
+      // Step 3.5: Sprint Qualifying (classification from OpenF1)
       startTime = Date.now();
-      this.logger.log('🔄 [4/4] Refreshing materialized views...');
+      this.logger.log('📡 [4/6] Ingesting Sprint Qualifying (SQ)...');
+      try {
+        await this.openf1Service.ingestSprintQualifyingResults(year);
+        steps.push({ 
+          step: 'Sprint Qualifying', 
+          status: 'success', 
+          duration: Date.now() - startTime 
+        });
+      } catch (error) {
+        this.logger.error(`Sprint Qualifying ingestion failed: ${error.message}`);
+        steps.push({ 
+          step: 'Sprint Qualifying', 
+          status: 'error', 
+          duration: Date.now() - startTime 
+        });
+      }
+
+      // Step 4: Sprint Race results (positions + points from Ergast)
+      startTime = Date.now();
+      this.logger.log('📡 [5/6] Ingesting Sprint Race results...');
+      try {
+        await this.openf1Service.ingestSprintRaceResults(year);
+        steps.push({ 
+          step: 'Sprint Race Results', 
+          status: 'success', 
+          duration: Date.now() - startTime 
+        });
+      } catch (error) {
+        this.logger.error(`Sprint Race ingestion failed: ${error.message}`);
+        steps.push({ 
+          step: 'Sprint Race Results', 
+          status: 'error', 
+          duration: Date.now() - startTime 
+        });
+      }
+
+      // Step 5: Refresh Materialized Views (5 views)
+      startTime = Date.now();
+      this.logger.log('🔄 [6/6] Refreshing materialized views...');
       await this.refreshMaterializedViews();
       steps.push({ 
         step: 'Refresh Materialized Views', 
