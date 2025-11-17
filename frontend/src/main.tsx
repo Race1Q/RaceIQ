@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { ColorModeScript } from '@chakra-ui/react';
+import { Analytics } from "@vercel/analytics/react";
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import 'swiper/css';
@@ -61,5 +62,6 @@ root.render(
         <App />
       </BrowserRouter>
     </Auth0Provider>
+    <Analytics />
   </>
 );
