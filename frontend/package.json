@@ -22,6 +22,7 @@
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@supabase/supabase-js": "^2.55.0",
+    "@vercel/analytics": "^1.5.0",
     "axios": "^1.11.0",
     "chakra-react-select": "^4.10.1",
     "framer-motion": "^12.23.21",
