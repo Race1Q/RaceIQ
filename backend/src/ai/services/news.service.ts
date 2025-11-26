@@ -41,8 +41,17 @@ export class NewsService {
       );
 
       if (latestResponse) {
-        this.logger.log(`Returning latest database response for news topic: ${topic}`);
-        return latestResponse;
+        // Check if cached data is still valid (not expired)
+        const generatedAt = new Date(latestResponse.generatedAt);
+        const ageInSeconds = (Date.now() - generatedAt.getTime()) / 1000;
+        
+        if (ageInSeconds < latestResponse.ttlSeconds) {
+          this.logger.log(`Returning cached database response for news topic: ${topic} (age: ${Math.floor(ageInSeconds / 60)} minutes)`);
+          return latestResponse;
+        } else {
+          this.logger.log(`Cached news response expired (age: ${Math.floor(ageInSeconds / 60)} minutes, TTL: ${latestResponse.ttlSeconds / 60} minutes). Generating new response.`);
+          // Continue to generate new response below
+        }
       }
 
       // Check if AI features are enabled
@@ -85,10 +94,14 @@ export class NewsService {
       // Track quota usage
       this.quotaService.increment();
 
+      // Clean up any URLs that might have slipped into the text
+      const cleanedSummary = this.removeUrlsFromText(aiResponse.summary);
+      const cleanedBullets = aiResponse.bullets.map(bullet => this.removeUrlsFromText(bullet));
+
       // Build response
       const response: AiNewsDto = {
-        summary: aiResponse.summary,
-        bullets: aiResponse.bullets,
+        summary: cleanedSummary,
+        bullets: cleanedBullets,
         citations: aiResponse.citations,
         generatedAt: new Date().toISOString(),
         ttlSeconds: this.newsTTL,
@@ -116,6 +129,29 @@ export class NewsService {
       // Final fallback
       return this.getFallbackNews(topic);
     }
+  }
+
+  /**
+   * Remove URLs from text content (summary and bullets)
+   * URLs should only appear in citations
+   */
+  private removeUrlsFromText(text: string): string {
+    // Remove URLs (http/https URLs)
+    let cleaned = text.replace(/https?:\/\/[^\s\)]+/gi, '');
+    
+    // Clean up any trailing parentheses or commas left behind
+    cleaned = cleaned.replace(/\s*\(\s*,?\s*\)/g, '');
+    cleaned = cleaned.replace(/\s*,\s*,/g, ',');
+    cleaned = cleaned.replace(/,\s*\)/g, ')');
+    cleaned = cleaned.replace(/\(\s*,/g, '(');
+    
+    // Clean up multiple spaces
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    // Remove trailing commas, periods, or spaces before punctuation
+    cleaned = cleaned.replace(/,\s*([.,;:!?])/g, '$1');
+    
+    return cleaned;
   }
 
   /**
