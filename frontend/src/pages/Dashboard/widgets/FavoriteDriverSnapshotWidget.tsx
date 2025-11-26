@@ -3,7 +3,7 @@ import { UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import WidgetCard from './WidgetCard';
 import { useUserProfile } from '../../../hooks/useUserProfile';
-import { driverHeadshots } from '../../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../../lib/driverHeadshotUtils';
 import { getTeamColor } from '../../../lib/teamColors';
 import { useMemo } from 'react';
 import { useThemeColor } from '../../../context/ThemeColorContext';
@@ -93,10 +93,10 @@ function FavoriteDriverSnapshotWidget() {
 
   const teamName = (favoriteDriver as any).team_name || (favoriteDriver as any).teamName || '';
 
-  const driverImage =
-    driverHeadshots[driverFullName] ||
-    (favoriteDriver as any).headshotUrl ||
-    'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png';
+  const driverImage = getDriverHeadshot(
+    (favoriteDriver as any).headshotUrl || (favoriteDriver as any).profile_image_url,
+    driverFullName
+  );
   const teamColorHex = getTeamColor(teamName, { hash: true });
 
   

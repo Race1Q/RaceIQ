@@ -4,7 +4,7 @@ import type { StandingsItem } from '../../../types';
 import WidgetCard from './WidgetCard';
 import { teamColors } from '../../../lib/teamColors';
 import { Trophy } from 'lucide-react';
-import { driverHeadshots } from '../../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../../lib/driverHeadshotUtils';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 
 const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; year?: number }) => {
@@ -29,7 +29,7 @@ const ChampionshipStandingsWidget = ({ data, year }: { data: StandingsItem[]; ye
           data.map((item) => {
             const isLeader = item.position === 1;
             const teamColor = teamColors[item.constructorName] || teamColors['Default'];
-            const headshot = driverHeadshots[item.driverFullName] || item.driverHeadshotUrl || '';
+            const headshot = getDriverHeadshot(item.driverHeadshotUrl, item.driverFullName);
 
             return (
               <Flex

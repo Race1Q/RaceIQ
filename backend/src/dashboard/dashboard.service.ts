@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, LessThan, IsNull, Not } from 'typeorm';
 import { Race } from '../races/races.entity';
 import { RaceResult } from '../race-results/race-results.entity';
+import { Driver } from '../drivers/drivers.entity';
 import { DriverStandingMaterialized } from '../standings/driver-standings-materialized.entity';
 import { RaceFastestLapMaterialized } from './race-fastest-laps-materialized.entity';
 import { DashboardResponseDto, HeadToHeadDriverDto, ConstructorStandingsItemDto } from './dto/dashboard.dto';
@@ -147,6 +148,7 @@ export class DashboardService {
         position: r.position,
         driverFullName: `${r.driver.first_name} ${r.driver.last_name}`,
         constructorName: r.team.name,
+        driverProfileImageUrl: r.driver.profile_image_url || null,
       })),
     };
   }
@@ -160,11 +162,20 @@ export class DashboardService {
       return {
         driverFullName: 'Data Pending',
         lapTime: '--:--.---',
+        driverProfileImageUrl: null,
       };
     }
+    
+    // Fetch driver profile image URL from drivers table
+    const driver = await this.raceResultRepository.manager.findOne(Driver, {
+      where: { id: fastestLap.driverId },
+      select: ['profile_image_url'],
+    });
+    
     return {
       driverFullName: fastestLap.driverFullName,
       lapTime: this.formatLapTime(fastestLap.lapTimeMs),
+      driverProfileImageUrl: driver?.profile_image_url || null,
     };
   }
   

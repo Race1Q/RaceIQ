@@ -4,7 +4,6 @@ import SearchableSelect from '../../../components/DropDownSearch/SearchableSelec
 import type { SelectOption } from '../../../components/DropDownSearch/SearchableSelect';
 import type { DriverDetails } from '../../../hooks/useDriverComparison';
 import type { ReactNode } from 'react';
-import { driverHeadshots } from '../../../lib/driverHeadshots';
 
 interface Props {
   title: string;

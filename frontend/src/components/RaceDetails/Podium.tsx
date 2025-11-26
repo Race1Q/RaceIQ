@@ -1,8 +1,7 @@
 // frontend/src/components/RaceDetails/Podium.tsx
 import React from 'react';
 import { Box, Flex, Heading, Text, VStack, Image } from '@chakra-ui/react';
-import { driverHeadshots } from '../../lib/driverHeadshots';
-import userIcon from '../../assets/UserIcon.png';
+import { getDriverHeadshot } from '../../lib/driverHeadshotUtils';
 
 // Define the shape of the podium data prop
 interface PodiumDriver {
@@ -23,7 +22,7 @@ interface PodiumProps {
 const PodiumStep = ({ driver, height }: { driver: PodiumDriver; height: string }) => {
   const driverName = driver.driver_name || driver.driver_code || String(driver.driver_id);
   const teamName = driver.team_name || driver.constructor_name || 'Unknown Team';
-  const headshot = driverHeadshots[driverName] || driver.driver_picture || userIcon;
+  const headshot = getDriverHeadshot(driver.driver_picture, driverName);
   
   // Get podium gradient and effects based on position
   const getPodiumEffects = (position: number) => {
@@ -69,7 +68,7 @@ const PodiumStep = ({ driver, height }: { driver: PodiumDriver; height: string }
         filter="drop-shadow(0 5px 10px rgba(0,0,0,0.5))"
         // THIS IS THE KEY CHANGE: A negative margin pulls the podium step up
         mb="-7.5px" 
-        onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
+        onError={(e) => { (e.currentTarget as HTMLImageElement).src = getDriverHeadshot(null, null); }}
       />
       <Box position="relative" w="100%" pt={2}>
         <Box

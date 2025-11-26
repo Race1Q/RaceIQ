@@ -18,6 +18,7 @@ export class PodiumItemDto {
   position: number;
   driverFullName: string;
   constructorName: string;
+  driverProfileImageUrl: string | null;
 }
 
 export class LastRacePodiumDto {
@@ -28,6 +29,7 @@ export class LastRacePodiumDto {
 export class FastestLapDto {
   driverFullName: string;
   lapTime: string; // Formatted as string
+  driverProfileImageUrl: string | null;
 }
 
 export class HeadToHeadDriverDto {

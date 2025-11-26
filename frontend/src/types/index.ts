@@ -55,6 +55,7 @@ export interface PodiumItem {
   position: number;
   driverFullName: string;
   constructorName: string;
+  driverProfileImageUrl: string | null;
 }
 
 export interface LastRacePodium {
@@ -65,6 +66,7 @@ export interface LastRacePodium {
 export interface FastestLap {
   driverFullName: string;
   lapTime: string;
+  driverProfileImageUrl: string | null;
 }
 
 export interface HeadToHeadDriver {

@@ -19,7 +19,7 @@ import { FaUnlock, FaSignInAlt, FaStar, FaChartBar, FaCog, FaUsers, FaTrophy, Fa
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link, useLocation } from 'react-router-dom';
 // Car images are available in public/assets/2025_Cars/
-import { driverHeadshots } from '../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../lib/driverHeadshotUtils';
 import FerrariLogo from '../../assets/team_logos/Ferrari.svg';
 
 interface LoginPromptProps {
@@ -171,7 +171,7 @@ const LoginPrompt: React.FC<LoginPromptProps> = ({
                 />
               ) : (
                 <Image
-                  src={driverHeadshots['Lewis Hamilton']}
+                  src={getDriverHeadshot(null, 'Lewis Hamilton')}
                   alt="Lewis Hamilton"
                   position="absolute"
                   top="50%"

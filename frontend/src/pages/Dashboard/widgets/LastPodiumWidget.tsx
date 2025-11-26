@@ -2,7 +2,7 @@ import { Heading, Text, VStack, HStack, Box, Avatar, Flex, useColorModeValue } f
 import type { LastRacePodium } from '../../../types';
 import { teamColors } from '../../../lib/teamColors';
 import WidgetCard from './WidgetCard';
-import { driverHeadshots } from '../../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../../lib/driverHeadshotUtils';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 
 interface LastPodiumWidgetProps {
@@ -49,7 +49,7 @@ function LastPodiumWidget({ data }: LastPodiumWidgetProps) {
           {data.podium.map((item) => {
             const isWinner = item.position === 1;
             const teamColor = teamColors[item.constructorName] || teamColors['Default'];
-            const headshot = driverHeadshots[item.driverFullName] || '';
+            const headshot = getDriverHeadshot(item.driverProfileImageUrl, item.driverFullName);
             return (
               <Flex
                 key={item.position}
