@@ -380,19 +380,34 @@ export class OpenF1Service {
     // Get sessions WITH the new key we just saved
     const { data: dbSessions } = await this.supabaseService.client.from('sessions').select('id, type, race_id, openf1_session_key').in('race_id', (dbRacesForYear ?? []).map(r => r.id));
     
-    const { data: dbDrivers } = await this.supabaseService.client.from('drivers').select('id, name_acronym, ergast_driver_ref');
+    const { data: dbDrivers } = await this.supabaseService.client.from('drivers').select('id, name_acronym, ergast_driver_ref, driver_number');
     const { data: dbConstructors } = await this.supabaseService.client.from('constructors').select('id, name');
 
     const ergastDriverRefMap = new Map((dbDrivers ?? []).map(d => [d.ergast_driver_ref, d.id]));
     const constructorNameMap = new Map((dbConstructors ?? []).map(c => [c.name, c.id]));
     const driverNumberToIdMap = new Map<number, number>();
-     if ((dbDrivers ?? []).length > 0) {
-        const representativeSessionKey = (dbSessions ?? []).find(s => s.type === 'RACE')?.openf1_session_key;
-        if(representativeSessionKey) {
-            const drivers = await this.fetchOpenF1Data<OpenF1Driver>(`/drivers?session_key=${representativeSessionKey}`);
-            (dbDrivers ?? []).forEach(dbd => { const od = drivers.find(od => od.name_acronym === dbd.name_acronym); if (od) driverNumberToIdMap.set(od.driver_number, dbd.id); });
-        }
+ if ((dbDrivers ?? []).length > 0) {
+    const representativeSessionKey = (dbSessions ?? []).find(s => s.type === 'RACE')?.openf1_session_key;
+    if(representativeSessionKey) {
+        const drivers = await this.fetchOpenF1Data<OpenF1Driver>(`/drivers?session_key=${representativeSessionKey}`);
+        // FIX: Match by driver_number instead of name_acronym to avoid conflicts
+        (dbDrivers ?? []).forEach(dbd => { 
+          // First try to match by driver_number (most reliable)
+          const od = drivers.find(od => od.driver_number === dbd.driver_number);
+          if (od && od.name_acronym === dbd.name_acronym) {
+            driverNumberToIdMap.set(od.driver_number, dbd.id);
+          } else {
+            // Fallback: match by name_acronym only if driver_number match not found
+            // But log a warning for manual review
+            const fallbackOd = drivers.find(od => od.name_acronym === dbd.name_acronym);
+            if (fallbackOd && !driverNumberToIdMap.has(fallbackOd.driver_number)) {
+              this.logger.warn(`Matched driver ${dbd.id} (${dbd.name_acronym}) by acronym only. Verify driver_number is correct.`);
+              driverNumberToIdMap.set(fallbackOd.driver_number, dbd.id);
+            }
+          }
+        });
     }
+}
 
 
     // --- 2. LOOP THROUGH EACH RACE OF THE SEASON ---
