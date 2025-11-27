@@ -240,7 +240,15 @@ const CompareConstructorsPage = () => {
           bg="border-accent"
           _hover={{ bg: 'border-accentDark' }}
           color={useColorModeValue('gray.800', 'white')}
-          onClick={() => loginWithRedirect()}
+          onClick={(e) => {
+            e.preventDefault();
+            loginWithRedirect({
+              authorizationParams: {
+                redirect_uri: window.location.origin,
+              },
+            });
+          }}
+          type="button"
         >
           Login
         </Button>

@@ -60,6 +60,7 @@ const getTeamKey = (constructorName: string): keyof typeof TEAM_META => {
     'Alpine': 'alpine',
     'RB F1 Team': 'rb',
     'Racing Bulls': 'rb',
+    'RB': 'rb', // Fallback for duplicate entry
     'Sauber': 'sauber',
     'Kick Sauber': 'sauber',
     'Williams': 'williams',
@@ -228,23 +229,39 @@ const Constructors = () => {
   }, [bulkStats]);
 
   const filteredConstructors = useMemo(() => {
+    let filtered: ApiConstructor[];
+    
     if (!isAuthenticated) {
-      return constructors.filter((c) => c.is_active);
+      filtered = constructors.filter((c) => c.is_active);
+    } else {
+      filtered = constructors.filter((c) => {
+        const matchesStatus =
+          statusFilter === 'all'
+            ? true
+            : statusFilter === 'active'
+            ? c.is_active
+            : !c.is_active;
+
+        const matchesSearch = c.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+        return matchesStatus && matchesSearch;
+      });
     }
-    return constructors.filter((c) => {
-      const matchesStatus =
-        statusFilter === 'all'
-          ? true
-          : statusFilter === 'active'
-          ? c.is_active
-          : !c.is_active;
 
-      const matchesSearch = c.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+    // Deduplicate RB entries: prefer "RB F1 Team" or "Racing Bulls" over "RB"
+    const hasRBF1Team = filtered.some(c => 
+      c.name === 'RB F1 Team' || c.name === 'Racing Bulls'
+    );
+    const hasRB = filtered.some(c => c.name === 'RB');
+    
+    if (hasRBF1Team && hasRB) {
+      // Filter out the duplicate "RB" entry when the proper name exists
+      filtered = filtered.filter(c => c.name !== 'RB');
+    }
 
-      return matchesStatus && matchesSearch;
-    });
+    return filtered;
   }, [constructors, statusFilter, isAuthenticated, searchTerm]);
 
   const standingsMap = useMemo(() => {

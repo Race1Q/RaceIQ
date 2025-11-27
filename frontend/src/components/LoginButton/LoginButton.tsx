@@ -8,9 +8,18 @@ const LoginButton = () => {
   const { loginWithRedirect } = useAuth0();
   const { accentColorWithHash, accentColorDark } = useThemeColor();
 
+  const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    loginWithRedirect({
+      authorizationParams: {
+        redirect_uri: window.location.origin,
+      },
+    });
+  };
+
   return (
     <Button
-      onClick={() => loginWithRedirect()}
+      onClick={handleLogin}
       bg={accentColorWithHash}
       color="text-on-accent"
       _hover={{ bg: accentColorDark, transform: 'translateY(-2px)', boxShadow: 'lg' }}
@@ -18,6 +27,7 @@ const LoginButton = () => {
       fontWeight="bold"
       fontFamily="heading"
       transition="all 0.3s ease"
+      type="button"
     >
       Login or Sign Up
     </Button>
