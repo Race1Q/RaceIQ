@@ -12,6 +12,9 @@ REQUIREMENTS:
 - Use British English spelling (e.g., "tyre", "kerb", "favourite", "analyse")
 - When quoting words or phrases, use single quotes (') instead of double quotes (")
 - Ensure all text in strings uses only single quotes for emphasis or quoting
+- CRITICAL: Do NOT include URLs, links, or web addresses in the summary or bullets text
+- URLs should ONLY appear in the citations array at the bottom
+- Reference sources by name (e.g., "Formula1.com reports...") but never include the actual URL in the text
 
 OUTPUT FORMAT:
 Return a JSON object with this exact structure (use ONLY single quotes for any quoted text):
