@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import {
   Container,
@@ -15,13 +15,6 @@ import {
   FormLabel,
   Divider,
   useToast,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
-  useDisclosure,
   SimpleGrid,
 } from '@chakra-ui/react';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
@@ -71,15 +64,12 @@ const ProfilePage: React.FC = () => {
   const [sending, setSending] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [pendingTheme, setPendingTheme] = useState<'light' | 'dark' | null>(null);
-  const [deleting, setDeleting] = useState<boolean>(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const cancelRef = useRef<HTMLButtonElement | null>(null);
 
   const authedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = await getAccessTokenSilently({
       authorizationParams: {
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: 'read:drivers read:constructors read:standings delete:users update:users',
+        scope: 'read:drivers read:constructors read:standings update:users',
       },
     });
 
@@ -250,25 +240,6 @@ const ProfilePage: React.FC = () => {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDeleteAccount = () => {
-    onOpen();
-  };
-
-  const confirmDeleteAccount = async () => {
-    try {
-      setDeleting(true);
-      await authedFetch(buildApiUrl('/api/profile'), { method: 'DELETE' });
-      toast({ title: 'Account deleted', status: 'success', duration: 3000, isClosable: true });
-      onClose();
-      // Log out the user immediately after successful deletion
-      window.location.href = '/api/auth/logout';
-    } catch (e: any) {
-      toast({ title: 'Failed to delete account', description: e.message, status: 'error', duration: 4000, isClosable: true });
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -477,20 +448,6 @@ const ProfilePage: React.FC = () => {
                 {sending ? 'Sending…' : 'Get  next 3 races info'}
               </Button>
               <Button
-                onClick={handleDeleteAccount}
-                colorScheme="red"
-                variant="outline"
-                isLoading={deleting}
-                loadingText="Deleting"
-                size={{ base: 'sm', md: 'md' }}
-                w={{ base: 'full', md: 'auto' }}
-                _hover={{
-                  transform: 'translateY(-2px)'
-                }}
-              >
-                Delete Account
-              </Button>
-              <Button
                 onClick={handleSaveChanges}
                 colorScheme="green"
                 isLoading={saving}
@@ -508,48 +465,6 @@ const ProfilePage: React.FC = () => {
           </VStack>
         </Box>
       </Container>
-
-      {/* Delete Account Confirmation Dialog */}
-  <AlertDialog isOpen={isOpen} onClose={onClose} isCentered leastDestructiveRef={cancelRef}>
-        <AlertDialogOverlay bg="blackAlpha.600" backdropFilter="blur(4px)">
-          <AlertDialogContent bg="var(--color-surface-gray)" border="1px solid var(--color-border-gray)" boxShadow="2xl">
-            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="var(--color-text-light)">
-              Delete Account
-            </AlertDialogHeader>
-
-            <AlertDialogBody color="var(--color-text-medium)">
-              <Text mb={4}>
-                This action will permanently delete your account and cannot be undone. You will also immediately be logged out.
-              </Text>
-              <Text fontWeight="semibold" color="var(--color-primary-red)">
-                Are you sure you want to continue?
-              </Text>
-            </AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button
-                ref={cancelRef}
-                onClick={onClose}
-                colorScheme="gray"
-                variant="outline"
-                mr={3}
-                _hover={{ transform: 'translateY(-1px)' }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={confirmDeleteAccount}
-                colorScheme="red"
-                isLoading={deleting}
-                loadingText="Deleting..."
-                _hover={{ transform: 'translateY(-1px)' }}
-              >
-                Delete Account
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
     </Box>
   );
   

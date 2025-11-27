@@ -81,12 +81,4 @@ export class UsersService {
     Object.assign(user, updateProfileDto);
     return this.userRepository.save(user);
   }
-
-  async deleteByAuth0Sub(auth0_sub: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { auth0_sub } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    await this.userRepository.delete({ auth0_sub });
-  }
 }
