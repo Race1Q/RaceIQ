@@ -37,78 +37,112 @@ export class PreviewService {
       const trackData = await this.trackDataAdapter.getTrackData(slug, eventId);
       const circuitId = trackData.circuitId;
 
-      // Check database for latest response first
-      const latestResponse = await this.aiResponseService.getLatestResponse<AiTrackPreviewDto>(
+      // 1. Check database for cached response with expiration check
+      const cached = await this.aiResponseService.getLatestResponseIfValid<AiTrackPreviewDto>(
         'track_preview',
         'circuit',
         circuitId || 0, // Use 0 as fallback if circuitId is undefined
+        this.previewTTL,
         undefined,
         eventId,
       );
 
-      if (latestResponse) {
-        this.logger.log(`Returning latest database response for track preview: ${slug}${eventId ? `, event ${eventId}` : ''}`);
-        return latestResponse;
+      // 2. If found and valid, return cached response
+      if (cached && !cached.isExpired) {
+        this.logger.log(`Returning valid cached track preview for ${slug}${eventId ? `, event ${eventId}` : ''}`);
+        return cached.data;
       }
 
+      // 3. If found but expired, or not found - try to generate new response
       // Check if AI features are enabled
       const aiEnabled = this.config.get<boolean>('AI_FEATURES_ENABLED');
       if (!aiEnabled) {
-        this.logger.warn('AI features are disabled, returning fallback');
+        // Return expired cached if available, otherwise fallback
+        if (cached?.isExpired) {
+          this.logger.warn('AI features disabled, returning expired cached track preview');
+          return cached.data;
+        }
         return this.getFallbackPreview(slug, eventId);
       }
 
       // Check quota
       if (!this.quotaService.hasQuota()) {
-        this.logger.warn('Daily quota exceeded, using fallback');
+        // Return expired cached if available, otherwise fallback
+        if (cached?.isExpired) {
+          this.logger.warn('Daily quota exceeded, returning expired cached track preview');
+          return cached.data;
+        }
         return this.getFallbackPreview(slug, eventId);
       }
 
-      // Generate AI preview
-      this.logger.log(`Generating AI preview for track ${slug}${eventId ? `, event ${eventId}` : ''}`);
-      const userPrompt = TRACK_USER_TEMPLATE(trackData, eventId);
+      // 4. Try to generate new response
+      try {
+        // Generate AI preview
+        this.logger.log(`Generating AI preview for track ${slug}${eventId ? `, event ${eventId}` : ''}`);
+        const userPrompt = TRACK_USER_TEMPLATE(trackData, eventId);
 
-      interface GeminiPreviewResponse {
-        intro: string;
-        strategyNotes: string[];
-        weatherAngle?: string;
-        historyBlurb?: string;
+        interface GeminiPreviewResponse {
+          intro: string;
+          strategyNotes: string[];
+          weatherAngle?: string;
+          historyBlurb?: string;
+        }
+
+        const aiResponse = await this.geminiService.generateJSON<GeminiPreviewResponse>(
+          TRACK_SYSTEM_PROMPT,
+          userPrompt
+        );
+
+        // Track quota usage
+        this.quotaService.increment();
+
+        // Build response
+        const response: AiTrackPreviewDto = {
+          trackSlug: slug,
+          eventId,
+          intro: aiResponse.intro,
+          strategyNotes: aiResponse.strategyNotes,
+          weatherAngle: aiResponse.weatherAngle,
+          historyBlurb: aiResponse.historyBlurb,
+          generatedAt: new Date().toISOString(),
+          isFallback: false,
+        };
+
+        // 5. If expired response existed, delete it before storing new one
+        if (cached?.isExpired) {
+          await this.aiResponseService.deleteLatestResponse(
+            'track_preview',
+            'circuit',
+            circuitId || 0,
+            undefined,
+            eventId,
+          );
+        }
+
+        // 6. Store the new response in database
+        await this.aiResponseService.storeResponse(
+          'track_preview',
+          'circuit',
+          circuitId || 0, // Use 0 as fallback if circuitId is undefined
+          response,
+          undefined,
+          eventId,
+          false,
+          'Powered by Gemini AI'
+        );
+        this.logger.log(`Successfully generated and stored preview for track ${slug}`);
+
+        return response;
+      } catch (apiError) {
+        // 7. API failed - return expired cached if available
+        if (cached?.isExpired) {
+          this.logger.warn(`API failed, returning expired cached track preview: ${apiError.message}`);
+          return cached.data;
+        }
+        // 8. No cached response - return fallback
+        this.logger.error(`No cached response and API failed: ${apiError.message}`);
+        return this.getFallbackPreview(slug, eventId);
       }
-
-      const aiResponse = await this.geminiService.generateJSON<GeminiPreviewResponse>(
-        TRACK_SYSTEM_PROMPT,
-        userPrompt
-      );
-
-      // Track quota usage
-      this.quotaService.increment();
-
-      // Build response
-      const response: AiTrackPreviewDto = {
-        trackSlug: slug,
-        eventId,
-        intro: aiResponse.intro,
-        strategyNotes: aiResponse.strategyNotes,
-        weatherAngle: aiResponse.weatherAngle,
-        historyBlurb: aiResponse.historyBlurb,
-        generatedAt: new Date().toISOString(),
-        isFallback: false,
-      };
-
-      // Store the response in database
-      await this.aiResponseService.storeResponse(
-        'track_preview',
-        'circuit',
-        circuitId || 0, // Use 0 as fallback if circuitId is undefined
-        response,
-        undefined,
-        eventId,
-        false,
-        'Powered by Gemini AI'
-      );
-      this.logger.log(`Successfully generated and stored preview for track ${slug}`);
-
-      return response;
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating track preview: ${error.message}`, error.stack);
@@ -119,17 +153,16 @@ export class PreviewService {
   }
 
   /**
-   * Fallback preview when AI generation fails
+   * Fallback preview when AI generation fails and no cached response available
    */
   private getFallbackPreview(slug: string, eventId?: number): AiTrackPreviewDto {
     return {
       trackSlug: slug,
       eventId,
-      intro: 'AI-generated track preview is temporarily unavailable.',
+      intro: 'Track preview data is currently unavailable. Please try again later.',
       strategyNotes: [
-        'Track preview is being generated',
-        'Check back in a few moments for strategic insights',
-        'View race results for historical performance data',
+        'Data is being generated',
+        'Please check back shortly',
       ],
       weatherAngle: undefined,
       historyBlurb: undefined,

@@ -98,6 +98,32 @@ export class AiResponseRepository {
   }
 
   /**
+   * Delete the latest response for a specific context
+   */
+  async deleteLatest(
+    responseType: string,
+    entityType: string,
+    entityId: number | string,
+    season?: number,
+    eventId?: number,
+  ): Promise<boolean> {
+    const latest = await this.findLatest(
+      responseType,
+      entityType,
+      entityId,
+      season,
+      eventId,
+    );
+
+    if (!latest) {
+      return false;
+    }
+
+    await this.repository.remove(latest);
+    return true;
+  }
+
+  /**
    * Delete old responses (for cleanup)
    */
   async deleteOldResponses(olderThanDays: number = 30): Promise<number> {

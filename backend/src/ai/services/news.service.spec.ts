@@ -5,6 +5,7 @@ import { GeminiService } from './gemini.service';
 import { QuotaService } from './quota.service';
 import { PersistentCacheService } from '../cache/persistent-cache.service';
 import { NewsFeedAdapter } from '../adapters/news-feed.adapter';
+import { AiResponseService } from './ai-response.service';
 import { AiNewsDto } from '../dto/ai-news.dto';
 
 describe('NewsService', () => {
@@ -13,6 +14,7 @@ describe('NewsService', () => {
   let quotaService: jest.Mocked<QuotaService>;
   let cacheService: jest.Mocked<PersistentCacheService>;
   let newsFeedAdapter: jest.Mocked<NewsFeedAdapter>;
+  let aiResponseService: jest.Mocked<AiResponseService>;
   let configService: jest.Mocked<ConfigService>;
 
   const mockArticles = [
@@ -71,6 +73,14 @@ describe('NewsService', () => {
           },
         },
         {
+          provide: AiResponseService,
+          useValue: {
+            getLatestResponseIfValid: jest.fn(),
+            deleteLatestResponse: jest.fn(),
+            storeResponse: jest.fn(),
+          },
+        },
+        {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
@@ -88,6 +98,7 @@ describe('NewsService', () => {
     quotaService = module.get(QuotaService);
     cacheService = module.get(PersistentCacheService);
     newsFeedAdapter = module.get(NewsFeedAdapter);
+    aiResponseService = module.get(AiResponseService);
     configService = module.get(ConfigService);
   });
 
@@ -99,8 +110,8 @@ describe('NewsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getNews - cache hit path', () => {
-    it('should return cached news when available', async () => {
+  describe('getNews - valid cached response', () => {
+    it('should return valid cached news when available', async () => {
       const cachedNews: AiNewsDto = {
         summary: 'Cached summary',
         bullets: ['Cached point'],
@@ -110,31 +121,91 @@ describe('NewsService', () => {
         isFallback: false,
       };
       
-      cacheService.get.mockReturnValue(cachedNews);
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue({
+        data: cachedNews,
+        isExpired: false,
+      });
 
       const result = await service.getNews('f1');
 
       expect(result).toEqual(cachedNews);
-      expect(cacheService.get).toHaveBeenCalledWith('news:f1');
+      expect(aiResponseService.getLatestResponseIfValid).toHaveBeenCalledWith(
+        'news',
+        'general',
+        0,
+        3600, // TTL in seconds (60 minutes * 60)
+        undefined,
+        undefined,
+      );
       expect(newsFeedAdapter.fetchNews).not.toHaveBeenCalled();
       expect(geminiService.generateJSON).not.toHaveBeenCalled();
       expect(quotaService.increment).not.toHaveBeenCalled();
     });
+  });
 
-    it('should use correct cache key for different topics', async () => {
-      cacheService.get.mockReturnValue(null);
+  describe('getNews - expired cached response', () => {
+    it('should generate new response when cached response is expired', async () => {
+      const expiredNews: AiNewsDto = {
+        summary: 'Expired summary',
+        bullets: ['Expired point'],
+        citations: [],
+        generatedAt: new Date(Date.now() - 10000000).toISOString(), // Old date
+        ttlSeconds: 3600,
+        isFallback: false,
+      };
+      
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue({
+        data: expiredNews,
+        isExpired: true,
+      });
       newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
       geminiService.generateJSON.mockResolvedValue(mockGeminiResponse);
 
-      await service.getNews('verstappen');
+      const result = await service.getNews('f1');
 
-      expect(cacheService.get).toHaveBeenCalledWith('news:verstappen');
+      expect(result).toMatchObject({
+        summary: 'F1 news summary',
+        bullets: ['Point 1', 'Point 2'],
+        isFallback: false,
+      });
+      expect(aiResponseService.deleteLatestResponse).toHaveBeenCalledWith(
+        'news',
+        'general',
+        0,
+        undefined,
+        undefined,
+      );
+      expect(aiResponseService.storeResponse).toHaveBeenCalled();
+      expect(quotaService.increment).toHaveBeenCalled();
+    });
+
+    it('should return expired cached response when API fails', async () => {
+      const expiredNews: AiNewsDto = {
+        summary: 'Expired summary',
+        bullets: ['Expired point'],
+        citations: [],
+        generatedAt: new Date(Date.now() - 10000000).toISOString(),
+        ttlSeconds: 3600,
+        isFallback: false,
+      };
+      
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue({
+        data: expiredNews,
+        isExpired: true,
+      });
+      newsFeedAdapter.fetchNews.mockRejectedValue(new Error('API Error'));
+
+      const result = await service.getNews('f1');
+
+      expect(result).toEqual(expiredNews);
+      expect(aiResponseService.deleteLatestResponse).not.toHaveBeenCalled();
+      expect(aiResponseService.storeResponse).not.toHaveBeenCalled();
     });
   });
 
-  describe('getNews - AI generation path', () => {
+  describe('getNews - AI generation path (no cached response)', () => {
     beforeEach(() => {
-      cacheService.get.mockReturnValue(null); // Cache miss
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null); // No cached response
       quotaService.hasQuota.mockReturnValue(true);
       configService.get.mockImplementation((key: string) => {
         if (key === 'AI_NEWS_TTL_MIN') return 60;
@@ -143,7 +214,7 @@ describe('NewsService', () => {
       });
     });
 
-    it('should generate news when cache is empty', async () => {
+    it('should generate news when no cached response exists', async () => {
       newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
       geminiService.generateJSON.mockResolvedValue(mockGeminiResponse);
 
@@ -157,7 +228,7 @@ describe('NewsService', () => {
       expect(newsFeedAdapter.fetchNews).toHaveBeenCalledWith('f1', 10);
       expect(geminiService.generateJSON).toHaveBeenCalled();
       expect(quotaService.increment).toHaveBeenCalled();
-      expect(cacheService.set).toHaveBeenCalledWith('news:f1', expect.any(Object), 3600);
+      expect(aiResponseService.storeResponse).toHaveBeenCalled();
     });
 
     it('should fetch correct number of articles', async () => {
@@ -189,29 +260,44 @@ describe('NewsService', () => {
       expect(quotaService.increment).toHaveBeenCalledTimes(1);
     });
 
-    it('should cache generated news with correct TTL', async () => {
+    it('should store generated news in database', async () => {
       newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
       geminiService.generateJSON.mockResolvedValue(mockGeminiResponse);
 
       await service.getNews('f1');
 
-      expect(cacheService.set).toHaveBeenCalledWith(
-        'news:f1',
+      expect(aiResponseService.storeResponse).toHaveBeenCalledWith(
+        'news',
+        'general',
+        0,
         expect.objectContaining({
           summary: 'F1 news summary',
           isFallback: false,
+          ttlSeconds: 3600,
         }),
-        3600, // TTL in seconds
+        undefined,
+        undefined,
+        false,
+        'Powered by Gemini AI',
       );
     });
   });
 
   describe('getNews - fallback scenarios', () => {
-    beforeEach(() => {
-      cacheService.get.mockReturnValue(null); // Cache miss
-    });
-
-    it('should return fallback when AI features are disabled', async () => {
+    it('should return expired cached when AI features are disabled', async () => {
+      const expiredNews: AiNewsDto = {
+        summary: 'Expired summary',
+        bullets: ['Expired point'],
+        citations: [],
+        generatedAt: new Date(Date.now() - 10000000).toISOString(),
+        ttlSeconds: 3600,
+        isFallback: false,
+      };
+      
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue({
+        data: expiredNews,
+        isExpired: true,
+      });
       configService.get.mockImplementation((key: string) => {
         if (key === 'AI_NEWS_TTL_MIN') return 60;
         if (key === 'AI_FEATURES_ENABLED') return false; // Disabled
@@ -220,49 +306,83 @@ describe('NewsService', () => {
 
       const result = await service.getNews('f1');
 
-      expect(result.isFallback).toBe(true);
-      expect(result.summary).toContain('temporarily unavailable');
+      expect(result).toEqual(expiredNews);
       expect(newsFeedAdapter.fetchNews).not.toHaveBeenCalled();
       expect(geminiService.generateJSON).not.toHaveBeenCalled();
     });
 
-    it('should return stale cache when quota is exhausted', async () => {
-      quotaService.hasQuota.mockReturnValue(false);
-      const staleNews: AiNewsDto = {
-        summary: 'Stale summary',
-        bullets: ['Stale point'],
-        citations: [],
-        generatedAt: new Date().toISOString(),
-        ttlSeconds: 3600,
-        isFallback: false,
-      };
-      
-      cacheService.get.mockImplementation((key: string, ignoreExpiry?: boolean) => {
-        if (ignoreExpiry) return staleNews;
+    it('should return fallback when AI features disabled and no cached response', async () => {
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'AI_NEWS_TTL_MIN') return 60;
+        if (key === 'AI_FEATURES_ENABLED') return false;
         return null;
       });
 
       const result = await service.getNews('f1');
 
-      expect(result).toMatchObject({
-        summary: 'Stale summary',
-        isFallback: true,
-      });
-      expect(cacheService.get).toHaveBeenCalledWith('news:f1', true);
+      expect(result.isFallback).toBe(true);
+      expect(result.summary).toContain('currently unavailable');
     });
 
-    it('should return fallback when quota exhausted and no stale cache', async () => {
+    it('should return expired cached when quota is exhausted', async () => {
       quotaService.hasQuota.mockReturnValue(false);
-      cacheService.get.mockReturnValue(null);
+      const expiredNews: AiNewsDto = {
+        summary: 'Expired summary',
+        bullets: ['Expired point'],
+        citations: [],
+        generatedAt: new Date(Date.now() - 10000000).toISOString(),
+        ttlSeconds: 3600,
+        isFallback: false,
+      };
+      
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue({
+        data: expiredNews,
+        isExpired: true,
+      });
+
+      const result = await service.getNews('f1');
+
+      expect(result).toEqual(expiredNews);
+    });
+
+    it('should return fallback when quota exhausted and no cached response', async () => {
+      quotaService.hasQuota.mockReturnValue(false);
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
 
       const result = await service.getNews('f1');
 
       expect(result.isFallback).toBe(true);
-      expect(result.summary).toContain('temporarily unavailable');
+      expect(result.summary).toContain('currently unavailable');
     });
 
-    it('should return fallback when no articles found', async () => {
+    it('should return expired cached when no articles found', async () => {
       quotaService.hasQuota.mockReturnValue(true);
+      const expiredNews: AiNewsDto = {
+        summary: 'Expired summary',
+        bullets: ['Expired point'],
+        citations: [],
+        generatedAt: new Date(Date.now() - 10000000).toISOString(),
+        ttlSeconds: 3600,
+        isFallback: false,
+      };
+      
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue({
+        data: expiredNews,
+        isExpired: true,
+      });
+      newsFeedAdapter.fetchNews.mockResolvedValue([]);
+
+      const result = await service.getNews('f1');
+
+      expect(result).toEqual(expiredNews);
+      expect(geminiService.generateJSON).not.toHaveBeenCalled();
+      expect(quotaService.increment).not.toHaveBeenCalled();
+    });
+
+    it('should return fallback when no articles found and no cached response', async () => {
+      quotaService.hasQuota.mockReturnValue(true);
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
       newsFeedAdapter.fetchNews.mockResolvedValue([]);
 
       const result = await service.getNews('f1');
@@ -272,31 +392,27 @@ describe('NewsService', () => {
       expect(quotaService.increment).not.toHaveBeenCalled();
     });
 
-    it('should return stale cache on generation error', async () => {
+    it('should return expired cached on API generation error', async () => {
       quotaService.hasQuota.mockReturnValue(true);
-      newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
-      geminiService.generateJSON.mockRejectedValue(new Error('API Error'));
-      
-      const staleNews: AiNewsDto = {
-        summary: 'Stale summary',
-        bullets: ['Stale point'],
+      const expiredNews: AiNewsDto = {
+        summary: 'Expired summary',
+        bullets: ['Expired point'],
         citations: [],
-        generatedAt: new Date().toISOString(),
+        generatedAt: new Date(Date.now() - 10000000).toISOString(),
         ttlSeconds: 3600,
         isFallback: false,
       };
       
-      cacheService.get.mockImplementation((key: string, ignoreExpiry?: boolean) => {
-        if (ignoreExpiry) return staleNews;
-        return null;
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue({
+        data: expiredNews,
+        isExpired: true,
       });
+      newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
+      geminiService.generateJSON.mockRejectedValue(new Error('API Error'));
 
       const result = await service.getNews('f1');
 
-      expect(result).toMatchObject({
-        summary: 'Stale summary',
-        isFallback: true,
-      });
+      expect(result).toEqual(expiredNews);
     });
 
     it('should return fallback on error with no stale cache', async () => {
@@ -314,7 +430,7 @@ describe('NewsService', () => {
 
   describe('getNews - different topics', () => {
     beforeEach(() => {
-      cacheService.get.mockReturnValue(null);
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
       quotaService.hasQuota.mockReturnValue(true);
       newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
       geminiService.generateJSON.mockResolvedValue(mockGeminiResponse);
@@ -324,7 +440,14 @@ describe('NewsService', () => {
       await service.getNews('hamilton');
 
       expect(newsFeedAdapter.fetchNews).toHaveBeenCalledWith('hamilton', 10);
-      expect(cacheService.get).toHaveBeenCalledWith('news:hamilton');
+      expect(aiResponseService.getLatestResponseIfValid).toHaveBeenCalledWith(
+        'news',
+        'general',
+        0,
+        3600,
+        undefined,
+        undefined,
+      );
     });
 
     it('should use default topic when not provided', async () => {
@@ -336,7 +459,7 @@ describe('NewsService', () => {
 
   describe('getFallbackNews (private method via public paths)', () => {
     beforeEach(() => {
-      cacheService.get.mockReturnValue(null);
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
       configService.get.mockImplementation((key: string) => {
         if (key === 'AI_NEWS_TTL_MIN') return 60;
         if (key === 'AI_FEATURES_ENABLED') return false; // Trigger fallback
@@ -348,16 +471,11 @@ describe('NewsService', () => {
       const result = await service.getNews('f1');
 
       expect(result).toMatchObject({
-        summary: expect.stringContaining('temporarily unavailable'),
+        summary: expect.stringContaining('currently unavailable'),
         bullets: expect.arrayContaining([
-          expect.stringContaining('news summaries'),
+          expect.stringContaining('Data is being generated'),
         ]),
-        citations: expect.arrayContaining([
-          expect.objectContaining({
-            title: 'Formula 1 Official Website',
-            url: 'https://www.formula1.com/en/latest.html',
-          }),
-        ]),
+        citations: expect.arrayContaining([]),
         ttlSeconds: 300,
         isFallback: true,
       });
@@ -373,7 +491,7 @@ describe('NewsService', () => {
 
   describe('error handling', () => {
     beforeEach(() => {
-      cacheService.get.mockReturnValue(null);
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
       quotaService.hasQuota.mockReturnValue(true);
     });
 
@@ -395,21 +513,24 @@ describe('NewsService', () => {
       expect(result.isFallback).toBe(true);
     });
 
-    it('should handle cache set errors without throwing', async () => {
+    it('should handle store response errors gracefully', async () => {
       newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
       geminiService.generateJSON.mockResolvedValue(mockGeminiResponse);
-      cacheService.set.mockRejectedValue(new Error('Cache write error'));
+      aiResponseService.storeResponse.mockRejectedValue(new Error('Database error'));
 
       const result = await service.getNews('f1');
 
-      // Cache write errors cause the service to go into error path and return fallback
-      expect(result.isFallback).toBe(true);
+      // Should still return the generated response even if storage fails
+      expect(result).toMatchObject({
+        summary: 'F1 news summary',
+        isFallback: false,
+      });
     });
   });
 
   describe('TTL configuration', () => {
-    it('should use configured TTL from environment', async () => {
-      cacheService.get.mockReturnValue(null);
+    it('should use configured TTL from environment for expiration check', async () => {
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
       quotaService.hasQuota.mockReturnValue(true);
       newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
       geminiService.generateJSON.mockResolvedValue(mockGeminiResponse);
@@ -441,6 +562,10 @@ describe('NewsService', () => {
             useValue: newsFeedAdapter,
           },
           {
+            provide: AiResponseService,
+            useValue: aiResponseService,
+          },
+          {
             provide: ConfigService,
             useValue: configService,
           },
@@ -450,25 +575,45 @@ describe('NewsService', () => {
       const service2 = module2.get<NewsService>(NewsService);
       await service2.getNews('f1');
 
-      expect(cacheService.set).toHaveBeenCalledWith(
-        'news:f1',
-        expect.any(Object),
-        7200, // 120 minutes * 60 seconds
+      // Should use 7200 seconds (120 minutes * 60) for expiration check
+      expect(aiResponseService.getLatestResponseIfValid).toHaveBeenCalledWith(
+        'news',
+        'general',
+        0,
+        7200,
+        undefined,
+        undefined,
+      );
+      expect(aiResponseService.storeResponse).toHaveBeenCalledWith(
+        'news',
+        'general',
+        0,
+        expect.objectContaining({
+          ttlSeconds: 7200,
+        }),
+        undefined,
+        undefined,
+        false,
+        'Powered by Gemini AI',
       );
     });
 
     it('should use default TTL when not configured', async () => {
-      cacheService.get.mockReturnValue(null);
+      aiResponseService.getLatestResponseIfValid.mockResolvedValue(null);
       quotaService.hasQuota.mockReturnValue(true);
       newsFeedAdapter.fetchNews.mockResolvedValue(mockArticles);
       geminiService.generateJSON.mockResolvedValue(mockGeminiResponse);
 
       await service.getNews('f1');
 
-      expect(cacheService.set).toHaveBeenCalledWith(
-        'news:f1',
-        expect.any(Object),
-        3600, // Default 60 minutes * 60 seconds
+      // Should use 3600 seconds (60 minutes * 60) as default
+      expect(aiResponseService.getLatestResponseIfValid).toHaveBeenCalledWith(
+        'news',
+        'general',
+        0,
+        3600,
+        undefined,
+        undefined,
       );
     });
   });

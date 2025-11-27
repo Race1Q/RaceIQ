@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
 import { PersistentCacheService } from '../cache/persistent-cache.service';
 import { AiResponseService } from './ai-response.service';
@@ -10,7 +11,7 @@ import { AiConstructorInfoDto } from '../dto/ai-constructor-info.dto';
 @Injectable()
 export class ConstructorInfoService {
   private readonly logger = new Logger(ConstructorInfoService.name);
-  private readonly CACHE_TTL_HOURS = 4380; // 4380 hours (6 months)
+  private readonly CACHE_TTL_SECONDS: number;
 
   constructor(
     private readonly geminiService: GeminiService,
@@ -19,24 +20,34 @@ export class ConstructorInfoService {
     private readonly constructorsService: ConstructorsService,
     private readonly driversService: DriversService,
     private readonly racesService: RacesService,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    // Get TTL from config, default to 4380 hours (6 months)
+    const ttlHours = this.config.get<number>('AI_CONSTRUCTOR_INFO_TTL_H') || 4380;
+    this.CACHE_TTL_SECONDS = ttlHours * 3600; // Convert hours to seconds
+  }
 
   async getConstructorInfo(constructorId: number, season?: number): Promise<AiConstructorInfoDto> {
     try {
-      // Check database for latest response first
-      const latestResponse = await this.aiResponseService.getLatestResponse<AiConstructorInfoDto>(
+      // 1. Check database for cached response with expiration check
+      const cached = await this.aiResponseService.getLatestResponseIfValid<AiConstructorInfoDto>(
         'constructor_info',
         'constructor',
         constructorId,
+        this.CACHE_TTL_SECONDS,
         season,
       );
 
-      if (latestResponse) {
-        this.logger.log(`Returning latest database response for constructor ${constructorId}${season ? `, season ${season}` : ''}`);
-        return latestResponse;
+      // 2. If found and valid, return cached response
+      if (cached && !cached.isExpired) {
+        this.logger.log(`Returning valid cached constructor info for constructor ${constructorId}${season ? `, season ${season}` : ''}`);
+        return cached.data;
       }
 
-      this.logger.log(`Generating AI constructor info for constructorId: ${constructorId}, season: ${season || 'all'}`);
+      // 3. If found but expired, or not found - try to generate new response
+      // 4. Try to generate new response
+      try {
+        this.logger.log(`Generating AI constructor info for constructorId: ${constructorId}, season: ${season || 'all'}`);
 
       // Fetch constructor data
       const constructor = await this.constructorsService.findOne(constructorId);
@@ -108,41 +119,61 @@ Make it engaging and informative for F1 fans.`;
         userPrompt
       );
 
-      const result: AiConstructorInfoDto = {
-        ...aiResponse,
-        generatedAt: new Date().toISOString(),
-        isFallback: false,
-      };
+        const result: AiConstructorInfoDto = {
+          ...aiResponse,
+          generatedAt: new Date().toISOString(),
+          isFallback: false,
+        };
 
-      // Store the response in database
-      await this.aiResponseService.storeResponse(
-        'constructor_info',
-        'constructor',
-        constructorId,
-        result,
-        season,
-        undefined,
-        false,
-        'Powered by Gemini AI'
-      );
+        // 5. If expired response existed, delete it before storing new one
+        if (cached?.isExpired) {
+          await this.aiResponseService.deleteLatestResponse(
+            'constructor_info',
+            'constructor',
+            constructorId,
+            season,
+          );
+        }
 
-      return result;
+        // 6. Store the new response in database
+        await this.aiResponseService.storeResponse(
+          'constructor_info',
+          'constructor',
+          constructorId,
+          result,
+          season,
+          undefined,
+          false,
+          'Powered by Gemini AI'
+        );
+
+        return result;
+      } catch (apiError) {
+        // 7. API failed - return expired cached if available
+        if (cached?.isExpired) {
+          this.logger.warn(`API failed, returning expired cached constructor info: ${apiError.message}`);
+          return cached.data;
+        }
+        // 8. No cached response - return fallback
+        this.logger.error(`No cached response and API failed: ${apiError.message}`);
+        throw apiError; // Re-throw to be caught by outer catch
+      }
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating constructor info: ${error.message}`, error.stack);
       
-      // Return fallback data
+      // Final fallback
       const constructorData = await this.constructorsService.findOne(constructorId);
       return {
-        overview: `${constructorData?.name || 'This team'} is a Formula 1 constructor with a rich history in the sport.`,
-        history: `Founded and representing ${constructorData?.nationality || 'their country'}, this team has been competing in Formula 1 with dedication and passion.`,
-        strengths: ['Experienced team management', 'Technical expertise', 'Strong driver lineup'],
-        challenges: ['Competitive midfield battle', 'Resource optimization'],
-        notableAchievements: ['Consistent point scoring', 'Midfield competitiveness'],
+        overview: `Constructor information data is currently unavailable. Please try again later.`,
+        history: 'Data is being generated.',
+        strengths: ['Data is being generated'],
+        challenges: ['Data is being generated'],
+        notableAchievements: ['Data is being generated'],
         currentSeason: {
-          performance: 'Showing competitive form in the current season.',
-          highlights: ['Strong qualifying performances', 'Consistent race finishes'],
-          outlook: 'Looking to maximize opportunities in the remaining races.'
+          performance: 'Data is being generated.',
+          highlights: ['Data is being generated'],
+          outlook: 'Data is being generated.'
         },
         generatedAt: new Date().toISOString(),
         isFallback: true,
