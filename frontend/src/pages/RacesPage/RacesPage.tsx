@@ -133,8 +133,16 @@ const NotAuthenticatedView = () => {
           bg="brand.red"
           _hover={{ bg: 'brand.redDark' }}
           color="white"
-          onClick={() => loginWithRedirect()}
+          onClick={(e) => {
+            e.preventDefault();
+            loginWithRedirect({
+              authorizationParams: {
+                redirect_uri: window.location.origin,
+              },
+            });
+          }}
           fontFamily="heading"
+          type="button"
         >
           Login / Sign Up
         </Button>

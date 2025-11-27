@@ -73,7 +73,14 @@ const ComparisonLoginPrompt: React.FC = () => {
                   bg="brand.red"
                   color="white"
                   size="lg"
-                  onClick={() => loginWithRedirect()}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    loginWithRedirect({
+                      authorizationParams: {
+                        redirect_uri: window.location.origin,
+                      },
+                    });
+                  }}
                   _hover={{
                     bg: 'red.600',
                     transform: 'translateY(-2px)',
@@ -84,6 +91,7 @@ const ComparisonLoginPrompt: React.FC = () => {
                   py={6}
                   fontSize="md"
                   fontWeight="semibold"
+                  type="button"
                 >
                   Sign In to Compare
                 </Button>
