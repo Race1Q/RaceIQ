@@ -31,75 +31,108 @@ export class FunFactsService {
    */
   async getDriverFunFacts(driverId: number, season?: number): Promise<AiDriverFunFactsDto> {
     try {
-      // Check database for latest response first
-      const latestResponse = await this.aiResponseService.getLatestResponse<AiDriverFunFactsDto>(
+      // 1. Check database for cached response with expiration check
+      const cached = await this.aiResponseService.getLatestResponseIfValid<AiDriverFunFactsDto>(
         'fun_facts',
         'driver',
         driverId,
+        this.funFactsTTL,
         season,
       );
 
-      if (latestResponse) {
-        this.logger.log(`Returning latest database response for driver ${driverId}${season ? `, season ${season}` : ''}`);
-        return latestResponse;
+      // 2. If found and valid, return cached response
+      if (cached && !cached.isExpired) {
+        this.logger.log(`Returning valid cached fun facts for driver ${driverId}${season ? `, season ${season}` : ''}`);
+        return cached.data;
       }
 
+      // 3. If found but expired, or not found - try to generate new response
       // Check if AI features are enabled
       const aiEnabled = this.config.get<boolean>('AI_FEATURES_ENABLED');
       if (!aiEnabled) {
-        this.logger.warn('AI features are disabled, returning fallback');
+        // Return expired cached if available, otherwise fallback
+        if (cached?.isExpired) {
+          this.logger.warn('AI features disabled, returning expired cached fun facts');
+          return cached.data;
+        }
         return this.getFallbackFunFacts(driverId, season);
       }
 
       // Check quota
       if (!this.quotaService.hasQuota()) {
-        this.logger.warn('Daily quota exceeded, using fallback');
+        // Return expired cached if available, otherwise fallback
+        if (cached?.isExpired) {
+          this.logger.warn('Daily quota exceeded, returning expired cached fun facts');
+          return cached.data;
+        }
         return this.getFallbackFunFacts(driverId, season);
       }
 
-      // Fetch driver data
-      this.logger.log(`Fetching driver data for fun facts generation: driver ${driverId}`);
-      const driverData = await this.driverStatsAdapter.getDriverData(driverId, season);
+      // 4. Try to generate new response
+      try {
+        // Fetch driver data
+        this.logger.log(`Fetching driver data for fun facts generation: driver ${driverId}`);
+        const driverData = await this.driverStatsAdapter.getDriverData(driverId, season);
 
-      // Generate AI fun facts
-      this.logger.log(`Generating AI fun facts for driver ${driverId}${season ? `, season ${season}` : ''}`);
-      const userPrompt = FUN_FACTS_USER_TEMPLATE(driverData, season);
+        // Generate AI fun facts
+        this.logger.log(`Generating AI fun facts for driver ${driverId}${season ? `, season ${season}` : ''}`);
+        const userPrompt = FUN_FACTS_USER_TEMPLATE(driverData, season);
 
-      interface GeminiFunFactsResponse {
-        title: string;
-        facts: string[];
+        interface GeminiFunFactsResponse {
+          title: string;
+          facts: string[];
+        }
+
+        const aiResponse = await this.geminiService.generateJSON<GeminiFunFactsResponse>(
+          FUN_FACTS_SYSTEM_PROMPT,
+          userPrompt,
+        );
+
+        // Track quota usage
+        this.quotaService.increment();
+
+        // Build response
+        const response: AiDriverFunFactsDto = {
+          driverId,
+          season: season || null,
+          title: aiResponse.title,
+          facts: aiResponse.facts,
+          generatedAt: new Date().toISOString(),
+          isFallback: false,
+          aiAttribution: 'Powered by Gemini AI',
+        };
+
+        // 5. If expired response existed, delete it before storing new one
+        if (cached?.isExpired) {
+          await this.aiResponseService.deleteLatestResponse(
+            'fun_facts',
+            'driver',
+            driverId,
+            season,
+          );
+        }
+
+        // 6. Store the new response in database
+        await this.aiResponseService.storeResponse(
+          'fun_facts',
+          'driver',
+          driverId,
+          response,
+          season,
+        );
+        this.logger.log(`Successfully generated and stored fun facts for driver ${driverId}`);
+
+        return response;
+      } catch (apiError) {
+        // 7. API failed - return expired cached if available
+        if (cached?.isExpired) {
+          this.logger.warn(`API failed, returning expired cached fun facts: ${apiError.message}`);
+          return cached.data;
+        }
+        // 8. No cached response - return fallback
+        this.logger.error(`No cached response and API failed: ${apiError.message}`);
+        return this.getFallbackFunFacts(driverId, season);
       }
-
-      const aiResponse = await this.geminiService.generateJSON<GeminiFunFactsResponse>(
-        FUN_FACTS_SYSTEM_PROMPT,
-        userPrompt,
-      );
-
-      // Track quota usage
-      this.quotaService.increment();
-
-      // Build response
-      const response: AiDriverFunFactsDto = {
-        driverId,
-        season: season || null,
-        title: aiResponse.title,
-        facts: aiResponse.facts,
-        generatedAt: new Date().toISOString(),
-        isFallback: false,
-        aiAttribution: 'Powered by Gemini AI',
-      };
-
-      // Store the response in database
-      await this.aiResponseService.storeResponse(
-        'fun_facts',
-        'driver',
-        driverId,
-        response,
-        season,
-      );
-      this.logger.log(`Successfully generated and stored fun facts for driver ${driverId}`);
-
-      return response;
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating driver fun facts: ${error.message}`, error.stack);
@@ -110,7 +143,7 @@ export class FunFactsService {
   }
 
   /**
-   * Fallback fun facts when AI generation fails
+   * Fallback fun facts when AI generation fails and no cached response available
    */
   private getFallbackFunFacts(driverId: number, season?: number): AiDriverFunFactsDto {
     return {
@@ -118,9 +151,9 @@ export class FunFactsService {
       season: season || null,
       title: 'Driver Fun Facts',
       facts: [
-        'Fun facts are being generated for this driver.',
-        'Check back in a few moments for interesting trivia and insights.',
-        "Visit the driver's profile for detailed statistics and career information.",
+        'Fun facts data is currently unavailable. Please try again later.',
+        'Data is being generated',
+        'Please check back shortly',
       ],
       generatedAt: new Date().toISOString(),
       isFallback: true,

@@ -31,97 +31,122 @@ export class NewsService {
    */
   async getNews(topic: string = 'f1'): Promise<AiNewsDto> {
     try {
-      // Check database for latest response first
-      const latestResponse = await this.aiResponseService.getLatestResponse<AiNewsDto>(
+      // 1. Check database for cached response with expiration check
+      const cached = await this.aiResponseService.getLatestResponseIfValid<AiNewsDto>(
         'news',
         'general',
         0, // Use 0 for general news (no specific entity)
+        this.newsTTL,
         undefined, // No season
         undefined, // No event
       );
 
-      if (latestResponse) {
-        // Check if cached data is still valid (not expired)
-        const generatedAt = new Date(latestResponse.generatedAt);
-        const ageInSeconds = (Date.now() - generatedAt.getTime()) / 1000;
-        
-        if (ageInSeconds < latestResponse.ttlSeconds) {
-          this.logger.log(`Returning cached database response for news topic: ${topic} (age: ${Math.floor(ageInSeconds / 60)} minutes)`);
-          return latestResponse;
-        } else {
-          this.logger.log(`Cached news response expired (age: ${Math.floor(ageInSeconds / 60)} minutes, TTL: ${latestResponse.ttlSeconds / 60} minutes). Generating new response.`);
-          // Continue to generate new response below
-        }
+      // 2. If found and valid, return cached response
+      if (cached && !cached.isExpired) {
+        this.logger.log(`Returning valid cached news response for topic: ${topic}`);
+        return cached.data;
       }
 
+      // 3. If found but expired, or not found - try to generate new response
       // Check if AI features are enabled
       const aiEnabled = this.config.get<boolean>('AI_FEATURES_ENABLED');
       if (!aiEnabled) {
-        this.logger.warn('AI features are disabled, returning fallback');
+        // Return expired cached if available, otherwise fallback
+        if (cached?.isExpired) {
+          this.logger.warn('AI features disabled, returning expired cached news response');
+          return cached.data;
+        }
         return this.getFallbackNews(topic);
       }
 
       // Check quota
       if (!this.quotaService.hasQuota()) {
-        this.logger.warn('Daily quota exceeded, using fallback');
+        // Return expired cached if available, otherwise fallback
+        if (cached?.isExpired) {
+          this.logger.warn('Daily quota exceeded, returning expired cached news response');
+          return cached.data;
+        }
         return this.getFallbackNews(topic);
       }
 
-      // Fetch news articles
-      this.logger.log(`Fetching news articles for topic: ${topic}`);
-      const articles = await this.newsFeedAdapter.fetchNews(topic, 10);
+      // 4. Try to generate new response
+      try {
+        // Fetch news articles
+        this.logger.log(`Fetching news articles for topic: ${topic}`);
+        const articles = await this.newsFeedAdapter.fetchNews(topic, 10);
 
-      if (articles.length === 0) {
-        this.logger.warn('No articles found, returning fallback');
+        if (articles.length === 0) {
+          // Return expired cached if available, otherwise fallback
+          if (cached?.isExpired) {
+            this.logger.warn('No articles found, returning expired cached news response');
+            return cached.data;
+          }
+          return this.getFallbackNews(topic);
+        }
+
+        // Generate AI summary
+        this.logger.log(`Generating AI summary for ${articles.length} articles`);
+        const userPrompt = NEWS_USER_TEMPLATE(articles);
+        
+        interface GeminiNewsResponse {
+          summary: string;
+          bullets: string[];
+          citations: Array<{ title: string; url: string; source: string }>;
+        }
+
+        const aiResponse = await this.geminiService.generateJSON<GeminiNewsResponse>(
+          NEWS_SYSTEM_PROMPT,
+          userPrompt
+        );
+
+        // Track quota usage
+        this.quotaService.increment();
+
+        // Build response
+        const response: AiNewsDto = {
+          summary: aiResponse.summary,
+          bullets: aiResponse.bullets,
+          citations: aiResponse.citations,
+          generatedAt: new Date().toISOString(),
+          ttlSeconds: this.newsTTL,
+          isFallback: false,
+        };
+
+        // 5. If expired response existed, delete it before storing new one
+        if (cached?.isExpired) {
+          await this.aiResponseService.deleteLatestResponse(
+            'news',
+            'general',
+            0,
+            undefined,
+            undefined,
+          );
+        }
+
+        // 6. Store the new response in database
+        await this.aiResponseService.storeResponse(
+          'news',
+          'general',
+          0, // Use 0 for general news (no specific entity)
+          response,
+          undefined,
+          undefined,
+          false,
+          'Powered by Gemini AI'
+        );
+        this.logger.log(`Successfully generated and stored news for topic: ${topic}`);
+
+        return response;
+      } catch (apiError) {
+        // 7. API failed - return expired cached if available
+        if (cached?.isExpired) {
+          this.logger.warn(`API failed, returning expired cached news response: ${apiError.message}`);
+          return cached.data;
+        }
+        // 8. No cached response - return fallback
+        this.logger.error(`No cached response and API failed: ${apiError.message}`);
         return this.getFallbackNews(topic);
       }
-
-      // Generate AI summary
-      this.logger.log(`Generating AI summary for ${articles.length} articles`);
-      const userPrompt = NEWS_USER_TEMPLATE(articles);
-      
-      interface GeminiNewsResponse {
-        summary: string;
-        bullets: string[];
-        citations: Array<{ title: string; url: string; source: string }>;
-      }
-
-      const aiResponse = await this.geminiService.generateJSON<GeminiNewsResponse>(
-        NEWS_SYSTEM_PROMPT,
-        userPrompt
-      );
-
-      // Track quota usage
-      this.quotaService.increment();
-
-      // Clean up any URLs that might have slipped into the text
-      const cleanedSummary = this.removeUrlsFromText(aiResponse.summary);
-      const cleanedBullets = aiResponse.bullets.map(bullet => this.removeUrlsFromText(bullet));
-
-      // Build response
-      const response: AiNewsDto = {
-        summary: cleanedSummary,
-        bullets: cleanedBullets,
-        citations: aiResponse.citations,
-        generatedAt: new Date().toISOString(),
-        ttlSeconds: this.newsTTL,
-        isFallback: false,
-      };
-
-      // Store the response in database
-      await this.aiResponseService.storeResponse(
-        'news',
-        'general',
-        0, // Use 0 for general news (no specific entity)
-        response,
-        undefined,
-        undefined,
-        false,
-        'Powered by Gemini AI'
-      );
-      this.logger.log(`Successfully generated and stored news for topic: ${topic}`);
-
-      return response;
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating news summary: ${error.message}`, error.stack);
@@ -132,46 +157,16 @@ export class NewsService {
   }
 
   /**
-   * Remove URLs from text content (summary and bullets)
-   * URLs should only appear in citations
-   */
-  private removeUrlsFromText(text: string): string {
-    // Remove URLs (http/https URLs)
-    let cleaned = text.replace(/https?:\/\/[^\s\)]+/gi, '');
-    
-    // Clean up any trailing parentheses or commas left behind
-    cleaned = cleaned.replace(/\s*\(\s*,?\s*\)/g, '');
-    cleaned = cleaned.replace(/\s*,\s*,/g, ',');
-    cleaned = cleaned.replace(/,\s*\)/g, ')');
-    cleaned = cleaned.replace(/\(\s*,/g, '(');
-    
-    // Clean up multiple spaces
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    
-    // Remove trailing commas, periods, or spaces before punctuation
-    cleaned = cleaned.replace(/,\s*([.,;:!?])/g, '$1');
-    
-    return cleaned;
-  }
-
-  /**
-   * Fallback news when AI generation fails
+   * Fallback news when AI generation fails and no cached response available
    */
   private getFallbackNews(topic: string): AiNewsDto {
     return {
-      summary: 'F1 news is temporarily unavailable. AI-generated summaries will return shortly.',
+      summary: 'F1 news data is currently unavailable. Please try again later.',
       bullets: [
-        'Live news summaries are being generated',
-        'Visit Formula1.com for the latest updates',
-        'Check back in a few minutes for AI-powered news',
+        'Data is being generated',
+        'Please check back shortly',
       ],
-      citations: [
-        {
-          title: 'Formula 1 Official Website',
-          url: 'https://www.formula1.com/en/latest.html',
-          source: 'Formula1.com',
-        },
-      ],
+      citations: [],
       generatedAt: new Date().toISOString(),
       ttlSeconds: 300, // 5 minutes
       isFallback: true,

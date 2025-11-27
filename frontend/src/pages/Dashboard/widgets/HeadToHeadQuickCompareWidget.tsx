@@ -4,7 +4,7 @@ import SearchableSelect from '../../../components/DropDownSearch/SearchableSelec
 import type { SelectOption } from '../../../components/DropDownSearch/SearchableSelect';
 import { teamColors } from '../../../lib/teamColors';
 import { getTeamLogo } from '../../../lib/teamAssets';
-import { driverHeadshots } from '../../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../../lib/driverHeadshotUtils';
 import { useThemeColor } from '../../../context/ThemeColorContext';
 import { useDashboardSharedData } from '../../../context/DashboardDataContext';
 import WidgetCard from './WidgetCard';
@@ -86,7 +86,7 @@ function HeadToHeadQuickCompareWidget({
     team: d1.teamName,
     teamColor: teamColors[d1.teamName] || teamColors['Default'],
     teamLogo: getTeamLogo(d1.teamName),
-    image: driverHeadshots[d1.fullName] || d1.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
+    image: getDriverHeadshot(d1.headshotUrl, d1.fullName),
     wins: d1.wins,
     podiums: d1.podiums,
     points: d1.points,
@@ -97,7 +97,7 @@ function HeadToHeadQuickCompareWidget({
     team: d2.teamName,
     teamColor: teamColors[d2.teamName] || teamColors['Default'],
     teamLogo: getTeamLogo(d2.teamName),
-    image: driverHeadshots[d2.fullName] || d2.headshotUrl || 'https://media.formula1.com/content/dam/fom-website/drivers/placeholder.png.transform/2col-retina/image.png',
+    image: getDriverHeadshot(d2.headshotUrl, d2.fullName),
     wins: d2.wins,
     podiums: d2.podiums,
     points: d2.points,

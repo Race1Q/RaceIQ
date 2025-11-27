@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Flex, Avatar, Text, HStack, Badge, Tooltip, Stat, StatLabel, StatNumber, useColorModeValue } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { teamColors } from '../../lib/teamColors';
-import { driverHeadshots } from '../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../lib/driverHeadshotUtils';
 import { optimizeF1ImageUrl } from '../../lib/imageOptimizer';
 
 interface DriverStandingCardProps {
@@ -24,7 +24,7 @@ export const DriverStandingCard: React.FC<DriverStandingCardProps> = ({
   const subtleBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
   
   // Get the driver headshot URL with fallback chain and optimize for smaller size
-  const headshotUrl = optimizeF1ImageUrl(driverHeadshots[fullName] || profileImageUrl, 'small') || undefined;
+  const headshotUrl = optimizeF1ImageUrl(getDriverHeadshot(profileImageUrl, fullName), 'small') || undefined;
   
   // Create soft gradient tints using hex with alpha (#RRGGBBAA)
   const baseGradient = useColorModeValue(

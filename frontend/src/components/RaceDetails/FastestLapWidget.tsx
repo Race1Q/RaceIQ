@@ -1,13 +1,14 @@
 // frontend/src/components/RaceDetails/FastestLapWidget.tsx
 import { Box, Heading, Text, VStack, Image, Flex, Icon } from '@chakra-ui/react';
 import { Zap } from 'lucide-react';
-import { driverHeadshots } from '../../lib/driverHeadshots';
-import userIcon from '../../assets/UserIcon.png';
+import { getDriverHeadshot } from '../../lib/driverHeadshotUtils';
 
 interface FastestLap {
   driver_id?: string | number;
   driver_code?: string;
   driver_name?: string;
+  driver_picture?: string | null;
+  driverProfileImageUrl?: string | null;
   constructor_id?: string | number;
   constructor_name?: string;
   lap_number?: number;
@@ -20,7 +21,10 @@ const FastestLapWidget = ({ data }: { data: FastestLap | null | undefined }) => 
   }
 
   const driverName = data.driver_name || data.driver_code || String(data.driver_id || 'Unknown');
-  const headshot = driverHeadshots[driverName] || userIcon;
+  const headshot = getDriverHeadshot(
+    data.driverProfileImageUrl || data.driver_picture,
+    driverName
+  );
 
   const formatLapTime = (ms: number | null | undefined) => {
     if (!ms || ms <= 0) return '--:--.---';
@@ -77,7 +81,7 @@ const FastestLapWidget = ({ data }: { data: FastestLap | null | undefined }) => 
         filter="contrast(1.1) brightness(1.1)"
         transform="scaleX(-1)"
         zIndex={3}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).src = userIcon; }}
+        onError={(e) => { (e.currentTarget as HTMLImageElement).src = getDriverHeadshot(null, null); }}
       />
       <VStack align="flex-start" w="100%" h="100%" zIndex={2} position="relative" justify="space-between">
         <Flex align="center" gap={2}>

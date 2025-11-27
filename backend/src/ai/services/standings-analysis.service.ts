@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
 import { PersistentCacheService } from '../cache/persistent-cache.service';
 import { AiResponseService } from './ai-response.service';
@@ -8,62 +9,72 @@ import { AiStandingsAnalysisDto } from '../dto/ai-standings-analysis.dto';
 @Injectable()
 export class StandingsAnalysisService {
   private readonly logger = new Logger(StandingsAnalysisService.name);
-  private readonly CACHE_TTL_HOURS = 168; // 168 hours (1 week) cache for standings analysis
+  private readonly CACHE_TTL_SECONDS: number;
 
   constructor(
     private readonly geminiService: GeminiService,
     private readonly cacheService: PersistentCacheService,
     private readonly aiResponseService: AiResponseService,
     private readonly standingsService: StandingsService,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    // Get TTL from config, default to 168 hours (1 week)
+    const ttlHours = this.config.get<number>('AI_STANDINGS_TTL_H') || 168;
+    this.CACHE_TTL_SECONDS = ttlHours * 3600; // Convert hours to seconds
+  }
 
   async getStandingsAnalysis(season?: number): Promise<AiStandingsAnalysisDto> {
     const currentSeason = season || new Date().getFullYear();
     
     try {
-      // Check database for latest response first
-      const latestResponse = await this.aiResponseService.getLatestResponse<AiStandingsAnalysisDto>(
+      // 1. Check database for cached response with expiration check
+      const cached = await this.aiResponseService.getLatestResponseIfValid<AiStandingsAnalysisDto>(
         'standings_analysis',
         'season',
         currentSeason,
+        this.CACHE_TTL_SECONDS,
         currentSeason,
       );
 
-      if (latestResponse) {
-        this.logger.log(`Returning latest database response for standings analysis, season ${currentSeason}`);
-        return latestResponse;
+      // 2. If found and valid, return cached response
+      if (cached && !cached.isExpired) {
+        this.logger.log(`Returning valid cached standings analysis for season ${currentSeason}`);
+        return cached.data;
       }
 
-      this.logger.log(`Generating AI standings analysis for season: ${currentSeason}`);
+      // 3. If found but expired, or not found - try to generate new response
+      // 4. Try to generate new response
+      try {
+        this.logger.log(`Generating AI standings analysis for season: ${currentSeason}`);
 
-      // Fetch current standings data
-      const standingsData = await this.standingsService.getStandingsByYear(currentSeason);
-      const driverStandings = standingsData.driverStandings;
-      const constructorStandings = standingsData.constructorStandings;
+        // Fetch current standings data
+        const standingsData = await this.standingsService.getStandingsByYear(currentSeason);
+        const driverStandings = standingsData.driverStandings;
+        const constructorStandings = standingsData.constructorStandings;
 
-      // Prepare data for Gemini
-      const analysisData = {
-        season: currentSeason,
-        drivers: driverStandings.slice(0, 10).map(driver => ({
-          position: driver.position,
-          name: driver.driverFullName,
-          constructor: driver.constructorName,
-          points: driver.points,
-          wins: driver.wins,
-          podiums: 0, // Not available in current DTO
-        })),
-        constructors: constructorStandings.slice(0, 10).map(constructor => ({
-          position: constructor.position,
-          name: constructor.team.name,
-          points: constructor.points,
-          wins: constructor.wins,
-          podiums: 0, // Not available in current DTO
-        })),
-      };
+        // Prepare data for Gemini
+        const analysisData = {
+          season: currentSeason,
+          drivers: driverStandings.slice(0, 10).map(driver => ({
+            position: driver.position,
+            name: driver.driverFullName,
+            constructor: driver.constructorName,
+            points: driver.points,
+            wins: driver.wins,
+            podiums: 0, // Not available in current DTO
+          })),
+          constructors: constructorStandings.slice(0, 10).map(constructor => ({
+            position: constructor.position,
+            name: constructor.team.name,
+            points: constructor.points,
+            wins: constructor.wins,
+            podiums: 0, // Not available in current DTO
+          })),
+        };
 
-      const systemPrompt = `You are an expert F1 analyst and commentator. Generate comprehensive, engaging analysis of Formula 1 championship standings based on the current data. Focus on providing insightful commentary that would interest F1 fans, including championship battles, trends, surprises, and predictions.`;
+        const systemPrompt = `You are an expert F1 analyst and commentator. Generate comprehensive, engaging analysis of Formula 1 championship standings based on the current data. Focus on providing insightful commentary that would interest F1 fans, including championship battles, trends, surprises, and predictions.`;
 
-      const userPrompt = `Generate detailed analysis of the ${analysisData.season} Formula 1 championship standings.
+        const userPrompt = `Generate detailed analysis of the ${analysisData.season} Formula 1 championship standings.
 
 Current Driver Standings (Top 10):
 ${analysisData.drivers.map((d, i) => `${i + 1}. ${d.name} (${d.constructor}) - ${d.points} pts (${d.wins} wins, ${d.podiums} podiums)`).join('\n')}
@@ -100,63 +111,79 @@ Format as JSON with these exact fields:
 
 Make it engaging and informative for F1 fans, with specific insights about the current championship battles.`;
 
-      const aiResponse = await this.geminiService.generateJSON<Omit<AiStandingsAnalysisDto, 'generatedAt' | 'isFallback'>>(
-        systemPrompt,
-        userPrompt
-      );
+        const aiResponse = await this.geminiService.generateJSON<Omit<AiStandingsAnalysisDto, 'generatedAt' | 'isFallback'>>(
+          systemPrompt,
+          userPrompt
+        );
 
-      const result: AiStandingsAnalysisDto = {
-        ...aiResponse,
-        generatedAt: new Date().toISOString(),
-        isFallback: false,
-      };
+        const result: AiStandingsAnalysisDto = {
+          ...aiResponse,
+          generatedAt: new Date().toISOString(),
+          isFallback: false,
+        };
 
-      // Store the response in database
-      await this.aiResponseService.storeResponse(
-        'standings_analysis',
-        'season',
-        currentSeason,
-        result,
-        currentSeason,
-        undefined,
-        false,
-        'Powered by Gemini AI'
-      );
+        // 5. If expired response existed, delete it before storing new one
+        if (cached?.isExpired) {
+          await this.aiResponseService.deleteLatestResponse(
+            'standings_analysis',
+            'season',
+            currentSeason,
+            currentSeason,
+          );
+        }
 
-      return result;
+        // 6. Store the new response in database
+        await this.aiResponseService.storeResponse(
+          'standings_analysis',
+          'season',
+          currentSeason,
+          result,
+          currentSeason,
+          undefined,
+          false,
+          'Powered by Gemini AI'
+        );
+
+        return result;
+      } catch (apiError) {
+        // 7. API failed - return expired cached if available
+        if (cached?.isExpired) {
+          this.logger.warn(`API failed, returning expired cached standings analysis: ${apiError.message}`);
+          return cached.data;
+        }
+        // 8. No cached response - return fallback
+        this.logger.error(`No cached response and API failed: ${apiError.message}`);
+        throw apiError; // Re-throw to be caught by outer catch
+      }
     } catch (error) {
       console.error('SERVICE FAILED:', error);
       this.logger.error(`Error generating standings analysis: ${error.message}`, error.stack);
       
-      // Return fallback data
+      // Final fallback
       return {
-        overview: `The ${currentSeason} Formula 1 season continues to deliver exciting championship battles across both driver and constructor standings.`,
+        overview: `Standings analysis data is currently unavailable. Please try again later.`,
         keyInsights: [
-          'Championship battles are heating up as we approach the season midpoint',
-          'Consistent point scoring has been key to championship success',
-          'Midfield teams are showing increased competitiveness',
-          'Development race is intensifying between top teams'
+          'Data is being generated',
+          'Please check back shortly',
         ],
         driverAnalysis: {
-          leader: 'The championship leader continues to show strong consistency and racecraft.',
-          biggestRiser: 'Several drivers have shown impressive improvement in recent races.',
-          biggestFall: 'Some drivers have faced challenges adapting to the current regulations.',
-          midfieldBattle: 'The midfield battle remains incredibly tight with multiple drivers fighting for position.'
+          leader: 'Data is being generated.',
+          biggestRiser: 'Data is being generated.',
+          biggestFall: 'Data is being generated.',
+          midfieldBattle: 'Data is being generated.'
         },
         constructorAnalysis: {
-          leader: 'The leading constructor has demonstrated superior car development and strategy.',
-          competition: 'The constructor championship remains competitive with multiple teams in contention.',
-          surprises: 'Some teams have exceeded expectations while others have faced unexpected challenges.'
+          leader: 'Data is being generated.',
+          competition: 'Data is being generated.',
+          surprises: 'Data is being generated.'
         },
         trends: [
-          'Increased competitiveness across the grid',
-          'Strategic decisions playing crucial role in race outcomes',
-          'Development race intensifying as season progresses'
+          'Data is being generated',
+          'Please check back shortly',
         ],
         predictions: [
-          'Championship battles likely to intensify in second half of season',
-          'Midfield teams expected to continue closing gap to front runners',
-          'Constructor championship could go down to the wire'
+          'Data is being generated',
+          'Please check back shortly',
         ],
         generatedAt: new Date().toISOString(),
         isFallback: true,

@@ -33,7 +33,7 @@ import { buildApiUrl } from '../../lib/api';
 import { useProfile } from '../../hooks/useProfile';
 import { sendRaceUpdate } from '../../services/notifications';
 import { useProfileUpdate } from '../../context/ProfileUpdateContext';
-import { driverHeadshots } from '../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../lib/driverHeadshotUtils';
 import { useThemeColor } from '../../context/ThemeColorContext';
 
 // Extended interface to include the new field
@@ -172,7 +172,10 @@ const ProfilePage: React.FC = () => {
       if (favoriteDriver) {
         const driverName = favoriteDriver.full_name || favoriteDriver.name || [favoriteDriver.first_name, favoriteDriver.last_name].filter(Boolean).join(' ');
         if (driverName) {
-          return driverHeadshots[driverName] || user?.picture;
+          return getDriverHeadshot(
+            (favoriteDriver as any).profile_image_url || (favoriteDriver as any).image_url,
+            driverName
+          ) || user?.picture;
         }
       }
     }

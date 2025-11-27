@@ -19,7 +19,7 @@ import { FaUnlock, FaSignInAlt, FaStar, FaChartBar, FaCog, FaUsers, FaTrophy, Fa
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link } from 'react-router-dom';
 // Car images are available in public/assets/2025_Cars/
-import { driverHeadshots } from '../../lib/driverHeadshots';
+import { getDriverHeadshot } from '../../lib/driverHeadshotUtils';
 
 const ComparisonLoginPrompt: React.FC = () => {
   const { loginWithRedirect } = useAuth0();
@@ -140,7 +140,7 @@ const ComparisonLoginPrompt: React.FC = () => {
               
               {/* Driver Headshot Layer */}
               <Image
-                src={driverHeadshots['Lewis Hamilton']}
+                src={getDriverHeadshot(null, 'Lewis Hamilton')}
                 alt="Lewis Hamilton"
                 position="absolute"
                 top="50%"
