@@ -430,7 +430,7 @@ export class OpenF1Service {
           const qualiToInsert = qualiResults.map(res => ({
             session_id: qualiSession.id,
             driver_id: ergastDriverRefMap.get(res.Driver.driverId),
-            constructor_id: constructorNameMap.get(res.Constructor.name),
+            constructor_id: this.normalizeConstructorName(res.Constructor.name, constructorNameMap),
             position: parseInt(res.position, 10),
             q1_time_ms: this.timeStringToMs(res.Q1),
             q2_time_ms: this.timeStringToMs(res.Q2),
@@ -454,7 +454,7 @@ export class OpenF1Service {
           const raceResultsToInsert = raceResults.map(res => ({
             session_id: raceSession.id,
             driver_id: ergastDriverRefMap.get(res.Driver.driverId),
-            constructor_id: constructorNameMap.get(res.Constructor.name),
+            constructor_id: this.normalizeConstructorName(res.Constructor.name, constructorNameMap),
             position: parseInt(res.position, 10),
             points: parseFloat(res.points),
             grid: parseInt(res.grid, 10),
@@ -825,6 +825,74 @@ export class OpenF1Service {
   ///// ----- ***** BACKFILL CONSTRUCTOR-DRIVERS (ERGAST) ***** ----- /////
 
   /**
+   * Normalizes Ergast API constructor names to our database constructor names.
+   * Uses priority order to handle ambiguous cases (e.g., "RB" vs "Red Bull Racing").
+   * 
+   * @param ergastName - Constructor name from Ergast API
+   * @param constructorNameMap - Map of database constructor names to IDs
+   * @returns The database constructor ID, or undefined if no match found
+   */
+  private normalizeConstructorName(
+    ergastName: string | undefined,
+    constructorNameMap: Map<string, number>
+  ): number | undefined {
+    if (!ergastName) return undefined;
+
+    const normalized = ergastName.trim();
+
+    // DEBUG: Log what we're trying to normalize (only for Red Bull related)
+    const isRedBullRelated = normalized.includes('Bull') || normalized === 'RB' || normalized === 'RBR';
+    if (isRedBullRelated) {
+      this.logger.debug(`[NORMALIZE] Input: "${normalized}"`);
+      this.logger.debug(`[NORMALIZE] Available constructors in DB: ${Array.from(constructorNameMap.keys()).filter(k => k.includes('Bull') || k.includes('RB')).join(', ')}`);
+    }
+
+    // Priority order: Check specific names first before generic ones
+    // This prevents "RB" from matching when it should be "Red Bull Racing"
+    
+    // Red Bull Racing variants (check these FIRST)
+    if (normalized === 'Red Bull Racing' || normalized === 'Red Bull' || normalized === 'RBR') {
+      const result = constructorNameMap.get('Red Bull Racing') || constructorNameMap.get('Red Bull');
+      if (isRedBullRelated) {
+        this.logger.debug(`[NORMALIZE] Matched Red Bull variant: "${normalized}" -> constructor_id: ${result}`);
+      }
+      return result;
+    }
+
+    // RB F1 Team / Racing Bulls / VCARB variants
+    if (normalized === 'RB' || normalized === 'RB F1 Team' || normalized === 'Racing Bulls' || normalized.includes('VCARB')) {
+      // Check for exact matches first
+      if (constructorNameMap.has('RB F1 Team')) {
+        const result = constructorNameMap.get('RB F1 Team');
+        if (isRedBullRelated) {
+          this.logger.debug(`[NORMALIZE] Matched RB F1 Team: "${normalized}" -> constructor_id: ${result}`);
+        }
+        return result;
+      }
+      if (constructorNameMap.has('Racing Bulls')) {
+        const result = constructorNameMap.get('Racing Bulls');
+        if (isRedBullRelated) {
+          this.logger.debug(`[NORMALIZE] Matched Racing Bulls: "${normalized}" -> constructor_id: ${result}`);
+        }
+        return result;
+      }
+      // Fallback to "RB" if that's what exists in DB
+      const result = constructorNameMap.get('RB');
+      if (isRedBullRelated) {
+        this.logger.debug(`[NORMALIZE] Matched RB (fallback): "${normalized}" -> constructor_id: ${result}`);
+      }
+      return result;
+    }
+
+    // Exact match for all other constructors
+    const result = constructorNameMap.get(normalized);
+    if (isRedBullRelated) {
+      this.logger.debug(`[NORMALIZE] Exact match: "${normalized}" -> constructor_id: ${result}`);
+    }
+    return result;
+  }
+
+  /**
    * Backfills the constructor_drivers table for a range of seasons using Ergast standings.
    * Prerequisites:
    *  - drivers.ergast_driver_ref populated
@@ -848,6 +916,12 @@ export class OpenF1Service {
     if (consErr) throw new Error(`Failed to fetch constructors: ${consErr.message}`);
     const consNameToId = new Map((allConstructors ?? []).map((c: any) => [c.name, c.id]));
 
+    // DEBUG: Log all constructors in DB (especially Red Bull related)
+    const redBullConstructors = Array.from(consNameToId.entries()).filter(([name]) => 
+      name.includes('Bull') || name.includes('RB')
+    );
+    this.logger.debug(`[BACKFILL] Red Bull/RB constructors in DB: ${JSON.stringify(redBullConstructors)}`);
+
     // Load seasons (year -> id)
     const { data: allSeasons, error: seaErr } = await this.supabaseService.client
       .from('seasons')
@@ -870,7 +944,35 @@ export class OpenF1Service {
           const driverRef = s?.Driver?.driverId;
           const constructorName = s?.Constructors?.[0]?.name;
           const driverId = driverRefToId.get(driverRef);
-          const constructorId = consNameToId.get(constructorName);
+          
+          // DEBUG: Log ALL Red Bull related drivers (not just specific refs)
+          const isRedBullDriver = driverRef === 'verstappen' || driverRef === 'max_verstappen' || driverRef === 'perez' || driverRef === 'tsunoda' || driverRef === 'ricciardo';
+          const isRedBullConstructor = constructorName && (constructorName.includes('Bull') || constructorName === 'RB' || constructorName === 'RBR');
+          
+          if (isRedBullDriver || isRedBullConstructor) {
+            this.logger.debug(`[BACKFILL] Driver: ${driverRef}, driver_id: ${driverId}, Ergast constructor name: "${constructorName}"`);
+          }
+          
+          const constructorId = this.normalizeConstructorName(constructorName, consNameToId);
+          
+          // DEBUG: Log the mapping result for Red Bull drivers
+          if (isRedBullDriver || isRedBullConstructor) {
+            this.logger.debug(`[BACKFILL] Driver: ${driverRef} (ID: ${driverId}), Mapped to constructor_id: ${constructorId}`);
+            if (constructorId) {
+              const mappedConstructorName = Array.from(consNameToId.entries()).find(([_, id]) => id === constructorId)?.[0];
+              this.logger.debug(`[BACKFILL] Constructor ID ${constructorId} = "${mappedConstructorName}"`);
+            }
+            if (!driverId) {
+              this.logger.warn(`[BACKFILL] ⚠️ Driver ${driverRef} NOT FOUND in database!`);
+            }
+            if (!constructorId) {
+              this.logger.warn(`[BACKFILL] ⚠️ Constructor "${constructorName}" NOT FOUND for driver ${driverRef}!`);
+            }
+            if (driverId && constructorId) {
+              this.logger.debug(`[BACKFILL] ✓ Will upsert: driver_id=${driverId}, constructor_id=${constructorId}`);
+            }
+          }
+          
           if (driverId && constructorId) {
             toUpsert.push({ season_id: seasonId, driver_id: driverId, constructor_id: constructorId });
           } else {
@@ -878,8 +980,37 @@ export class OpenF1Service {
             if (!constructorId) this.logger.warn(`(${year}) constructor map miss: '${constructorName}'`);
           }
         }
+        
+        // DEBUG: Show ALL Red Bull related entries that will be upserted
+        const redBullUpserts = toUpsert.filter(u => {
+          const driverRef = Array.from(driverRefToId.entries()).find(([_, id]) => id === u.driver_id)?.[0];
+          const constructorName = Array.from(consNameToId.entries()).find(([_, id]) => id === u.constructor_id)?.[0];
+          return (driverRef && (driverRef === 'verstappen' || driverRef === 'max_verstappen' || driverRef === 'perez' || driverRef === 'tsunoda' || driverRef === 'ricciardo')) ||
+                 (constructorName && (constructorName.includes('Bull') || constructorName === 'RB' || constructorName === 'RB F1 Team'));
+        });
+        if (redBullUpserts.length > 0) {
+          this.logger.debug(`[BACKFILL] All Red Bull related entries to upsert: ${JSON.stringify(redBullUpserts.map(u => {
+            const driverRef = Array.from(driverRefToId.entries()).find(([_, id]) => id === u.driver_id)?.[0];
+            const constructorName = Array.from(consNameToId.entries()).find(([_, id]) => id === u.constructor_id)?.[0];
+            return { driver_ref: driverRef, driver_id: u.driver_id, constructor_id: u.constructor_id, constructor_name: constructorName };
+          }))}`);
+        }
 
         if (toUpsert.length) {
+          // DEBUG: Log what we're about to upsert for Red Bull drivers
+          const redBullMappings = toUpsert.filter(u => {
+            const driver = Array.from(driverRefToId.entries()).find(([ref, id]) => id === u.driver_id);
+            return driver && (driver[0] === 'verstappen' || driver[0] === 'max_verstappen' || driver[0] === 'perez' || driver[0] === 'tsunoda' || driver[0] === 'ricciardo');
+          });
+          if (redBullMappings.length > 0) {
+            this.logger.debug(`[BACKFILL] Red Bull driver mappings to upsert: ${JSON.stringify(redBullMappings)}`);
+            redBullMappings.forEach(m => {
+              const driverRef = Array.from(driverRefToId.entries()).find(([_, id]) => id === m.driver_id)?.[0];
+              const constructorName = Array.from(consNameToId.entries()).find(([_, id]) => id === m.constructor_id)?.[0];
+              this.logger.debug(`[BACKFILL]   ${driverRef} -> constructor_id ${m.constructor_id} ("${constructorName}")`);
+            });
+          }
+          
           const { error } = await this.supabaseService.client
             .from('constructor_drivers')
             .upsert(toUpsert, { onConflict: 'season_id,constructor_id,driver_id' });
@@ -1056,6 +1187,37 @@ export class OpenF1Service {
     const driverConstructorMap = new Map<number, number>(
       (constructorDrivers ?? []).map((cd: any) => [Number(cd.driver_id), Number(cd.constructor_id)])
     );
+
+    // DEBUG: Log what constructor Red Bull drivers are mapped to
+    // First, get all constructors for lookup
+    const { data: allConstructors } = await this.supabaseService.client
+      .from('constructors')
+      .select('id, name');
+    const constructorIdToName = new Map((allConstructors ?? []).map((c: any) => [c.id, c.name]));
+    
+    // Get driver IDs for Red Bull drivers (Verstappen, Perez, Tsunoda, Ricciardo)
+    // Note: Max Verstappen uses 'max_verstappen' in Ergast, not 'verstappen' (which is Jos)
+    const { data: redBullDrivers } = await this.supabaseService.client
+      .from('drivers')
+      .select('id, first_name, last_name, ergast_driver_ref')
+      .in('ergast_driver_ref', ['verstappen', 'max_verstappen', 'perez', 'tsunoda', 'ricciardo']);
+    
+    if (redBullDrivers && redBullDrivers.length > 0) {
+      this.logger.debug(`[SPRINT] Red Bull drivers found: ${JSON.stringify(redBullDrivers.map(d => ({ id: d.id, name: `${d.first_name} ${d.last_name}`, ref: d.ergast_driver_ref })))}`);
+      
+      // DEBUG: Show what's in constructor_drivers for these drivers
+      this.logger.debug(`[SPRINT] constructor_drivers entries for season ${season.id}: ${JSON.stringify((constructorDrivers ?? []).filter((cd: any) => redBullDrivers.some((d: any) => d.id === cd.driver_id)).map((cd: any) => ({ driver_id: cd.driver_id, constructor_id: cd.constructor_id })))}`);
+      
+      redBullDrivers.forEach((driver: any) => {
+        const constructorId = driverConstructorMap.get(driver.id);
+        if (constructorId) {
+          const constructorName = constructorIdToName.get(constructorId);
+          this.logger.debug(`[SPRINT] ${driver.first_name} ${driver.last_name} (ID: ${driver.id}, ref: ${driver.ergast_driver_ref}) -> constructor_id: ${constructorId} ("${constructorName}")`);
+        } else {
+          this.logger.warn(`[SPRINT] ⚠️ ${driver.first_name} ${driver.last_name} (ID: ${driver.id}, ref: ${driver.ergast_driver_ref}) has NO constructor mapping in constructor_drivers table!`);
+        }
+      });
+    }
 
     // 4) All SPRINT sessions for the season
     const { data: sprintSessions } = await this.supabaseService.client

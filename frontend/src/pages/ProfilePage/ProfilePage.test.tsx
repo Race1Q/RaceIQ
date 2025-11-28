@@ -190,24 +190,4 @@ describe('ProfilePage', () => {
     expect(screen.getByText('alice@example.com')).toBeInTheDocument();
   });
 
-  it('shows a warning toast when clicking "Delete Account"', async () => {
-    setupInitialFetches();
-    renderWithProviders(<ProfilePage />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-
-    const deleteButton = screen.queryByRole('button', { name: /delete account/i });
-    if (deleteButton) {
-      fireEvent.click(deleteButton);
-      // Toast might be called or might not be implemented yet
-      if (toastMock.mock.calls.length > 0) {
-        const warnArgs = toastMock.mock.calls.find(([arg]) => arg.status === 'warning')?.[0];
-        if (warnArgs) {
-          expect(warnArgs.status).toBe('warning');
-        }
-      }
-    }
-    // Test passes if delete button doesn't exist or toast isn't triggered
-    expect(true).toBe(true);
-  });
-
 });
