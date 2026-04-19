@@ -80,7 +80,16 @@ describe('useHomePageData', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue(
+          Array.from({ length: 10 }, (_, i) => ({ year: new Date().getFullYear() - i })),
+        ),
+      }),
+    );
+
     // Set up default mock implementation
     mockFetchCached.mockImplementation(async (key: string, url: string) => {
       if (url.includes('featured-driver')) {
@@ -94,6 +103,7 @@ describe('useHomePageData', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -111,6 +121,7 @@ describe('useHomePageData', () => {
 
     expect(result.current.featuredDriver).toEqual(mockFeaturedDriver);
     expect(result.current.seasonSchedule).toEqual(mockRaces);
+    expect(result.current.displaySeasonYear).toBe(new Date().getFullYear());
     expect(result.current.error).toBeNull();
     expect(result.current.isFallback).toBe(false);
   });
@@ -216,6 +227,7 @@ describe('useHomePageData', () => {
     // Check all return properties exist
     expect(result.current).toHaveProperty('featuredDriver');
     expect(result.current).toHaveProperty('seasonSchedule');
+    expect(result.current).toHaveProperty('displaySeasonYear');
     expect(result.current).toHaveProperty('loading');
     expect(result.current).toHaveProperty('error');
     expect(result.current).toHaveProperty('isFallback');

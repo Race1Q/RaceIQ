@@ -14,6 +14,7 @@ import RacesSkeleton from './RacesSkeleton';
 import type { Race } from '../../types/races';
 import { apiFetch } from '../../lib/api';
 import { useThemeColor } from '../../context/ThemeColorContext';
+import { getCalendarSeasonYear, resolveFetchedSeasonYear } from '../../lib/seasonYear';
 
 // Local wrapper to keep minimalist callsites
 const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? path : `/${path}`}`);
@@ -193,8 +194,20 @@ const RacesPage: React.FC = () => {
 
   useEffect(() => {
     let alive = true;
-    fetchAvailableYears().then((ys) => { if (alive) setYears(ys); });
-    return () => { alive = false; };
+    fetchAvailableYears().then((ys) => {
+      if (!alive) return;
+      setYears(ys);
+      setSeason((prev) => {
+        const cal = getCalendarSeasonYear();
+        if (!ys.length) return prev;
+        if (ys.includes(prev)) return prev;
+        if (prev === cal) return resolveFetchedSeasonYear(cal, ys);
+        return prev;
+      });
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {

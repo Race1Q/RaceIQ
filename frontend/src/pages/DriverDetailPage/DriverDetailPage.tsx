@@ -23,6 +23,7 @@ import {
 } from '../../components/DriverCharts';
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import DriverBioCard from '../../components/DriverBioCard/DriverBioCard';
+import { SEASON_FALLBACK_YEAR } from '../../lib/seasonYear';
 
 const DriverDetailPage: React.FC = () => {
   const { driverId } = useParams<{ driverId: string }>();
@@ -239,7 +240,7 @@ const DriverDetailPage: React.FC = () => {
               <CumulativeProgressionChart 
                 data={progressionData} 
                 teamColor={teamColor} 
-                season={progressionData[0]?.year || new Date().getFullYear()}
+                season={progressionData[0]?.year ?? SEASON_FALLBACK_YEAR}
               />
             )}
           </Box>

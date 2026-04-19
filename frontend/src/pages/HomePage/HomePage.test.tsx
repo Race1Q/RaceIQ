@@ -70,6 +70,7 @@ vi.mock('../../hooks/useHomePageData', () => ({
         podium: null,
       },
     ],
+    displaySeasonYear: new Date().getFullYear(),
     loading: false,
     error: null,
   }),

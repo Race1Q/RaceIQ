@@ -5,6 +5,13 @@ import { BrowserRouter } from 'react-router-dom';
 import ConstructorStandings from './ConstructorStandings';
 import { ThemeColorProvider } from '../../context/ThemeColorContext';
 
+vi.mock('../../hooks/useResolvedDefaultSeasonYear', () => ({
+  useResolvedDefaultSeasonYear: () => ({
+    defaultSeasonYear: new Date().getFullYear(),
+    loading: false,
+  }),
+}));
+
 // Mock Auth0
 vi.mock('@auth0/auth0-react', () => ({
   useAuth0: () => ({

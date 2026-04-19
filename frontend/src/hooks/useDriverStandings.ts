@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { buildApiUrl } from '../lib/api';
+import { resolveFetchedSeasonYear } from '../lib/seasonYear';
 
 export interface DriverStanding {
   id: number;
@@ -41,8 +42,27 @@ export const useDriverStandings = (season: number) => {
         });
         
         if (!alive) return; // Check after async operation
-        
-        const response = await fetch(buildApiUrl(`/api/drivers/standings/${season}`), {
+
+        let seasonYears: number[] = [];
+        try {
+          const seasonsRes = await fetch(buildApiUrl('/api/seasons'), {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (seasonsRes.ok) {
+            const seasonsJson = await seasonsRes.json();
+            if (Array.isArray(seasonsJson)) {
+              seasonYears = seasonsJson
+                .map((s: { year?: number }) => s.year)
+                .filter((y: unknown): y is number => typeof y === 'number' && Number.isFinite(y));
+            }
+          }
+        } catch {
+          // ignore; resolveFetchedSeasonYear handles empty list
+        }
+
+        const effectiveSeason = resolveFetchedSeasonYear(season, seasonYears);
+
+        const response = await fetch(buildApiUrl(`/api/drivers/standings/${effectiveSeason}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -68,7 +88,7 @@ export const useDriverStandings = (season: number) => {
           wins: d.wins ?? 0,
           podiums: d.podiums ?? 0,
           position: d.position ?? 0,
-          seasonYear: d.seasonyear ?? season,
+          seasonYear: d.seasonyear ?? effectiveSeason,
         }));
 
         if (alive) {

@@ -9,6 +9,8 @@ import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileC
 import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
 import { useDriversData } from '../../hooks/useDriversData';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
+import { SEASON_FALLBACK_YEAR } from '../../lib/seasonYear';
 import { useThemeColor } from '../../context/ThemeColorContext';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
@@ -29,7 +31,18 @@ const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
 );
 
 const Drivers = () => {
-  const { loading, error, isFallback, orderedTeamNames, groupedDrivers } = useDriversData(2025);
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
+  const [driverGridYear, setDriverGridYear] = useState(SEASON_FALLBACK_YEAR);
+  const appliedDefaultSeason = useRef(false);
+
+  useEffect(() => {
+    if (!resolvingDefaultSeason && !appliedDefaultSeason.current) {
+      appliedDefaultSeason.current = true;
+      setDriverGridYear(defaultSeasonYear);
+    }
+  }, [resolvingDefaultSeason, defaultSeasonYear]);
+
+  const { loading, error, isFallback, orderedTeamNames, groupedDrivers } = useDriversData(driverGridYear);
   const { accentColor, accentColorLight, accentColorRgba } = useThemeColor();
   const [selectedTeam, setSelectedTeam] = useState<string>('All');
   const [canScrollRight, setCanScrollRight] = useState(false);

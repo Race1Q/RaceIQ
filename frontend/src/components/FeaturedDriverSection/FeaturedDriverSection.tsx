@@ -22,13 +22,20 @@ import { countryCodeMap } from '../../lib/countryCodeUtils';
 import ReactCountryFlag from 'react-country-flag';
 
 import type { FeaturedDriver } from '../../types';
+import { getCalendarSeasonYear } from '../../lib/seasonYear';
 
 export interface FeaturedDriverSectionProps {
   featuredDriver: FeaturedDriver | null;
   isError: boolean;
+  /** Season label for stats (defaults to calendar year). */
+  statsSeasonYear?: number;
 }
 
-const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredDriver, isError }) => {
+const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({
+  featuredDriver,
+  isError,
+  statsSeasonYear,
+}) => {
   if (!featuredDriver) {
     return null;
   }
@@ -135,7 +142,7 @@ const FeaturedDriverSection: React.FC<FeaturedDriverSectionProps> = ({ featuredD
             <VStack align="flex-start" spacing={{ base: 4, md: 6 }} w="full" overflow="hidden">
               {/* Season Stats */}
               <VStack align="flex-start" spacing={{ base: 2, md: 3 }} w="full">
-                <Heading as="h3" size={{ base: 'sm', md: 'md' }} color="text-primary">{new Date().getFullYear()} Season</Heading>
+                <Heading as="h3" size={{ base: 'sm', md: 'md' }} color="text-primary">{statsSeasonYear ?? getCalendarSeasonYear()} Season</Heading>
                 <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={{ base: 3, md: 4 }} w="full">
                   <VStack
                     role="group"

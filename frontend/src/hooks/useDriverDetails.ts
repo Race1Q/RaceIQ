@@ -4,6 +4,7 @@ import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { fallbackDriverDetails } from '../lib/fallbackData/driverDetails';
 import { apiFetch } from '../lib/api';
+import { getCalendarSeasonYear, resolveFetchedSeasonYear } from '../lib/seasonYear';
 
 // Define types for the new driver details model
 export type DriverDetailsModel = {
@@ -105,8 +106,11 @@ export const useDriverDetails = (driverId?: string) => {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (seasonStatsResponse && Array.isArray(seasonStatsResponse)) {
-              const currentYear = new Date().getFullYear();
-              const currentSeasonData = seasonStatsResponse.find((s: any) => s.year === currentYear);
+              const poleYears = seasonStatsResponse
+                .map((s: any) => s.year)
+                .filter((y: unknown): y is number => typeof y === 'number' && Number.isFinite(y));
+              const poleSeasonYear = resolveFetchedSeasonYear(getCalendarSeasonYear(), poleYears);
+              const currentSeasonData = seasonStatsResponse.find((s: any) => s.year === poleSeasonYear);
               const totalCareerPoles = seasonStatsResponse.reduce((sum: number, s: any) => sum + (s.poles || 0), 0);
               
               polesData = {

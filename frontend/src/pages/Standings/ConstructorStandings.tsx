@@ -1,5 +1,5 @@
 // src/pages/Standings/ConstructorStandings.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast, Box, Flex, Text } from '@chakra-ui/react';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
@@ -8,6 +8,8 @@ import type { SelectOption } from '../../components/DropDownSearch/SearchableSel
 import StandingsSkeleton from './StandingsSkeleton';
 // import { teamColors } from '../../lib/teamColors';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
+import { getCalendarSeasonYear } from '../../lib/seasonYear';
 import ConstructorStandingCard from '../../components/Standings/ConstructorStandingCard';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
@@ -34,19 +36,30 @@ const ConstructorStandings: React.FC = () => {
   // const navigate = useNavigate();
 
   const [standings, setStandings] = useState<UiConstructorStanding[]>([]);
-  const [selectedSeason, setSelectedSeason] = useState<number>(new Date().getFullYear());
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
+  const [selectedSeason, setSelectedSeason] = useState<number>(getCalendarSeasonYear());
+  const appliedDefaultSeason = useRef(false);
+
+  useEffect(() => {
+    if (!resolvingDefaultSeason && !appliedDefaultSeason.current) {
+      appliedDefaultSeason.current = true;
+      setSelectedSeason(defaultSeasonYear);
+    }
+  }, [resolvingDefaultSeason, defaultSeasonYear]);
+
   const { standings: supaStandings, loading, error } = useConstructorStandings(selectedSeason);
 
-  // Generate season options from 2025 → 2000
+  // Generate season options (include current calendar year when ahead of 2025)
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 2000; year--) {
+    const cal = getCalendarSeasonYear();
+    for (let year = Math.max(2025, cal); year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (supaStandings) {
       const mapped: UiConstructorStanding[] = supaStandings.map(row => ({
         position: row.position,
@@ -61,7 +74,7 @@ const ConstructorStandings: React.FC = () => {
     }
   }, [supaStandings]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       toast({
         title: 'Failed to fetch constructor standings',

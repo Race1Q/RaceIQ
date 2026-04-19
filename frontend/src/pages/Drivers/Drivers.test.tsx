@@ -34,6 +34,13 @@ vi.mock('../../hooks/useUserProfile', () => ({
   }),
 }));
 
+vi.mock('../../hooks/useResolvedDefaultSeasonYear', () => ({
+  useResolvedDefaultSeasonYear: () => ({
+    defaultSeasonYear: 2025,
+    loading: false,
+  }),
+}));
+
 // Mock the drivers data hook - simple approach
 vi.mock('../../hooks/useDriversData', () => ({
   useDriversData: () => ({

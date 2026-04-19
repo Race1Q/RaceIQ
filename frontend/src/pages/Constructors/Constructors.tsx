@@ -1,5 +1,5 @@
 // src/pages/Constructors/Constructors.tsx
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   useToast,
   Box,
@@ -22,6 +22,8 @@ import { buildApiUrl } from '../../lib/api';
 import { teamCarImages } from '../../lib/teamCars';
 import { useConstructorStandings } from '../../hooks/useConstructorStandings';
 import { useConstructorStatsBulk } from '../../hooks/useConstructorStatsBulk';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
+import { getCalendarSeasonYear } from '../../lib/seasonYear';
 import { TEAM_META } from '../../theme/teamTokens';
 
 // Import critical layout components normally (don't lazy load)
@@ -133,7 +135,17 @@ const Constructors = () => {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<FilterOption>('active');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSeason] = useState<number>(new Date().getFullYear());
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
+  const [selectedSeason, setSelectedSeason] = useState<number>(getCalendarSeasonYear());
+  const appliedDefaultSeason = useRef(false);
+
+  useEffect(() => {
+    if (!resolvingDefaultSeason && !appliedDefaultSeason.current) {
+      appliedDefaultSeason.current = true;
+      setSelectedSeason(defaultSeasonYear);
+    }
+  }, [resolvingDefaultSeason, defaultSeasonYear]);
+
   // Replace individual stats fetching with bulk stats
   const { 
     data: bulkStats, 

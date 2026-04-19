@@ -42,6 +42,13 @@ vi.mock('../../hooks/useDriverStandings', () => ({
   useDriverStandings: vi.fn(),
 }));
 
+vi.mock('../../hooks/useResolvedDefaultSeasonYear', () => ({
+  useResolvedDefaultSeasonYear: () => ({
+    defaultSeasonYear: new Date().getFullYear(),
+    loading: false,
+  }),
+}));
+
 // Mock SearchableSelect component
 vi.mock('../../components/DropDownSearch/SearchableSelect', () => ({
   default: ({ label, options, value, onChange, placeholder }: any) => (

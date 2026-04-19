@@ -10,6 +10,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { buildApiUrl } from '../../../lib/api';
 import { useDashboardSharedData } from '../../../context/DashboardDataContext';
+import { getCalendarSeasonYear, resolveFetchedSeasonYear } from '../../../lib/seasonYear';
 
 function FavoriteTeamSnapshotWidget() {
   const { favoriteConstructor, loading, error } = useUserProfile();
@@ -24,7 +25,8 @@ function FavoriteTeamSnapshotWidget() {
     const fetchPoints = async () => {
       try {
         if (!favoriteConstructor || seasons.length === 0) return;
-        const season = new Date().getFullYear();
+        const seasonYears = seasons.map((s) => s.year);
+        const season = resolveFetchedSeasonYear(getCalendarSeasonYear(), seasonYears);
         const token = await getAccessTokenSilently({
           authorizationParams: {
             audience: import.meta.env.VITE_AUTH0_AUDIENCE,
