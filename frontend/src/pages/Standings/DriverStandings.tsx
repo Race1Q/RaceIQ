@@ -1,5 +1,5 @@
 // src/pages/DriverStandings.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import StandingsTabs from '../../components/Standings/StandingsTabs';
 import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
@@ -9,14 +9,26 @@ import StandingsSkeleton from './StandingsSkeleton';
 // import { teamColors } from '../../lib/teamColors';
 import DriverStandingCard from '../../components/Standings/DriverStandingCard';
 import { useDriverStandings } from '../../hooks/useDriverStandings';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
+import { getCalendarSeasonYear } from '../../lib/seasonYear';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
 
 type SeasonOption = SelectOption & { value: number };
 
 const DriverStandingsPage: React.FC = () => {
   // const navigate = useNavigate();
-  const [selectedSeason, setSelectedSeason] = useState<number>(new Date().getFullYear());
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
+  const [selectedSeason, setSelectedSeason] = useState<number>(getCalendarSeasonYear());
+  const appliedDefaultSeason = useRef(false);
+
+  useEffect(() => {
+    if (!resolvingDefaultSeason && !appliedDefaultSeason.current) {
+      appliedDefaultSeason.current = true;
+      setSelectedSeason(defaultSeasonYear);
+    }
+  }, [resolvingDefaultSeason, defaultSeasonYear]);
 
   const { standings: rawStandings, loading, error } = useDriverStandings(selectedSeason);
 
@@ -38,7 +50,8 @@ const DriverStandingsPage: React.FC = () => {
 
   const seasonOptions: SeasonOption[] = useMemo(() => {
     const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 2000; year--) {
+    const cal = getCalendarSeasonYear();
+    for (let year = Math.max(2025, cal); year >= 2000; year--) {
       options.push({ value: year, label: year.toString() });
     }
     return options;
@@ -73,6 +86,10 @@ const DriverStandingsPage: React.FC = () => {
         subtitle=" Explore F1 Driver Standings and statistics"
       />
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <Flex mb={12} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
           <StandingsTabs active="drivers" />
           <Box maxW={{ base: 'full', md: '220px' }} w="full">

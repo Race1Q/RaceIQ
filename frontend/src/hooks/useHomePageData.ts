@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { buildApiUrl } from '../lib/api';
 import { fetchCached } from '../lib/requestCache';
+import { getCalendarSeasonYear, resolveFetchedSeasonYear } from '../lib/seasonYear';
 import type { FeaturedDriver } from '../types';
 import type { Race } from '../types/races';
 
 interface HomePageData {
     featuredDriver: FeaturedDriver | null;
     seasonSchedule: Race[];
+    /** Calendar season used for schedule (and featured stats label); may differ from raw getFullYear() when not ingested. */
+    displaySeasonYear: number;
     loading: boolean;
     error: string | null;
     isFallback: boolean;
@@ -34,6 +37,7 @@ const fallbackFeaturedDriver: FeaturedDriver = {
 export function useHomePageData(): HomePageData {
     const [featuredDriver, setFeaturedDriver] = useState<FeaturedDriver | null>(null);
     const [seasonSchedule, setSeasonSchedule] = useState<Race[]>([]);
+    const [displaySeasonYear, setDisplaySeasonYear] = useState(() => getCalendarSeasonYear());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isFallback, setIsFallback] = useState(false);
@@ -49,15 +53,28 @@ export function useHomePageData(): HomePageData {
                 setError(null);
                 setIsFallback(false);
 
-                const currentYear = new Date().getFullYear();
+                const calendarYear = getCalendarSeasonYear();
 
-                // Fetch both in parallel with caching and timeout
-                // Using timestamp to force cache refresh for debugging
                 const cacheKey = `home:featured:${Date.now()}`;
-                const [driverData, scheduleData] = await Promise.all([
+                const [driverData, seasonsRes] = await Promise.all([
                   fetchCached<FeaturedDriver>(cacheKey, buildApiUrl('/api/standings/featured-driver')),
-                  fetchCached<Race[]>(`home:races:${currentYear}`, buildApiUrl(`/api/seasons/${currentYear}/races`)),
+                  fetch(buildApiUrl('/api/seasons')),
                 ]);
+
+                let seasonYears: number[] = [];
+                if (seasonsRes.ok) {
+                  const seasonsJson = await seasonsRes.json();
+                  if (Array.isArray(seasonsJson)) {
+                    seasonYears = seasonsJson
+                      .map((s: { year?: number }) => s.year)
+                      .filter((y: unknown): y is number => typeof y === 'number' && Number.isFinite(y));
+                  }
+                }
+                const raceYear = resolveFetchedSeasonYear(calendarYear, seasonYears);
+                const scheduleData = await fetchCached<Race[]>(
+                  `home:races:${raceYear}`,
+                  buildApiUrl(`/api/seasons/${raceYear}/races`),
+                );
                 
                 // Debug logging to see what data we're getting
                 console.log('[DEBUG] useHomePageData: Received driver data =', {
@@ -70,6 +87,7 @@ export function useHomePageData(): HomePageData {
                 if (alive) {
                   setFeaturedDriver(driverData);
                   setSeasonSchedule(Array.isArray(scheduleData) ? scheduleData : []);
+                  setDisplaySeasonYear(raceYear);
                 }
             } catch (err) {
                 if (!alive) return; // Don't update state if unmounted
@@ -78,6 +96,7 @@ export function useHomePageData(): HomePageData {
                 setError(errorMessage);
                 setFeaturedDriver(fallbackFeaturedDriver);
                 setSeasonSchedule([]);
+                setDisplaySeasonYear(resolveFetchedSeasonYear(getCalendarSeasonYear(), []));
                 setIsFallback(true);
                 toast({
                     title: 'Could not fetch live home page data',
@@ -100,5 +119,5 @@ export function useHomePageData(): HomePageData {
         };
     }, [toast]);
 
-    return { featuredDriver, seasonSchedule, loading, error, isFallback };
+    return { featuredDriver, seasonSchedule, displaySeasonYear, loading, error, isFallback };
 }

@@ -9,9 +9,12 @@ import DriverProfileCard from '../../components/DriverProfileCard/DriverProfileC
 import TeamBanner from '../../components/TeamBanner/TeamBanner';
 import { teamColors } from '../../lib/teamColors';
 import { useDriversData } from '../../hooks/useDriversData';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
+import { SEASON_FALLBACK_YEAR } from '../../lib/seasonYear';
 import { useThemeColor } from '../../context/ThemeColorContext';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
 
 // New component for the fallback banner
 const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
@@ -29,7 +32,18 @@ const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
 );
 
 const Drivers = () => {
-  const { loading, error, isFallback, orderedTeamNames, groupedDrivers } = useDriversData(2025);
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
+  const [driverGridYear, setDriverGridYear] = useState(SEASON_FALLBACK_YEAR);
+  const appliedDefaultSeason = useRef(false);
+
+  useEffect(() => {
+    if (!resolvingDefaultSeason && !appliedDefaultSeason.current) {
+      appliedDefaultSeason.current = true;
+      setDriverGridYear(defaultSeasonYear);
+    }
+  }, [resolvingDefaultSeason, defaultSeasonYear]);
+
+  const { loading, error, isFallback, orderedTeamNames, groupedDrivers } = useDriversData(driverGridYear);
   const { accentColor, accentColorLight, accentColorRgba } = useThemeColor();
   const [selectedTeam, setSelectedTeam] = useState<string>('All');
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -102,6 +116,10 @@ const Drivers = () => {
         subtitle="Explore F1 drivers and their teams"
       />
       <LayoutContainer maxW="1600px">
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         {isFallback && <FallbackBanner accentColor={accentColor} />}
   {loading && <DriversSkeleton />}
         {!loading && error && !isFallback && (

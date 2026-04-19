@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { buildApiUrl } from '../lib/api';
+import { getCalendarSeasonYear, resolveFetchedSeasonYear } from '../lib/seasonYear';
 
 interface DriverStandingsData {
   id: number;
@@ -35,7 +36,6 @@ const DashboardSharedDataContext = createContext<DashboardSharedDataContextType 
 
 export function DashboardSharedDataProvider({ children }: { children: ReactNode }) {
   const { getAccessTokenSilently } = useAuth0();
-  const currentSeason = new Date().getFullYear();
 
   const [driverStandings, setDriverStandings] = useState<DriverStandingsData[]>([]);
   const [seasons, setSeasons] = useState<SeasonData[]>([]);
@@ -44,13 +44,11 @@ export function DashboardSharedDataProvider({ children }: { children: ReactNode 
   const [errorDriverStandings, setErrorDriverStandings] = useState<string | null>(null);
   const [errorSeasons, setErrorSeasons] = useState<string | null>(null);
 
-  // Fetch driver standings for current season
-  const fetchDriverStandings = useCallback(async () => {
-    try {
-      setLoadingDriverStandings(true);
-      setErrorDriverStandings(null);
-      const token = await getAccessTokenSilently();
-      const res = await fetch(buildApiUrl(`/api/drivers/standings/${currentSeason}`), {
+  const loadStandingsForSeasons = useCallback(
+    async (seasonsList: SeasonData[], token: string) => {
+      const years = seasonsList.map((s) => s.year);
+      const effective = resolveFetchedSeasonYear(getCalendarSeasonYear(), years);
+      const res = await fetch(buildApiUrl(`/api/drivers/standings/${effective}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`Failed to fetch standings: ${res.status}`);
@@ -64,20 +62,18 @@ export function DashboardSharedDataProvider({ children }: { children: ReactNode 
         points: Number(d.points ?? 0),
         position: Number(d.position ?? 0),
         headshotUrl: d.profileimageurl || d.profileImageUrl || d.headshotUrl || undefined,
-      })).filter(r => !!r.id && !!r.fullName);
+      })).filter((r) => !!r.id && !!r.fullName);
       setDriverStandings(rows);
-    } catch (e: any) {
-      setErrorDriverStandings(e.message || 'Failed to load driver standings');
-    } finally {
-      setLoadingDriverStandings(false);
-    }
-  }, [getAccessTokenSilently, currentSeason]);
+    },
+    [],
+  );
 
-  // Fetch seasons data
   const fetchSeasons = useCallback(async () => {
     try {
       setLoadingSeasons(true);
+      setLoadingDriverStandings(true);
       setErrorSeasons(null);
+      setErrorDriverStandings(null);
       const token = await getAccessTokenSilently();
       const res = await fetch(buildApiUrl('/api/seasons'), {
         headers: { Authorization: `Bearer ${token}` },
@@ -85,18 +81,32 @@ export function DashboardSharedDataProvider({ children }: { children: ReactNode 
       if (!res.ok) throw new Error(`Failed to fetch seasons: ${res.status}`);
       const data = await res.json();
       setSeasons(data);
+      await loadStandingsForSeasons(data, token);
     } catch (e: any) {
       setErrorSeasons(e.message || 'Failed to load seasons');
+      setErrorDriverStandings(e.message || 'Failed to load driver standings');
     } finally {
       setLoadingSeasons(false);
+      setLoadingDriverStandings(false);
     }
-  }, [getAccessTokenSilently]);
+  }, [getAccessTokenSilently, loadStandingsForSeasons]);
 
-  // Initial data fetch
+  const refetchDriverStandings = useCallback(async () => {
+    try {
+      setLoadingDriverStandings(true);
+      setErrorDriverStandings(null);
+      const token = await getAccessTokenSilently();
+      await loadStandingsForSeasons(seasons, token);
+    } catch (e: any) {
+      setErrorDriverStandings(e.message || 'Failed to load driver standings');
+    } finally {
+      setLoadingDriverStandings(false);
+    }
+  }, [getAccessTokenSilently, seasons, loadStandingsForSeasons]);
+
   useEffect(() => {
-    fetchDriverStandings();
     fetchSeasons();
-  }, [fetchDriverStandings, fetchSeasons]);
+  }, [fetchSeasons]);
 
   const value: DashboardSharedDataContextType = {
     driverStandings,
@@ -105,7 +115,7 @@ export function DashboardSharedDataProvider({ children }: { children: ReactNode 
     loadingSeasons,
     errorDriverStandings,
     errorSeasons,
-    refetchDriverStandings: fetchDriverStandings,
+    refetchDriverStandings,
     refetchSeasons: fetchSeasons,
   };
 
@@ -123,4 +133,3 @@ export function useDashboardSharedData() {
   }
   return context;
 }
-

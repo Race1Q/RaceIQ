@@ -9,11 +9,14 @@ import { AlertTriangle } from 'lucide-react';
 import { Select } from 'chakra-react-select';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
 import RacesSkeleton from './RacesSkeleton';
 import type { Race } from '../../types/races';
 import { apiFetch } from '../../lib/api';
 import { useThemeColor } from '../../context/ThemeColorContext';
+import { getCalendarSeasonYear, resolveFetchedSeasonYear } from '../../lib/seasonYear';
 
 // Local wrapper to keep minimalist callsites
 const getJSON = <T,>(path: string) => apiFetch<T>(`/api${path.startsWith('/') ? path : `/${path}`}`);
@@ -163,6 +166,7 @@ const ErrorView = ({ message }: { message: string }) => (
 const RacesPage: React.FC = () => {
   const { isAuthenticated } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const [season, setSeason] = useState<number>(currentYear);
   const [years, setYears] = useState<number[]>([]);
@@ -193,8 +197,20 @@ const RacesPage: React.FC = () => {
 
   useEffect(() => {
     let alive = true;
-    fetchAvailableYears().then((ys) => { if (alive) setYears(ys); });
-    return () => { alive = false; };
+    fetchAvailableYears().then((ys) => {
+      if (!alive) return;
+      setYears(ys);
+      setSeason((prev) => {
+        const cal = getCalendarSeasonYear();
+        if (!ys.length) return prev;
+        if (ys.includes(prev)) return prev;
+        if (prev === cal) return resolveFetchedSeasonYear(cal, ys);
+        return prev;
+      });
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -285,6 +301,10 @@ const RacesPage: React.FC = () => {
       />
 
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <Flex alignItems="flex-end" justifyContent="flex-end" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
           <Box maxW={{ base: 'full', md: '220px' }} w="full">
             <Select

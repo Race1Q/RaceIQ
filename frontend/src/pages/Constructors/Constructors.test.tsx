@@ -17,6 +17,13 @@ vi.mock('../../hooks/useUserProfile', () => ({
   }),
 }));
 
+vi.mock('../../hooks/useResolvedDefaultSeasonYear', () => ({
+  useResolvedDefaultSeasonYear: () => ({
+    defaultSeasonYear: new Date().getFullYear(),
+    loading: false,
+  }),
+}));
+
 // Mock useConstructorStandings
 const mockUseConstructorStandings = vi.fn();
 vi.mock('../../hooks/useConstructorStandings', () => ({

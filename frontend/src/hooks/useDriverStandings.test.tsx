@@ -124,14 +124,34 @@ describe('useDriverStandings', () => {
     },
   ];
 
+  const seasonsFetchSuccess = {
+    ok: true,
+    json: async () => [
+      { year: 2026 },
+      { year: 2025 },
+      { year: 2024 },
+      { year: 2023 },
+      { year: 2022 },
+      { year: 2021 },
+    ],
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Default successful mock implementations
+
     mockGetAccessTokenSilently.mockResolvedValue('mock-access-token');
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => mockApiResponse,
+    mockFetch.mockImplementation(async (url: string | URL) => {
+      const u = typeof url === 'string' ? url : String(url);
+      if (u.includes('/api/seasons')) {
+        return {
+          ok: true,
+          json: async () => [{ year: 2026 }, { year: 2025 }, { year: 2024 }, { year: 2023 }, { year: 2022 }],
+        };
+      }
+      return {
+        ok: true,
+        json: async () => mockApiResponse,
+      };
     });
   });
 
@@ -169,7 +189,7 @@ describe('useDriverStandings', () => {
 
   it('should handle API failure with proper error handling', async () => {
     const networkError = new Error('Network error');
-    mockFetch.mockRejectedValueOnce(networkError);
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockRejectedValueOnce(networkError);
 
     const { result } = renderHook(() => useDriverStandings(2024), { wrapper });
 
@@ -187,7 +207,7 @@ describe('useDriverStandings', () => {
   });
 
   it('should handle HTTP error responses', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: false,
       status: 500,
       statusText: 'Internal Server Error',
@@ -209,7 +229,7 @@ describe('useDriverStandings', () => {
   });
 
   it('should handle 401 unauthorized errors', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
@@ -224,7 +244,7 @@ describe('useDriverStandings', () => {
   });
 
   it('should handle 404 not found errors', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: false,
       status: 404,
       statusText: 'Not Found',
@@ -250,7 +270,7 @@ describe('useDriverStandings', () => {
   });
 
   it('should handle malformed JSON responses', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: true,
       json: async () => {
         throw new Error('Invalid JSON');
@@ -266,7 +286,7 @@ describe('useDriverStandings', () => {
   });
 
   it('should handle non-Error exceptions', async () => {
-    mockFetch.mockRejectedValueOnce('String error');
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockRejectedValueOnce('String error');
 
     const { result } = renderHook(() => useDriverStandings(2024), { wrapper });
 
@@ -277,7 +297,7 @@ describe('useDriverStandings', () => {
   });
 
   it('should handle empty API response', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: true,
       json: async () => [],
     });
@@ -309,7 +329,7 @@ describe('useDriverStandings', () => {
       },
     ];
 
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: true,
       json: async () => incompleteApiResponse,
     });
@@ -375,7 +395,7 @@ describe('useDriverStandings', () => {
       },
     ];
 
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: true,
       json: async () => alternativeFieldResponse,
     });
@@ -420,7 +440,7 @@ describe('useDriverStandings', () => {
       },
     ];
 
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockResolvedValueOnce({
       ok: true,
       json: async () => nullValuesResponse,
     });
@@ -454,7 +474,7 @@ describe('useDriverStandings', () => {
       resolvePromise = resolve;
     });
 
-    mockFetch.mockReturnValueOnce(fetchPromise);
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockReturnValueOnce(fetchPromise);
 
     const { result } = renderHook(() => useDriverStandings(2024), { wrapper });
 
@@ -534,7 +554,7 @@ describe('useDriverStandings', () => {
 
   it('should handle toast function dependency correctly', async () => {
     const networkError = new Error('Network error');
-    mockFetch.mockRejectedValueOnce(networkError);
+    mockFetch.mockResolvedValueOnce(seasonsFetchSuccess).mockRejectedValueOnce(networkError);
 
     const { result } = renderHook(() => useDriverStandings(2024), { wrapper });
 

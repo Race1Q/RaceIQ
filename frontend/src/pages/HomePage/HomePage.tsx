@@ -15,7 +15,7 @@ import RecentRacesSkeleton from '../../components/RaceSlider/RecentRacesSkeleton
 
 function HomePage() {
   const { isAuthenticated, user } = useAuth0();
-  const { featuredDriver, seasonSchedule, loading: dataLoading, error } = useHomePageData();
+  const { featuredDriver, seasonSchedule, displaySeasonYear, loading: dataLoading, error } = useHomePageData();
 
   // Ensure page loads at top
   useEffect(() => {
@@ -55,7 +55,11 @@ function HomePage() {
             {dataLoading ? (
               <FeaturedDriverSkeleton />
             ) : (
-              <FeaturedDriverSection featuredDriver={featuredDriver} isError={!!error} />
+              <FeaturedDriverSection
+                featuredDriver={featuredDriver}
+                isError={!!error}
+                statsSeasonYear={displaySeasonYear}
+              />
             )}
             <SectionConnector />
           </ScrollAnimationWrapper>

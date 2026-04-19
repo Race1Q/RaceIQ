@@ -38,6 +38,14 @@ vi.mock('../../hooks/useUserProfile', () => ({
   }),
 }));
 
+// Avoid extra /api/seasons fetch from PendingSeasonDataBanner hook (tests chain mockFetch call order)
+vi.mock('../../hooks/useResolvedDefaultSeasonYear', () => ({
+  useResolvedDefaultSeasonYear: () => ({
+    defaultSeasonYear: new Date().getFullYear(),
+    loading: false,
+  }),
+}));
+
 // Mock RaceProfileCard component
 vi.mock('../../components/RaceProfileCard/RaceProfileCard', () => ({
   default: ({ race }: { race: any }) => (

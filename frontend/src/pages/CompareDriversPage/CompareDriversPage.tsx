@@ -10,6 +10,8 @@ import type { SelectOption } from '../../components/DropDownSearch/SearchableSel
 import { DriverSelectionPanel } from './components/DriverSelectionPanel';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
 import CompareTabs from '../../components/compare/CompareTabs';
 import { DriverPdfComparisonCard } from '../../components/compare/DriverPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
@@ -277,7 +279,8 @@ const DriverStatsColumn = ({
 
 const CompareDriversPage = () => {
   const { isAuthenticated, loginWithRedirect, getAccessTokenSilently } = useAuth0();
-  
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
+
   // Theme-aware colors
   const primaryTextColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
@@ -1395,6 +1398,10 @@ const CompareDriversPage = () => {
         subtitle="Compare F1 drivers head-to-head"
       />
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <CompareTabs active="drivers" />
         <Box p={{ base: 'md', md: 'xl' }}>
         {error && <Text color="border-accent" textAlign="center" fontSize="lg" p="xl">{error}</Text>}

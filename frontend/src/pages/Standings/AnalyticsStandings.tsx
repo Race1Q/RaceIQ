@@ -18,6 +18,8 @@ import SearchableSelect from '../../components/DropDownSearch/SearchableSelect';
 import type { SelectOption } from '../../components/DropDownSearch/SearchableSelect';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
 import StandingsAnalysisCard from '../../components/StandingsAnalysisCard/StandingsAnalysisCard';
 
 type SeasonOption = SelectOption & { value: number };
@@ -44,6 +46,7 @@ interface DriverProgression {
 }
 
 const AnalyticsStandings: React.FC = () => {
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
   const [constructorsProgression, setConstructorsProgression] = useState<ConstructorProgression[]>([]);
   const [driversProgression, setDriversProgression] = useState<DriverProgression[]>([]);
   const [loading, setLoading] = useState(true);
@@ -317,6 +320,10 @@ const AnalyticsStandings: React.FC = () => {
         subtitle="Explore and Analyze both F1 Championships"
       />
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <Flex 
           mb={12} 
           alignItems="flex-end" 

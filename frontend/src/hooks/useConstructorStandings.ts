@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { buildApiUrl } from '../lib/api';
+import { resolveFetchedSeasonYear } from '../lib/seasonYear';
 
 export interface ConstructorStandingRow {
   seasonYear: number;
@@ -32,22 +33,23 @@ export const useConstructorStandings = (
         setLoading(true);
         setError(null);
         try {
-          // 1) Find target season ID by year
           const seasonsRes = await fetch(buildApiUrl('/api/seasons'));
           if (!seasonsRes.ok) throw new Error('Failed to fetch seasons');
           const seasons = await seasonsRes.json();
-          const targetSeason = seasons.find((s: any) => s.year === seasonYear);
+          const years = (Array.isArray(seasons) ? seasons : [])
+            .map((s: any) => s.year)
+            .filter((y: unknown) => typeof y === 'number' && Number.isFinite(y));
+          const effectiveYear = resolveFetchedSeasonYear(seasonYear, years);
+          const targetSeason = seasons.find((s: any) => s.year === effectiveYear);
           if (!targetSeason) {
             setStandings([]);
             return;
           }
 
-        // 2) Get constructors list FOR THE SELECTED YEAR
-        const constructorsRes = await fetch(buildApiUrl(`/api/constructors?year=${seasonYear}`));
-        if (!constructorsRes.ok) throw new Error('Failed to fetch constructors');
-        const constructors = await constructorsRes.json();
+          const constructorsRes = await fetch(buildApiUrl(`/api/constructors?year=${effectiveYear}`));
+          if (!constructorsRes.ok) throw new Error('Failed to fetch constructors');
+          const constructors = await constructorsRes.json();
 
-          // 3) For each constructor, fetch season points (public endpoint)
           const standingsPromises = constructors.map(async (constructor: any) => {
             try {
               const resp = await fetch(buildApiUrl(`/api/race-results/constructor/${constructor.id}/season-points`));
@@ -56,7 +58,7 @@ export const useConstructorStandings = (
               const current = seasonPoints.find((sp: any) => sp.season === targetSeason.id);
               if (!current) return null;
               return {
-                seasonYear,
+                seasonYear: effectiveYear,
                 constructorId: constructor.id,
                 constructorName: constructor.name,
                 nationality: constructor.nationality || '',
@@ -73,7 +75,6 @@ export const useConstructorStandings = (
           const standingsData = (await Promise.all(standingsPromises))
             .filter(Boolean) as ConstructorStandingRow[];
 
-          // 4) Sort and assign positions
           const sortedStandings = [...standingsData].sort((a, b) => (b.seasonPoints || 0) - (a.seasonPoints || 0));
           const withPositions = sortedStandings.map((s, idx) => ({ ...s, position: idx + 1 }));
           setStandings(withPositions);
@@ -107,34 +108,36 @@ export const useConstructorStandings = (
           },
         });
 
-      // Get all constructors for the selected year
-      const constructorsResponse = await fetch(buildApiUrl(`/api/constructors?year=${seasonYear}`), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-        
-        if (!constructorsResponse.ok) {
-          throw new Error('Failed to fetch constructors');
-        }
-        
-        const constructors = await constructorsResponse.json();
-        
-        // Get season data to find season ID
         const seasonsResponse = await fetch(buildApiUrl('/api/seasons'), {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (!seasonsResponse.ok) {
           throw new Error('Failed to fetch seasons');
         }
-        
+
         const seasons = await seasonsResponse.json();
-        const targetSeason = seasons.find((s: any) => s.year === seasonYear);
-        
+        const years = (Array.isArray(seasons) ? seasons : [])
+          .map((s: any) => s.year)
+          .filter((y: unknown) => typeof y === 'number' && Number.isFinite(y));
+        const effectiveYear = resolveFetchedSeasonYear(seasonYear, years);
+        const targetSeason = seasons.find((s: any) => s.year === effectiveYear);
+
         if (!targetSeason) {
-          throw new Error(`Season ${seasonYear} not found`);
+          setStandings([]);
+          return;
         }
 
-        // Fetch standings data for each constructor
+        const constructorsResponse = await fetch(buildApiUrl(`/api/constructors?year=${effectiveYear}`), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!constructorsResponse.ok) {
+          throw new Error('Failed to fetch constructors');
+        }
+
+        const constructors = await constructorsResponse.json();
+
         const standingsPromises = constructors.map(async (constructor: any) => {
           try {
             const response = await fetch(
@@ -143,28 +146,28 @@ export const useConstructorStandings = (
                 headers: { Authorization: `Bearer ${token}` },
               }
             );
-            
+
             if (!response.ok) {
               console.warn(`Failed to fetch data for constructor ${constructor.name}`);
               return null;
             }
-            
+
             const seasonPoints = await response.json();
             const currentSeasonData = seasonPoints.find((sp: any) => sp.season === targetSeason.id);
-            
+
             if (!currentSeasonData) {
               return null;
             }
-            
+
             return {
-              seasonYear: seasonYear,
+              seasonYear: effectiveYear,
               constructorId: constructor.id,
               constructorName: constructor.name,
               nationality: constructor.nationality || '',
               seasonPoints: currentSeasonData.points || 0,
               seasonWins: currentSeasonData.wins || 0,
               seasonPodiums: currentSeasonData.podiums || 0,
-              position: 0, // Will be calculated after sorting
+              position: 0,
             };
           } catch (err) {
             console.warn(`Error fetching data for constructor ${constructor.name}:`, err);

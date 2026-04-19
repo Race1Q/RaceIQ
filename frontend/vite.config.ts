@@ -41,7 +41,7 @@ export default defineConfig({
         manualChunks: {
           // Core React libs - MUST be together for context to work
           'react-vendor': ['react', 'react-dom', 'react/jsx-runtime', 'react-router-dom'],
-          
+
           // UI libraries
           'ui-vendor': [
             '@chakra-ui/react',
@@ -50,14 +50,10 @@ export default defineConfig({
             '@emotion/styled',
             'framer-motion',
           ],
-          
+
           // Auth and API
-          'auth-vendor': [
-            '@auth0/auth0-react',
-            '@supabase/supabase-js',
-            'axios',
-          ],
-          
+          'auth-vendor': ['@auth0/auth0-react', '@supabase/supabase-js', 'axios'],
+
           // Smaller utilities
           'utils-vendor': [
             'lucide-react',
@@ -99,7 +95,8 @@ export default defineConfig({
 
   server: {
     proxy: {
-      '/api': {
+      // Match /api/... only — plain '/api' prefix wrongly proxied '/api-base.js' to the backend.
+      '^/api(/|$)': {
         target: 'http://localhost:3000',
         changeOrigin: true,
       },

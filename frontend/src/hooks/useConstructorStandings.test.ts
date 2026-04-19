@@ -178,14 +178,9 @@ describe('useConstructorStandings', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.error).toBe('Season 1999 not found');
-      expect(mockToast).toHaveBeenCalledWith({
-        title: 'Constructor standings error',
-        description: 'Season 1999 not found',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      expect(result.current.standings).toEqual([]);
+      expect(result.current.error).toBeNull();
+      expect(mockToast).not.toHaveBeenCalled();
     });
 
     it('should handle constructors fetch failure', async () => {

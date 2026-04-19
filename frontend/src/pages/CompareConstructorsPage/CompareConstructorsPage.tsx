@@ -10,6 +10,8 @@ import { ConstructorSelectionPanel } from './components/ConstructorSelectionPane
 import { ConstructorComparisonTable } from './components/ConstructorComparisonTable';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
 import CompareTabs from '../../components/compare/CompareTabs';
 import { ConstructorPdfComparisonCard } from '../../components/compare/ConstructorPdfComparisonCard';
 import { getTeamColor } from '../../lib/teamColors';
@@ -20,7 +22,8 @@ type ParameterPhase = 'constructors' | 'time' | 'stats';
 
 const CompareConstructorsPage = () => {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
-  
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
+
   // Theme-aware colors
   const primaryTextColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.300');
@@ -1002,6 +1005,10 @@ const CompareConstructorsPage = () => {
         subtitle="Compare F1 constructors head-to-head"
       />
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <CompareTabs active="constructors" />
         <Box p={{ base: 'md', md: 'xl' }}>
           {error && <Text color="border-accent" textAlign="center" fontSize="lg" p="xl">{error}</Text>}
