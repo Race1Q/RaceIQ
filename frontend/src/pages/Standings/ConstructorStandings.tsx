@@ -13,6 +13,7 @@ import { getCalendarSeasonYear } from '../../lib/seasonYear';
 import ConstructorStandingCard from '../../components/Standings/ConstructorStandingCard';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
 
 // Interfaces
 interface UiConstructorStanding {
@@ -127,6 +128,10 @@ const ConstructorStandings: React.FC = () => {
         subtitle="Explore F1 Constructor Standings and statistics"
       />
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <Flex 
           mb={12} 
           alignItems="flex-end" 

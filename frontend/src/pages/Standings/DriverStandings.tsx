@@ -13,6 +13,7 @@ import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeas
 import { getCalendarSeasonYear } from '../../lib/seasonYear';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
 
 type SeasonOption = SelectOption & { value: number };
 
@@ -85,6 +86,10 @@ const DriverStandingsPage: React.FC = () => {
         subtitle=" Explore F1 Driver Standings and statistics"
       />
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <Flex mb={12} alignItems="flex-end" justifyContent="space-between" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
           <StandingsTabs active="drivers" />
           <Box maxW={{ base: 'full', md: '220px' }} w="full">

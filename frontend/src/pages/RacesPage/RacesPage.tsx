@@ -9,6 +9,8 @@ import { AlertTriangle } from 'lucide-react';
 import { Select } from 'chakra-react-select';
 import PageHeader from '../../components/layout/PageHeader';
 import LayoutContainer from '../../components/layout/LayoutContainer';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
 import RaceProfileCard from '../../components/RaceProfileCard/RaceProfileCard';
 import RacesSkeleton from './RacesSkeleton';
 import type { Race } from '../../types/races';
@@ -164,6 +166,7 @@ const ErrorView = ({ message }: { message: string }) => (
 const RacesPage: React.FC = () => {
   const { isAuthenticated } = useAuth0();
   const { accentColorWithHash } = useThemeColor();
+  const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
   const currentYear = useMemo(() => new Date().getFullYear(), []);
   const [season, setSeason] = useState<number>(currentYear);
   const [years, setYears] = useState<number[]>([]);
@@ -298,6 +301,10 @@ const RacesPage: React.FC = () => {
       />
 
       <LayoutContainer>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         <Flex alignItems="flex-end" justifyContent="flex-end" flexDirection={{ base: 'column', md: 'row' }} gap={4}>
           <Box maxW={{ base: 'full', md: '220px' }} w="full">
             <Select

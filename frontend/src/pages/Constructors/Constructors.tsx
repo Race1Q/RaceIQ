@@ -30,6 +30,7 @@ import { TEAM_META } from '../../theme/teamTokens';
 import ConstructorsSkeleton from './ConstructorsSkeleton';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
 import FilterTabs from '../../components/FilterTabs/FilterTabs';
 
 // Lazy load ONLY TeamCard for better code splitting
@@ -324,6 +325,13 @@ const Constructors = () => {
         title="Constructors"
         subtitle="Explore F1 teams and constructors"
       />
+
+      <LayoutContainer maxW="container.2xl" py={{ base: 3, md: 4 }}>
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
+      </LayoutContainer>
 
       {isAuthenticated && (
         <LayoutContainer>

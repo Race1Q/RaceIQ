@@ -14,6 +14,7 @@ import { SEASON_FALLBACK_YEAR } from '../../lib/seasonYear';
 import { useThemeColor } from '../../context/ThemeColorContext';
 import LayoutContainer from '../../components/layout/LayoutContainer';
 import PageHeader from '../../components/layout/PageHeader';
+import PendingSeasonDataBanner from '../../components/PendingSeasonDataBanner/PendingSeasonDataBanner';
 
 // New component for the fallback banner
 const FallbackBanner = ({ accentColor }: { accentColor: string }) => (
@@ -115,6 +116,10 @@ const Drivers = () => {
         subtitle="Explore F1 drivers and their teams"
       />
       <LayoutContainer maxW="1600px">
+        <PendingSeasonDataBanner
+          defaultSeasonYear={defaultSeasonYear}
+          loading={resolvingDefaultSeason}
+        />
         {isFallback && <FallbackBanner accentColor={accentColor} />}
   {loading && <DriversSkeleton />}
         {!loading && error && !isFallback && (
