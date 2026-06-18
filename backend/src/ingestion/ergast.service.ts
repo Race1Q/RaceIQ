@@ -396,6 +396,93 @@ export class ErgastService {
     this.logger.log(`Successfully inserted ${allSessionsToInsert.length} sessions.`);
   }
 
+  /**
+   * Ingest races + sessions for a SINGLE season only.
+   *
+   * Unlike {@link ingestRacesAndSessions} (which re-walks every year and does a plain
+   * insert), this is year-scoped and idempotent: it skips rounds that already exist for
+   * the season, so it can be re-run safely without creating duplicate races/sessions.
+   * Used to onboard a new season (e.g. 2026) without touching historical data.
+   */
+  public async ingestRacesAndSessionsForYear(year: number): Promise<{ inserted: number; sessions: number }> {
+    this.logger.log(`Ingesting races & sessions for ${year} only...`);
+
+    const { data: season } = await this.supabaseService.client
+      .from('seasons').select('id').eq('year', year).single();
+    if (!season) {
+      this.logger.error(`No season row for ${year}. Run /ingestion/seasons first.`);
+      throw new Error(`Season ${year} not found`);
+    }
+    const seasonId = season.id;
+
+    const { data: circuits } = await this.supabaseService.client.from('circuits').select('id, name');
+    const circuitsMap = new Map((circuits ?? []).map(c => [c.name, c.id]));
+
+    // Idempotency: don't re-insert rounds we already have for this season.
+    const { data: existingRaces } = await this.supabaseService.client
+      .from('races').select('round').eq('season_id', seasonId);
+    const existingRounds = new Set((existingRaces ?? []).map(r => r.round));
+
+    const apiRaces = await this.fetchAllErgastPages<ApiRace>(`/${year}/races`);
+    const racesToInsert: any[] = [];
+
+    for (const apiRace of apiRaces) {
+      if (!apiRace || !apiRace.Circuit) {
+        this.logger.warn(`Skipping a race in ${year} due to missing Circuit data.`);
+        continue;
+      }
+      const round = parseInt(apiRace.round, 10);
+      if (existingRounds.has(round)) continue;
+
+      const circuitDetails = await this.fetchAllErgastPages<ApiCircuit>(`/circuits/${apiRace.Circuit.circuitId}`);
+      if (!circuitDetails || circuitDetails.length === 0) continue;
+
+      const circuitName = circuitDetails[0]?.circuitName;
+      const circuitId = circuitsMap.get(circuitName);
+      if (!circuitId) {
+        this.logger.warn(`Could not find circuit ID for '${circuitName}' (round ${round}). Run /ingestion/circuits, then re-run. Skipping race.`);
+        continue;
+      }
+
+      racesToInsert.push({
+        season_id: seasonId,
+        circuit_id: circuitId,
+        round,
+        name: apiRace.raceName,
+        date: apiRace.date,
+        time: apiRace.time ? apiRace.time.replace('Z', '') : null,
+      });
+    }
+
+    if (racesToInsert.length === 0) {
+      this.logger.log(`No new races to insert for ${year} (already up to date).`);
+      return { inserted: 0, sessions: 0 };
+    }
+
+    const { data: insertedRaces, error: racesError } = await this.supabaseService.client
+      .from('races').insert(racesToInsert).select();
+    if (racesError) {
+      this.logger.error('Failed to insert races. Supabase error:', racesError);
+      throw new Error('Failed to insert races');
+    }
+
+    const sessionsToInsert: { race_id: number; type: string }[] = [];
+    for (const race of (insertedRaces ?? [])) {
+      sessionsToInsert.push({ race_id: race.id, type: 'QUALIFYING' });
+      sessionsToInsert.push({ race_id: race.id, type: 'RACE' });
+    }
+
+    const { error: sessionsError } = await this.supabaseService.client
+      .from('sessions').insert(sessionsToInsert);
+    if (sessionsError) {
+      this.logger.error('Failed to insert sessions. Supabase error:', sessionsError);
+      throw new Error('Failed to insert sessions');
+    }
+
+    this.logger.log(`Inserted ${insertedRaces?.length ?? 0} races and ${sessionsToInsert.length} sessions for ${year}.`);
+    return { inserted: insertedRaces?.length ?? 0, sessions: sessionsToInsert.length };
+  }
+
   ///////// ----- ***** INGEST ALL RESULTS ***** ----- /////////
   ///////// ----- ***** INGEST ALL RESULTS ***** ----- /////////
   ///////// ----- ***** INGEST ALL RESULTS ***** ----- /////////

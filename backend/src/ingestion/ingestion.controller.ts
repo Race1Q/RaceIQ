@@ -59,6 +59,18 @@ export class IngestionController {
   }
 
   @ApiExcludeEndpoint()
+  @ApiBadRequestResponse({
+    description: 'Invalid input. (e.g., year is not a number).',
+    type: ApiErrorDto,
+  })
+  @Post('races-and-sessions/:year')
+  async ingestRacesAndSessionsForYear(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Ingesting Races and Sessions for ${year} only ---`);
+    const result = await this.ergastService.ingestRacesAndSessionsForYear(year);
+    return { message: `Races and sessions ingestion for ${year} complete.`, ...result };
+  }
+
+  @ApiExcludeEndpoint()
   @Post('seasons')
   async ingestSeasons() {
     this.logger.log('--- MANUAL TRIGGER: Ingesting Seasons ---');
