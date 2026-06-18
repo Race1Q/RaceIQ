@@ -136,7 +136,7 @@ export class IngestionService {
 
       // === OPENF1 MODERN (2023-2025) ===
       this.logger.log('📡 [Phase 2/2] Running OpenF1 Modern Ingestion...');
-      for (const year of [2023, 2024, 2025]) {
+      for (const year of [2023, 2024, 2025, 2026]) {
         this.logger.log(`Processing year ${year}...`);
         await this.openf1Service.ingestSessionsAndWeather(year);
         await this.openf1Service.ingestGranularData(year);
