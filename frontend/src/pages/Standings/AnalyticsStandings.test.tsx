@@ -165,6 +165,12 @@ describe('AnalyticsStandings', () => {
     
     // Mock successful fetch responses
     (global.fetch as any).mockImplementation((url: string) => {
+      if (url.includes('/seasons')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ id: 26, year: 2025 }]),
+        });
+      }
       if (url.includes('/constructors/')) {
         return Promise.resolve({
           ok: true,

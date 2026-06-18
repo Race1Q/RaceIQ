@@ -50,23 +50,60 @@ const AnalyticsStandings: React.FC = () => {
   const [constructorsProgression, setConstructorsProgression] = useState<ConstructorProgression[]>([]);
   const [driversProgression, setDriversProgression] = useState<DriverProgression[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSeason, setSelectedSeason] = useState<number>(2025);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<number>(26); // Default to 2025 season ID
+  const [seasons, setSeasons] = useState<{ id: number; year: number }[]>([]);
+  const [seasonsLoaded, setSeasonsLoaded] = useState(false);
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null);
   const [seasonChanging, setSeasonChanging] = useState(false);
 
-  // Generate season options from 2025 → 2000 (same as other standings pages)
+  // Map season year -> DB season id, derived from /api/seasons (no hardcoded ids)
+  const yearToSeasonId = useMemo(() => {
+    const map: Record<number, number> = {};
+    seasons.forEach((s) => { map[s.year] = s.id; });
+    return map;
+  }, [seasons]);
+
+  // Season options come straight from the ingested seasons (newest first)
   const seasonOptions: SeasonOption[] = useMemo(() => {
-    const options: SeasonOption[] = [];
-    for (let year = 2025; year >= 2000; year--) {
-      options.push({ value: year, label: year.toString() });
-    }
-    return options;
+    return [...seasons]
+      .sort((a, b) => b.year - a.year)
+      .map((s) => ({ value: s.year, label: s.year.toString() }));
+  }, [seasons]);
+
+  // Load the list of ingested seasons once
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(buildApiUrl('/api/seasons'));
+        if (!res.ok) throw new Error(`seasons ${res.status}`);
+        const data = await res.json();
+        if (alive && Array.isArray(data)) {
+          setSeasons(data.filter((s) => typeof s?.id === 'number' && typeof s?.year === 'number'));
+        }
+      } catch (err) {
+        console.error('Failed to load seasons', err);
+      } finally {
+        if (alive) setSeasonsLoaded(true);
+      }
+    })();
+    return () => { alive = false; };
   }, []);
 
-  // Set default season ID for 2025
+  // Once the default year is resolved and seasons are loaded, select it
+  // (falling back to the newest ingested season if the default isn't present)
   useEffect(() => {
-    setSelectedSeasonId(26); // 2025 season ID
-  }, []);
+    if (resolvingDefaultSeason || !seasonsLoaded || selectedSeasonId !== null) return;
+    if (seasons.length === 0) {
+      // Nothing to show; drop out of the skeleton state.
+      setLoading(false);
+      return;
+    }
+    const sorted = [...seasons].sort((a, b) => b.year - a.year);
+    const target = sorted.find((s) => s.year === defaultSeasonYear) ?? sorted[0];
+    setSelectedSeason(target.year);
+    setSelectedSeasonId(target.id);
+  }, [resolvingDefaultSeason, seasonsLoaded, seasons, defaultSeasonYear, selectedSeasonId]);
 
   // Theme-aware colors
   const chartBgColor = useColorModeValue('white', 'gray.900');
@@ -113,38 +150,9 @@ const AnalyticsStandings: React.FC = () => {
   const handleSeasonChange = async (newSeason: number) => {
     setSeasonChanging(true);
     setSelectedSeason(newSeason);
-    
-    // Map year to season ID (this is a simplified mapping - in production you might want to fetch this from API)
-    const seasonIdMapping: Record<number, number> = {
-      2025: 26,
-      2024: 25,
-      2023: 24,
-      2022: 23,
-      2021: 22,
-      2020: 21,
-      2019: 20,
-      2018: 19,
-      2017: 18,
-      2016: 17,
-      2015: 16,
-      2014: 15,
-      2013: 14,
-      2012: 13,
-      2011: 12,
-      2010: 11,
-      2009: 10,
-      2008: 9,
-      2007: 8,
-      2006: 7,
-      2005: 6,
-      2004: 5,
-      2003: 4,
-      2002: 3,
-      2001: 2,
-      2000: 1,
-    };
-    
-    const seasonId = seasonIdMapping[newSeason];
+
+    // Map year -> season id from the ingested seasons (see yearToSeasonId)
+    const seasonId = yearToSeasonId[newSeason];
     if (seasonId) {
       setSelectedSeasonId(seasonId);
     }
