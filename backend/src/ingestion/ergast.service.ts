@@ -116,7 +116,7 @@ export class ErgastService {
 
   // --- CONFIGURATION ---
   private readonly startYear = 2000;
-  private readonly endYear = 2025; // Allow foundational scripts to run for all years 
+  private readonly endYear = 2026; // Allow foundational scripts to run for all years
   private readonly pageLimit = 100; // A higher page limit for faster bulk ingestion
 
   constructor(

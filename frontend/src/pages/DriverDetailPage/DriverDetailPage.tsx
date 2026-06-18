@@ -24,12 +24,14 @@ import {
 import TeamLogo from '../../components/TeamLogo/TeamLogo';
 import DriverBioCard from '../../components/DriverBioCard/DriverBioCard';
 import { SEASON_FALLBACK_YEAR } from '../../lib/seasonYear';
+import { useResolvedDefaultSeasonYear } from '../../hooks/useResolvedDefaultSeasonYear';
 
 const DriverDetailPage: React.FC = () => {
   const { driverId } = useParams<{ driverId: string }>();
   const { driverDetails, loading, error } = useDriverDetails(driverId);
   const { seasonStats, loading: seasonStatsLoading } = useDriverSeasonStats(driverId);
   const { progressionData, loading: progressionLoading } = useDriverSeasonProgression(driverId);
+  const { defaultSeasonYear } = useResolvedDefaultSeasonYear();
 
   // --- DEBUG STEP 3: Log the data as it's received by the page component ---
   console.log("%c3. Data Received by Page Component:", "color: orange; font-weight: bold;", driverDetails);
@@ -250,7 +252,7 @@ const DriverDetailPage: React.FC = () => {
         {/* --- AI-GENERATED BIO SECTION --- */}
         <Box mt="xl">
           <Heading size="md" fontFamily="heading" mb="md" color="text-primary">Driver Biography</Heading>
-          <DriverBioCard driverId={Number(driverId)} season={2025} />
+          <DriverBioCard driverId={Number(driverId)} season={defaultSeasonYear} />
         </Box>
       </Container>
     </Box>
