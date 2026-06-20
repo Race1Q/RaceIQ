@@ -10,6 +10,8 @@ import williams from '../assets/2025williamscarright.png';
 import rb from '../assets/2025racingbullscarright.png';
 import sauber from '../assets/2025kicksaubercarright.png';
 import haas from '../assets/2025haascarright.png';
+import audi from '../assets/2026audicarright.webp';
+import cadillac from '../assets/2026cadillaccarright.webp';
 
 export const teamCarImages: { [key: string]: string } = {
     // F1 Team Car Images - Using reliable placeholder images
@@ -22,5 +24,8 @@ export const teamCarImages: { [key: string]: string } = {
     "Williams": williams,
     "RB F1 Team": rb,
     "Sauber": sauber,
-    "Haas F1 Team": haas
+    "Haas F1 Team": haas,
+    // 2026 new entries
+    "Audi": audi,
+    "Cadillac F1 Team": cadillac
   };

@@ -126,6 +126,38 @@ const getFlagEmoji = (nationality: string): string => {
   return flags[nationality] || '🏁';
 };
 
+// Map a constructor nationality (adjective or ISO code) to an ISO 3166-1 alpha-2
+// code so we can render an SVG flag (emoji flags don't render on Windows).
+const getCountryCode = (nationality: string): string | undefined => {
+  const map: Record<string, string> = {
+    British: 'GB', English: 'GB',
+    Italian: 'IT',
+    German: 'DE',
+    French: 'FR',
+    Austrian: 'AT',
+    Swiss: 'CH',
+    American: 'US',
+    Dutch: 'NL',
+    Spanish: 'ES',
+    Canadian: 'CA',
+    Australian: 'AU',
+    Japanese: 'JP',
+    Indian: 'IN',
+    Irish: 'IE',
+    Russian: 'RU',
+    Mexican: 'MX',
+    Brazilian: 'BR',
+    Belgian: 'BE',
+    Swedish: 'SE',
+    'New Zealander': 'NZ',
+    Malaysian: 'MY',
+    // Accept raw ISO alpha-2 codes too
+    GB: 'GB', IT: 'IT', DE: 'DE', FR: 'FR', AT: 'AT', CH: 'CH', US: 'US',
+    ES: 'ES', NL: 'NL', CA: 'CA', AU: 'AU', JP: 'JP',
+  };
+  return map[nationality];
+};
+
 
 const Constructors = () => {
   const toast = useToast();
@@ -136,6 +168,11 @@ const Constructors = () => {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<FilterOption>('active');
   const [searchTerm, setSearchTerm] = useState('');
+  // Teams that actually competed in the selected season (season-driven "active" set),
+  // derived from /api/constructors?year= so the page reflects the real grid each year
+  // instead of the manually-maintained is_active flag.
+  const [seasonTeamIds, setSeasonTeamIds] = useState<Set<number>>(new Set());
+  const [seasonRaceCount, setSeasonRaceCount] = useState<number | null>(null);
   const { defaultSeasonYear, loading: resolvingDefaultSeason } = useResolvedDefaultSeasonYear();
   const [selectedSeason, setSelectedSeason] = useState<number>(getCalendarSeasonYear());
   const appliedDefaultSeason = useRef(false);
@@ -230,6 +267,36 @@ const Constructors = () => {
     fetchConstructors();
   }, [publicFetch, toast]);
 
+  // Fetch the teams + race count for the selected season (season-driven active set).
+  useEffect(() => {
+    let alive = true;
+    const fetchSeasonGrid = async () => {
+      try {
+        const [seasonTeams, seasonRaces] = await Promise.all([
+          publicFetch(buildApiUrl(`/api/constructors?year=${selectedSeason}`)),
+          publicFetch(buildApiUrl(`/api/races?year=${selectedSeason}`)),
+        ]);
+        if (!alive) return;
+        setSeasonTeamIds(
+          new Set(
+            (Array.isArray(seasonTeams) ? seasonTeams : []).map((c: ApiConstructor) => c.id),
+          ),
+        );
+        setSeasonRaceCount(Array.isArray(seasonRaces) ? seasonRaces.length : null);
+      } catch {
+        // Non-fatal: fall back to the is_active flag if the season grid can't load.
+        if (alive) {
+          setSeasonTeamIds(new Set());
+          setSeasonRaceCount(null);
+        }
+      }
+    };
+    fetchSeasonGrid();
+    return () => {
+      alive = false;
+    };
+  }, [selectedSeason, publicFetch]);
+
   // Create stats map from bulk data
   const statsMap = useMemo(() => {
     if (!bulkStats) return new Map();
@@ -241,19 +308,26 @@ const Constructors = () => {
     return map;
   }, [bulkStats]);
 
+  // A team is "active" for the selected season if it appears in that season's grid.
+  // Fall back to the is_active flag only when the season grid hasn't loaded.
+  const isActiveTeam = useCallback(
+    (c: ApiConstructor) => (seasonTeamIds.size > 0 ? seasonTeamIds.has(c.id) : c.is_active),
+    [seasonTeamIds],
+  );
+
   const filteredConstructors = useMemo(() => {
     let filtered: ApiConstructor[];
-    
+
     if (!isAuthenticated) {
-      filtered = constructors.filter((c) => c.is_active);
+      filtered = constructors.filter((c) => isActiveTeam(c));
     } else {
       filtered = constructors.filter((c) => {
         const matchesStatus =
           statusFilter === 'all'
             ? true
             : statusFilter === 'active'
-            ? c.is_active
-            : !c.is_active;
+            ? isActiveTeam(c)
+            : !isActiveTeam(c);
 
         const matchesSearch = c.name
           .toLowerCase()
@@ -275,7 +349,7 @@ const Constructors = () => {
     }
 
     return filtered;
-  }, [constructors, statusFilter, isAuthenticated, searchTerm]);
+  }, [constructors, statusFilter, isAuthenticated, searchTerm, isActiveTeam]);
 
   const standingsMap = useMemo(() => {
     const map = new Map();
@@ -351,11 +425,11 @@ const Constructors = () => {
               
               {/* Broadcast-style stat bar - right aligned */}
               <HStack spacing={8} color="text-muted" fontSize="sm" fontFamily="heading">
-                <Text>2025 Season</Text>
+                <Text>{selectedSeason} Season</Text>
                 <Box w="1px" h="4" bg="border-primary" />
-                <Text>10 Teams</Text>
+                <Text>{seasonTeamIds.size > 0 ? seasonTeamIds.size : '—'} Teams</Text>
                 <Box w="1px" h="4" bg="border-primary" />
-                <Text>24 Races</Text>
+                <Text>{seasonRaceCount ?? '—'} Races</Text>
               </HStack>
             </Flex>
 
@@ -431,11 +505,12 @@ const Constructors = () => {
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="lg">
               {sortedConstructors.map((constructor) => {
                 const teamKey = getTeamKey(constructor.name);
-                const isHistorical = !constructor.is_active;
-                const carImage = isHistorical 
-                  ? '/assets/F1Car.png' 
+                const isHistorical = !isActiveTeam(constructor);
+                const carImage = isHistorical
+                  ? '/assets/F1Car.png'
                   : (teamCarImages[constructor.name] || '/assets/default-car.png');
                 const flagEmoji = getFlagEmoji(constructor.nationality);
+                const countryCode = getCountryCode(constructor.nationality);
 
                 // Get stats from bulk data instead of individual calls
                 const bulkStats = statsMap.get(constructor.id);
@@ -449,6 +524,7 @@ const Constructors = () => {
                       teamKey={teamKey}
                       teamName={constructor.name}
                       countryName={constructor.nationality}
+                      countryCode={countryCode}
                       countryFlagEmoji={flagEmoji}
                       points={displayPoints}
                       maxPoints={isHistorical ? Math.max(1000, displayPoints) : 500}

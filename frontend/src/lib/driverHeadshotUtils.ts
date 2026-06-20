@@ -4,6 +4,28 @@ import { driverHeadshots } from './driverHeadshots';
 import userIcon from '../assets/UserIcon.png';
 
 /**
+ * Normalize a driver name for tolerant lookups: strip diacritics and collapse
+ * whitespace/case. Ensures e.g. API "Sergio Pérez" matches map key "Sergio Perez".
+ */
+function normalizeName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // remove combining accent marks
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+// Build an accent-insensitive index of the headshot map once at module load.
+const normalizedHeadshots: Record<string, string> = Object.entries(driverHeadshots).reduce(
+  (acc, [name, url]) => {
+    acc[normalizeName(name)] = url;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
+
+/**
  * Gets driver headshot URL with fallback chain:
  * 1. API-provided URL (from backend/database) - highest priority
  * 2. Hardcoded mapping (driverHeadshots.ts) - fallback for missing API data
@@ -40,11 +62,17 @@ export function getDriverHeadshot(
     return apiImageUrl.trim();
   }
   
-  // Priority 2: Fallback to hardcoded mapping using driver's full name
+  // Priority 2: Fallback to hardcoded mapping using driver's full name.
+  // Try an exact match first, then an accent-insensitive match so names like
+  // "Sergio Pérez" resolve against the "Sergio Perez" key.
   if (driverFullName && driverFullName.trim().length > 0) {
     const trimmedName = driverFullName.trim();
     if (driverHeadshots[trimmedName]) {
       return driverHeadshots[trimmedName];
+    }
+    const normalized = normalizedHeadshots[normalizeName(trimmedName)];
+    if (normalized) {
+      return normalized;
     }
   }
   

@@ -1,5 +1,5 @@
 /** Last fully ingested season when the calendar year is not in the DB yet. */
-export const SEASON_FALLBACK_YEAR = 2025;
+export const SEASON_FALLBACK_YEAR = 2026;
 
 export function getCalendarSeasonYear(date = new Date()): number {
   return date.getFullYear();

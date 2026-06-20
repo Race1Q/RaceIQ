@@ -176,6 +176,34 @@ describe('useDriverStandings', () => {
     });
   });
 
+  it('enriches standings with driver images from the round-based endpoint', async () => {
+    mockFetch.mockImplementation(async (url: string | URL) => {
+      const u = typeof url === 'string' ? url : String(url);
+      if (u.includes('/api/seasons')) {
+        return { ok: true, json: async () => [{ year: 2024 }] };
+      }
+      if (u.includes('/api/standings/') && u.includes('/99')) {
+        return {
+          ok: true,
+          json: async () => ({
+            driverStandings: [
+              { driverId: 1, driverProfileImageUrl: 'https://cdn/kimi.png' },
+              { driverId: 2, driverProfileImageUrl: '' }, // empty -> ignored
+            ],
+          }),
+        };
+      }
+      return { ok: true, json: async () => mockApiResponse };
+    });
+
+    const { result } = renderHook(() => useDriverStandings(2024), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const byId = Object.fromEntries(result.current.standings.map((s) => [s.id, s.profileImageUrl]));
+    expect(byId[1]).toBe('https://cdn/kimi.png'); // enriched from round endpoint
+    expect(byId[2]).toBe('hamilton.jpg'); // empty image -> falls back to materialized value
+  });
+
   it('should handle different seasons correctly', async () => {
     const { result } = renderHook(() => useDriverStandings(2023), { wrapper });
 
