@@ -30,7 +30,8 @@ interface Constructor {
 }
 
 interface SeasonPoints {
-  season: number;
+  season: number; // season_id (backward compatibility)
+  year?: number; // calendar year (authoritative for chart labels)
   points: number;
   wins: number;
   podiums: number;
@@ -167,10 +168,12 @@ const ConstructorDetails: React.FC = () => {
   const mappedPointsPerSeason = useMemo(() => {
     if (!pointsPerSeason || !Array.isArray(pointsPerSeason)) return [];
     return pointsPerSeason.map((s) => {
+      // Prefer the authoritative year from the API; fall back to id->year lookup.
       const seasonObj = seasons.find((season) => season.id === s.season);
+      const year = s.year ?? seasonObj?.year;
       return {
         ...s,
-        seasonLabel: seasonObj ? seasonObj.year.toString() : `Season ${s.season}`,
+        seasonLabel: year ? year.toString() : `Season ${s.season}`,
       };
     });
   }, [pointsPerSeason, seasons]);
@@ -187,11 +190,11 @@ const ConstructorDetails: React.FC = () => {
 
   const latestSeason = useMemo(() => {
     if (!pointsPerSeason || pointsPerSeason.length === 0) return null;
+    const yearOf = (s: SeasonPoints) =>
+      s.year ?? seasons.find((season) => season.id === s.season)?.year ?? -Infinity;
     let latest = pointsPerSeason[0];
     pointsPerSeason.forEach((s) => {
-      const seasonObj = seasons.find((season) => season.id === s.season);
-      const latestObj = seasons.find((season) => season.id === latest.season);
-      if (seasonObj && latestObj && seasonObj.year > latestObj.year) {
+      if (yearOf(s) > yearOf(latest)) {
         latest = s;
       }
     });

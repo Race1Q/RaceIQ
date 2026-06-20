@@ -71,10 +71,33 @@ export const useDriverStandings = (season: number) => {
         }
 
         const dataFromApi = await response.json();
-        
+
         if (!alive) return; // Check after async operation
-        
+
         console.log('Raw Driver Standings from API: ', dataFromApi);
+
+        // The materialized standings endpoint above does not expose driver images,
+        // so enrich from the round-based standings endpoint (same source the Drivers
+        // page uses), which returns driverProfileImageUrl. Keyed by driver id.
+        let imageById = new Map<number, string>();
+        try {
+          const imgRes = await fetch(buildApiUrl(`/api/standings/${effectiveSeason}/99`), {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (imgRes.ok) {
+            const imgJson = await imgRes.json();
+            const list = Array.isArray(imgJson?.driverStandings) ? imgJson.driverStandings : [];
+            imageById = new Map(
+              list
+                .filter((r: any) => r?.driverId != null && r?.driverProfileImageUrl)
+                .map((r: any) => [Number(r.driverId), String(r.driverProfileImageUrl)]),
+            );
+          }
+        } catch {
+          // Non-fatal: fall back to the name-based headshot map in getDriverHeadshot.
+        }
+
+        if (!alive) return;
 
         // Map API fields to frontend interface
         const mapped: DriverStanding[] = dataFromApi.map((d: any) => ({
@@ -82,7 +105,7 @@ export const useDriverStandings = (season: number) => {
           fullName: d.fullname || d.fullName || 'Unknown',
           number: d.number ?? null,
           country: d.country ?? 'N/A',
-          profileImageUrl: d.profileimageurl ?? null,
+          profileImageUrl: imageById.get(Number(d.id)) ?? d.profileimageurl ?? null,
           constructor: d.constructor ?? 'Unknown',
           points: d.points ?? 0,
           wins: d.wins ?? 0,

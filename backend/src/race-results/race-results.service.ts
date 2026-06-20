@@ -141,47 +141,61 @@ export class RaceResultsService {
       if (race) sessionToSeason[s.id] = race.season_id;
     });
   
-    // Aggregate points per season
+    // Resolve season_id <-> calendar year. The chart needs real years, and gap
+    // filling must happen over the year range (season_ids are NOT contiguous or
+    // year-aligned, so filling the id range produced bogus entries like 39, 58).
+    const { data: allSeasons } = await this.supabaseService.client
+      .from('seasons')
+      .select('id, year');
+    const idToYear = new Map<number, number>((allSeasons ?? []).map((s) => [s.id, s.year]));
+    const yearToId = new Map<number, number>((allSeasons ?? []).map((s) => [s.year, s.id]));
+
+    // Aggregate points per season, keyed by calendar year
     const seasonMap: Record<number, any> = {};
     raceResults.forEach((r) => {
-      const season = sessionToSeason[r.session_id];
-      if (season === undefined) return;
-  
-      if (!seasonMap[season]) {
-        seasonMap[season] = {
-          season,
+      const seasonId = sessionToSeason[r.session_id];
+      if (seasonId === undefined) return;
+      const year = idToYear.get(seasonId);
+      if (year === undefined) return;
+
+      if (!seasonMap[year]) {
+        seasonMap[year] = {
+          season: seasonId, // season_id kept for backward compatibility
+          year,
           points: 0,
           wins: 0,
           podiums: 0,
           totalRaces: 0,
         };
       }
-  
-      seasonMap[season].points += Number(r.points || 0);
-      seasonMap[season].wins += r.position === 1 ? 1 : 0;
-      seasonMap[season].podiums += r.position && r.position <= 3 ? 1 : 0;
-      seasonMap[season].totalRaces += 1;
+
+      seasonMap[year].points += Number(r.points || 0);
+      seasonMap[year].wins += r.position === 1 ? 1 : 0;
+      seasonMap[year].podiums += r.position && r.position <= 3 ? 1 : 0;
+      seasonMap[year].totalRaces += 1;
     });
-  
-    // --- Fill missing seasons ---
-    const seasons = races.map((r) => r.season_id);
-    const minSeason = Math.min(...seasons);
-    const maxSeason = Math.max(...seasons);
-  
-    for (let s = minSeason; s <= maxSeason; s++) {
-      if (!seasonMap[s]) {
-        seasonMap[s] = {
-          season: s,
-          points: 0,
-          wins: 0,
-          podiums: 0,
-          totalRaces: 0,
-        };
+
+    // --- Fill missing years (gap seasons with zero results) ---
+    const years = Object.keys(seasonMap).map(Number);
+    if (years.length > 0) {
+      const minYear = Math.min(...years);
+      const maxYear = Math.max(...years);
+      for (let y = minYear; y <= maxYear; y++) {
+        if (!seasonMap[y]) {
+          seasonMap[y] = {
+            season: yearToId.get(y) ?? null,
+            year: y,
+            points: 0,
+            wins: 0,
+            podiums: 0,
+            totalRaces: 0,
+          };
+        }
       }
     }
-  
-    // Convert map to array sorted by season
-    return Object.values(seasonMap).sort((a, b) => a.season - b.season);
+
+    // Convert map to array sorted by year
+    return Object.values(seasonMap).sort((a, b) => a.year - b.year);
   }
   
   

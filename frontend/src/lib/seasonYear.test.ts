@@ -14,10 +14,16 @@ describe('seasonYear', () => {
     expect(resolveFetchedSeasonYear(2024, [2025, 2024, 2023])).toBe(2024);
   });
 
-  it('falls back from calendar year to 2025 when 2026 missing', () => {
+  it('falls back from calendar year to the latest available prior year when calendar year missing', () => {
     vi.useFakeTimers({ now: new Date('2026-06-01T12:00:00Z') });
     expect(getCalendarSeasonYear()).toBe(2026);
-    expect(resolveFetchedSeasonYear(2026, [2025, 2024])).toBe(SEASON_FALLBACK_YEAR);
+    expect(resolveFetchedSeasonYear(2026, [2025, 2024])).toBe(2025);
+    vi.useRealTimers();
+  });
+
+  it('uses SEASON_FALLBACK_YEAR for the calendar year when present in the list', () => {
+    vi.useFakeTimers({ now: new Date(`${SEASON_FALLBACK_YEAR}-06-01T12:00:00Z`) });
+    expect(resolveFetchedSeasonYear(SEASON_FALLBACK_YEAR, [SEASON_FALLBACK_YEAR, SEASON_FALLBACK_YEAR - 1])).toBe(SEASON_FALLBACK_YEAR);
     vi.useRealTimers();
   });
 

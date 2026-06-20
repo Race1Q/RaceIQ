@@ -402,6 +402,10 @@ describe('RaceResultsService', () => {
         { id: 2, season_id: 2023 },
         { id: 3, season_id: 2024 },
       ];
+      const mockSeasons = [
+        { id: 2023, year: 2023 },
+        { id: 2024, year: 2024 },
+      ];
 
       (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
         if (table === 'race_results') {
@@ -422,6 +426,10 @@ describe('RaceResultsService', () => {
               in: jest.fn().mockResolvedValue({ data: mockRaces, error: null }),
             }),
           };
+        } else if (table === 'seasons') {
+          return {
+            select: jest.fn().mockResolvedValue({ data: mockSeasons, error: null }),
+          };
         }
       });
 
@@ -430,6 +438,7 @@ describe('RaceResultsService', () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
         season: 2023,
+        year: 2023,
         points: 43,
         wins: 1,
         podiums: 2,
@@ -437,6 +446,7 @@ describe('RaceResultsService', () => {
       });
       expect(result[1]).toEqual({
         season: 2024,
+        year: 2024,
         points: 15,
         wins: 0,
         podiums: 1,

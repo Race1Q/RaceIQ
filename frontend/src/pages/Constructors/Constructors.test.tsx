@@ -318,11 +318,13 @@ describe('Constructors Page', () => {
   it('renders broadcast stat bar', async () => {
     mockFetch.mockResolvedValue({ ok: true, json: async () => data });
     renderPage(<Constructors />);
-    
+
+    // Stat bar is season-driven now (year/teams/races derived from the API),
+    // so assert the dynamic labels rather than hardcoded 2025 values.
     await waitFor(() => {
-      expect(screen.getByText('2025 Season')).toBeInTheDocument();
-      expect(screen.getByText('10 Teams')).toBeInTheDocument();
-      expect(screen.getByText('24 Races')).toBeInTheDocument();
+      expect(screen.getByText(/\d{4} Season/)).toBeInTheDocument();
+      expect(screen.getByText(/(\d+|—) Teams/)).toBeInTheDocument();
+      expect(screen.getByText(/(\d+|—) Races/)).toBeInTheDocument();
     }, { timeout: 5000 });
   });
 

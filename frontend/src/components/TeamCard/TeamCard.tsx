@@ -3,6 +3,7 @@ import {
   Box, Flex, Heading, Text, Image, HStack, Badge, Progress, usePrefersReducedMotion
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
+import ReactCountryFlag from "react-country-flag";
 import { TEAM_META, COUNTRY_COLORS } from "../../theme/teamTokens";
 import React, { useRef, useState } from "react";
 
@@ -10,7 +11,8 @@ type Props = {
   teamKey: keyof typeof TEAM_META;
   teamName?: string; // Optional override for historical teams
   countryName: string;
-  countryFlagEmoji?: string; // or use react-country-flag if installed in your project
+  countryCode?: string; // ISO 3166-1 alpha-2 code; renders an SVG flag (preferred over emoji on Windows)
+  countryFlagEmoji?: string; // emoji fallback when no countryCode is available
   points?: number; 
   maxPoints?: number;
   wins?: number; 
@@ -21,7 +23,7 @@ type Props = {
 };
 
 export function TeamCard({
-  teamKey, teamName, countryName, countryFlagEmoji, points = 0, maxPoints = 100, wins = 0, podiums = 0, carImage, onClick, isHistorical: isHistoricalProp
+  teamKey, teamName, countryName, countryCode, countryFlagEmoji, points = 0, maxPoints = 100, wins = 0, podiums = 0, carImage, onClick, isHistorical: isHistoricalProp
 }: Props) {
   const meta = TEAM_META[teamKey];
   const displayName = teamName || meta.name; // Use override name if provided
@@ -174,7 +176,17 @@ export function TeamCard({
               fontSize="xs"
               fontWeight="bold"
             >
-              {countryFlagEmoji ?? "🏳️"} {countryName}
+              {countryCode ? (
+                <ReactCountryFlag
+                  countryCode={countryCode}
+                  svg
+                  style={{ width: '1.1em', height: '1.1em', marginRight: '0.35em', verticalAlign: 'middle' }}
+                  title={countryName}
+                />
+              ) : (
+                <>{countryFlagEmoji ?? "🏳️"} </>
+              )}
+              {countryName}
             </Badge>
           </HStack>
           
