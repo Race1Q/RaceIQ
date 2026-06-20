@@ -411,7 +411,9 @@ describe('RaceResultsService', () => {
         if (table === 'race_results') {
           return {
             select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockResolvedValue({ data: mockRaceResults, error: null }),
+              eq: jest.fn().mockReturnValue({
+                range: jest.fn().mockResolvedValue({ data: mockRaceResults, error: null }),
+              }),
             }),
           };
         } else if (table === 'sessions') {
@@ -454,12 +456,64 @@ describe('RaceResultsService', () => {
       });
     });
 
+    it('paginates past the 1000-row cap so the newest season is not truncated', async () => {
+      const constructorId = 1;
+      // Page 1 is a full page of old (2024) results; page 2 holds the newest (2026)
+      // result. Without pagination the 2026 row would be dropped.
+      const page1 = Array.from({ length: 1000 }, () => ({ session_id: 1, points: 1, position: 5 }));
+      const page2 = [{ session_id: 2, points: 25, position: 1 }];
+      const rangeMock = jest
+        .fn()
+        .mockResolvedValueOnce({ data: page1, error: null })
+        .mockResolvedValueOnce({ data: page2, error: null });
+
+      (supabaseService.client.from as jest.Mock).mockImplementation((table) => {
+        if (table === 'race_results') {
+          return { select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ range: rangeMock }) }) };
+        } else if (table === 'sessions') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({
+                data: [{ id: 1, race_id: 1 }, { id: 2, race_id: 2 }],
+                error: null,
+              }),
+            }),
+          };
+        } else if (table === 'races') {
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockResolvedValue({
+                data: [{ id: 1, season_id: 10 }, { id: 2, season_id: 114 }],
+                error: null,
+              }),
+            }),
+          };
+        } else if (table === 'seasons') {
+          return {
+            select: jest.fn().mockResolvedValue({
+              data: [{ id: 10, year: 2024 }, { id: 114, year: 2026 }],
+              error: null,
+            }),
+          };
+        }
+      });
+
+      const result = await service.getConstructorPointsPerSeason(constructorId);
+
+      expect(rangeMock).toHaveBeenCalledTimes(2); // fetched both pages
+      const years = result.map((r: any) => r.year);
+      expect(years).toContain(2026); // newest season survived pagination
+      expect(result.find((r: any) => r.year === 2026)?.points).toBe(25);
+    });
+
     it('should return empty array when no results', async () => {
       const constructorId = 1;
 
       (supabaseService.client.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+          eq: jest.fn().mockReturnValue({
+            range: jest.fn().mockResolvedValue({ data: [], error: null }),
+          }),
         }),
       });
 
@@ -474,7 +528,9 @@ describe('RaceResultsService', () => {
 
       (supabaseService.client.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: null, error }),
+          eq: jest.fn().mockReturnValue({
+            range: jest.fn().mockResolvedValue({ data: null, error }),
+          }),
         }),
       });
 
@@ -505,7 +561,9 @@ describe('RaceResultsService', () => {
         if (table === 'race_results') {
           return {
             select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockResolvedValue({ data: mockRaceResults, error: null }),
+              eq: jest.fn().mockReturnValue({
+                range: jest.fn().mockResolvedValue({ data: mockRaceResults, error: null }),
+              }),
             }),
           };
         } else if (table === 'sessions') {
@@ -548,7 +606,9 @@ describe('RaceResultsService', () => {
 
       (supabaseService.client.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+          eq: jest.fn().mockReturnValue({
+            range: jest.fn().mockResolvedValue({ data: [], error: null }),
+          }),
         }),
       });
 
@@ -564,7 +624,9 @@ describe('RaceResultsService', () => {
 
       (supabaseService.client.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: null, error }),
+          eq: jest.fn().mockReturnValue({
+            range: jest.fn().mockResolvedValue({ data: null, error }),
+          }),
         }),
       });
 

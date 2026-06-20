@@ -105,14 +105,38 @@ export class RaceResultsService {
       .sort((a, b) => a.season - b.season);
   }
 
+  /**
+   * Fetch ALL race_results for a constructor, paginating past Supabase's default
+   * 1000-row cap. Without this, long-history constructors (Ferrari, McLaren,
+   * Williams) lose their most recent rows (e.g. the current season) to truncation.
+   */
+  private async fetchAllConstructorRaceResults(constructorId: number, columns: string): Promise<any[]> {
+    const pageSize = 1000;
+    let from = 0;
+    const all: any[] = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data, error } = await this.supabaseService.client
+        .from('race_results')
+        .select(columns)
+        .eq('constructor_id', constructorId)
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      if (!data?.length) break;
+      all.push(...data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
+  }
+
   async getConstructorPointsPerSeason(constructorId: number) {
-    // Fetch all race results for the constructor
-    const { data: raceResults, error } = await this.supabaseService.client
-      .from('race_results')
-      .select('points, position, session_id')
-      .eq('constructor_id', constructorId);
-  
-    if (error) throw new Error(error.message);
+    // Fetch all race results for the constructor (paginated to avoid the 1000-row cap)
+    const raceResults = await this.fetchAllConstructorRaceResults(
+      constructorId,
+      'points, position, session_id',
+    );
+
     if (!raceResults?.length) return [];
   
     // Fetch sessions for these session_ids
@@ -201,13 +225,10 @@ export class RaceResultsService {
   
 
   async getConstructorPointsProgression(constructorId: number, seasonId: number) {
-    // Fetch all race results for the constructor
-    const { data: raceResults, error } = await this.supabaseService.client
-      .from('race_results')
-      .select('points, session_id')
-      .eq('constructor_id', constructorId);
-  
-    if (error) throw new Error(error.message);
+    // Fetch all race results for the constructor (paginated to avoid the 1000-row cap,
+    // which otherwise drops the most recent season for long-history constructors)
+    const raceResults = await this.fetchAllConstructorRaceResults(constructorId, 'points, session_id');
+
     if (!raceResults?.length) return [];
   
     // Fetch sessions for these results
