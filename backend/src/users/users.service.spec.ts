@@ -367,8 +367,37 @@ describe('UsersService', () => {
       });
     });
 
-    it('should throw NotFoundException if user not found', async () => {
+    it('should create the row and return it when the user does not exist yet', async () => {
+      // First lookup (and the one inside ensureExists) miss, the re-read after
+      // the insert hits.
+      mockRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockUser);
+      mockRepository.create.mockReturnValue(mockUser);
+      mockRepository.save.mockResolvedValue(mockUser);
+
+      const result = await service.getProfile('auth0|123456', 'test@example.com');
+
+      expect(result).toBe(mockUser);
+      expect(mockRepository.save).toHaveBeenCalled();
+    });
+
+    it('should swallow a concurrent-insert failure and return the winning row', async () => {
+      mockRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockUser);
+      mockRepository.create.mockReturnValue(mockUser);
+      mockRepository.save.mockRejectedValue(new Error('duplicate key value violates unique constraint'));
+
+      await expect(service.getProfile('auth0|123456')).resolves.toBe(mockUser);
+    });
+
+    it('should throw NotFoundException if the row still cannot be read back', async () => {
       mockRepository.findOne.mockResolvedValue(null);
+      mockRepository.create.mockReturnValue(mockUser);
+      mockRepository.save.mockRejectedValue(new Error('Save error'));
 
       await expect(service.getProfile('auth0|123456')).rejects.toThrow(NotFoundException);
       await expect(service.getProfile('auth0|123456')).rejects.toThrow('User profile not found.');

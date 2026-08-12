@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { invalidateUserProfile } from '../lib/profileCache';
 
 interface ProfileUpdateContextType {
   refreshTrigger: number;
@@ -11,6 +12,9 @@ export function ProfileUpdateProvider({ children }: { children: React.ReactNode 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const triggerRefresh = useCallback(() => {
+    // Drop the shared cache first, so the re-render this bump causes refetches
+    // instead of reading back the stale entry.
+    invalidateUserProfile();
     setRefreshTrigger(prev => prev + 1);
   }, []);
 

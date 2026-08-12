@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useCallback, useState, useEffect } from 'react';
 import { buildApiUrl } from '../lib/api';
+import { loadUserProfile, invalidateUserProfile } from '../lib/profileCache';
 
 type ThemePref = 'light' | 'dark';
 
@@ -16,27 +17,33 @@ interface ProfileResponse {
 }
 
 export const useProfile = () => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, user } = useAuth0();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (options: { force?: boolean } = {}) => {
     try {
-      const token = await getAccessTokenSilently({
-        authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+      const data = await loadUserProfile<ProfileResponse>(
+        user?.sub ?? 'anonymous',
+        async () => {
+          const token = await getAccessTokenSilently({
+            authorizationParams: {
+              audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+            },
+          });
+          const response = await fetch(buildApiUrl('/api/profile'), {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!response.ok) throw new Error('Failed to fetch profile');
+          return (await response.json()) as ProfileResponse;
         },
-      });
-      const response = await fetch(buildApiUrl('/api/profile'), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Failed to fetch profile');
-      const data = (await response.json()) as ProfileResponse;
+        options,
+      );
       setProfile(data);
     } finally {
       setLoading(false);
     }
-  }, [getAccessTokenSilently]);
+  }, [getAccessTokenSilently, user?.sub]);
 
   const updateProfile = useCallback(async (payload: Partial<ProfileResponse>) => {
     const token = await getAccessTokenSilently({
@@ -50,7 +57,9 @@ export const useProfile = () => {
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('Failed to save profile');
-    fetchProfile();
+    // We just changed the row every other consumer is holding.
+    invalidateUserProfile();
+    fetchProfile({ force: true });
   }, [getAccessTokenSilently, fetchProfile]);
 
   useEffect(() => {

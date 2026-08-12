@@ -21,7 +21,12 @@ export class ProfileController {
   async getProfile(@AuthUser() authUser: any): Promise<User> {
     // Passport's JWT strategy attaches a payload to request.user
     // We assume it has a 'sub' property for the Auth0 ID
-    return this.usersService.getProfile(authUser.sub);
+    // Email comes from the namespaced claim (same one POST /users/ensure-exists reads)
+    // so a row created here is seeded identically.
+    return this.usersService.getProfile(
+      authUser?.sub,
+      authUser?.['https://api.raceiq.dev/email'],
+    );
   }
 
   @ApiExcludeEndpoint()

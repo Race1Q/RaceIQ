@@ -2,9 +2,15 @@ import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { extendTheme } from '@chakra-ui/react';
+import { invalidateUserProfile } from './lib/profileCache';
 
 expect.extend(matchers);
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  // The profile cache is module-level, so it would otherwise leak a response
+  // from one test into the next.
+  invalidateUserProfile();
+});
 
 // matchMedia polyfill for Chakra
 if (!window.matchMedia) {
