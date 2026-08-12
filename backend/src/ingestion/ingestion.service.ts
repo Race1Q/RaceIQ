@@ -117,6 +117,101 @@ export class IngestionService {
   }
 
   /**
+   * Which already-run rounds of a season have no race results yet.
+   * This is the set an incremental top-up needs to fill.
+   */
+  async findRoundsMissingResults(year: number): Promise<{ round: number; name: string; date: string }[]> {
+    return this.dataSource.query(
+      `SELECT r.round, r.name, r.date::text AS date
+         FROM races r
+         JOIN seasons s ON s.id = r.season_id
+         LEFT JOIN sessions ses ON ses.race_id = r.id AND ses.type = 'RACE'
+         LEFT JOIN race_results rr ON rr.session_id = ses.id
+        WHERE s.year = $1
+          AND r.date < CURRENT_DATE
+        GROUP BY r.round, r.name, r.date
+       HAVING COUNT(rr.id) = 0
+        ORDER BY r.round`,
+      [year],
+    );
+  }
+
+  /**
+   * Incremental top-up: ingest ONLY the rounds that have happened but have no
+   * results, then refresh the views.
+   *
+   * Prefer this over ingestCurrentYearPipeline for routine updates. The full
+   * pipeline deletes every session in the season before re-inserting, and
+   * race_results/qualifying_results/tire_stints/race_events all cascade off
+   * sessions — so it destroys the whole season's results and is only correct if
+   * every subsequent step succeeds. This touches nothing outside the missing rounds.
+   */
+  async ingestMissingRounds(year: number = new Date().getFullYear()): Promise<{
+    success: boolean;
+    message: string;
+    rounds: number[];
+    steps: { step: string; status: string; duration: number }[];
+  }> {
+    const missing = await this.findRoundsMissingResults(year);
+    const rounds = missing.map(r => r.round);
+    const steps: { step: string; status: string; duration: number }[] = [];
+
+    if (rounds.length === 0) {
+      this.logger.log(`✅ ${year} is already up to date — no rounds missing results.`);
+      return { success: true, message: `No missing rounds for ${year}.`, rounds: [], steps };
+    }
+
+    this.logger.log(
+      `🚀 Topping up ${year} rounds ${rounds.join(', ')} ` +
+        `(${missing.map(m => m.name).join(', ')})`,
+    );
+
+    try {
+      let startTime = Date.now();
+      this.logger.log('📡 [1/4] Sessions and weather (scoped)...');
+      await this.openf1Service.ingestSessionsAndWeather(year, { rounds });
+      steps.push({ step: 'OpenF1 Sessions & Weather', status: 'success', duration: Date.now() - startTime });
+
+      startTime = Date.now();
+      this.logger.log('📡 [2/4] Granular data (scoped)...');
+      await this.openf1Service.ingestGranularData(year, { rounds });
+      steps.push({ step: 'OpenF1 Granular Data', status: 'success', duration: Date.now() - startTime });
+
+      startTime = Date.now();
+      this.logger.log('📡 [3/4] Modern results and laps (scoped)...');
+      await this.openf1Service.ingestModernResultsAndLaps(year, { rounds });
+      steps.push({ step: 'Modern Results & Laps', status: 'success', duration: Date.now() - startTime });
+
+      startTime = Date.now();
+      this.logger.log('🔄 [4/4] Refreshing materialized views...');
+      await this.refreshMaterializedViews();
+      steps.push({ step: 'Refresh Materialized Views', status: 'success', duration: Date.now() - startTime });
+
+      const stillMissing = await this.findRoundsMissingResults(year);
+      if (stillMissing.length > 0) {
+        return {
+          success: false,
+          message:
+            `Ingested rounds ${rounds.join(', ')} but ${stillMissing.map(r => r.round).join(', ')} ` +
+            `still have no results. Check whether OpenF1 has published them yet.`,
+          rounds,
+          steps,
+        };
+      }
+
+      return {
+        success: true,
+        message: `Successfully added ${year} rounds ${rounds.join(', ')} and refreshed materialized views.`,
+        rounds,
+        steps,
+      };
+    } catch (error) {
+      this.logger.error('❌ Incremental ingestion failed:', error.message);
+      return { success: false, message: `Incremental ingestion failed: ${error.message}`, rounds, steps };
+    }
+  }
+
+  /**
    * OPTIONAL: Full historical + modern pipeline
    * Use this if you ever need to rebuild the entire database from scratch
    */
