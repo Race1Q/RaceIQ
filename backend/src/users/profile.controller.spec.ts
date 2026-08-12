@@ -116,7 +116,7 @@ describe('ProfileController', () => {
         const result = await controller.getProfile(mockAuthUser);
         
         expect(result).toBe(mockUser);
-        expect(mockUsersService.getProfile).toHaveBeenCalledWith('auth0|123456');
+        expect(mockUsersService.getProfile).toHaveBeenCalledWith('auth0|123456', undefined);
       });
 
       it('should handle different auth0_sub formats', async () => {
@@ -136,7 +136,7 @@ describe('ProfileController', () => {
         const result = await controller.getProfile(mockAuthUser);
         
         expect(result).toBe(mockUser);
-        expect(mockUsersService.getProfile).toHaveBeenCalledWith('google-oauth2|123456');
+        expect(mockUsersService.getProfile).toHaveBeenCalledWith('google-oauth2|123456', undefined);
       });
 
       it('should handle service errors', async () => {
@@ -149,7 +149,7 @@ describe('ProfileController', () => {
         };
 
         await expect(controller.getProfile(mockAuthUser)).rejects.toThrow('Profile not found');
-        expect(mockUsersService.getProfile).toHaveBeenCalledWith('auth0|123456');
+        expect(mockUsersService.getProfile).toHaveBeenCalledWith('auth0|123456', undefined);
       });
 
       it('should handle empty auth user', async () => {
@@ -169,7 +169,7 @@ describe('ProfileController', () => {
         const result = await controller.getProfile(mockAuthUser);
         
         expect(result).toBe(mockUser);
-        expect(mockUsersService.getProfile).toHaveBeenCalledWith('');
+        expect(mockUsersService.getProfile).toHaveBeenCalledWith('', undefined);
       });
 
       it('should handle null auth user', async () => {
@@ -189,7 +189,7 @@ describe('ProfileController', () => {
         const result = await controller.getProfile(mockAuthUser);
         
         expect(result).toBe(mockUser);
-        expect(mockUsersService.getProfile).toHaveBeenCalledWith(null);
+        expect(mockUsersService.getProfile).toHaveBeenCalledWith(null, undefined);
       });
     });
 
@@ -570,7 +570,7 @@ describe('ProfileController', () => {
 
       await controller.getProfile(mockAuthUser);
 
-      expect(mockUsersService.getProfile).toHaveBeenCalledWith('auth0|123456');
+      expect(mockUsersService.getProfile).toHaveBeenCalledWith('auth0|123456', undefined);
     });
 
     it.skip('should handle service method failures', async () => {
@@ -600,7 +600,7 @@ describe('ProfileController', () => {
       const result = await controller.getProfile(null as any);
       
       expect(result).toBe(mockUser);
-      expect(mockUsersService.getProfile).toHaveBeenCalledWith(undefined);
+      expect(mockUsersService.getProfile).toHaveBeenCalledWith(undefined, undefined);
     });
 
     it.skip('should handle undefined auth user', async () => {
@@ -616,7 +616,7 @@ describe('ProfileController', () => {
       const result = await controller.getProfile(undefined as any);
       
       expect(result).toBe(mockUser);
-      expect(mockUsersService.getProfile).toHaveBeenCalledWith(undefined);
+      expect(mockUsersService.getProfile).toHaveBeenCalledWith(undefined, undefined);
     });
 
     it.skip('should handle null update DTO', async () => {

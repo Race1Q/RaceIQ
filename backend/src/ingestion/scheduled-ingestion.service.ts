@@ -19,12 +19,17 @@ export class ScheduledIngestionService {
   })
   async handleWeeklyPipeline() {
     const currentYear = new Date().getFullYear();
-    
-    this.logger.log(`🚀 Starting scheduled current year pipeline for year ${currentYear}`);
-    
+
+    this.logger.log(`🚀 Starting scheduled incremental ingestion for year ${currentYear}`);
+
     try {
-      const result = await this.ingestionService.ingestCurrentYearPipeline(currentYear);
-      
+      // Incremental, not ingestCurrentYearPipeline. The full pipeline deletes every
+      // session in the season before rebuilding, and results/qualifying/stints/events
+      // cascade off sessions — so a week where OpenF1 is slow or rate-limits would
+      // leave the season gutted until someone noticed. This only touches rounds that
+      // have run but have no results yet, and is a no-op when nothing is missing.
+      const result = await this.ingestionService.ingestMissingRounds(currentYear);
+
       if (result.success) {
         this.logger.log(`✅ Scheduled pipeline completed successfully for ${currentYear}`);
         this.logger.log(`Steps completed: ${result.steps.length}`);
@@ -40,8 +45,9 @@ export class ScheduledIngestionService {
   }
 
  // Manual trigger script for testing - should prove that the automated pipeline is working
+ // Must call whatever handleWeeklyPipeline calls, or it proves nothing.
   async triggerManualPipeline(year: number = new Date().getFullYear()) {
-    this.logger.log(`🔧 Manual trigger: Running current year pipeline for ${year}`);
-    return await this.ingestionService.ingestCurrentYearPipeline(year);
+    this.logger.log(`🔧 Manual trigger: Running incremental ingestion for ${year}`);
+    return await this.ingestionService.ingestMissingRounds(year);
   }
 }

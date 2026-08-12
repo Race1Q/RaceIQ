@@ -26,6 +26,7 @@ vi.mock('../context/ProfileUpdateContext', () => ({
 // Import mocked modules
 import { useAuth0 } from '@auth0/auth0-react';
 import { useProfileUpdate } from '../context/ProfileUpdateContext';
+import { invalidateUserProfile } from '../lib/profileCache';
 
 const mockUseAuth0 = vi.mocked(useAuth0);
 const mockUseProfileUpdate = vi.mocked(useProfileUpdate);
@@ -235,7 +236,10 @@ describe('useUserProfile', () => {
     // Initial fetch - only 1 call since relations are included in profile response
     expect(mockFetch).toHaveBeenCalledTimes(1);
 
-    // Change refresh trigger
+    // Change refresh trigger. ProfileUpdateContext is mocked out here, so we do
+    // by hand what the real triggerRefresh does: drop the shared profile cache
+    // so the re-run actually hits the network instead of replaying the entry.
+    invalidateUserProfile();
     mockUseProfileUpdate.mockReturnValue({
       refreshTrigger: 1,
       triggerRefresh: mockTriggerRefresh,

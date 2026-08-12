@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { buildApiUrl } from '../lib/api';
+import { loadUserProfile, invalidateUserProfile } from '../lib/profileCache';
 import type { Layouts } from 'react-grid-layout';
 
 export interface WidgetVisibility {
@@ -74,7 +75,7 @@ const DEFAULT_LAYOUTS: Layouts = {
 };
 
 export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, user } = useAuth0();
   const [widgetVisibility, setWidgetVisibility] = useState<WidgetVisibility>(DEFAULT_VISIBILITY);
   const [layouts, setLayouts] = useState<Layouts>(DEFAULT_LAYOUTS);
   const [widgetSettings, setWidgetSettings] = useState<WidgetSettings>({});
@@ -95,22 +96,24 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
         setIsLoading(true);
         setError(null);
         
-        // Get the access token using Auth0
-        const token = await getAccessTokenSilently();
-        
-        const response = await fetch(buildApiUrl('/api/profile'), {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        // Shares the single /api/profile request with the rest of the dashboard
+        const profile: any = await loadUserProfile(user?.sub ?? 'anonymous', async () => {
+          const token = await getAccessTokenSilently();
+
+          const response = await fetch(buildApiUrl('/api/profile'), {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to load profile: ${response.status} ${response.statusText}`);
+          }
+
+          return response.json();
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to load profile: ${response.status} ${response.statusText}`);
-        }
-
-        const profile = await response.json();
-        
         if (profile.dashboard_visibility) {
           setWidgetVisibility(profile.dashboard_visibility);
         }
@@ -142,7 +145,7 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
     };
 
     loadUserPreferences();
-  }, [toast, getAccessTokenSilently]);
+  }, [toast, getAccessTokenSilently, user?.sub]);
 
   // Save preferences with debouncing
   const savePreferences = useCallback(async () => {
@@ -169,6 +172,9 @@ export const useDashboardPreferences = (): UseDashboardPreferencesReturn => {
       if (!response.ok) {
         throw new Error(`Failed to save preferences: ${response.status} ${response.statusText}`);
       }
+
+      // The cached profile now holds stale layout/visibility JSON.
+      invalidateUserProfile();
 
       setSaveStatus('saved');
       

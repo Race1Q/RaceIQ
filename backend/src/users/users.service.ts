@@ -57,17 +57,34 @@ export class UsersService {
     return user;
   }
 
-  async getProfile(auth0_sub: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { auth0_sub },
-      relations: ['favoriteDriver', 'favoriteConstructor'],
-    });
+  async getProfile(auth0_sub: string, email?: string): Promise<User> {
+    const loadWithRelations = () =>
+      this.userRepository.findOne({
+        where: { auth0_sub },
+        relations: ['favoriteDriver', 'favoriteConstructor'],
+      });
 
-    if (!user) {
-      // This case is unlikely if findOrCreate is called on every login
+    const user = await loadWithRelations();
+    if (user) {
+      return user;
+    }
+
+    // A valid Auth0 session can reach this endpoint before POST /users/ensure-exists
+    // has finished (the frontend fires both on mount), or after it failed outright.
+    // Create the row here instead of 404ing a session we just authenticated.
+    // Concurrent callers race on the unique auth0_sub index; if our insert loses,
+    // the winner's row is already committed, so re-read either way.
+    try {
+      await this.ensureExists({ auth0_sub, email });
+    } catch {
+      // Fall through to the re-read below.
+    }
+
+    const created = await loadWithRelations();
+    if (!created) {
       throw new NotFoundException('User profile not found.');
     }
-    return user;
+    return created;
   }
 
   async updateProfile(

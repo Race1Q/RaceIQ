@@ -168,9 +168,30 @@ export class OpenF1Service {
   }
 
 
+  /**
+   * Narrow a season's race list to a set of rounds. Returns the list unchanged
+   * when `rounds` is undefined, so existing whole-season callers are unaffected.
+   */
+  private filterRacesByRounds<T extends { round?: number }>(
+    races: T[] | null | undefined,
+    rounds?: number[],
+  ): T[] {
+    const all = races ?? [];
+    if (!rounds) return all;
+    const wanted = new Set(rounds);
+    return all.filter(r => r.round !== undefined && wanted.has(r.round));
+  }
+
   ///// ----- ***** INGEST SESSIONS AND WEATHER ***** ----- /////
 
-  public async ingestSessionsAndWeather(year: number) {
+  /**
+   * @param options.rounds Restrict work to these round numbers. Omit to process the
+   *   whole season. IMPORTANT: this method deletes the sessions of every race it
+   *   processes before re-inserting, and race_results/qualifying_results/tire_stints/
+   *   race_events all cascade off sessions. Passing `rounds` is therefore the
+   *   difference between topping up a few rounds and rebuilding the entire season.
+   */
+  public async ingestSessionsAndWeather(year: number, options: { rounds?: number[] } = {}) {
     this.logger.log(`Starting OpenF1 Sessions & Weather ingestion for ${year}...`);
 
     const { data: season } = await this.supabaseService.client.from('seasons').select('id').eq('year', year).single();
@@ -179,10 +200,14 @@ export class OpenF1Service {
       return;
     }
 
-    const { data: racesForYear } = await this.supabaseService.client.from('races').select('id, name').eq('season_id', season.id);
+    const { data: allRacesForYear } = await this.supabaseService.client.from('races').select('id, name, round').eq('season_id', season.id);
+    const racesForYear = this.filterRacesByRounds(allRacesForYear, options.rounds);
     if (!racesForYear || racesForYear.length === 0) {
       this.logger.error(`No races found for ${year} in DB. Run Ergast ingestion first.`);
       return;
+    }
+    if (options.rounds) {
+      this.logger.log(`Scoped to rounds: ${racesForYear.map(r => r.round).join(', ')}`);
     }
 
     const raceMap = new Map<string, number>();
@@ -226,9 +251,11 @@ export class OpenF1Service {
       await new Promise(resolve => setTimeout(resolve, 50)); 
     }
 
+    // Scoped to the races we are actually re-inserting. Anything outside `rounds`
+    // keeps its sessions — and therefore its results — untouched.
     const raceIdsToDelete = (racesForYear ?? []).map(r => r.id);
     if (raceIdsToDelete.length > 0) {
-      this.logger.log(`Deleting existing OpenF1-era sessions for ${year} before inserting.`);
+      this.logger.log(`Deleting existing OpenF1-era sessions for ${raceIdsToDelete.length} race(s) in ${year} before inserting.`);
       await this.supabaseService.client.from('sessions').delete().in('race_id', raceIdsToDelete);
     }
     
@@ -244,7 +271,8 @@ export class OpenF1Service {
 
   ///// ----- ***** INGEST GRANULAR DATA ***** ----- /////
 
-  public async ingestGranularData(year: number) {
+  /** @param options.rounds Restrict work to these round numbers (see ingestSessionsAndWeather). */
+  public async ingestGranularData(year: number, options: { rounds?: number[] } = {}) {
     this.logger.log(`Starting OpenF1 Granular Data (Stints, Events) ingestion for ${year}...`);
   
     // 1. Fetch all necessary mapping data
@@ -260,8 +288,9 @@ export class OpenF1Service {
       return;
     }
     
-    const { data: dbRacesForYear } = await this.supabaseService.client.from('races').select('id, name').eq('season_id', season.id);
-    const raceIdsForYear = (dbRacesForYear ?? []).map(r => r.id);
+    const { data: allDbRacesForYear } = await this.supabaseService.client.from('races').select('id, name, round').eq('season_id', season.id);
+    const dbRacesForYear = this.filterRacesByRounds(allDbRacesForYear, options.rounds);
+    const raceIdsForYear = dbRacesForYear.map(r => r.id);
     const { data: dbSessions } = await this.supabaseService.client
       .from('sessions')
       .select('id, type, race_id')
@@ -369,16 +398,18 @@ export class OpenF1Service {
 
   ///// ----- ***** INGEST MODERN RESULTS AND LAPS ***** ----- /////
 
-  public async ingestModernResultsAndLaps(year: number) {
+  /** @param options.rounds Restrict work to these round numbers (see ingestSessionsAndWeather). */
+  public async ingestModernResultsAndLaps(year: number, options: { rounds?: number[] } = {}) {
     this.logger.log(`Starting ROBUST Modern Ingestion for ${year}...`);
 
     // --- 1. SETUP & MAPPING ---
     const { data: season } = await this.supabaseService.client.from('seasons').select('id').eq('year', year).single();
     if (!season) { this.logger.error(`Season ${year} not found.`); return; }
 
-    const { data: dbRacesForYear } = await this.supabaseService.client.from('races').select('id, name, round').eq('season_id', season.id);
+    const { data: allDbRacesForYear } = await this.supabaseService.client.from('races').select('id, name, round').eq('season_id', season.id);
+    const dbRacesForYear = this.filterRacesByRounds(allDbRacesForYear, options.rounds);
     // Get sessions WITH the new key we just saved
-    const { data: dbSessions } = await this.supabaseService.client.from('sessions').select('id, type, race_id, openf1_session_key').in('race_id', (dbRacesForYear ?? []).map(r => r.id));
+    const { data: dbSessions } = await this.supabaseService.client.from('sessions').select('id, type, race_id, openf1_session_key').in('race_id', dbRacesForYear.map(r => r.id));
     
     const { data: dbDrivers } = await this.supabaseService.client.from('drivers').select('id, name_acronym, ergast_driver_ref, driver_number');
     const { data: dbConstructors } = await this.supabaseService.client.from('constructors').select('id, name');

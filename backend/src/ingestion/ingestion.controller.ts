@@ -1,12 +1,21 @@
-import { Controller, Post, Logger, Get, Param, ParseIntPipe, HttpCode } from '@nestjs/common';
+import { Controller, Post, Logger, Get, Param, ParseIntPipe, HttpCode, UseGuards } from '@nestjs/common';
 import { ApiBadRequestResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ErgastService } from './ergast.service';
 import { OpenF1Service } from './openf1.service';
 import { IngestionService } from './ingestion.service';
 import { ScheduledIngestionService } from './scheduled-ingestion.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ScopesGuard } from '../auth/scopes.guard';
+import { Scopes } from '../auth/scopes.decorator';
 import { ApiErrorDto } from '../common/dto/api-error.dto';
 
+// These endpoints rewrite the database — run-full-pipeline alone takes hours and
+// run-current-year-pipeline deletes a whole season before rebuilding it. They were
+// previously unauthenticated: @ApiExcludeEndpoint only hides a route from Swagger,
+// it is not access control. Same guard pair AdminController uses.
 @Controller('ingestion')
+@UseGuards(JwtAuthGuard, ScopesGuard)
+@Scopes('admin:all')
 export class IngestionController {
   private readonly logger = new Logger(IngestionController.name);
 
@@ -202,7 +211,33 @@ export class IngestionController {
   }
 
   /**
-   * ⭐ USE THIS ENDPOINT FOR CURRENT YEAR UPDATES
+   * ⭐ USE THIS ENDPOINT FOR ROUTINE UPDATES
+   * Ingests ONLY the rounds that have run but have no results yet, then refreshes views.
+   * Unlike run-current-year-pipeline it never deletes data for rounds that are
+   * already complete, so a mid-run failure cannot take out the rest of the season.
+   */
+  @ApiExcludeEndpoint()
+  @Post('backfill-missing/:year')
+  async backfillMissingRounds(@Param('year', ParseIntPipe) year: number) {
+    this.logger.log(`--- MANUAL TRIGGER: Backfilling missing rounds for ${year} ---`);
+    return this.ingestionService.ingestMissingRounds(year);
+  }
+
+  /**
+   * Read-only: which rounds of a season have run but have no results yet.
+   * Use this to see what backfill-missing would do before running it.
+   */
+  @ApiExcludeEndpoint()
+  @Get('missing-rounds/:year')
+  async getMissingRounds(@Param('year', ParseIntPipe) year: number) {
+    const missing = await this.ingestionService.findRoundsMissingResults(year);
+    return { year, count: missing.length, missing };
+  }
+
+  /**
+   * ⚠️ DESTRUCTIVE: deletes every session in the season (results, qualifying,
+   * stints and events cascade off sessions) and rebuilds them. Only correct if
+   * every step succeeds. Prefer backfill-missing for routine updates.
    * Runs the 3 OpenF1 scripts + materialized view refresh
    */
   @ApiExcludeEndpoint()

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { buildApiUrl } from '../lib/api';
+import { loadUserProfile } from '../lib/profileCache';
 import { useProfileUpdate } from '../context/ProfileUpdateContext';
 
 interface UserProfile {
@@ -91,14 +92,20 @@ export function useUserProfile() {
       return;
     }
 
+    const sub = user.sub;
+
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch user profile
-        const profileData = await authedFetch(buildApiUrl('/api/profile'));
-        
+        // Shared with every other /api/profile consumer mounted this tick.
+        // A refreshTrigger bump has already invalidated the cache, so this
+        // re-run naturally refetches.
+        const profileData = await loadUserProfile(sub, () =>
+          authedFetch(buildApiUrl('/api/profile')),
+        );
+
         setProfile(profileData);
 
         // Set favorite driver and constructor from the relations returned by the API
@@ -122,9 +129,14 @@ export function useUserProfile() {
       setLoading(true);
       setError(null);
       
-      // Fetch user profile (includes favoriteDriver and favoriteConstructor relations)
-      const profileData = await authedFetch(buildApiUrl('/api/profile'));
-      
+      // Explicit refetch: bypass the shared cache (includes favoriteDriver and
+      // favoriteConstructor relations)
+      const profileData = await loadUserProfile(
+        user.sub,
+        () => authedFetch(buildApiUrl('/api/profile')),
+        { force: true },
+      );
+
       setProfile(profileData);
 
       // Set favorite driver and constructor from the relations returned by the API

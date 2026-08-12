@@ -1,6 +1,6 @@
 // frontend/src/components/UserRegistrationHandler/UserRegistrationHandler.tsx
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserRegistration } from '../../hooks/useUserRegistration';
 
@@ -8,10 +8,18 @@ interface UserRegistrationHandlerProps {
   children: React.ReactNode;
 }
 
+/**
+ * Fires the one-time "make sure this Auth0 user has a row in `users`" call.
+ *
+ * This does NOT gate rendering. It used to return null until the POST resolved,
+ * which meant a blank page for the full duration of an API cold start before a
+ * single pixel of the app appeared. GET /api/profile now creates the row itself
+ * if it is missing, so nothing downstream depends on this call having finished —
+ * it is a warm-up, not a prerequisite.
+ */
 const UserRegistrationHandler: React.FC<UserRegistrationHandlerProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth0();
   const { ensureUserExists } = useUserRegistration();
-  const [isRegistrationComplete, setIsRegistrationComplete] = useState(false);
   const registrationAttempted = useRef(false); // Flag to prevent infinite loops
 
   useEffect(() => {
@@ -19,14 +27,11 @@ const UserRegistrationHandler: React.FC<UserRegistrationHandlerProps> = ({ child
       // Only run if the user is authenticated and we haven't tried yet
       if (isAuthenticated && !registrationAttempted.current) {
         registrationAttempted.current = true; // Mark that we are trying
-        console.log('Ensuring user exists in database...');
         try {
           await ensureUserExists();
-          console.log('Existing user found in database');
         } catch (error) {
+          // Non-fatal: GET /api/profile self-heals a missing row.
           console.error('Failed to ensure user exists:', error);
-        } finally {
-          setIsRegistrationComplete(true); // Allow the app to render
         }
       }
     };
@@ -35,12 +40,6 @@ const UserRegistrationHandler: React.FC<UserRegistrationHandlerProps> = ({ child
       handleUserRegistration();
     }
   }, [isAuthenticated, isLoading, ensureUserExists]);
-
-  // Don't render the rest of the app until the user is authenticated
-  // and the registration check is complete.
-  if (isAuthenticated && !isRegistrationComplete) {
-    return null; // Or a loading spinner
-  }
 
   return <>{children}</>;
 };
